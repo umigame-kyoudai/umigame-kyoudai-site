@@ -59,7 +59,7 @@ const calculateServerSidePrice = (
 
   const baseTotal = adultCount * adultPrice + childCount * childPrice + under3Count * under3Price
   const vipSurcharge = plan.vipSurcharge ?? 0
-  const staffFee = selectedStaff ? STAFF_FEE : 0
+  const staffFee = selectedStaff && plan.id !== 'S3' && plan.id !== 'S4' ? STAFF_FEE : 0
 
   return Math.max(0, baseTotal + vipSurcharge + staffFee - couponDiscount)
 }

@@ -239,6 +239,14 @@ export function BookingForm() {
     }
   }, [bookingData.adultCount, bookingData.childCount, bookingData.under3Count, createParticipants])
 
+  const isNightHunterPlan = bookingData.selectedPlan === "S3" || bookingData.selectedPlan === "S4"
+
+  useEffect(() => {
+    if (isNightHunterPlan && bookingData.selectedStaff) {
+      setBookingData((prev) => ({ ...prev, selectedStaff: "" }))
+    }
+  }, [isNightHunterPlan, bookingData.selectedStaff])
+
   useEffect(() => {
     // Calculate per-person pricing for all plans
     const baseTotal = bookingData.adultCount * adultPrice + bookingData.childCount * childPrice
@@ -248,7 +256,7 @@ export function BookingForm() {
 
     const vipSurcharge = selectedPlanData?.vipSurcharge || 0
 
-    const staffFee = bookingData.selectedStaff ? STAFF_FEE : 0
+    const staffFee = bookingData.selectedStaff && !isNightHunterPlan ? STAFF_FEE : 0
 
     setTotalPrice(baseTotal + under3Total + vipSurcharge + staffFee - bookingData.couponDiscount)
   }, [
@@ -261,6 +269,7 @@ export function BookingForm() {
     selectedPlanData,
     adultPrice,
     childPrice,
+    isNightHunterPlan,
   ])
 
   const handleInputChange = (field: keyof BookingData, value: any) => {
@@ -972,6 +981,7 @@ export function BookingForm() {
       </Card>
 
       {/* Staff Selection */}
+      {!isNightHunterPlan && (
       <Card className="glass-card bg-white/70 backdrop-blur-xl rounded-3xl ring-1 ring-emerald-100 shadow-lg">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-emerald-800">
@@ -1019,6 +1029,7 @@ export function BookingForm() {
           )}
         </CardContent>
       </Card>
+      )}
 
       {/* Terms and Submit */}
       <Card className="glass-card bg-white/70 backdrop-blur-xl rounded-3xl ring-1 ring-emerald-100 shadow-lg">
