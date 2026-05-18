@@ -21,6 +21,13 @@ const staffMembers = [
     objectPosition: "center center",
   },
   {
+    name: "そうたろう",
+    role: "ツアーガイド",
+    image: "/img-2102-staff-photo.jpg",
+    description: "初めての方にも寄り添うガイド",
+    objectPosition: "center center",
+  },
+  {
     name: "そういちろう",
     role: "ナイトツアー専門",
     image: "/images/night-tour-coconut-crab.jpg",
@@ -54,7 +61,7 @@ export function StaffSection() {
           <p className="text-gray-500 text-lg">安心して楽しめるのは、経験豊富なスタッフがいるから</p>
         </motion.div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 md:gap-8">
           {staffMembers.map((staff, i) => (
             <motion.div
               key={staff.name}

@@ -443,6 +443,13 @@ export const STAFFS: Staff[] = [
     image: "/hikaru-staff-photo.jpg",
   },
   {
+    id: "sotaro",
+    name: "そうたろう",
+    role: "ツアーガイド",
+    description: "明るく丁寧なサポートで、初めての方にも安心して楽しんでいただけるようご案内します。",
+    image: "/img-2102-staff-photo.jpg",
+  },
+  {
     id: "souichiro",
     name: "そういちろう",
     role: "ナイトツアー専門",

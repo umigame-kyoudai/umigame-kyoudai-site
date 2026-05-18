@@ -73,6 +73,7 @@ const STAFF_LIST = [
   { id: "", name: "指名なし" },
   { id: "staff1", name: "やまちゃん" },
   { id: "staff2", name: "ひかる" },
+  { id: "staff5", name: "そうたろう" },
   { id: "staff3", name: "そういちろう" },
   { id: "staff4", name: "凪" },
 ]

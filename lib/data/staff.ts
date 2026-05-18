@@ -21,6 +21,15 @@ export const staff: Staff[] = [
     specialties: ['シュノーケリング', 'サンゴ保全'],
   },
   {
+    id: 'sotaro',
+    name: 'そうたろう',
+    role: 'ツアーガイド',
+    bio: '明るく丁寧なサポートで、初めての方にも安心して楽しんでいただけるようご案内します。',
+    image: '/img-2102-staff-photo.jpg',
+    languages: ['日本語'],
+    specialties: ['シュノーケリング', '写真撮影サポート'],
+  },
+  {
     id: 'nagi',
     name: 'ナギ',
     role: 'ツアーコーディネーター',

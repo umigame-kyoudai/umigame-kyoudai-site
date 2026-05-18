@@ -3,7 +3,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { motion } from "framer-motion"
-import { Shield, Star, Award, Plane } from "lucide-react"
+import { Shield, Star, Award, Plane, Compass } from "lucide-react"
 import { BLUR_DATA_URLS } from "@/lib/data"
 
 const staff = [
@@ -42,6 +42,25 @@ const staff = [
       "初心者対応の名手",
       "写真撮影のセンス抜群",
       "穏やかで安心感のある接客",
+    ],
+    tours: ["ウミガメシュノーケル", "VIP貸切ツアー"],
+  },
+  {
+    id: "sotaro",
+    name: "そうたろう",
+    role: "ツアーガイド",
+    icon: Compass,
+    iconColor: "text-amber-600",
+    badgeColor: "bg-amber-500",
+    image: "/img-2102-staff-photo.jpg",
+    objectPosition: "center center",
+    catchphrase: "宮古島の自然を、丁寧にご案内します。",
+    description: "明るく丁寧なサポートで、初めての方にも安心して楽しんでいただけるようご案内します。",
+    details: [
+      "初めての方にもわかりやすく案内",
+      "安全確認を大切にしたサポート",
+      "自然を楽しむ時間づくりが得意",
+      "写真撮影も丁寧にサポート",
     ],
     tours: ["ウミガメシュノーケル", "VIP貸切ツアー"],
   },
