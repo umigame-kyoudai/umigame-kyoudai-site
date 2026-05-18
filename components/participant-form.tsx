@@ -26,7 +26,7 @@ export function ParticipantForm({ participants, minAge, selectedPlan, onUpdate }
   if (participants.length === 0) return null
 
   // ナイトツアーかどうかを判定
-  const isNightTour = selectedPlan === "night-hunter" || selectedPlan === "S3"
+  const isNightTour = selectedPlan === "night-hunter" || selectedPlan === "S3" || selectedPlan === "S5"
 
   return (
     <Card className="glass-card bg-white/70 backdrop-blur-xl rounded-3xl ring-1 ring-emerald-100 shadow-lg">
@@ -42,7 +42,7 @@ export function ParticipantForm({ participants, minAge, selectedPlan, onUpdate }
       <CardContent className="space-y-6">
         {participants.map((participant, index) => {
           const categoryLabel =
-            participant.category === "adult" ? "大人" : participant.category === "child" ? "子ども" : "3歳未満"
+            participant.category === "adult" ? "大人" : participant.category === "child" ? "子ども" : "3歳以下"
           const isOverSixty =
             selectedPlan === "S1" && typeof participant.age === "number" && participant.age >= 60
 
@@ -72,7 +72,7 @@ export function ParticipantForm({ participants, minAge, selectedPlan, onUpdate }
                       onUpdate(participant.id, "age", value)
                     }}
                     min={participant.category === "under3" ? 0 : participant.category === "child" ? minAge : 13}
-                    max={participant.category === "under3" ? 2 : participant.category === "child" ? 12 : 100}
+                    max={participant.category === "under3" ? 3 : participant.category === "child" ? 12 : 100}
                     className={`rounded-xl focus:border-emerald-500 ${isOverSixty ? "border-red-400 focus:border-red-500" : "border-emerald-200"}`}
                     aria-invalid={isOverSixty || undefined}
                     required

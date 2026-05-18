@@ -406,7 +406,7 @@ function doPost(e) {
     var headcount =
       '大人' + (data.adultCount    || 0) + '名 / ' +
       '子供' + (data.childCount    || 0) + '名 / ' +
-      '3歳未満' + (data.under3Count || 0) + '名';
+      '3歳以下' + (data.under3Count || 0) + '名';
 
     var participantsDetail = '';
     if (data.participants && Array.isArray(data.participants)) {

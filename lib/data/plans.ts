@@ -1,4 +1,6 @@
-// プラン型定義
+import { PLANS as CANONICAL_PLANS } from '../data'
+
+// 互換用のプラン型定義。実データは lib/data.ts を正とする。
 export interface Plan {
   id: string
   name: string
@@ -12,57 +14,24 @@ export interface Plan {
   rank?: number
 }
 
-// サンセットシュノーケリングプラン
-export const plans: Plan[] = [
-  {
-    id: 'sunset-snorkel',
-    name: 'サンセット シュノーケリング',
-    description: '西表島の美しいサンセットを楽しみながらシュノーケリング',
-    duration: '約3時間',
-    price: 12000,
-    maxParticipants: 4,
-    features: ['シュノーケルギア貸出', 'プロガイド同行', '夕焼け写真撮影', 'ウェットスーツ'],
-    image: '/images/sunset-sup-silhouettes.jpg',
-  },
-  {
-    id: 'day-snorkel',
-    name: 'デイ シュノーケリング',
-    description: '宮古島の海で色とりどりの熱帯魚とサンゴを観察',
-    duration: '約4時間',
-    price: 10000,
-    maxParticipants: 6,
-    features: ['シュノーケルギア貸出', 'プロガイド同行', 'ランチ付', 'フォト撮影'],
-    image: '/snorkeling-underwater-coral-reef-fish.jpg',
-  },
-  {
-    id: 'family-plan',
-    name: 'ファミリープラン',
-    description: '小さなお子様も安心！家族向けシュノーケリング体験',
-    duration: '約3時間',
-    price: 8000,
-    maxParticipants: 4,
-    features: ['キッズギア貸出', '浅瀬中心のコース', 'プロガイド同行', '安全第一'],
-    image: '/images/s1-sea-turtle-snorkeling.jpg',
-  },
-  {
-    id: 'night-tour',
-    name: 'ナイトツアー',
-    description: '夜の宮古島の自然を探索！ジャングルの生き物観察',
-    duration: '約2時間',
-    price: 6000,
-    maxParticipants: 6,
-    features: ['ヘッドライト貸出', 'ナイトガイド', '双眼鏡貸出', 'スタートバー'],
-    image: '/images/miyakojima-night-tour-creatures.jpg',
-  },
-]
+export const plans: Plan[] = CANONICAL_PLANS.map((plan) => ({
+  id: plan.id,
+  name: plan.name,
+  description: plan.description,
+  duration: `約${plan.durationHours}時間`,
+  price: plan.price,
+  childPrice: plan.childPrice,
+  maxParticipants: plan.maxParticipants ?? 99,
+  features: plan.features,
+  image: plan.image,
+  rank: plan.rank,
+}))
 
 // 価格マップ（プランIDと価格の対応）
-export const planPriceMap: Record<string, number> = {
-  'sunset-snorkel': 12000,
-  'day-snorkel': 10000,
-  'family-plan': 8000,
-  'night-tour': 6000,
-}
+export const planPriceMap: Record<string, number> = plans.reduce<Record<string, number>>((acc, plan) => {
+  acc[plan.id] = plan.price
+  return acc
+}, {})
 
 // プランを取得
 export const getPlanById = (id: string): Plan | undefined => {

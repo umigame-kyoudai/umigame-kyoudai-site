@@ -15,7 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import { Calendar, Clock, Users, Calculator, Star, CheckCircle, UserCheck, Check } from "lucide-react"
-import { PLANS, STAFF_FEE } from "@/lib/data"
+import { ADULT_PRICE, CHILD_PRICE, PLANS, STAFF_FEE } from "@/lib/data"
 import { calculateCouponDiscount } from "@/lib/constants/coupons"
 import { todayStr, localDateFromYMD } from "@/lib/date-utils"
 import BookingTimeSlots from "@/components/booking-time-slots"
@@ -51,12 +51,10 @@ interface BookingData {
   lineDisplayName: string | null
 }
 
-const ADULT_PRICE = 6000 // Declare ADULT_PRICE variable
-const CHILD_PRICE = 6000 // Declare CHILD_PRICE variable
-
 function getPlanType(planId: string): "night-hunter" | "sunset-sup" | "other" {
   switch (planId) {
     case "S3":
+    case "S5":
       return "night-hunter"
     case "S4":
       return "sunset-sup"
@@ -148,13 +146,13 @@ export function BookingForm() {
   const { adultPrice, childPrice } = getCurrentPrices()
 
   const getAgeCategories = () => {
-    const isNightHunter = bookingData.selectedPlan === "S3"
+    const isNightHunter = bookingData.selectedPlan === "S3" || bookingData.selectedPlan === "S5"
 
     return {
       childLabel: isNightHunter ? "子ども（4-12歳）" : "子ども（5-12歳）",
       minAge: isNightHunter ? 4 : 5,
       showUnder3: isNightHunter,
-      ageRestrictionMessage: isNightHunter ? "※3歳未満は無料（保護者同伴必須）" : "※5歳未満のお子様は参加できません",
+      ageRestrictionMessage: isNightHunter ? "※3歳以下は無料（保護者同伴必須）" : "※5歳未満のお子様は参加できません",
     }
   }
 
@@ -240,7 +238,8 @@ export function BookingForm() {
     }
   }, [bookingData.adultCount, bookingData.childCount, bookingData.under3Count, createParticipants])
 
-  const isNightHunterPlan = bookingData.selectedPlan === "S3" || bookingData.selectedPlan === "S4"
+  const isNightHunterPlan = bookingData.selectedPlan === "S3" || bookingData.selectedPlan === "S4" || bookingData.selectedPlan === "S5"
+  const isUnder3FreePlan = bookingData.selectedPlan === "S3" || bookingData.selectedPlan === "S5"
 
   useEffect(() => {
     if (isNightHunterPlan && bookingData.selectedStaff) {
@@ -252,14 +251,14 @@ export function BookingForm() {
     // Calculate per-person pricing for all plans
     const baseTotal = bookingData.adultCount * adultPrice + bookingData.childCount * childPrice
 
-    const under3Price = bookingData.selectedPlan === "S3" ? 0 : childPrice
+    const under3Price = isUnder3FreePlan ? 0 : childPrice
     const under3Total = bookingData.under3Count * under3Price
 
     const vipSurcharge = selectedPlanData?.vipSurcharge || 0
 
     const staffFee = bookingData.selectedStaff && !isNightHunterPlan ? STAFF_FEE : 0
 
-    setTotalPrice(baseTotal + under3Total + vipSurcharge + staffFee - bookingData.couponDiscount)
+    setTotalPrice(Math.max(0, baseTotal + under3Total + vipSurcharge + staffFee - bookingData.couponDiscount))
   }, [
     bookingData.adultCount,
     bookingData.childCount,
@@ -271,6 +270,7 @@ export function BookingForm() {
     adultPrice,
     childPrice,
     isNightHunterPlan,
+    isUnder3FreePlan,
   ])
 
   const handleInputChange = (field: keyof BookingData, value: any) => {
@@ -415,7 +415,7 @@ export function BookingForm() {
               </p>
               <p>
                 人数: 大人{bookingData.adultCount}名 子ども{bookingData.childCount}名
-                {bookingData.under3Count > 0 && ` 3歳未満${bookingData.under3Count}名`}
+                {bookingData.under3Count > 0 && ` 3歳以下${bookingData.under3Count}名`}
               </p>
               {bookingData.selectedStaff && (
                 <p className="text-emerald-600">
@@ -710,7 +710,7 @@ export function BookingForm() {
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
               <p className="text-sm text-amber-800">
                 <strong>年齢制限:</strong> このプランは5歳以上のお客様が対象です。
-                3歳未満のお子様が参加できるのは【アマゾン帰りの男と行く】本格ナイトツアーのみとなります。
+                3歳以下のお子様が参加できるのは【アマゾン帰りの男と行く】本格ナイトツアーのみとなります。
               </p>
             </div>
           )}
@@ -791,7 +791,7 @@ export function BookingForm() {
             {showUnder3 && (
               <div>
                 <Label className="text-sm font-medium text-gray-700 mb-3 block">
-                  3歳未満
+                  3歳以下
                   <span className="text-emerald-600 ml-2">無料</span>
                 </Label>
                 <div className="flex items-center gap-4">
@@ -849,11 +849,11 @@ export function BookingForm() {
                 {bookingData.under3Count > 0 && (
                   <div className="flex justify-between">
                     <span>
-                      3歳未満 {bookingData.under3Count}名 ×{" "}
-                      {bookingData.selectedPlan === "S3" ? "無料" : `￥${childPrice.toLocaleString()}`}
+                      3歳以下 {bookingData.under3Count}名 ×{" "}
+                      {isUnder3FreePlan ? "無料" : `￥${childPrice.toLocaleString()}`}
                     </span>
                     <span>
-                      {bookingData.selectedPlan === "S3"
+                      {isUnder3FreePlan
                         ? "￥0"
                         : `￥${(bookingData.under3Count * childPrice).toLocaleString()}`}
                     </span>
@@ -1046,7 +1046,9 @@ export function BookingForm() {
               利用規約・キャンセルポリシーに同意します。
               <br />
               <span className="text-xs text-gray-500">
-                ※前日と当日のキャンセルは100%のキャンセル料が発生します。
+                ※前日までのキャンセルは無料です。
+                <br />
+                ※当日キャンセル・無断キャンセルは100%のキャンセル料が発生します。
                 <br />
                 ※悪天候による中止の場合は全額返金いたします。
               </span>
