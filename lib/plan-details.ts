@@ -1,4 +1,4 @@
-import { TOUR_IMAGE_PATHS } from "@/lib/data"
+import { PLAN_COVER_IMAGE, TOUR_IMAGE_PATHS } from "@/lib/data"
 
 export interface PlanDetail {
   id: string
@@ -54,7 +54,7 @@ export const PLAN_DETAILS: Record<string, PlanDetail> = {
     name: "ウミガメと泳ぐシュノーケルツアー",
     tagline: "安全管理を徹底した少人数制。宮古島一番人気のツアー",
     heroDescription: "透き通る宮古島の海で、ウミガメと一緒に泳ぐ感動体験。安全管理を徹底した少人数制だから初心者もお子様も安心。高画質の写真・動画は全て無料プレゼント！",
-    image: "/images/s1-sea-turtle-snorkeling.jpg",
+    image: PLAN_COVER_IMAGE.snorkel,
     images: TOUR_IMAGE_PATHS.snorkel,
     color: "emerald",
     gradientFrom: "from-emerald-600",
@@ -114,7 +114,7 @@ export const PLAN_DETAILS: Record<string, PlanDetail> = {
     name: "【貸切】ウミガメシュノーケルツアー",
     tagline: "人気のウミガメシュノーケルを完全貸切で。専属ガイドで安心。",
     heroDescription: "一番人気のウミガメシュノーケルツアーを、1組限定で完全貸切。専属ガイドが付きっきりだから、お子様や泳ぎが苦手な方も絶対安心。他のお客様を気にせず自分たちだけのペースで楽しめます。",
-    image: "/images/s2-sea-turtle-closeup.jpg",
+    image: PLAN_COVER_IMAGE.snorkelPrivate,
     images: TOUR_IMAGE_PATHS.snorkel,
     color: "purple",
     gradientFrom: "from-purple-600",
@@ -166,7 +166,7 @@ export const PLAN_DETAILS: Record<string, PlanDetail> = {
     name: "本格ナイトツアー",
     tagline: "アマゾン帰りの男と行く、夜の大冒険",
     heroDescription: "懐中電灯を持って夜のジャングルへ！巨大ヤシガニや夜行性の生き物を探す冒険ツアー。0歳から参加OK、三世代でも楽しめます。",
-    image: "/images/night-tour-coconut-crab.jpg",
+    image: PLAN_COVER_IMAGE.night,
     images: TOUR_IMAGE_PATHS.night,
     color: "indigo",
     gradientFrom: "from-indigo-700",
@@ -259,7 +259,7 @@ export const PLAN_DETAILS: Record<string, PlanDetail> = {
     name: "【貸切】本格ナイトツアー",
     tagline: "専属ガイドと行く、お客様だけのプライベート夜の大冒険",
     heroDescription: "通常ナイトツアーを1組限定で完全貸切。お子様のペースに合わせて自由に探検でき、専属ガイドがじっくり解説。三世代でも安心して楽しめます。",
-    image: "/images/night-tour-coconut-crab.jpg",
+    image: PLAN_COVER_IMAGE.nightPrivate,
     images: TOUR_IMAGE_PATHS.night,
     color: "violet",
     gradientFrom: "from-violet-700",

@@ -5,7 +5,7 @@ import Link from "next/link"
 import { motion } from "framer-motion"
 import { useRef, useState, useEffect } from "react"
 import { Star, Clock, Users, Camera, Shield, Check, ChevronLeft, ChevronRight } from "lucide-react"
-import { BLUR_DATA_URLS, TOUR_IMAGE_PATHS } from "@/lib/data"
+import { BLUR_DATA_URLS, PLAN_COVER_IMAGE, TOUR_IMAGE_PATHS } from "@/lib/data"
 import { ComingSoonBadge } from "@/components/coming-soon"
 import { getPlanPriceDisplay } from "@/lib/plan-price-display"
 
@@ -41,7 +41,7 @@ const tours: Tour[] = [
     name: "ウミガメシュノーケルツアー",
     tagline: "安全管理徹底！少人数制で安心の感動体験",
     description: "宮古島の透き通る海で、ウミガメと一緒に泳ぐ感動体験。安全管理を徹底した少人数制だからお子様も安心。高画質の写真・動画は全て無料プレゼント。",
-    image: "/images/s1-sea-turtle-snorkeling.jpg",
+    image: PLAN_COVER_IMAGE.snorkel,
     images: TOUR_IMAGE_PATHS.snorkel,
     imageAlts: [
       "宮古島でウミガメと一緒に泳ぐシュノーケルツアー",
@@ -80,7 +80,7 @@ const tours: Tour[] = [
     name: "本格ナイトツアー",
     tagline: "アマゾン帰りの男と行く夜の大冒険",
     description: "懐中電灯を持って夜のジャングルへ！巨大ヤシガニや夜行性の生き物を探す冒険ツアー。0歳から参加OK、三世代でも楽しめます。",
-    image: "/images/night-tour-coconut-crab.jpg",
+    image: PLAN_COVER_IMAGE.night,
     images: TOUR_IMAGE_PATHS.night,
     imageAlts: [
       "宮古島の夜にヤシガニを探すナイトツアー",

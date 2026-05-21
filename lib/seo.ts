@@ -4,7 +4,7 @@ export const SITE_URL = "https://www.umigamekyoudaimiyakojima.com"
 export const SITE_NAME = "海亀兄弟"
 export const SITE_DESCRIPTION = "宮古島で家族向け少人数制マリン体験なら海亀兄弟。ウミガメシュノーケル、貸切ツアー、ナイトツアー、サンセットSUPなど。安全管理徹底、写真・動画無料、前日キャンセル無料。"
 
-export const OG_IMAGE = `${SITE_URL}/images/s1-sea-turtle-snorkeling.jpg`
+export const OG_IMAGE = `${SITE_URL}/images/tours/snorkel/snorkel-01.webp`
 
 export function createMetadata({
   title,

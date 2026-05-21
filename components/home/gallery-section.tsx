@@ -4,15 +4,10 @@ import Image from "next/image"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { BLUR_DATA_URLS } from "@/lib/data"
+import { getFeaturedGalleryImages } from "@/lib/data/images"
 
-const galleryImages = [
-  { src: "/images/s1-sea-turtle-snorkeling.jpg", alt: "ウミガメとシュノーケリング", span: "col-span-1 row-span-1" },
-  { src: "/images/dsc06632.jpeg", alt: "宮古島の海", span: "col-span-1 row-span-1" },
-  { src: "/images/sunset-sup-silhouettes.jpg", alt: "サンセットSUP", span: "col-span-1 row-span-1" },
-  { src: "/images/night-tour-coconut-crab.jpg", alt: "ナイトツアー", span: "col-span-1 row-span-1" },
-  { src: "/images/s2-sea-turtle-closeup.jpg", alt: "ウミガメと接近", span: "col-span-1 row-span-1" },
-  { src: "/images/gallery-new-1.jpg", alt: "巨大ヤシガニ", span: "col-span-1 row-span-1" },
-]
+// トップページに表示する写真は lib/data/images.ts で featured: true を付けて管理
+const galleryImages = getFeaturedGalleryImages()
 
 export function GallerySection() {
   return (

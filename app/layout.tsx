@@ -47,7 +47,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/images/s1-sea-turtle-snorkeling.jpg",
+        url: "/images/tours/snorkel/snorkel-01.webp",
         width: 1200,
         height: 630,
         alt: "宮古島の海亀兄弟 - ウミガメシュノーケルツアー",
@@ -58,7 +58,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "海亀兄弟 | 宮古島ウミガメシュノーケル・マリン体験",
     description: "宮古島で家族向け少人数制マリン体験。安全管理徹底、写真・動画無料。",
-    images: ["/images/s1-sea-turtle-snorkeling.jpg"],
+    images: ["/images/tours/snorkel/snorkel-01.webp"],
   },
 }
 
@@ -84,9 +84,9 @@ export default function RootLayout({
 
         <link key="preload-hero" rel="preload" as="image" href="/images/hero-aerial-ocean.jpg" type="image/jpeg" fetchPriority="high" />
 
-        <link key="preload-snorkeling" rel="preload" as="image" href="/images/s1-sea-turtle-snorkeling.jpg" type="image/jpeg" />
-        <link key="preload-closeup" rel="preload" as="image" href="/images/s2-sea-turtle-closeup.jpg" type="image/jpeg" />
-        <link key="preload-crab" rel="preload" as="image" href="/images/night-tour-coconut-crab.jpg" type="image/jpeg" />
+        <link key="preload-snorkeling" rel="preload" as="image" href="/images/tours/snorkel/snorkel-01.webp" type="image/webp" />
+        <link key="preload-snorkel-private" rel="preload" as="image" href="/images/tours/snorkel/snorkel-03.webp" type="image/webp" />
+        <link key="preload-night" rel="preload" as="image" href="/images/tours/night/night-01.webp" type="image/webp" />
       </head>
       <body className="font-sans antialiased" suppressHydrationWarning>
         <Suspense fallback={null}>

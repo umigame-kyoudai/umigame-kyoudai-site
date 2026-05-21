@@ -6,59 +6,20 @@ import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 import { X, ChevronLeft, ChevronRight, Heart } from "lucide-react"
 import { BLUR_DATA_URLS } from "@/lib/data"
+import {
+  galleryImages,
+  getGalleryCategories,
+  GALLERY_CATEGORY_LABELS,
+  type GalleryImage,
+} from "@/lib/data/images"
 
-interface GalleryImage {
-  src: string
-  title: string
-  category: string
-}
+// フィルタの選択状態。"all" は「すべて」を表す
+type FilterValue = "all" | GalleryImage["category"]
 
-const galleryImages: GalleryImage[] = [
-  { src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/20230719-P7190430-kJtRINA4MIDkKCWZv2JYG4r8Y366iz.jpg", title: "海亀と一緒にシュノーケリング", category: "海亀体験" },
-  { src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/20230719-P7190431-Ww3py8Wm9ogBMFhp0seUzqRhdypk9O.jpg", title: "海亀との記念撮影", category: "記念写真" },
-  { src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/20230720-P7200982-szA4D8aLpo1Ea14m2Z9wGj4JB5QIF5.jpg", title: "宮古島の海中世界", category: "海中風景" },
-  { src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/20230719-P7190902-lVDNsaCVNCsCFPT4CGV0d5pY8ji4gO.jpg", title: "海亀との至近距離体験", category: "海亀体験" },
-  { src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/20230719-P7190285-3hIWBTJtJPkFyHx2i5V5hkEKdwOOw4.jpg", title: "カップルで海亀体験", category: "記念写真" },
-  { src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/20230717-P7170313-7ShB5QROdk2pVrtQa5cA4HnX6D9qs4.jpg", title: "クマノミとサンゴ礁", category: "海中生物" },
-  { src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/20230716-P7160026-2-xCLsoHvkrhlfCVXS4PSpECLPYQt3k3.jpg", title: "海亀と泳ぐ夫婦", category: "記念写真" },
-  { src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/20230715-P7152056-xcHj0KyOIGTSiDrAZtgzoX87FtLw0i.jpg", title: "グループで海亀体験", category: "ファミリー" },
-  { src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/20230715-P7155003-vG2kkpVlckvEiOfvhxN4CUa57wWkuo.jpg", title: "3人で海亀観察", category: "ファミリー" },
-  { src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/20230715-P7152051-XKU6IhtQ1kFBajFNChMqu5PYvk01qw.jpg", title: "友達と海亀シュノーケリング", category: "記念写真" },
-  { src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/20230715-P7154995-Jp6QY7Raba0CudJdD3Ftr5lyOnpER8.jpg", title: "海亀との平和な時間", category: "海亀体験" },
-  { src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/20230715-P7155093-CFKTIpWycIjirB47GqOhBzkjzfZXHq.jpg", title: "海亀との記念撮影", category: "記念写真" },
-  { src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/20230715-P7155085-I4OqgwLMbl8nAVpZYTMexyuM4b3F4x.jpg", title: "海亀と一緒に泳ぐ", category: "海亀体験" },
-  { src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/20230715-P7155109-AV7aDudPGSeu1zNjrkELPolQilHONa.jpg", title: "海亀観察体験", category: "海亀体験" },
-  { src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/20230712-P7124427-eKTXAY68xDDfzfl326iBAdgNdm8gSq.jpg", title: "海亀との感動的な出会い", category: "海亀体験" },
-  { src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/20230712-P7121543-ReS66RRi9OVaOzp3WKmy5XZbK5yJ58.jpg", title: "友達と海亀記念撮影", category: "記念写真" },
-  { src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/20230712-P7124413-v9HLhTc2KQ4I5uYL0EZe52EW1O96jU.jpg", title: "海亀のクローズアップ", category: "海亀体験" },
-  { src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/20230712-P7124428-SFFkwd5wZWHsGb0hXSwJwnoeAsV4YK.jpg", title: "海亀との共泳体験", category: "海亀体験" },
-  { src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/20230712-P7124415-UYfQv7k6e5Hm6GkOsDHAXVcLLwEAaj.jpg", title: "海亀と記念撮影", category: "記念写真" },
-  { src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/20230712-P7124452-ZfQhhaCOaswwNIocEdJj5JTfEfisQf.jpg", title: "海亀体験の喜び", category: "記念写真" },
-  { src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/20230712-P7121544-9hBTBwX426xvuNHrPAHgcsDXqg8gLX.jpg", title: "カップルで海亀体験", category: "記念写真" },
-  { src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/DSC06630.JPG-s6zKQo4DVkcMP4KFXSzSbTqVHYZyJy.jpeg", title: "ガイドサービス", category: "スタッフ" },
-  { src: "/hikaru-staff-photo.jpg", title: "ひかる - やまちゃんの右腕", category: "スタッフ" },
-  { src: "/images/night-tour-coconut-crab.jpg", title: "そういちろう - ナイトツアー専門", category: "スタッフ" },
-  { src: "/nagi-staff-photo.jpg", title: "凪", category: "スタッフ" },
-  { src: "/images/night-tour-coconut-crab.jpg", title: "ヤシガニとガイド", category: "ナイトツアー" },
-  { src: "/images/gallery-new-1.jpg", title: "巨大ヤシガニ", category: "ナイトツアー" },
-  { src: "/images/gallery-night-tour-2.jpg", title: "ヤシの葉の上のヤシガニ", category: "ナイトツアー" },
-  { src: "/images/gallery-night-tour-3.jpg", title: "夜の森のクワガタ", category: "ナイトツアー" },
-  { src: "/images/gallery-night-tour-4.jpg", title: "岩場のヤシガニ", category: "ナイトツアー" },
-  { src: "/images/gallery-night-tour-5.jpg", title: "宮古島のオオヒキガエル", category: "ナイトツアー" },
-  { src: "/images/gallery-night-tour-6.jpg", title: "落ち葉の中のヤシガニ", category: "ナイトツアー" },
-  { src: "/images/gallery-nt-0052.jpg", title: "カップルでヤシガニ発見", category: "ナイトツアー" },
-  { src: "/images/gallery-nt-9998.jpg", title: "ヤモリを手のひらに", category: "ナイトツアー" },
-  { src: "/images/gallery-nt-0232.jpg", title: "親子でヤシガニ観察", category: "ナイトツアー" },
-  { src: "/images/gallery-nt-7944.jpg", title: "家族でヤシガニと記念撮影", category: "ナイトツアー" },
-  { src: "/images/gallery-nt-7908.jpg", title: "ナイトツアーの探検風景", category: "ナイトツアー" },
-  { src: "/images/gallery-nt-7884.jpg", title: "ヒキガエルとの出会い", category: "ナイトツアー" },
-  { src: "/images/gallery-nt-7890.jpg", title: "ナナフシを発見", category: "ナイトツアー" },
-  { src: "/images/gallery-nt-0263.jpg", title: "巨大ヤシガニの迫力", category: "ナイトツアー" },
-  { src: "/images/gallery-nt-9317.jpg", title: "家族でヤシガニと記念写真", category: "ナイトツアー" },
-  { src: "/images/gallery-nt-9301.jpg", title: "少年とヤシガニの冒険", category: "ナイトツアー" },
-]
-
-const categories = ["すべて", "海亀体験", "記念写真", "ファミリー", "海中風景", "海中生物", "ナイトツアー", "スタッフ"]
+// 「すべて」 + 画像が存在するカテゴリのみ
+const categoryFilters: FilterValue[] = ["all", ...getGalleryCategories()]
+const filterLabel = (value: FilterValue) =>
+  value === "all" ? "すべて" : GALLERY_CATEGORY_LABELS[value]
 
 // --- Lightbox ---
 function Lightbox({ images, index, onClose, onPrev, onNext }: {
@@ -153,12 +114,12 @@ function Lightbox({ images, index, onClose, onPrev, onNext }: {
 }
 
 export function ImageGallery() {
-  const [selectedCategory, setSelectedCategory] = useState("すべて")
+  const [selectedCategory, setSelectedCategory] = useState<FilterValue>("all")
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const [visibleCount, setVisibleCount] = useState(9)
   const loadMoreRef = useRef<HTMLDivElement>(null)
 
-  const filteredImages = selectedCategory === "すべて"
+  const filteredImages = selectedCategory === "all"
     ? galleryImages
     : galleryImages.filter((img) => img.category === selectedCategory)
 
@@ -192,7 +153,7 @@ export function ImageGallery() {
         {/* Category filters */}
         <div className="mb-6 sm:mb-10 overflow-x-auto scrollbar-hide -mx-4 px-4">
           <div className="flex gap-2 w-max sm:w-auto sm:flex-wrap sm:justify-center">
-            {categories.map((cat) => (
+            {categoryFilters.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
@@ -202,7 +163,7 @@ export function ImageGallery() {
                     : "bg-white text-gray-600 border border-gray-200 hover:border-emerald-300 hover:text-emerald-600"
                 }`}
               >
-                {cat}
+                {filterLabel(cat)}
               </button>
             ))}
           </div>
@@ -215,7 +176,7 @@ export function ImageGallery() {
         <div className="columns-2 sm:columns-2 md:columns-3 gap-2 sm:gap-3 space-y-2 sm:space-y-3">
           {visibleImages.map((image, index) => (
             <motion.div
-              key={image.src}
+              key={image.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: Math.min(index * 0.05, 0.3) }}
@@ -239,7 +200,7 @@ export function ImageGallery() {
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-300 flex items-end">
                     <div className="w-full p-2.5 sm:p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
                       <span className="text-white text-[10px] sm:text-xs font-medium bg-emerald-500/80 px-2 py-0.5 rounded-full">
-                        {image.category}
+                        {GALLERY_CATEGORY_LABELS[image.category]}
                       </span>
                       <p className="text-white text-xs sm:text-sm font-semibold mt-1 line-clamp-1">{image.title}</p>
                     </div>

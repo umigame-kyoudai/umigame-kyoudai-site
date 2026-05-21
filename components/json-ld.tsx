@@ -21,7 +21,7 @@ export function LocalBusinessJsonLd() {
       latitude: 24.79,
       longitude: 125.28,
     },
-    image: `${SITE_URL}/images/s1-sea-turtle-snorkeling.jpg`,
+    image: `${SITE_URL}/images/tours/snorkel/snorkel-01.webp`,
     priceRange: "¥4,000〜¥9,000",
     openingHoursSpecification: {
       "@type": "OpeningHoursSpecification",
