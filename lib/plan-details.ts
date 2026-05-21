@@ -1,3 +1,5 @@
+import { TOUR_IMAGE_PATHS } from "@/lib/data"
+
 export interface PlanDetail {
   id: string
   brand?: "umigame-kyodai" | string
@@ -6,6 +8,7 @@ export interface PlanDetail {
   tagline: string
   heroDescription: string
   image: string
+  images?: readonly string[]
   heroVideo?: string
   color: string // theme color class
   gradientFrom: string
@@ -52,6 +55,7 @@ export const PLAN_DETAILS: Record<string, PlanDetail> = {
     tagline: "安全管理を徹底した少人数制。宮古島一番人気のツアー",
     heroDescription: "透き通る宮古島の海で、ウミガメと一緒に泳ぐ感動体験。安全管理を徹底した少人数制だから初心者もお子様も安心。高画質の写真・動画は全て無料プレゼント！",
     image: "/images/s1-sea-turtle-snorkeling.jpg",
+    images: TOUR_IMAGE_PATHS.snorkel,
     color: "emerald",
     gradientFrom: "from-emerald-600",
     gradientTo: "to-cyan-500",
@@ -111,6 +115,7 @@ export const PLAN_DETAILS: Record<string, PlanDetail> = {
     tagline: "人気のウミガメシュノーケルを完全貸切で。専属ガイドで安心。",
     heroDescription: "一番人気のウミガメシュノーケルツアーを、1組限定で完全貸切。専属ガイドが付きっきりだから、お子様や泳ぎが苦手な方も絶対安心。他のお客様を気にせず自分たちだけのペースで楽しめます。",
     image: "/images/s2-sea-turtle-closeup.jpg",
+    images: TOUR_IMAGE_PATHS.snorkel,
     color: "purple",
     gradientFrom: "from-purple-600",
     gradientTo: "to-indigo-500",
@@ -162,6 +167,7 @@ export const PLAN_DETAILS: Record<string, PlanDetail> = {
     tagline: "アマゾン帰りの男と行く、夜の大冒険",
     heroDescription: "懐中電灯を持って夜のジャングルへ！巨大ヤシガニや夜行性の生き物を探す冒険ツアー。0歳から参加OK、三世代でも楽しめます。",
     image: "/images/night-tour-coconut-crab.jpg",
+    images: TOUR_IMAGE_PATHS.night,
     color: "indigo",
     gradientFrom: "from-indigo-700",
     gradientTo: "to-purple-900",
@@ -207,6 +213,7 @@ export const PLAN_DETAILS: Record<string, PlanDetail> = {
     tagline: "1日1組だけの特別な夕日。黄金に染まる海で極上のひとときを。",
     heroDescription: "1日1組限定だから叶う、完全プライベートのサンセット体験。海の上から眺める夕日のグラデーションは圧巻。初心者でも安定のボードで安心。エモーショナルなシルエット写真が大人気！",
     image: "/images/sunset-sup-silhouettes.jpg",
+    images: TOUR_IMAGE_PATHS.sup,
     color: "orange",
     gradientFrom: "from-orange-500",
     gradientTo: "to-pink-500",
@@ -253,6 +260,7 @@ export const PLAN_DETAILS: Record<string, PlanDetail> = {
     tagline: "専属ガイドと行く、お客様だけのプライベート夜の大冒険",
     heroDescription: "通常ナイトツアーを1組限定で完全貸切。お子様のペースに合わせて自由に探検でき、専属ガイドがじっくり解説。三世代でも安心して楽しめます。",
     image: "/images/night-tour-coconut-crab.jpg",
+    images: TOUR_IMAGE_PATHS.night,
     color: "violet",
     gradientFrom: "from-violet-700",
     gradientTo: "to-indigo-900",
@@ -299,6 +307,7 @@ export const PLAN_DETAILS: Record<string, PlanDetail> = {
     tagline: "滑り台も飛び込み台も。宮古島の海をもっとアクティブに遊ぶ新プラン",
     heroDescription: "トゥリバーマリーナ集合の滑り台付きボートシュノーケルがまもなく登場。ファミリーもグループも、海へ滑って、飛び込んで、宮古島の透明な海を思い切り楽しめる新しい海遊びです。",
     image: "/images/slide-boat-photo.jpg",
+    images: TOUR_IMAGE_PATHS.slideBoat,
     color: "cyan",
     gradientFrom: "from-cyan-600",
     gradientTo: "to-emerald-500",

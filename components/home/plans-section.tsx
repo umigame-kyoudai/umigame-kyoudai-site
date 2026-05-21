@@ -5,7 +5,7 @@ import Link from "next/link"
 import { motion } from "framer-motion"
 import { useRef, useState, useEffect } from "react"
 import { Star, Clock, Users, Camera, Shield, Check, ChevronLeft, ChevronRight } from "lucide-react"
-import { BLUR_DATA_URLS } from "@/lib/data"
+import { BLUR_DATA_URLS, TOUR_IMAGE_PATHS } from "@/lib/data"
 import { ComingSoonBadge } from "@/components/coming-soon"
 import { getPlanPriceDisplay } from "@/lib/plan-price-display"
 
@@ -24,6 +24,8 @@ interface Tour {
   tagline: string
   description: string
   image: string
+  images?: readonly string[]
+  imageAlts?: readonly string[]
   duration: string
   age: string
   rating: number
@@ -40,6 +42,15 @@ const tours: Tour[] = [
     tagline: "安全管理徹底！少人数制で安心の感動体験",
     description: "宮古島の透き通る海で、ウミガメと一緒に泳ぐ感動体験。安全管理を徹底した少人数制だからお子様も安心。高画質の写真・動画は全て無料プレゼント。",
     image: "/images/s1-sea-turtle-snorkeling.jpg",
+    images: TOUR_IMAGE_PATHS.snorkel,
+    imageAlts: [
+      "宮古島でウミガメと一緒に泳ぐシュノーケルツアー",
+      "家族で楽しめる宮古島のシュノーケルツアー",
+      "ガイドが近くでサポートする初心者向けシュノーケル",
+      "透明度の高い宮古島の海を楽しむシュノーケル",
+      "浅瀬から入れる宮古島のシュノーケルツアー",
+      "ウミガメと近くで出会える宮古島シュノーケルツアー",
+    ],
     duration: "約2時間",
     age: "5〜65歳",
     rating: 4.9,
@@ -70,6 +81,15 @@ const tours: Tour[] = [
     tagline: "アマゾン帰りの男と行く夜の大冒険",
     description: "懐中電灯を持って夜のジャングルへ！巨大ヤシガニや夜行性の生き物を探す冒険ツアー。0歳から参加OK、三世代でも楽しめます。",
     image: "/images/night-tour-coconut-crab.jpg",
+    images: TOUR_IMAGE_PATHS.night,
+    imageAlts: [
+      "宮古島の夜にヤシガニを探すナイトツアー",
+      "家族で楽しむ宮古島ナイトツアー",
+      "ガイドと一緒に宮古島の夜を探検するナイトツアー",
+      "宮古島ナイトツアーで出会う夜行性のカエルなどの生き物",
+      "ガイドとヤシガニを観察する宮古島ナイトツアー",
+      "夜の生き物を間近で観察する宮古島ナイトツアー",
+    ],
     duration: "約1.5時間",
     age: "0〜75歳",
     rating: 5.0,
@@ -100,6 +120,15 @@ const tours: Tour[] = [
     tagline: "1日1組だけの特別な夕日体験",
     description: "1日1組限定！海の上から眺める夕日のグラデーションは圧巻。初心者でも安定のボードで安心。エモーショナルなシルエット写真が大人気。",
     image: "/images/sunset-sup-silhouettes.jpg",
+    images: TOUR_IMAGE_PATHS.sup,
+    imageAlts: [
+      "宮古島の夕日の中でSUPを楽しむグループ",
+      "カップルで楽しむ宮古島サンセットSUP",
+      "夕焼けの海でSUPに乗る仲間たち",
+      "サンセットSUP体験中の笑顔の参加者",
+      "黄金色に染まる海を眺める宮古島サンセットSUP",
+      "シルエットが美しい宮古島サンセットSUPツアー",
+    ],
     duration: "約2時間",
     age: "5〜65歳",
     rating: 5.0,
@@ -122,6 +151,7 @@ const tours: Tour[] = [
     tagline: "滑り台付きボートで遊ぶ新プラン",
     description: "トゥリバーマリーナ集合の滑り台付きボートシュノーケルがまもなく登場。滑り台・飛び込み台・ボートシュノーケルで、宮古島の海をもっとアクティブに楽しめます。",
     image: "/images/slide-boat-photo.jpg",
+    images: TOUR_IMAGE_PATHS.slideBoat,
     duration: "約3時間",
     age: "5〜65歳予定",
     rating: 0,
@@ -177,6 +207,139 @@ function PlanPricePair({ planId, tone = "emerald", dense = false }: { planId: st
   )
 }
 
+function CarouselImage({ src, fallbackSrc, alt }: { src: string; fallbackSrc: string; alt: string }) {
+  const [resolvedSrc, setResolvedSrc] = useState(src)
+
+  useEffect(() => {
+    setResolvedSrc(src)
+  }, [src])
+
+  return (
+    <Image
+      src={resolvedSrc}
+      alt={alt}
+      fill
+      quality={80}
+      placeholder="blur"
+      blurDataURL={BLUR_DATA_URLS.turtle}
+      className="object-cover"
+      sizes="(max-width: 640px) 85vw, 440px"
+      onError={() => {
+        if (resolvedSrc !== fallbackSrc) setResolvedSrc(fallbackSrc)
+      }}
+    />
+  )
+}
+
+function TourImageCarousel({ tour, isComingSoon }: { tour: Tour; isComingSoon: boolean }) {
+  const imageScrollRef = useRef<HTMLDivElement>(null)
+  const [activeImage, setActiveImage] = useState(0)
+  const images = tour.images?.length ? tour.images : [tour.image]
+  const hasMultipleImages = images.length > 1
+
+  const updateActiveImage = () => {
+    const el = imageScrollRef.current
+    if (!el) return
+    const nextIndex = Math.round(el.scrollLeft / Math.max(el.clientWidth, 1))
+    setActiveImage(Math.min(Math.max(nextIndex, 0), images.length - 1))
+  }
+
+  const scrollImageTo = (index: number) => {
+    const el = imageScrollRef.current
+    if (!el) return
+    el.scrollTo({ left: el.clientWidth * index, behavior: "smooth" })
+  }
+
+  const moveImage = (direction: "previous" | "next") => {
+    const nextIndex = direction === "previous" ? activeImage - 1 : activeImage + 1
+    scrollImageTo((nextIndex + images.length) % images.length)
+  }
+
+  useEffect(() => {
+    const el = imageScrollRef.current
+    if (!el) return
+    el.addEventListener("scroll", updateActiveImage, { passive: true })
+    updateActiveImage()
+    return () => el.removeEventListener("scroll", updateActiveImage)
+  }, [images.length])
+
+  return (
+    <div className="relative aspect-[16/10] overflow-hidden">
+      <div
+        ref={imageScrollRef}
+        className="flex h-full overflow-x-auto snap-x snap-mandatory scrollbar-hide"
+        style={{ WebkitOverflowScrolling: "touch", touchAction: "pan-x", overscrollBehaviorX: "contain" }}
+        onPointerDown={(event) => event.stopPropagation()}
+        onPointerMove={(event) => event.stopPropagation()}
+      >
+        {images.map((src, index) => (
+          <div key={`${tour.name}-${src}-${index}`} className="relative h-full w-full flex-none snap-center">
+            <CarouselImage
+              src={src}
+              fallbackSrc={tour.image}
+              alt={tour.imageAlts?.[index] ?? `${tour.name}の写真 ${index + 1}`}
+            />
+          </div>
+        ))}
+      </div>
+
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+
+      <span className={`absolute top-3 left-3 z-20 ${tour.badgeColor} text-xs font-bold px-3 py-1 rounded-full shadow-lg`}>
+        {tour.badge}
+      </span>
+
+      {isComingSoon ? (
+        <ComingSoonBadge className="absolute bottom-3 left-3 z-20 bg-white/90" />
+      ) : (
+        <div className="absolute bottom-3 left-3 z-20 flex items-center gap-1.5 bg-black/50 backdrop-blur-sm rounded-full px-2.5 py-1">
+          <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" />
+          <span className="text-white font-bold text-xs">{tour.rating}</span>
+          <span className="text-white/70 text-[10px]">({tour.reviews.toLocaleString()}件)</span>
+        </div>
+      )}
+
+      {hasMultipleImages && (
+        <>
+          <button
+            type="button"
+            aria-label="前の写真"
+            onClick={() => moveImage("previous")}
+            className="hidden md:flex absolute left-3 top-1/2 z-20 h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-gray-800 shadow-lg backdrop-blur-sm transition-colors hover:bg-white"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+          <button
+            type="button"
+            aria-label="次の写真"
+            onClick={() => moveImage("next")}
+            className="hidden md:flex absolute right-3 top-1/2 z-20 h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-gray-800 shadow-lg backdrop-blur-sm transition-colors hover:bg-white"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
+
+          <div className="absolute bottom-3 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-black/25 px-2 py-1 backdrop-blur-sm">
+            {images.map((_, index) => (
+              <button
+                key={index}
+                type="button"
+                aria-label={`${index + 1}枚目の写真を表示`}
+                onClick={() => scrollImageTo(index)}
+                className={`h-1.5 rounded-full transition-all ${index === activeImage ? "w-4 bg-white" : "w-1.5 bg-white/55"}`}
+              />
+            ))}
+          </div>
+
+          <div className="absolute bottom-3 right-3 z-20 flex items-center gap-1 rounded-full bg-black/50 px-2.5 py-1 text-[10px] font-bold text-white backdrop-blur-sm">
+            <Camera className="h-3 w-3" />
+            写真 {images.length}枚
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
 function TourCard({ tour }: { tour: Tour }) {
   const [selectedVariant, setSelectedVariant] = useState(0)
   const variant = tour.variants[selectedVariant]
@@ -186,34 +349,7 @@ function TourCard({ tour }: { tour: Tour }) {
   return (
     <div className="flex-shrink-0 w-[85vw] sm:w-[400px] md:w-[440px] snap-center">
       <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 h-full flex flex-col">
-        {/* Image */}
-        <div className="relative aspect-[16/10] overflow-hidden">
-          <Image
-            src={tour.image}
-            alt={tour.name}
-            fill
-            quality={80}
-            placeholder="blur"
-            blurDataURL={BLUR_DATA_URLS.turtle}
-            className="object-cover"
-            sizes="(max-width: 640px) 85vw, 440px"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-
-          <span className={`absolute top-3 left-3 ${tour.badgeColor} text-xs font-bold px-3 py-1 rounded-full shadow-lg`}>
-            {tour.badge}
-          </span>
-
-          {isComingSoon ? (
-            <ComingSoonBadge className="absolute bottom-3 left-3 bg-white/90" />
-          ) : (
-            <div className="absolute bottom-3 left-3 flex items-center gap-1.5 bg-black/50 backdrop-blur-sm rounded-full px-2.5 py-1">
-              <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" />
-              <span className="text-white font-bold text-xs">{tour.rating}</span>
-              <span className="text-white/70 text-[10px]">({tour.reviews.toLocaleString()}件)</span>
-            </div>
-          )}
-        </div>
+        <TourImageCarousel tour={tour} isComingSoon={isComingSoon} />
 
         {/* Content */}
         <div className="p-4 sm:p-5 flex flex-col flex-1">

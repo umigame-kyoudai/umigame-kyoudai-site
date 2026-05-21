@@ -14,6 +14,34 @@ export const BLUR_DATA_URLS = {
     "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAb/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWEREiMxUf/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q==",
 }
 
+export const TOUR_IMAGE_PATHS = {
+  snorkel: [
+    "/images/tours/snorkel/snorkel-01.webp",
+    "/images/tours/snorkel/snorkel-02.webp",
+    "/images/tours/snorkel/snorkel-03.webp",
+    "/images/tours/snorkel/snorkel-04.webp",
+    "/images/tours/snorkel/snorkel-05.webp",
+    "/images/tours/snorkel/snorkel-06.webp",
+  ],
+  night: [
+    "/images/tours/night/night-01.webp",
+    "/images/tours/night/night-02.webp",
+    "/images/tours/night/night-03.webp",
+    "/images/tours/night/night-04.webp",
+    "/images/tours/night/night-05.webp",
+    "/images/tours/night/night-06.webp",
+  ],
+  sup: [
+    "/images/tours/sup/sup-01.webp",
+    "/images/tours/sup/sup-02.webp",
+    "/images/tours/sup/sup-03.webp",
+    "/images/tours/sup/sup-04.webp",
+    "/images/tours/sup/sup-05.webp",
+    "/images/tours/sup/sup-06.webp",
+  ],
+  slideBoat: ["/images/slide-boat-photo.jpg"],
+} as const
+
 export function formatPriceWithTilde(item: { price: number; childPrice?: number }): string {
   if (item.childPrice && item.childPrice !== item.price) {
     return `¥${item.childPrice.toLocaleString()}〜`
@@ -35,6 +63,7 @@ export interface Plan {
   rating: number
   reviewCount: number
   image: string
+  images?: readonly string[]
   previewVideo?: string
   timeTags: string[]
   provisionalTimes?: string[]
@@ -137,6 +166,7 @@ SNS映え間違いなし！
     rating: 4.9,
     reviewCount: 3842,
     image: "/placeholder-4t1ct.png",
+    images: TOUR_IMAGE_PATHS.snorkel,
     timeTags: ["07:00", "09:00", "11:00", "14:00", "16:00"],
     provisionalTimes: ["08:00", "10:00", "12:00", "13:00"],
     durationHours: 2,
@@ -222,6 +252,7 @@ SNS映え間違いなし！
     rating: 5.0, // rating を 5.0 に変更
     reviewCount: 1247,
     image: "/placeholder-p4pnn.png",
+    images: TOUR_IMAGE_PATHS.snorkel,
     timeTags: ["07:00", "09:00", "11:00", "14:00", "16:00"],
     provisionalTimes: ["08:00", "10:00", "12:00", "13:00"],
     flexibleScheduling: true,
@@ -293,6 +324,7 @@ SNS映え間違いなし！
     rating: 5.0,
     reviewCount: 2156,
     image: "/images/night-tour-coconut-crab.jpg",
+    images: TOUR_IMAGE_PATHS.night,
     timeTags: ["19:20", "21:10"],
     provisionalTimes: ["19:20", "21:10"],
     durationHours: 1.5,
@@ -352,6 +384,7 @@ SUPの漕ぎ方や乗り方を陸上でしっかり丁寧にレクチャー致�
     rating: 5.0, // rating を 5.0 に変更
     reviewCount: 2891,
     image: "/placeholder-c23py.png",
+    images: TOUR_IMAGE_PATHS.sup,
     timeTags: ["日没に合わせて変動（時期により集合時間が異なります）"],
     provisionalTimes: ["開始時間は事前にご案内します"],
     durationHours: 2,
@@ -408,6 +441,7 @@ SUPの漕ぎ方や乗り方を陸上でしっかり丁寧にレクチャー致�
     rating: 5.0,
     reviewCount: 487,
     image: "/images/miyakojima-night-tour-creatures.jpg",
+    images: TOUR_IMAGE_PATHS.night,
     timeTags: ["19:20", "21:10"],
     provisionalTimes: ["19:20", "21:10"],
     durationHours: 1.5,
@@ -440,6 +474,7 @@ SUPの漕ぎ方や乗り方を陸上でしっかり丁寧にレクチャー致�
     rating: 0,
     reviewCount: 0,
     image: "/images/slide-boat-photo.jpg",
+    images: TOUR_IMAGE_PATHS.slideBoat,
     timeTags: ["09:00", "13:00"],
     provisionalTimes: ["09:00", "13:00"],
     schedule: [

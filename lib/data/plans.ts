@@ -12,6 +12,7 @@ export interface Plan {
   maxParticipants: number
   features: string[]
   image: string
+  images?: readonly string[]
   rank?: number
 }
 
@@ -26,6 +27,7 @@ export const plans: Plan[] = CANONICAL_PLANS.map((plan) => ({
   maxParticipants: plan.maxParticipants ?? 99,
   features: plan.features,
   image: plan.image,
+  images: plan.images,
   rank: plan.rank,
 }))
 

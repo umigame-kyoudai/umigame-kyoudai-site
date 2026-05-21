@@ -33,9 +33,9 @@ function AnimatedNumber({ value, suffix = "", decimals = 0 }: { value: number; s
 
 const stats = [
   { icon: Star, value: 4.9, suffix: "", label: "平均評価", iconColor: "text-yellow-500", fillIcon: true, decimals: 1 },
-  { icon: MessageCircle, value: 10136, suffix: "+", label: "口コミ件数", iconColor: "text-blue-500", fillIcon: false, decimals: 0 },
-  { icon: Heart, value: 100, suffix: "%", label: "子連れ歓迎", iconColor: "text-pink-500", fillIcon: true, decimals: 0 },
-  { icon: Award, value: 5000, suffix: "+", label: "年間実績", iconColor: "text-emerald-500", fillIcon: false, decimals: 0 },
+  { icon: MessageCircle, value: 10136, suffix: "+", label: "口コミ実績", iconColor: "text-blue-500", fillIcon: false, decimals: 0 },
+  { icon: Heart, value: 5, suffix: "歳〜", label: "参加OK", iconColor: "text-pink-500", fillIcon: true, decimals: 0 },
+  { icon: Award, value: 5000, suffix: "+", label: "年間案内実績", iconColor: "text-emerald-500", fillIcon: false, decimals: 0 },
 ]
 
 export function StatsSection() {
