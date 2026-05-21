@@ -12,16 +12,23 @@ import {
 import { BLUR_DATA_URLS } from "@/lib/data"
 import type { PlanDetail } from "@/lib/plan-details"
 import { PLAN_DETAILS } from "@/lib/plan-details"
+import { ComingSoonBadge, ComingSoonBanner } from "@/components/coming-soon"
+import { getPlanPriceDisplay } from "@/lib/plan-price-display"
 
 const iconMap: Record<string, any> = {
   turtle: Sparkles, camera: Camera, users: Users, shield: Shield,
   crown: Crown, gift: Gift, clock: Clock, baby: Baby,
   bug: Bug, stars: Sparkles, compass: Compass, sunset: Sun,
-  lifebuoy: LifeBuoy, heart: Heart,
+  lifebuoy: LifeBuoy, heart: Heart, sparkles: Sparkles,
 }
 
 // --- Hero ---
 function PlanHero({ plan }: { plan: PlanDetail }) {
+  const isComingSoon = plan.status === "coming_soon"
+  const priceDisplay = getPlanPriceDisplay(plan.id)
+  const priceLabel = priceDisplay ? `${priceDisplay.rows[0].label}${priceDisplay.rows[0].price}` : plan.price
+  const priceSub = priceDisplay?.rows[1] ? `${priceDisplay.rows[1].label}${priceDisplay.rows[1].price}` : plan.priceNote
+
   return (
     <section className="relative min-h-[60svh] sm:min-h-[70svh] md:min-h-[80svh] flex items-end overflow-hidden">
       <motion.div
@@ -30,17 +37,31 @@ function PlanHero({ plan }: { plan: PlanDetail }) {
         transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
         className="absolute inset-0"
       >
-        <Image
-          src={plan.image}
-          alt={plan.name}
-          fill
-          priority
-          quality={90}
-          placeholder="blur"
-          blurDataURL={BLUR_DATA_URLS.turtle}
-          className="object-cover"
-          sizes="100vw"
-        />
+        {plan.heroVideo ? (
+          <video
+            className="h-full w-full object-cover"
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            poster={plan.image}
+          >
+            <source src={plan.heroVideo} type="video/mp4" />
+          </video>
+        ) : (
+          <Image
+            src={plan.image}
+            alt={plan.name}
+            fill
+            priority
+            quality={90}
+            placeholder="blur"
+            blurDataURL={BLUR_DATA_URLS.turtle}
+            className="object-cover"
+            sizes="100vw"
+          />
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/10" />
       </motion.div>
 
@@ -51,13 +72,19 @@ function PlanHero({ plan }: { plan: PlanDetail }) {
           transition={{ duration: 0.8, delay: 0.3 }}
         >
           <div className="flex items-center gap-2 mb-3">
-            <div className="flex gap-0.5">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Star key={i} className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400 fill-yellow-400" />
-              ))}
-            </div>
-            <span className="text-white font-bold text-sm sm:text-base">{plan.rating}</span>
-            <span className="text-white/70 text-xs sm:text-sm">({plan.reviews.toLocaleString()}件)</span>
+            {isComingSoon ? (
+              <ComingSoonBadge className="bg-white/90 text-cyan-800 ring-white/40" />
+            ) : (
+              <>
+                <div className="flex gap-0.5">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star key={i} className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400 fill-yellow-400" />
+                  ))}
+                </div>
+                <span className="text-white font-bold text-sm sm:text-base">{plan.rating}</span>
+                <span className="text-white/70 text-xs sm:text-sm">({plan.reviews.toLocaleString()}件)</span>
+              </>
+            )}
           </div>
 
           <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white mb-2 sm:mb-3 drop-shadow-2xl">
@@ -75,7 +102,7 @@ function PlanHero({ plan }: { plan: PlanDetail }) {
           className="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap sm:gap-3 mt-5 sm:mt-8"
         >
           {[
-            { label: plan.price, sub: plan.priceNote, icon: CreditCard },
+            { label: priceLabel, sub: priceSub, icon: CreditCard },
             { label: plan.duration, sub: "所要時間", icon: Clock },
             { label: plan.age, sub: "対象年齢", icon: Users },
           ].map((s) => (
@@ -205,6 +232,12 @@ function FlowSection({ plan }: { plan: PlanDetail }) {
 
 // --- Price & Included ---
 function PriceSection({ plan }: { plan: PlanDetail }) {
+  const priceDisplay = getPlanPriceDisplay(plan.id)
+  const priceRows = priceDisplay?.rows ?? [
+    { label: "大人", price: plan.price, note: plan.priceNote },
+    ...(plan.childPrice ? [{ label: "子供", price: plan.childPrice }] : []),
+  ]
+
   return (
     <section className="py-10 sm:py-16 md:py-24 bg-white">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -226,10 +259,17 @@ function PriceSection({ plan }: { plan: PlanDetail }) {
             transition={{ duration: 0.6 }}
             className="bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-2xl p-8 text-white shadow-xl"
           >
-            <p className="text-emerald-100 text-sm font-medium mb-2">料金</p>
-            <p className="text-5xl font-black mb-2">{plan.price}</p>
-            <p className="text-emerald-100 text-sm mb-1">{plan.priceNote}</p>
-            {plan.childPrice && <p className="text-emerald-100 text-sm">子供: {plan.childPrice}</p>}
+            <p className="text-emerald-100 text-sm font-medium mb-3">料金</p>
+            <div className="grid grid-cols-2 gap-3">
+              {priceRows.map((row) => (
+                <div key={row.label} className="rounded-2xl bg-white/15 p-4 ring-1 ring-white/20">
+                  <p className="text-emerald-100 text-xs font-semibold mb-1">{row.label}</p>
+                  <p className="text-3xl sm:text-4xl font-black leading-none">{row.price}</p>
+                  {row.note && <p className="mt-2 text-xs text-emerald-100">{row.note}</p>}
+                </div>
+              ))}
+            </div>
+            {priceDisplay?.caption && <p className="mt-3 text-sm font-semibold text-emerald-50">{priceDisplay.caption}</p>}
 
             <div className="mt-6 pt-6 border-t border-white/20 space-y-3">
               <div className="flex items-center gap-3">
@@ -548,6 +588,52 @@ function InfoSection({ plan }: { plan: PlanDetail }) {
   )
 }
 
+// --- Meeting point map ---
+function MeetingPointMapSection({ plan }: { plan: PlanDetail }) {
+  if (!plan.meetingPoint?.embedUrl) return null
+
+  return (
+    <section className="py-10 sm:py-16 md:py-24 bg-white">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-80px" }}
+          className="mb-8 text-center"
+        >
+          <h2 className="text-2xl md:text-4xl font-bold text-gray-900">
+            集合場所<span className="text-emerald-600">マップ</span>
+          </h2>
+          <p className="mt-3 text-sm text-gray-500">{plan.meetingPoint.name}</p>
+        </motion.div>
+
+        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-gray-50 shadow-sm">
+          <iframe
+            src={plan.meetingPoint.embedUrl}
+            title={`${plan.meetingPoint.name}の地図`}
+            className="h-[320px] w-full md:h-[420px]"
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+          />
+          <div className="flex flex-col gap-3 border-t border-gray-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-gray-600">
+              受付開始時に、集合時間・駐車場所・当日の流れをあわせて正式にご案内します。
+            </p>
+            <a
+              href={plan.meetingPoint.mapUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex flex-shrink-0 justify-center rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-emerald-700"
+            >
+              Google Mapsで開く
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 // --- FAQ ---
 function FAQItem({ faq, index }: { faq: { q: string; a: string }; index: number }) {
   const [open, setOpen] = useState(false)
@@ -608,6 +694,8 @@ function PlanFAQ({ plan }: { plan: PlanDetail }) {
 
 // --- Reviews ---
 function PlanReviews({ plan }: { plan: PlanDetail }) {
+  const isComingSoon = plan.status === "coming_soon"
+
   return (
     <section className="py-10 sm:py-16 md:py-24 bg-gray-50">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -618,9 +706,11 @@ function PlanReviews({ plan }: { plan: PlanDetail }) {
           className="text-center mb-12"
         >
           <h2 className="text-2xl md:text-4xl font-bold text-gray-900 mb-2">
-            お客様の<span className="text-emerald-600">声</span>
+            {isComingSoon ? "受付開始前の" : "お客様の"}<span className="text-emerald-600">{isComingSoon ? "ご案内" : "声"}</span>
           </h2>
-          <p className="text-gray-500">{plan.reviews.toLocaleString()}件の口コミから抜粋</p>
+          <p className="text-gray-500">
+            {isComingSoon ? "新プラン公開までの準備状況をお知らせします" : `${plan.reviews.toLocaleString()}件の口コミから抜粋`}
+          </p>
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -653,6 +743,23 @@ function PlanReviews({ plan }: { plan: PlanDetail }) {
 
 // --- CTA ---
 function PlanCTA({ plan }: { plan: PlanDetail }) {
+  const priceDisplay = getPlanPriceDisplay(plan.id)
+
+  if (plan.status === "coming_soon") {
+    return (
+      <section className="py-10 sm:py-16 md:py-24 bg-gradient-to-br from-cyan-600 to-emerald-600">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <ComingSoonBanner
+            title="近日公開・予約受付開始までお待ちください"
+            description="宮古島の海を滑り台付きボートで遊ぶ新プランを準備中です。受付開始後は、このページと予約フォームから選べるようになります。"
+            actionLabel="LINEで受付開始を相談する"
+            className="bg-white/95"
+          />
+        </div>
+      </section>
+    )
+  }
+
   return (
     <section className="py-10 sm:py-16 md:py-24 bg-gradient-to-br from-emerald-600 to-cyan-600">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -665,7 +772,7 @@ function PlanCTA({ plan }: { plan: PlanDetail }) {
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-3">
             {plan.name}を予約する
           </h2>
-          <p className="text-emerald-100 text-sm sm:text-lg mb-2">{plan.price}〜 / {plan.duration}</p>
+          <p className="text-emerald-100 text-sm sm:text-lg mb-2">{priceDisplay?.compact ?? `${plan.price}〜`} / {plan.duration}</p>
           <p className="text-emerald-100 text-xs sm:text-base mb-6 sm:mb-8">前日までキャンセル無料 ・ 天候不良の場合は全額返金</p>
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center px-2">
@@ -695,12 +802,13 @@ function PlanCTA({ plan }: { plan: PlanDetail }) {
 }
 
 // --- Other Plans ---
-const otherPlansMeta: Record<string, { name: string; tagline: string; image: string; price: string; badge: string; badgeColor: string }> = {
+const otherPlansMeta: Record<string, { name: string; tagline: string; image: string; price: string; badge: string; badgeColor: string; comingSoon?: boolean }> = {
   S1: { name: "ウミガメシュノーケル", tagline: "安全管理徹底の少人数制ツアー", image: "/images/s1-sea-turtle-snorkeling.jpg", price: "¥6,000〜", badge: "一番人気", badgeColor: "bg-yellow-400 text-yellow-900" },
   S2: { name: "【貸切】ウミガメシュノーケル", tagline: "ウミガメシュノーケルを完全貸切で", image: "/images/s2-sea-turtle-closeup.jpg", price: "¥9,000", badge: "貸切プラン", badgeColor: "bg-purple-500 text-white" },
   S3: { name: "本格ナイトツアー", tagline: "夜の大冒険へ出かけよう", image: "/images/night-tour-coconut-crab.jpg", price: "¥4,000", badge: "家族人気No.1", badgeColor: "bg-emerald-500 text-white" },
   S4: { name: "サンセットSUP【1日1組限定】", tagline: "1日1組だけの特別な夕日体験", image: "/images/sunset-sup-silhouettes.jpg", price: "¥6,000〜", badge: "映え度No.1", badgeColor: "bg-orange-500 text-white" },
   S5: { name: "【貸切】本格ナイトツアー", tagline: "専属ガイドとプライベート冒険", image: "/images/night-tour-coconut-crab.jpg", price: "¥8,000", badge: "貸切プラン", badgeColor: "bg-violet-500 text-white" },
+  "slide-boat": { name: "スライダーボートシュノーケル", tagline: "滑り台付きボートの新プラン", image: "/images/slide-boat-photo.jpg", price: "大人¥14,000", badge: "Coming Soon", badgeColor: "bg-cyan-100 text-cyan-800", comingSoon: true },
 }
 
 function OtherPlans({ currentId }: { currentId: string }) {
@@ -729,6 +837,7 @@ function OtherPlans({ currentId }: { currentId: string }) {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {others.map((id, i) => {
             const p = otherPlansMeta[id]
+            const priceDisplay = getPlanPriceDisplay(id)
             return (
               <motion.div
                 key={id}
@@ -753,8 +862,15 @@ function OtherPlans({ currentId }: { currentId: string }) {
                     <span className={`absolute top-3 left-3 ${p.badgeColor} text-xs font-bold px-3 py-1 rounded-full`}>
                       {p.badge}
                     </span>
-                    <div className="absolute bottom-3 right-3 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1">
-                      <span className="text-sm font-bold text-red-600">{p.price}</span>
+                    {p.comingSoon && (
+                      <ComingSoonBadge className="absolute right-3 top-3 bg-white/90" />
+                    )}
+                    <div className="absolute bottom-3 right-3 rounded-xl bg-white/90 px-3 py-1.5 text-right leading-tight backdrop-blur-sm">
+                      {priceDisplay?.rows.map((row) => (
+                        <span key={row.label} className="block text-xs font-black text-red-600 sm:text-sm">
+                          {row.label}{row.price}
+                        </span>
+                      ))}
                     </div>
                   </div>
                   <h3 className="text-lg font-bold text-gray-900 group-hover:text-emerald-600 transition-colors mb-1">
@@ -783,14 +899,17 @@ function FloatingPlanNav({ currentId }: { currentId: string }) {
     setVisible(latest > 600)
   })
 
-  const allIds = ["S1", "S2", "S3", "S4", "S5"]
+  const allIds = ["S1", "S2", "S3", "S4", "S5", "slide-boat"]
   const shortNames: Record<string, string> = {
     S1: "シュノーケル",
     S2: "貸切シュノーケル",
     S3: "ナイト",
     S4: "SUP",
     S5: "貸切ナイト",
+    "slide-boat": "スライダーボート",
   }
+  const currentPlan = PLAN_DETAILS[currentId]
+  const isComingSoon = currentPlan?.status === "coming_soon"
 
   return (
     <AnimatePresence>
@@ -821,12 +940,21 @@ function FloatingPlanNav({ currentId }: { currentId: string }) {
             </div>
 
             {/* CTA */}
-            <Link
-              href={`/book?plan=${currentId}`}
-              className="flex-shrink-0 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold px-5 py-2 rounded-full transition-colors ml-3"
-            >
-              予約する
-            </Link>
+            {isComingSoon ? (
+              <Link
+                href="#coming-soon"
+                className="flex-shrink-0 bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold px-5 py-2 rounded-full transition-colors ml-3"
+              >
+                近日公開
+              </Link>
+            ) : (
+              <Link
+                href={`/book?plan=${currentId}`}
+                className="flex-shrink-0 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold px-5 py-2 rounded-full transition-colors ml-3"
+              >
+                予約する
+              </Link>
+            )}
           </div>
         </motion.div>
       )}
@@ -846,6 +974,7 @@ export function PlanDetailPage({ plan }: { plan: PlanDetail }) {
         <LocationsSection plan={plan} />
         <PriceSection plan={plan} />
         <InfoSection plan={plan} />
+        <MeetingPointMapSection plan={plan} />
         <PlanReviews plan={plan} />
         <PlanFAQ plan={plan} />
         <PlanCTA plan={plan} />

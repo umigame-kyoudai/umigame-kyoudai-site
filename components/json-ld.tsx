@@ -47,9 +47,10 @@ export function LocalBusinessJsonLd() {
 
 // Product schema for plan detail pages
 export function PlanJsonLd({ plan }: {
-  plan: { name: string; heroDescription: string; price: string; image: string; rating: number; reviews: number; id: string }
+  plan: { name: string; heroDescription: string; price: string; image: string; rating: number; reviews: number; id: string; status?: "active" | "coming_soon" }
 }) {
   const priceNum = plan.price.replace(/[^0-9]/g, "")
+  const isComingSoon = plan.status === "coming_soon"
   const schema = {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -62,15 +63,19 @@ export function PlanJsonLd({ plan }: {
       "@type": "Offer",
       price: priceNum,
       priceCurrency: "JPY",
-      availability: "https://schema.org/InStock",
-      url: `${SITE_URL}/book?plan=${plan.id}`,
+      availability: isComingSoon ? "https://schema.org/PreOrder" : "https://schema.org/InStock",
+      url: isComingSoon ? `${SITE_URL}/plans/${plan.id}#coming-soon` : `${SITE_URL}/book?plan=${plan.id}`,
     },
-    aggregateRating: {
-      "@type": "AggregateRating",
-      ratingValue: plan.rating.toString(),
-      reviewCount: plan.reviews.toString(),
-      bestRating: "5",
-    },
+    ...(!isComingSoon && plan.reviews > 0
+      ? {
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: plan.rating.toString(),
+            reviewCount: plan.reviews.toString(),
+            bestRating: "5",
+          },
+        }
+      : {}),
   }
 
   return (

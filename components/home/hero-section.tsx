@@ -4,10 +4,8 @@ import Image from "next/image"
 import Link from "next/link"
 import { motion, useScroll, useTransform } from "framer-motion"
 import { useRef } from "react"
-import { Star, ChevronDown } from "lucide-react"
+import { CalendarCheck, Camera, ChevronDown, MessageCircle, Shield, Star } from "lucide-react"
 import { BLUR_DATA_URLS } from "@/lib/data"
-
-const titleChars = "海亀兄弟".split("")
 
 export function HeroSection() {
   const sectionRef = useRef<HTMLElement>(null)
@@ -21,8 +19,21 @@ export function HeroSection() {
   const contentOpacity = useTransform(scrollYProgress, [0, 0.5], [1, 0])
   const contentY = useTransform(scrollYProgress, [0, 0.5], [0, -60])
 
+  const proofItems = [
+    { label: "大人", value: "¥6,500" },
+    { label: "子供", value: "¥6,000" },
+    { label: "対象", value: "5歳から" },
+    { label: "写真", value: "無料" },
+  ]
+
+  const trustItems = [
+    { icon: Shield, text: "少人数制・保険加入済み" },
+    { icon: Camera, text: "写真・動画データ無料" },
+    { icon: CalendarCheck, text: "前日までキャンセル無料" },
+  ]
+
   return (
-    <section ref={sectionRef} className="relative min-h-[100svh] flex flex-col overflow-hidden">
+    <section ref={sectionRef} className="relative min-h-[calc(100svh-4rem)] sm:min-h-[88svh] flex flex-col overflow-hidden">
       <motion.div className="absolute inset-0" style={{ y: bgY, scale: bgScale }}>
         <Image
           src="/images/gemini-generated-image-rq969urq969urq96.jpeg"
@@ -33,107 +44,105 @@ export function HeroSection() {
           quality={90}
           placeholder="blur"
           blurDataURL={BLUR_DATA_URLS.turtle}
-          className="object-cover object-center"
+          className="object-cover object-[54%_48%] sm:object-center"
           sizes="100vw"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/10 to-black/60" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-black/25 to-black/70 sm:from-black/50 sm:via-black/20 sm:to-black/70" />
       </motion.div>
 
       <motion.div
         style={{ opacity: contentOpacity, y: contentY }}
-        className="relative z-10 flex-1 flex flex-col justify-center items-center px-5 pt-16 pb-24"
+        className="relative z-10 flex-1 flex flex-col justify-end sm:justify-center px-5 pt-16 pb-28 sm:pt-20 sm:pb-16"
       >
-        <div className="text-center max-w-4xl mx-auto w-full">
-          {/* Rating badge */}
+        <div className="max-w-6xl mx-auto w-full">
           <motion.div
-            initial={{ opacity: 0, scale: 0.5, y: -30 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.3 }}
-            className="inline-flex items-center gap-1.5 bg-white/90 backdrop-blur-sm rounded-full px-3.5 py-2 mb-6 shadow-lg"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="inline-flex items-center gap-2 bg-white/92 backdrop-blur-sm rounded-full px-3 py-1.5 sm:px-3.5 sm:py-2 mb-4 sm:mb-5 shadow-lg"
           >
-            <motion.div animate={{ rotate: [0, 15, -15, 0] }} transition={{ duration: 0.6, delay: 0.8 }}>
-              <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-            </motion.div>
-            <span className="text-gray-800 font-bold text-sm sm:text-lg">4.9</span>
-            <span className="text-gray-500 text-xs sm:text-sm">/ 10,136件の口コミ</span>
+            <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+            <span className="text-gray-900 font-bold text-xs sm:text-sm">宮古島の家族向けマリン体験</span>
           </motion.div>
 
-          {/* Main heading */}
-          <h1 className="text-5xl sm:text-7xl md:text-8xl lg:text-9xl font-black text-white mb-4 sm:mb-6 tracking-tight drop-shadow-2xl flex justify-center">
-            {titleChars.map((char, i) => (
-              <motion.span
-                key={i}
-                initial={{ opacity: 0, y: 80, rotateX: 90 }}
-                animate={{ opacity: 1, y: 0, rotateX: 0 }}
-                transition={{ duration: 0.8, delay: 0.5 + i * 0.12, ease: [0.16, 1, 0.3, 1] }}
-                className="inline-block"
-              >
-                {char}
-              </motion.span>
-            ))}
-          </h1>
-
-          {/* Subheading */}
-          <motion.p
-            initial={{ opacity: 0, filter: "blur(20px)", y: 20 }}
-            animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
-            transition={{ duration: 1.2, delay: 1.1, ease: "easeOut" }}
-            className="text-xl sm:text-3xl md:text-4xl text-white font-medium mb-3 drop-shadow-lg"
+          <motion.h1
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55, delay: 0.18 }}
+            className="max-w-[22rem] sm:max-w-4xl text-[2.65rem] min-[380px]:text-[3rem] sm:text-5xl md:text-7xl font-black text-white mb-4 tracking-normal drop-shadow-2xl leading-[1.05] sm:tracking-tight sm:leading-tight"
           >
-            宮古島でウミガメと泳ごう
-          </motion.p>
+            <span className="block">宮古島で</span>
+            <span className="block">ウミガメと泳ぐ</span>
+            <span className="block text-[1.25rem] min-[380px]:text-[1.45rem] sm:text-3xl md:text-5xl mt-3 text-emerald-100 leading-tight">
+              料金も安心も、すぐ分かる
+            </span>
+          </motion.h1>
 
-          {/* Description */}
           <motion.p
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 1.5 }}
-            className="text-sm sm:text-lg text-white/90 mb-8 max-w-2xl mx-auto drop-shadow-md"
+            transition={{ duration: 0.5, delay: 0.28 }}
+            className="max-w-[21rem] sm:max-w-2xl text-[15px] sm:text-xl text-white/90 mb-4 sm:mb-6 drop-shadow-md leading-7 sm:leading-relaxed"
           >
-            初心者・お子様大歓迎。感動の海亀体験をお届けします。
+            初心者・お子様連れでも迷わず選べる少人数制ツアー。写真・動画無料、前日までキャンセル無料。
           </motion.p>
 
-          {/* CTA Buttons - compact */}
-          <div className="flex flex-row gap-2.5 justify-center mb-6">
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.36 }}
+            className="grid grid-cols-2 sm:grid-cols-4 gap-2 max-w-[22rem] sm:max-w-2xl mb-0 sm:mb-6"
+          >
+            {proofItems.map((item) => (
+              <div key={item.label} className="bg-white/92 backdrop-blur-sm rounded-2xl px-3 py-2.5 sm:rounded-xl sm:py-3 shadow-lg ring-1 ring-white/50">
+                <p className="text-[10px] sm:text-[11px] font-semibold text-gray-500 leading-none mb-1">{item.label}</p>
+                <p className="text-[1.55rem] sm:text-xl font-black text-emerald-700 leading-none whitespace-nowrap">{item.value}</p>
+              </div>
+            ))}
+          </motion.div>
+
+          <div className="hidden sm:flex flex-col sm:flex-row gap-3 mb-5">
             <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ type: "spring", stiffness: 100, damping: 20, delay: 1.7 }}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ type: "spring", stiffness: 120, damping: 20, delay: 0.44 }}
             >
               <Link
                 href="/book"
-                className="block bg-emerald-500 hover:bg-emerald-600 text-white font-semibold text-xs sm:text-sm px-5 py-2.5 rounded-full shadow-lg transition-all active:scale-95"
+                className="inline-flex w-full sm:w-auto items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-base px-7 py-3.5 rounded-full shadow-lg transition-all active:scale-95"
               >
-                今すぐ予約
+                <CalendarCheck className="w-5 h-5" />
+                空き確認・予約する
               </Link>
             </motion.div>
             <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ type: "spring", stiffness: 100, damping: 20, delay: 1.7 }}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ type: "spring", stiffness: 120, damping: 20, delay: 0.5 }}
             >
               <a
                 href="https://lin.ee/jfp4laz"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block bg-white/15 backdrop-blur-sm hover:bg-white/25 text-white font-semibold text-xs sm:text-sm px-5 py-2.5 rounded-full border border-white/30 transition-all active:scale-95"
+                className="inline-flex w-full sm:w-auto items-center justify-center gap-2 bg-white/15 backdrop-blur-sm hover:bg-white/25 text-white font-bold text-base px-7 py-3.5 rounded-full border border-white/35 transition-all active:scale-95"
               >
+                <MessageCircle className="w-5 h-5" />
                 LINEで相談
               </a>
             </motion.div>
           </div>
 
-          {/* Trust badges */}
-          <div className="flex flex-wrap justify-center gap-2 text-white/90 text-xs sm:text-sm font-medium">
-            {["器材レンタル無料", "写真データ無料", "保険加入済み"].map((text, i) => (
+          <div className="hidden md:flex flex-wrap gap-2 text-white/90 text-xs sm:text-sm font-medium">
+            {trustItems.map((item, i) => (
               <motion.span
-                key={text}
-                initial={{ opacity: 0, scale: 0 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ type: "spring", stiffness: 260, damping: 20, delay: 2.0 + i * 0.1 }}
-                className="bg-white/20 backdrop-blur-sm rounded-full px-3 py-1.5"
+                key={item.text}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.6 + i * 0.08 }}
+                className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm rounded-full px-3 py-1.5"
               >
-                {text}
+                <item.icon className="w-3.5 h-3.5" />
+                {item.text}
               </motion.span>
             ))}
           </div>
@@ -145,7 +154,7 @@ export function HeroSection() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 2.5 }}
-        className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-1.5"
+        className="hidden sm:flex absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex-col items-center gap-1.5"
       >
         <motion.span
           animate={{ opacity: [0.4, 1, 0.4] }}

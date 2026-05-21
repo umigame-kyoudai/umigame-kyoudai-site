@@ -30,7 +30,7 @@ export function MobileCTA() {
             >
               <Link href="/book">
                 <Calendar className="w-4 h-4 mr-2" />
-                予約
+                予約する
               </Link>
             </Button>
           )}

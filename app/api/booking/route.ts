@@ -34,7 +34,7 @@ interface BookingRequest {
 
 const SUNSET_SUP_TIME_NOTE = 'サンセット時刻（予約確定時にご案内）'
 const FREE_UNDER3_PLAN_IDS = new Set(['S3', 'S5'])
-const STAFF_UNAVAILABLE_PLAN_IDS = new Set(['S3', 'S4', 'S5'])
+const STAFF_UNAVAILABLE_PLAN_IDS = new Set(['S3', 'S4', 'S5', 'slide-boat'])
 const TIME_OPTIONAL_PLAN_IDS = new Set(['S4'])
 const VALID_STAFF_IDS = new Set(['staff1', 'staff2', 'staff3', 'staff4', 'staff5'])
 const STAFF_NAMES: Record<string, string> = {
@@ -124,6 +124,9 @@ const validateBookingRequest = (data: BookingRequest): { valid: boolean; error?:
   if (!validateRequired(selectedPlan).valid) return { valid: false, error: 'プランが必須です' }
   const plan = PLANS.find((p) => p.id === selectedPlan)
   if (!plan) return { valid: false, error: '無効なプランです' }
+  if (plan.status === 'coming_soon') {
+    return { valid: false, error: 'このプランは近日公開のため、まだ予約できません' }
+  }
 
   if (!validateRequired(selectedDate).valid) return { valid: false, error: '予約日が必須です' }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(selectedDate)) {

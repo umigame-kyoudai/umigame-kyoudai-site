@@ -3,6 +3,7 @@ import { PLANS as CANONICAL_PLANS } from '../data'
 // 互換用のプラン型定義。実データは lib/data.ts を正とする。
 export interface Plan {
   id: string
+  status?: 'active' | 'coming_soon'
   name: string
   description: string
   duration: string
@@ -16,6 +17,7 @@ export interface Plan {
 
 export const plans: Plan[] = CANONICAL_PLANS.map((plan) => ({
   id: plan.id,
+  status: plan.status,
   name: plan.name,
   description: plan.description,
   duration: `約${plan.durationHours}時間`,

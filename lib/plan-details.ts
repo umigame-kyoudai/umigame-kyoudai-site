@@ -1,9 +1,12 @@
 export interface PlanDetail {
   id: string
+  brand?: "umigame-kyodai" | string
+  status?: "active" | "coming_soon"
   name: string
   tagline: string
   heroDescription: string
   image: string
+  heroVideo?: string
   color: string // theme color class
   gradientFrom: string
   gradientTo: string
@@ -23,6 +26,11 @@ export interface PlanDetail {
   options?: { name: string; price: string; note?: string }[]
   location: string
   locationNote?: string
+  meetingPoint?: {
+    name: string
+    mapUrl: string
+    embedUrl?: string
+  }
   meetingTime: string
   paymentMethod: string
   faqs: { q: string; a: string }[]
@@ -281,6 +289,58 @@ export const PLAN_DETAILS: Record<string, PlanDetail> = {
       { name: "T.M さん", date: "2025年3月", rating: 5, text: "3歳と6歳の子連れで貸切を利用。子供のペースで止まったり進んだりできて最高でした。ガイドさんが子供の質問に全部丁寧に答えてくれて、子供たちが夢中になっていました。" },
       { name: "K.A さん", date: "2025年2月", rating: 5, text: "おじいちゃんの誕生日記念に三世代で参加。貸切だからおじいちゃんのペースに合わせてもらえて安心でした。ヤシガニを見つけた時のおじいちゃんの顔が忘れられません！" },
       { name: "Y.S さん", date: "2025年1月", rating: 5, text: "通常プランに参加して楽しかったので、2回目は貸切で。じっくり解説を聞けるのが良かった！ガイドさんの知識が深くて大人でも勉強になります。" },
+    ],
+  },
+  "slide-boat": {
+    id: "slide-boat",
+    brand: "umigame-kyodai",
+    status: "coming_soon",
+    name: "海亀兄弟のスライダーボートシュノーケル",
+    tagline: "滑り台も飛び込み台も。宮古島の海をもっとアクティブに遊ぶ新プラン",
+    heroDescription: "トゥリバーマリーナ集合の滑り台付きボートシュノーケルがまもなく登場。ファミリーもグループも、海へ滑って、飛び込んで、宮古島の透明な海を思い切り楽しめる新しい海遊びです。",
+    image: "/images/slide-boat-photo.jpg",
+    color: "cyan",
+    gradientFrom: "from-cyan-600",
+    gradientTo: "to-emerald-500",
+    price: "¥14,000",
+    priceNote: "大人1名あたり",
+    childPrice: "¥12,000（子供）",
+    duration: "約3時間",
+    age: "5〜65歳（予定）",
+    rating: 0,
+    reviews: 0,
+    highlights: [
+      { title: "滑り台付きボート", description: "ボートから海へそのまま滑り込める、遊び心のある新体験。海に入る瞬間から盛り上がるので、お子様連れやグループ旅行にぴったりです。", icon: "lifebuoy" },
+      { title: "飛び込み台でアクティブに遊べる", description: "飛び込み台付きだから、ただ移動するだけのボートではなく、海の上そのものが遊び場になります。写真や動画にも残したくなる体験です。", icon: "sparkles" },
+      { title: "ボートシュノーケル", description: "トゥリバーマリーナから出発し、海況を見ながらシュノーケルを楽しむ予定です。ビーチエントリーとは違う開放感を味わえます。", icon: "compass" },
+      { title: "ファミリー・グループ向け", description: "午前便・午後便の2便制を予定。家族旅行、友人グループ、アクティブに遊びたい方に向けた新しい選択肢です。", icon: "users" },
+    ],
+    flow: [
+      { step: 1, title: "トゥリバーマリーナ集合・受付", description: "集合後、受付と体調確認を行います。船の設備や安全ルールも出発前にご案内します。", time: "開始15分前" },
+      { step: 2, title: "出港・安全説明", description: "ボートでポイントへ向かいます。滑り台・飛び込み台の使い方、シュノーケル時の注意点を丁寧に説明します。" },
+      { step: 3, title: "スライダーボート遊び・シュノーケル", description: "滑り台、飛び込み台、ボートシュノーケルを楽しむメイン時間。宮古島の透明な海でアクティブに遊びます。", time: "約2時間" },
+      { step: 4, title: "帰港・解散", description: "トゥリバーマリーナへ戻り、片付け後に解散予定です。" },
+    ],
+    included: ["乗船料", "シュノーケル器材一式", "ライフジャケット", "ガイド同行", "保険", "安全説明"],
+    whatToBring: ["水着（着用して集合）", "着替え", "タオル", "日焼け止め", "飲み物", "酔い止め（必要な方）"],
+    precautions: ["現在は近日公開のため予約受付前です", "妊娠中の方は参加不可", "持病をお持ちの方は参加前に必ずご相談ください", "飲酒されている方は参加不可", "海況・天候により内容や開催可否が変更になる場合があります"],
+    location: "トゥリバーマリーナ",
+    locationNote: "集合場所はトゥリバーマリーナを予定しています。受付開始時に詳細をご案内します。",
+    meetingPoint: {
+      name: "トゥリバーマリーナ",
+      mapUrl: "https://maps.app.goo.gl/5EFXTxxksYLeeSGL7?g_st=ic",
+      embedUrl: "https://www.google.com/maps?q=%E3%83%88%E3%82%A5%E3%83%AA%E3%83%90%E3%83%BC%E3%83%9E%E3%83%AA%E3%83%BC%E3%83%8A%20%E5%AE%AE%E5%8F%A4%E5%B3%B6&output=embed",
+    },
+    meetingTime: "午前便 8:45 / 午後便 12:45（予定）",
+    paymentMethod: "現地現金決済予定（受付開始時に正式案内）",
+    faqs: [
+      { q: "いつから予約できますか？", a: "現在は近日公開の告知段階です。予約受付開始日は決まり次第、このページとLINEでご案内します。" },
+      { q: "開催時間は決まっていますか？", a: "午前便 9:00〜12:00、午後便 13:00〜16:00を予定しています。海況や運航準備により変更になる場合があります。" },
+      { q: "集合場所はどこですか？", a: "トゥリバーマリーナを予定しています。Google Mapsのリンクはページ内の集合場所マップから確認できます。" },
+      { q: "子供も参加できますか？", a: "5歳以上を想定しています。正式な参加条件は予約受付開始時に安全基準とあわせてご案内します。" },
+    ],
+    reviews_data: [
+      { name: "海亀兄弟", date: "準備中", rating: 5, text: "滑り台付きボートで、宮古島の海をもっと楽しく遊べる新プランを準備中です。受付開始までしばらくお待ちください。" },
     ],
   },
 }

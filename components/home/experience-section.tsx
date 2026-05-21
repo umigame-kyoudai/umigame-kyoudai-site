@@ -1,15 +1,40 @@
 "use client"
 
 import Image from "next/image"
+import Link from "next/link"
 import { motion, useScroll, useTransform } from "framer-motion"
 import { useRef } from "react"
 import { BLUR_DATA_URLS } from "@/lib/data"
+import { PLAN_DETAILS } from "@/lib/plan-details"
+import { ComingSoonBadge } from "@/components/coming-soon"
 
-const experiences = [
-  { image: "/images/s1-sea-turtle-snorkeling.jpg", title: "ウミガメシュノーケル", subtitle: "安全管理徹底の少人数制ツアー" },
-  { image: "/images/night-tour-coconut-crab.jpg", title: "ナイトツアー", subtitle: "夜の冒険へ出かけよう" },
-  { image: "/images/sunset-sup-silhouettes.jpg", title: "サンセットSUP", subtitle: "黄金の海に浮かぶひととき" },
-]
+const experienceIds = ["S1", "S3", "S4", "slide-boat"] as const
+
+const titleOverrides: Partial<Record<(typeof experienceIds)[number], string>> = {
+  S1: "ウミガメシュノーケル",
+  S3: "ナイトツアー",
+  S4: "サンセットSUP",
+  "slide-boat": "スライダーボート",
+}
+
+const subtitleOverrides: Partial<Record<(typeof experienceIds)[number], string>> = {
+  S1: "安全管理徹底の少人数制ツアー",
+  S3: "夜の冒険へ出かけよう",
+  S4: "黄金の海に浮かぶひととき",
+}
+
+const experiences = experienceIds.map((id) => {
+  const plan = PLAN_DETAILS[id]
+
+  return {
+    id,
+    image: plan.image,
+    title: titleOverrides[id] || plan.name,
+    subtitle: subtitleOverrides[id] || plan.tagline,
+    status: plan.status,
+    href: plan.status === "coming_soon" ? `/plans/${plan.id}#coming-soon` : `/plans/${plan.id}`,
+  }
+})
 
 function ExperienceCard({ exp, index }: { exp: typeof experiences[0]; index: number }) {
   const cardRef = useRef<HTMLDivElement>(null)
@@ -17,33 +42,38 @@ function ExperienceCard({ exp, index }: { exp: typeof experiences[0]; index: num
   const imageY = useTransform(scrollYProgress, [0, 1], ["-10%", "10%"])
 
   return (
-    <motion.div
-      ref={cardRef}
-      initial={{ opacity: 0, clipPath: "inset(100% 0 0 0)" }}
-      whileInView={{ opacity: 1, clipPath: "inset(0% 0 0 0)" }}
-      viewport={{ once: true, margin: "-50px" }}
-      transition={{ duration: 0.8, delay: index * 0.15, ease: [0.16, 1, 0.3, 1] }}
-      className="group relative aspect-[3/4] sm:aspect-[3/4] rounded-xl sm:rounded-2xl overflow-hidden cursor-pointer"
-    >
-      <motion.div className="absolute inset-[-20%]" style={{ y: imageY }}>
-        <Image
-          src={exp.image}
-          alt={exp.title}
-          fill
-          quality={75}
-          placeholder="blur"
-          blurDataURL={BLUR_DATA_URLS.turtle}
-          className="object-cover transition-transform duration-700 group-hover:scale-110"
-          sizes="(max-width: 768px) 50vw, 25vw"
-        />
+    <Link href={exp.href} className="block">
+      <motion.div
+        ref={cardRef}
+        initial={{ opacity: 0, clipPath: "inset(100% 0 0 0)" }}
+        whileInView={{ opacity: 1, clipPath: "inset(0% 0 0 0)" }}
+        viewport={{ once: true, margin: "-50px" }}
+        transition={{ duration: 0.8, delay: index * 0.15, ease: [0.16, 1, 0.3, 1] }}
+        className="group relative aspect-[3/4] sm:aspect-[3/4] rounded-xl sm:rounded-2xl overflow-hidden cursor-pointer"
+      >
+        <motion.div className="absolute inset-[-20%]" style={{ y: imageY }}>
+          <Image
+            src={exp.image}
+            alt={exp.title}
+            fill
+            quality={75}
+            placeholder="blur"
+            blurDataURL={BLUR_DATA_URLS.turtle}
+            className="object-cover transition-transform duration-700 group-hover:scale-110"
+            sizes="(max-width: 768px) 50vw, 25vw"
+          />
+        </motion.div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+        {exp.status === "coming_soon" && (
+          <ComingSoonBadge className="absolute left-3 top-3 bg-white/90 sm:left-4 sm:top-4" />
+        )}
+        <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-4 md:p-6">
+          <p className="text-emerald-300 text-[10px] sm:text-xs font-semibold mb-0.5">{exp.subtitle}</p>
+          <h3 className="text-white text-sm sm:text-lg md:text-xl font-bold">{exp.title}</h3>
+        </div>
+        <div className="absolute inset-0 bg-emerald-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       </motion.div>
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-      <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-4 md:p-6">
-        <p className="text-emerald-300 text-[10px] sm:text-xs font-semibold mb-0.5">{exp.subtitle}</p>
-        <h3 className="text-white text-sm sm:text-lg md:text-xl font-bold">{exp.title}</h3>
-      </div>
-      <div className="absolute inset-0 bg-emerald-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-    </motion.div>
+    </Link>
   )
 }
 
@@ -60,14 +90,14 @@ export function ExperienceSection() {
         >
           <p className="text-emerald-400 font-semibold text-xs sm:text-sm tracking-widest uppercase mb-2">Experiences</p>
           <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold text-white mb-3">
-            3つの<span className="text-emerald-400">感動体験</span>
+            {experiences.length}つの<span className="text-emerald-400">感動体験</span>
           </h2>
           <p className="text-gray-400 text-sm sm:text-lg max-w-xl mx-auto">
             宮古島の海と自然を、朝から夜まで満喫できる多彩なプラン
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-3 gap-2.5 sm:gap-4 md:gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 md:gap-6">
           {experiences.map((exp, i) => (
             <ExperienceCard key={exp.title} exp={exp} index={i} />
           ))}

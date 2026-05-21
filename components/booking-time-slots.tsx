@@ -7,7 +7,7 @@ import { ja } from "date-fns/locale"
 import { Button } from "@/components/ui/button"
 import { Clock, Info } from "lucide-react"
 
-type PlanId = "night-hunter" | "sunset-sup" | "other"
+type PlanId = "night-hunter" | "sunset-sup" | "slide-boat" | "other"
 
 type Props = {
   selectedPlan: PlanId
@@ -58,6 +58,8 @@ function getTimeSlots(plan: PlanId, date: Date): string[] {
       return ["19:20", "21:10"]
     case "sunset-sup":
       return getSunsetSlots(date)
+    case "slide-boat":
+      return ["09:00", "13:00"]
     default:
       return ["07:00", "09:00", "11:00", "14:00", "16:00"]
   }

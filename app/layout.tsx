@@ -3,8 +3,6 @@ import type { Metadata } from "next"
 import { Inter, JetBrains_Mono, Noto_Serif_JP } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { Suspense } from "react"
-import Script from "next/script"
-import { WelcomeAnimation } from "@/components/welcome-animation"
 import { LiffProvider } from "@/components/liff-provider"
 import { Toaster } from "sonner"
 import "./globals.css"
@@ -91,7 +89,6 @@ export default function RootLayout({
         <link key="preload-crab" rel="preload" as="image" href="/images/night-tour-coconut-crab.jpg" type="image/jpeg" />
       </head>
       <body className="font-sans antialiased" suppressHydrationWarning>
-        <WelcomeAnimation />
         <Suspense fallback={null}>
           <LiffProvider>
             {children}

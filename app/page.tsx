@@ -20,20 +20,20 @@ export default function Page() {
       <Navbar />
 
       <main>
-        {/* ① 第一印象 */}
+        {/* ① 第一印象・予約判断 */}
         <HeroSection />
 
-        {/* ② 信頼の証 */}
+        {/* ② プラン比較 */}
+        <PlansSection />
+
+        {/* ③ 信頼の証 */}
         <StatsSection />
 
-        {/* ③ 選ばれる理由 */}
+        {/* ④ 選ばれる理由 */}
         <FeaturesSection />
 
-        {/* ④ 体験ビジュアル */}
+        {/* ⑤ 体験ビジュアル */}
         <ExperienceSection />
-
-        {/* ⑤ 全プラン詳細 */}
-        <PlansSection />
 
         {/* ⑥ 撮影ギャラリー */}
         <GallerySection />

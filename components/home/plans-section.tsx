@@ -6,6 +6,8 @@ import { motion } from "framer-motion"
 import { useRef, useState, useEffect } from "react"
 import { Star, Clock, Users, Camera, Shield, Check, ChevronLeft, ChevronRight } from "lucide-react"
 import { BLUR_DATA_URLS } from "@/lib/data"
+import { ComingSoonBadge } from "@/components/coming-soon"
+import { getPlanPriceDisplay } from "@/lib/plan-price-display"
 
 interface PlanVariant {
   id: string
@@ -14,6 +16,7 @@ interface PlanVariant {
   priceNote: string
   highlights: string[]
   included: string[]
+  status?: "active" | "coming_soon"
 }
 
 interface Tour {
@@ -27,6 +30,7 @@ interface Tour {
   reviews: number
   badge: string
   badgeColor: string
+  status?: "active" | "coming_soon"
   variants: PlanVariant[]
 }
 
@@ -113,12 +117,71 @@ const tours: Tour[] = [
       },
     ],
   },
+  {
+    name: "スライダーボートシュノーケル",
+    tagline: "滑り台付きボートで遊ぶ新プラン",
+    description: "トゥリバーマリーナ集合の滑り台付きボートシュノーケルがまもなく登場。滑り台・飛び込み台・ボートシュノーケルで、宮古島の海をもっとアクティブに楽しめます。",
+    image: "/images/slide-boat-photo.jpg",
+    duration: "約3時間",
+    age: "5〜65歳予定",
+    rating: 0,
+    reviews: 0,
+    badge: "Coming Soon",
+    badgeColor: "bg-cyan-100 text-cyan-800",
+    status: "coming_soon",
+    variants: [
+      {
+        id: "slide-boat",
+        label: "近日公開",
+        price: "¥14,000",
+        priceNote: "子供¥12,000",
+        highlights: ["滑り台付きボート", "飛び込み台", "午前・午後の2便", "トゥリバーマリーナ集合"],
+        included: ["乗船料", "シュノーケル器材", "ライフジャケット", "保険"],
+        status: "coming_soon",
+      },
+    ],
+  },
 ]
+
+const quickCompare = [
+  { id: "S1", name: "ウミガメ", age: "5〜65歳", time: "約2時間", bestFor: "初めて・家族・友人" },
+  { id: "S3", name: "ナイト", age: "0〜75歳", time: "約1.5時間", bestFor: "小さな子連れ・三世代" },
+  { id: "S4", name: "サンセットSUP", age: "5〜65歳", time: "約2時間", bestFor: "カップル・夕日撮影" },
+  { id: "slide-boat", name: "スライダーボート", age: "5〜65歳予定", time: "約3時間", bestFor: "家族・グループ・アクティブ", status: "coming_soon" },
+]
+
+function priceToneClass(tone: "emerald" | "purple" | "cyan") {
+  if (tone === "purple") return "text-purple-700"
+  if (tone === "cyan") return "text-cyan-700"
+  return "text-emerald-700"
+}
+
+function PlanPricePair({ planId, tone = "emerald", dense = false }: { planId: string; tone?: "emerald" | "purple" | "cyan"; dense?: boolean }) {
+  const priceDisplay = getPlanPriceDisplay(planId)
+  if (!priceDisplay) return null
+
+  return (
+    <div className={dense ? "mt-1" : ""}>
+      <div className="grid grid-cols-2 gap-1.5">
+        {priceDisplay.rows.map((row) => (
+          <div key={row.label} className={`rounded-lg bg-white/75 border border-white/80 ${dense ? "px-1.5 py-1" : "px-2.5 py-2"}`}>
+            <span className="block text-[9px] font-semibold leading-none text-gray-500">{row.label}</span>
+            <span className={`block font-black leading-tight ${dense ? "text-xs" : "text-lg"} ${priceToneClass(tone)}`}>
+              {row.price}
+            </span>
+          </div>
+        ))}
+      </div>
+      {priceDisplay.caption && <p className="mt-1 text-[9px] font-medium text-gray-500">{priceDisplay.caption}</p>}
+    </div>
+  )
+}
 
 function TourCard({ tour }: { tour: Tour }) {
   const [selectedVariant, setSelectedVariant] = useState(0)
   const variant = tour.variants[selectedVariant]
   const hasMultipleVariants = tour.variants.length > 1
+  const isComingSoon = tour.status === "coming_soon" || variant.status === "coming_soon"
 
   return (
     <div className="flex-shrink-0 w-[85vw] sm:w-[400px] md:w-[440px] snap-center">
@@ -141,11 +204,15 @@ function TourCard({ tour }: { tour: Tour }) {
             {tour.badge}
           </span>
 
-          <div className="absolute bottom-3 left-3 flex items-center gap-1.5 bg-black/50 backdrop-blur-sm rounded-full px-2.5 py-1">
-            <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" />
-            <span className="text-white font-bold text-xs">{tour.rating}</span>
-            <span className="text-white/70 text-[10px]">({tour.reviews.toLocaleString()}件)</span>
-          </div>
+          {isComingSoon ? (
+            <ComingSoonBadge className="absolute bottom-3 left-3 bg-white/90" />
+          ) : (
+            <div className="absolute bottom-3 left-3 flex items-center gap-1.5 bg-black/50 backdrop-blur-sm rounded-full px-2.5 py-1">
+              <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" />
+              <span className="text-white font-bold text-xs">{tour.rating}</span>
+              <span className="text-white/70 text-[10px]">({tour.reviews.toLocaleString()}件)</span>
+            </div>
+          )}
         </div>
 
         {/* Content */}
@@ -183,12 +250,7 @@ function TourCard({ tour }: { tour: Tour }) {
                   <p className={`text-[10px] font-semibold mb-0.5 ${
                     selectedVariant === i && i === 1 ? "text-purple-600" : "text-gray-500"
                   }`}>{v.label}</p>
-                  <p className={`font-bold text-sm ${
-                    selectedVariant === i
-                      ? i === 0 ? "text-emerald-600" : "text-purple-600"
-                      : "text-gray-700"
-                  }`}>{v.price}</p>
-                  {v.priceNote && <p className="text-[9px] text-gray-400 mt-0.5">{v.priceNote}</p>}
+                  <PlanPricePair planId={v.id} tone={i === 1 ? "purple" : "emerald"} dense />
                 </button>
               ))}
             </div>
@@ -197,8 +259,7 @@ function TourCard({ tour }: { tour: Tour }) {
           {/* Price for single variant */}
           {!hasMultipleVariants && (
             <div className="mb-4 p-3 bg-gray-50 rounded-xl">
-              <p className="text-xl font-bold text-emerald-600">{variant.price}</p>
-              <p className="text-[10px] text-gray-500">{variant.priceNote}</p>
+              <PlanPricePair planId={variant.id} tone={isComingSoon ? "cyan" : "emerald"} />
             </div>
           )}
 
@@ -222,20 +283,29 @@ function TourCard({ tour }: { tour: Tour }) {
           </div>
 
           {/* CTA */}
-          <div className="flex gap-2 mt-auto">
+          {isComingSoon ? (
             <Link
-              href={`/book?plan=${variant.id}`}
-              className="flex-1 text-center bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm py-3 rounded-xl transition-all active:scale-95 shadow-md"
+              href={`/plans/${variant.id}#coming-soon`}
+              className="mt-auto block text-center bg-cyan-700 hover:bg-cyan-800 text-white font-bold text-sm py-3 rounded-xl transition-all active:scale-95 shadow-md"
             >
-              予約する
+              近日公開を見る
             </Link>
-            <Link
-              href={`/plans/${variant.id}`}
-              className="flex-1 text-center border-2 border-emerald-500 text-emerald-600 font-bold text-sm py-3 rounded-xl transition-all active:scale-95"
-            >
-              詳細を見る
-            </Link>
-          </div>
+          ) : (
+            <div className="flex gap-2 mt-auto">
+              <Link
+                href={`/book?plan=${variant.id}`}
+                className="flex-1 text-center bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm py-3 rounded-xl transition-all active:scale-95 shadow-md"
+              >
+                予約する
+              </Link>
+              <Link
+                href={`/plans/${variant.id}`}
+                className="flex-1 text-center border-2 border-emerald-500 text-emerald-600 font-bold text-sm py-3 rounded-xl transition-all active:scale-95"
+              >
+                詳細を見る
+              </Link>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -275,7 +345,7 @@ export function PlansSection() {
   }, [])
 
   return (
-    <section className="py-12 sm:py-16 md:py-28 bg-gray-50 relative overflow-hidden">
+    <section className="py-12 sm:py-16 md:py-24 bg-gray-50 relative overflow-hidden">
       <div className="max-w-7xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 30, filter: "blur(10px)" }}
@@ -286,12 +356,53 @@ export function PlansSection() {
         >
           <p className="text-emerald-600 font-semibold text-xs sm:text-sm tracking-widest uppercase mb-2">Tour Plans</p>
           <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold text-gray-900 mb-3">
-            あなたにぴったりの<span className="text-emerald-600">プラン</span>を見つけよう
+            料金・対象年齢で<span className="text-emerald-600">すぐ比較</span>
           </h2>
           <p className="text-gray-500 text-sm sm:text-lg max-w-2xl mx-auto">
-            全3ツアー。通常プランと貸切プランから選べます。写真無料・前日キャンセル無料。
+            迷ったら、まずは年齢と料金で選んでください。詳しい相談はLINEで確認できます。
           </p>
         </motion.div>
+
+        <div className="px-5 sm:px-6 lg:px-8 mb-8">
+          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <div className="grid grid-cols-4 bg-emerald-900 text-white text-[11px] sm:text-sm font-bold">
+              <div className="p-3 sm:p-4">ツアー</div>
+              <div className="p-3 sm:p-4">料金</div>
+              <div className="p-3 sm:p-4">対象・所要</div>
+              <div className="p-3 sm:p-4">おすすめ</div>
+            </div>
+            {quickCompare.map((item) => {
+              const priceDisplay = getPlanPriceDisplay(item.id)
+
+              return (
+                <div key={item.name} className="grid grid-cols-4 border-t border-gray-100 text-[11px] sm:text-sm">
+                  <div className="p-3 sm:p-4 font-bold text-gray-900">
+                    <span>{item.name}</span>
+                    {item.status === "coming_soon" && <ComingSoonBadge className="mt-1 px-2 py-0.5 text-[10px]" />}
+                  </div>
+                  <div className="p-3 sm:p-4 font-bold leading-snug text-emerald-700">
+                    {priceDisplay?.rows.map((row) => (
+                      <span key={row.label} className="block whitespace-nowrap">
+                        {row.label}{row.price}
+                      </span>
+                    ))}
+                    {priceDisplay?.caption && <span className="block text-[10px] font-medium text-gray-500">{priceDisplay.caption}</span>}
+                  </div>
+                  <div className="p-3 sm:p-4 text-gray-700">
+                    {item.age}
+                    <span className="block text-gray-400">{item.time}</span>
+                  </div>
+                  <div className="p-3 sm:p-4 text-gray-700">{item.bestFor}</div>
+                </div>
+              )
+            })}
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2 text-xs text-gray-600">
+            <span className="rounded-full bg-white px-3 py-1 border border-gray-200">写真・動画無料</span>
+            <span className="rounded-full bg-white px-3 py-1 border border-gray-200">前日までキャンセル無料</span>
+            <span className="rounded-full bg-white px-3 py-1 border border-gray-200">天候不良は全額返金</span>
+          </div>
+        </div>
 
         {/* Carousel */}
         <div className="relative">

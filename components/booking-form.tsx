@@ -1,6 +1,7 @@
 "use client"
 
 import type React from "react"
+import Link from "next/link"
 import { ParticipantForm } from "./participant-form"
 import { useLiff } from "./liff-provider"
 
@@ -19,6 +20,8 @@ import { ADULT_PRICE, CHILD_PRICE, PLANS, STAFF_FEE } from "@/lib/data"
 import { calculateCouponDiscount } from "@/lib/constants/coupons"
 import { todayStr, localDateFromYMD } from "@/lib/date-utils"
 import BookingTimeSlots from "@/components/booking-time-slots"
+import { ComingSoonBadge } from "@/components/coming-soon"
+import { getPlanPriceDisplay } from "@/lib/plan-price-display"
 
 interface ParticipantDetails {
   id: string // Added unique ID for each participant
@@ -51,13 +54,15 @@ interface BookingData {
   lineDisplayName: string | null
 }
 
-function getPlanType(planId: string): "night-hunter" | "sunset-sup" | "other" {
+function getPlanType(planId: string): "night-hunter" | "sunset-sup" | "slide-boat" | "other" {
   switch (planId) {
     case "S3":
     case "S5":
       return "night-hunter"
     case "S4":
       return "sunset-sup"
+    case "slide-boat":
+      return "slide-boat"
     default:
       return "other"
   }
@@ -75,6 +80,39 @@ const STAFF_LIST = [
   { id: "staff3", name: "そういちろう" },
   { id: "staff4", name: "凪" },
 ]
+
+function getPlanTone(planId: string): "emerald" | "purple" | "cyan" {
+  if (planId === "S2" || planId === "S5") return "purple"
+  if (planId === "slide-boat") return "cyan"
+  return "emerald"
+}
+
+function priceTextClass(tone: "emerald" | "purple" | "cyan") {
+  if (tone === "purple") return "text-purple-700"
+  if (tone === "cyan") return "text-cyan-700"
+  return "text-emerald-700"
+}
+
+function BookingPlanPrice({ planId, className = "" }: { planId: string; className?: string }) {
+  const priceDisplay = getPlanPriceDisplay(planId)
+  if (!priceDisplay) return null
+
+  const tone = getPlanTone(planId)
+
+  return (
+    <div className={className}>
+      <div className="grid grid-cols-2 gap-1.5">
+        {priceDisplay.rows.map((row) => (
+          <div key={row.label} className="rounded-lg bg-white/75 px-2 py-1.5 text-center ring-1 ring-gray-100">
+            <span className="block text-[10px] font-semibold leading-none text-gray-500">{row.label}</span>
+            <span className={`block text-sm font-black leading-tight ${priceTextClass(tone)}`}>{row.price}</span>
+          </div>
+        ))}
+      </div>
+      {priceDisplay.caption && <p className="mt-1 text-center text-[10px] font-medium text-gray-500">{priceDisplay.caption}</p>}
+    </div>
+  )
+}
 
 export function BookingForm() {
   const searchParams = useSearchParams()
@@ -110,12 +148,14 @@ export function BookingForm() {
 
     const planParam = searchParams?.get("plan")
     const dateParam = searchParams?.get("date")
+    const planFromParam = planParam ? PLANS.find((plan) => plan.id === planParam) : undefined
+    const canPreselectPlan = !!planFromParam && planFromParam.status !== "coming_soon"
 
     if (planParam || dateParam) {
       hasInitialized.current = true
       setBookingData((prev) => ({
         ...prev,
-        ...(planParam && { selectedPlan: planParam }),
+        ...(canPreselectPlan && planParam ? { selectedPlan: planParam } : {}),
         ...(dateParam && { selectedDate: dateParam }),
       }))
     }
@@ -131,6 +171,7 @@ export function BookingForm() {
   }, [liffUserId, liffDisplayName])
 
   const selectedPlanData = PLANS.find((plan) => plan.id === bookingData.selectedPlan)
+  const selectedPlanIsComingSoon = selectedPlanData?.status === "coming_soon"
 
   const getCurrentPrices = () => {
     if (!selectedPlanData) {
@@ -238,7 +279,7 @@ export function BookingForm() {
     }
   }, [bookingData.adultCount, bookingData.childCount, bookingData.under3Count, createParticipants])
 
-  const isNightHunterPlan = bookingData.selectedPlan === "S3" || bookingData.selectedPlan === "S4" || bookingData.selectedPlan === "S5"
+  const isNightHunterPlan = bookingData.selectedPlan === "S3" || bookingData.selectedPlan === "S4" || bookingData.selectedPlan === "S5" || bookingData.selectedPlan === "slide-boat"
   const isUnder3FreePlan = bookingData.selectedPlan === "S3" || bookingData.selectedPlan === "S5"
 
   useEffect(() => {
@@ -313,6 +354,10 @@ export function BookingForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (selectedPlanIsComingSoon) {
+      toast.error("このプランは近日公開のため、まだ予約できません")
+      return
+    }
     setIsSubmitting(true)
 
     try {
@@ -356,6 +401,8 @@ export function BookingForm() {
   const hasSeniorOnRegularSnorkel =
     bookingData.selectedPlan === "S1" &&
     bookingData.participants.some((p) => typeof p.age === "number" && p.age >= 60)
+  const isNightTourForDetails =
+    bookingData.selectedPlan === "S3" || bookingData.selectedPlan === "S5" || bookingData.selectedPlan === "night-hunter"
 
   const isFormValid =
     bookingData.selectedPlan &&
@@ -365,6 +412,7 @@ export function BookingForm() {
     bookingData.customerName &&
     bookingData.customerPhone &&
     bookingData.agreedToTerms &&
+    !selectedPlanIsComingSoon &&
     !hasSeniorOnRegularSnorkel &&
     bookingData.participants.every((p) => {
       // Check required fields for all participants
@@ -373,9 +421,7 @@ export function BookingForm() {
       }
 
       // For night tour (S3 or night-hunter), height, weight, and footSize are optional
-      const isNightTour = bookingData.selectedPlan === "S3" || bookingData.selectedPlan === "night-hunter"
-
-      if (isNightTour) {
+      if (isNightTourForDetails) {
         // Night tour: these fields are optional, but if provided, must be valid
         return true
       } else {
@@ -454,6 +500,26 @@ export function BookingForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
+      <div className="rounded-2xl border border-emerald-100 bg-white/80 p-4 sm:p-5 shadow-sm">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-emerald-600">Booking Flow</p>
+            <h2 className="mt-1 text-lg font-bold text-gray-900">3分で仮予約できます</h2>
+          </div>
+          <div className="grid grid-cols-3 gap-2 text-center text-xs sm:min-w-[360px]">
+            {["プラン", "日時・人数", "連絡先"].map((label, index) => (
+              <div key={label} className="rounded-xl bg-emerald-50 px-2 py-2 text-emerald-800">
+                <span className="block text-[10px] font-bold text-emerald-500">STEP {index + 1}</span>
+                <span className="font-semibold">{label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <p className="mt-3 text-sm text-gray-600">
+          送信後すぐに確定ではありません。スタッフが内容を確認し、LINEで集合場所や時間をご案内します。
+        </p>
+      </div>
+
       {/* LINE連携ステータス */}
       {!!process.env.NEXT_PUBLIC_LIFF_ID && isLiffReady && (
         liffUserId ? (
@@ -523,13 +589,12 @@ export function BookingForm() {
                       <label className={`cursor-pointer p-3 rounded-xl border-2 text-center transition-all ${isS1Selected ? "border-emerald-500 bg-emerald-50" : "border-gray-200 hover:border-emerald-300"}`}>
                         <input type="radio" name="plan" value="S1" checked={isS1Selected} onChange={(e) => handleInputChange("selectedPlan", e.target.value)} className="sr-only" />
                         <p className="text-xs text-gray-500 mb-0.5">通常プラン</p>
-                        <p className="font-bold text-emerald-600">¥6,500</p>
-                        <p className="text-[10px] text-gray-500">子供¥6,000</p>
+                        <BookingPlanPrice planId="S1" className="mt-1" />
                       </label>
                       <label className={`cursor-pointer p-3 rounded-xl border-2 text-center transition-all ${isS2Selected ? "border-purple-500 bg-purple-50" : "border-gray-200 hover:border-purple-300"}`}>
                         <input type="radio" name="plan" value="S2" checked={isS2Selected} onChange={(e) => handleInputChange("selectedPlan", e.target.value)} className="sr-only" />
                         <p className="text-xs text-purple-600 font-semibold mb-0.5">貸切プラン</p>
-                        <p className="font-bold text-purple-600">¥9,000/人</p>
+                        <BookingPlanPrice planId="S2" className="mt-1" />
                       </label>
                     </div>
                   </div>
@@ -556,13 +621,13 @@ export function BookingForm() {
                       <label className={`cursor-pointer p-3 rounded-xl border-2 text-center transition-all ${isS3Selected ? "border-emerald-500 bg-emerald-50" : "border-gray-200 hover:border-emerald-300"}`}>
                         <input type="radio" name="plan" value="S3" checked={isS3Selected} onChange={(e) => handleInputChange("selectedPlan", e.target.value)} className="sr-only" />
                         <p className="text-xs text-gray-500 mb-0.5">通常プラン</p>
-                        <p className="font-bold text-emerald-600">¥4,000</p>
+                        <BookingPlanPrice planId="S3" className="mt-1" />
                       </label>
                       {s5 && (
                         <label className={`cursor-pointer p-3 rounded-xl border-2 text-center transition-all ${isS5Selected ? "border-purple-500 bg-purple-50" : "border-gray-200 hover:border-purple-300"}`}>
                           <input type="radio" name="plan" value="S5" checked={isS5Selected} onChange={(e) => handleInputChange("selectedPlan", e.target.value)} className="sr-only" />
                           <p className="text-xs text-purple-600 font-semibold mb-0.5">貸切プラン</p>
-                          <p className="font-bold text-purple-600">¥8,000/人</p>
+                          <BookingPlanPrice planId="S5" className="mt-1" />
                         </label>
                       )}
                     </div>
@@ -590,12 +655,46 @@ export function BookingForm() {
                           <span className="flex items-center gap-1"><Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />{s4.rating}</span>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-xl font-bold text-emerald-600">¥8,000〜</p>
+                      <div className="w-40">
+                        <BookingPlanPrice planId="S4" />
                       </div>
                     </div>
                   </div>
                 </label>
+              )
+            })()}
+
+            {/* スライダーボートシュノーケル（近日公開） */}
+            {(() => {
+              const slideBoat = PLANS.find(p => p.id === "slide-boat")
+              if (!slideBoat) return null
+
+              return (
+                <div className="rounded-2xl border-2 border-dashed border-cyan-200 bg-cyan-50/70">
+                  <div className="p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="mb-1 flex flex-wrap items-center gap-2">
+                          <h3 className="font-bold text-gray-900 text-base">スライダーボートシュノーケル</h3>
+                          <ComingSoonBadge />
+                        </div>
+                        <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500">
+                          <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{slideBoat.durationHours}時間</span>
+                        </div>
+                        <BookingPlanPrice planId="slide-boat" className="mt-2 max-w-xs" />
+                      </div>
+                    </div>
+                    <p className="mt-3 text-sm leading-relaxed text-cyan-900">
+                      滑り台付きボート・飛び込み台・ボートシュノーケルを準備中です。現在は予約受付前のため、このフォームでは選択できません。
+                    </p>
+                    <Link
+                      href="/plans/slide-boat#coming-soon"
+                      className="mt-3 inline-flex rounded-full bg-cyan-700 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-cyan-800"
+                    >
+                      詳細ページを見る
+                    </Link>
+                  </div>
+                </div>
               )
             })()}
           </div>
@@ -612,16 +711,7 @@ export function BookingForm() {
                 </div>
                 <div className="bg-white/60 rounded-lg p-2">
                   <div className="text-gray-600 mb-0.5">料金</div>
-                  <div className="font-semibold text-gray-800">
-                    {selectedPlanData.id === "S3" || selectedPlanData.id === "S5" ? (
-                      <>
-                        ¥{selectedPlanData.price.toLocaleString()}/人{" "}
-                        <span className="text-emerald-600">(3歳以下無料)</span>
-                      </>
-                    ) : (
-                      <>大人¥{selectedPlanData.price.toLocaleString()}</>
-                    )}
-                  </div>
+                  <BookingPlanPrice planId={selectedPlanData.id} className="mt-1" />
                 </div>
               </div>
 
