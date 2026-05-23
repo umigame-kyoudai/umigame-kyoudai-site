@@ -808,7 +808,7 @@ export function BookingForm() {
           {bookingData.selectedPlan === "S2" && (
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
               <p className="text-sm text-blue-800">
-                <strong>VIP貸切プランについて：</strong><br />
+                <strong>【貸切】ウミガメシュノーケルツアーについて：</strong><br />
                 • 料金：¥9,000 / 1名<br />
                 • 最大6名まで承ります<br />
                 • 7名以上の場合はLINEよりご相談ください

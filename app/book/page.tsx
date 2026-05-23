@@ -3,7 +3,7 @@ import { Navbar } from "@/components/navbar"
 
 export const metadata: Metadata = {
   title: "ご予約",
-  description: "海亀兄弟のツアー予約ページ。ウミガメシュノーケル、VIP貸切ツアー、ナイトツアー、サンセットSUP。前日までキャンセル無料。",
+  description: "海亀兄弟のツアー予約ページ。ウミガメシュノーケル、【貸切】ウミガメシュノーケルツアー、ナイトツアー、サンセットSUP。前日までキャンセル無料。",
   alternates: { canonical: "https://www.umigamekyoudaimiyakojima.com/book" },
   robots: { index: false, follow: true },
 }
