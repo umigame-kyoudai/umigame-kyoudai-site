@@ -6,9 +6,9 @@ export function LocalBusinessJsonLd() {
     "@context": "https://schema.org",
     "@type": "TouristAttraction",
     name: "海亀兄弟",
-    description: "宮古島で家族向け少人数制マリン体験。ウミガメシュノーケル、VIP貸切ツアー、ナイトツアー、サンセットSUP。",
+    description: "宮古島で家族向け少人数制マリン体験。ウミガメシュノーケル、貸切ツアー、ナイトツアー、サンセットSUP。",
     url: SITE_URL,
-    telephone: "08053442439",
+    telephone: "+81-80-5344-2439",
     address: {
       "@type": "PostalAddress",
       streetAddress: "平良西里861-5",
@@ -16,12 +16,13 @@ export function LocalBusinessJsonLd() {
       addressRegion: "沖縄県",
       addressCountry: "JP",
     },
+    areaServed: ["宮古島", "沖縄県宮古島市"],
     geo: {
       "@type": "GeoCoordinates",
       latitude: 24.79,
       longitude: 125.28,
     },
-    image: `${SITE_URL}/images/tours/snorkel/snorkel-01.webp`,
+    image: `${SITE_URL}/images/gemini-generated-image-rq969urq969urq96.jpeg`,
     priceRange: "¥4,000〜¥9,000",
     openingHoursSpecification: {
       "@type": "OpeningHoursSpecification",
@@ -29,12 +30,7 @@ export function LocalBusinessJsonLd() {
       opens: "07:00",
       closes: "18:00",
     },
-    aggregateRating: {
-      "@type": "AggregateRating",
-      ratingValue: "4.9",
-      reviewCount: "10136",
-      bestRating: "5",
-    },
+    // 検証可能な口コミ・評価データと紐づかないため aggregateRating は出力しない。
   }
 
   return (
@@ -66,16 +62,7 @@ export function PlanJsonLd({ plan }: {
       availability: isComingSoon ? "https://schema.org/PreOrder" : "https://schema.org/InStock",
       url: isComingSoon ? `${SITE_URL}/plans/${plan.id}#coming-soon` : `${SITE_URL}/book?plan=${plan.id}`,
     },
-    ...(!isComingSoon && plan.reviews > 0
-      ? {
-          aggregateRating: {
-            "@type": "AggregateRating",
-            ratingValue: plan.rating.toString(),
-            reviewCount: plan.reviews.toString(),
-            bestRating: "5",
-          },
-        }
-      : {}),
+    // 検証可能な口コミ・評価データと紐づかないため aggregateRating は出力しない。
   }
 
   return (

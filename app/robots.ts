@@ -6,7 +6,9 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/api/", "/book"],
+        // /book は noindex（page metadata）。クロールは許可して noindex を読ませる。
+        // 内部処理の API ルートのみクロール対象外にする。
+        disallow: ["/api/"],
       },
     ],
     sitemap: "https://www.umigamekyoudaimiyakojima.com/sitemap.xml",

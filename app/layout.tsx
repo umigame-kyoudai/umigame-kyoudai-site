@@ -23,6 +23,9 @@ export const metadata: Metadata = {
   },
   description:
     "宮古島で家族向け少人数制マリン体験なら海亀兄弟。ウミガメシュノーケル、貸切ツアー、ナイトツアー、サンセットSUP。安全管理徹底、写真・動画無料、前日キャンセル無料。",
+  alternates: {
+    canonical: "/",
+  },
   icons: {
     icon: "/icon.png",
     apple: "/icon.png",
@@ -47,10 +50,10 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/images/tours/snorkel/snorkel-01.webp",
+        url: "/images/gemini-generated-image-rq969urq969urq96.jpeg",
         width: 1200,
         height: 630,
-        alt: "宮古島の海亀兄弟 - ウミガメシュノーケルツアー",
+        alt: "宮古島でウミガメと泳ぐシュノーケリングツアーの様子",
       },
     ],
   },
@@ -58,7 +61,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "海亀兄弟 | 宮古島ウミガメシュノーケル・マリン体験",
     description: "宮古島で家族向け少人数制マリン体験。安全管理徹底、写真・動画無料。",
-    images: ["/images/tours/snorkel/snorkel-01.webp"],
+    images: ["/images/gemini-generated-image-rq969urq969urq96.jpeg"],
   },
 }
 
