@@ -2,9 +2,9 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Menu, X, MessageSquare } from "lucide-react"
-import { TurtleLogo } from "./TurtleLogo"
 
 const LINE_URL = "https://lin.ee/jfp4laz"
 
@@ -27,11 +27,15 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2 min-w-0 flex-shrink-0">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center flex-shrink-0">
-              <TurtleLogo size={32} className="sm:w-10 sm:h-10" />
-            </div>
-            <span className="font-bold text-lg sm:text-xl text-emerald-800 whitespace-nowrap">海亀兄弟</span>
+          <Link href="/" className="flex items-center min-w-0 flex-shrink-0">
+            <Image
+              src="/images/sea-turtle-brothers-logo.png"
+              alt="海亀兄弟"
+              width={1276}
+              height={903}
+              priority
+              className="h-9 w-auto sm:h-11"
+            />
           </Link>
 
           {/* Desktop Navigation */}
