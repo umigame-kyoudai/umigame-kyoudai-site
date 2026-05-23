@@ -1,6 +1,6 @@
 import Link from "next/link"
+import Image from "next/image"
 import { Phone, MessageSquare, MapPin, Clock } from "lucide-react"
-import { TurtleLogo } from "./TurtleLogo"
 
 const CONTACT_INFO = {
   phone: "08053442439",
@@ -30,12 +30,13 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Company Info */}
           <div className="col-span-1 md:col-span-2">
-            <div className="flex items-center space-x-2 mb-4">
-              <div className="w-10 h-10 flex items-center justify-center">
-                <TurtleLogo size={40} className="text-white" />
-              </div>
-              <span className="font-bold text-xl">海亀兄弟</span>
-            </div>
+            <Image
+              src="/images/sea-turtle-brothers-logo-white.png"
+              alt="海亀兄弟 SEA TURTLE BROTHERS EST. 2024"
+              width={1276}
+              height={903}
+              className="mb-4 h-auto w-[72px] object-contain sm:w-[84px] md:w-[96px]"
+            />
             <p className="text-emerald-100 mb-4 max-w-md">
               家族向け少人数制マリン体験で、安心・誠実・やわらかな高揚感をお届けします。
               透明度抜群の海で海亀との感動的な出会いを。
