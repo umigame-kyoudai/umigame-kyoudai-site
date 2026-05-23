@@ -101,11 +101,11 @@ function BookingPlanPrice({ planId, className = "" }: { planId: string; classNam
 
   return (
     <div className={className}>
-      <div className="grid grid-cols-2 gap-1.5">
+      <div className="grid grid-cols-2 gap-1 sm:gap-1.5">
         {priceDisplay.rows.map((row) => (
-          <div key={row.label} className="rounded-lg bg-white/75 px-2 py-1.5 text-center ring-1 ring-gray-100">
+          <div key={row.label} className="rounded-lg bg-white/75 px-1 py-1.5 text-center ring-1 ring-gray-100 sm:px-2">
             <span className="block text-[10px] font-semibold leading-none text-gray-500">{row.label}</span>
-            <span className={`block text-sm font-black leading-tight ${priceTextClass(tone)}`}>{row.price}</span>
+            <span className={`block whitespace-nowrap text-xs font-black leading-tight tracking-tight sm:text-sm ${priceTextClass(tone)}`}>{row.price}</span>
           </div>
         ))}
       </div>
@@ -360,6 +360,12 @@ export function BookingForm() {
     }
     setIsSubmitting(true)
 
+    // 氏名が未入力の参加者は内部的に「参加者1」「参加者2」…として扱う
+    const participantsForSubmit = bookingData.participants.map((p, index) => ({
+      ...p,
+      name: p.name.trim() === "" ? `参加者${index + 1}` : p.name.trim(),
+    }))
+
     try {
       const response = await fetch("/api/booking", {
         method: "POST",
@@ -368,6 +374,7 @@ export function BookingForm() {
         },
         body: JSON.stringify({
           ...bookingData,
+          participants: participantsForSubmit,
           // LIFFから最新のuserIdを直接取得（レースコンディション対策）
           lineUserId: liffUserId || bookingData.lineUserId,
           lineDisplayName: liffDisplayName || bookingData.lineDisplayName,
@@ -415,25 +422,16 @@ export function BookingForm() {
     !selectedPlanIsComingSoon &&
     !hasSeniorOnRegularSnorkel &&
     bookingData.participants.every((p) => {
-      // Check required fields for all participants
-      if (p.name.trim() === "" || typeof p.age !== "number" || p.age <= 0) {
+      // 年齢は全プランで必須（氏名・身長・体重は任意）
+      if (typeof p.age !== "number" || p.age <= 0) {
         return false
       }
 
-      // For night tour (S3 or night-hunter), height, weight, and footSize are optional
+      // ナイトツアーは足のサイズも任意。シュノーケル系はフィン準備のため足のサイズのみ必須
       if (isNightTourForDetails) {
-        // Night tour: these fields are optional, but if provided, must be valid
         return true
       } else {
-        // Other plans: height, weight, and footSize are required
-        return (
-          typeof p.height === "number" &&
-          p.height > 0 &&
-          typeof p.weight === "number" &&
-          p.weight > 0 &&
-          typeof p.footSize === "number" &&
-          p.footSize > 0
-        )
+        return typeof p.footSize === "number" && p.footSize > 0
       }
     })
 
@@ -586,12 +584,12 @@ export function BookingForm() {
                       <span className="flex items-center gap-1"><Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />{s1.rating}</span>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
-                      <label className={`cursor-pointer p-3 rounded-xl border-2 text-center transition-all ${isS1Selected ? "border-emerald-500 bg-emerald-50" : "border-gray-200 hover:border-emerald-300"}`}>
+                      <label className={`cursor-pointer p-2 sm:p-3 rounded-xl border-2 text-center transition-all ${isS1Selected ? "border-emerald-500 bg-emerald-50" : "border-gray-200 hover:border-emerald-300"}`}>
                         <input type="radio" name="plan" value="S1" checked={isS1Selected} onChange={(e) => handleInputChange("selectedPlan", e.target.value)} className="sr-only" />
                         <p className="text-xs text-gray-500 mb-0.5">通常プラン</p>
                         <BookingPlanPrice planId="S1" className="mt-1" />
                       </label>
-                      <label className={`cursor-pointer p-3 rounded-xl border-2 text-center transition-all ${isS2Selected ? "border-purple-500 bg-purple-50" : "border-gray-200 hover:border-purple-300"}`}>
+                      <label className={`cursor-pointer p-2 sm:p-3 rounded-xl border-2 text-center transition-all ${isS2Selected ? "border-purple-500 bg-purple-50" : "border-gray-200 hover:border-purple-300"}`}>
                         <input type="radio" name="plan" value="S2" checked={isS2Selected} onChange={(e) => handleInputChange("selectedPlan", e.target.value)} className="sr-only" />
                         <p className="text-xs text-purple-600 font-semibold mb-0.5">貸切プラン</p>
                         <BookingPlanPrice planId="S2" className="mt-1" />
@@ -618,13 +616,13 @@ export function BookingForm() {
                       <span className="flex items-center gap-1"><Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />{s3.rating}</span>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
-                      <label className={`cursor-pointer p-3 rounded-xl border-2 text-center transition-all ${isS3Selected ? "border-emerald-500 bg-emerald-50" : "border-gray-200 hover:border-emerald-300"}`}>
+                      <label className={`cursor-pointer p-2 sm:p-3 rounded-xl border-2 text-center transition-all ${isS3Selected ? "border-emerald-500 bg-emerald-50" : "border-gray-200 hover:border-emerald-300"}`}>
                         <input type="radio" name="plan" value="S3" checked={isS3Selected} onChange={(e) => handleInputChange("selectedPlan", e.target.value)} className="sr-only" />
                         <p className="text-xs text-gray-500 mb-0.5">通常プラン</p>
                         <BookingPlanPrice planId="S3" className="mt-1" />
                       </label>
                       {s5 && (
-                        <label className={`cursor-pointer p-3 rounded-xl border-2 text-center transition-all ${isS5Selected ? "border-purple-500 bg-purple-50" : "border-gray-200 hover:border-purple-300"}`}>
+                        <label className={`cursor-pointer p-2 sm:p-3 rounded-xl border-2 text-center transition-all ${isS5Selected ? "border-purple-500 bg-purple-50" : "border-gray-200 hover:border-purple-300"}`}>
                           <input type="radio" name="plan" value="S5" checked={isS5Selected} onChange={(e) => handleInputChange("selectedPlan", e.target.value)} className="sr-only" />
                           <p className="text-xs text-purple-600 font-semibold mb-0.5">貸切プラン</p>
                           <BookingPlanPrice planId="S5" className="mt-1" />

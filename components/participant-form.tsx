@@ -36,7 +36,7 @@ export function ParticipantForm({ participants, minAge, selectedPlan, onUpdate }
           参加者詳細情報
         </CardTitle>
         <p className="text-sm text-gray-600 mt-2">
-          器材のサイズ調整や安全管理のため、参加者全員の詳細情報をご入力ください。
+          参加者名・身長・体重は分かる範囲で大丈夫です。年齢は安全確認、足のサイズはフィン準備のためご入力をお願いします。
         </p>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -53,13 +53,12 @@ export function ParticipantForm({ participants, minAge, selectedPlan, onUpdate }
               </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                 <div>
-                  <Label className="text-sm font-medium text-gray-700 mb-2 block">氏名 *</Label>
+                  <Label className="text-sm font-medium text-gray-700 mb-2 block">氏名 (任意)</Label>
                   <Input
                     value={participant.name}
                     onChange={(e) => onUpdate(participant.id, "name", e.target.value)}
                     placeholder="山田 太郎"
                     className="rounded-xl border-emerald-200 focus:border-emerald-500"
-                    required
                   />
                 </div>
                 <div>
@@ -90,7 +89,7 @@ export function ParticipantForm({ participants, minAge, selectedPlan, onUpdate }
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                    身長 (cm) {isNightTour ? "(任意)" : "*"}
+                    身長 (cm) (任意)
                   </Label>
                   <Input
                     type="number"
@@ -102,12 +101,11 @@ export function ParticipantForm({ participants, minAge, selectedPlan, onUpdate }
                     min="50"
                     max="220"
                     className="rounded-xl border-emerald-200 focus:border-emerald-500"
-                    required={!isNightTour}
                   />
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                    体重 (kg) {isNightTour ? "(任意)" : "*"}
+                    体重 (kg) (任意)
                   </Label>
                   <Input
                     type="number"
@@ -119,7 +117,6 @@ export function ParticipantForm({ participants, minAge, selectedPlan, onUpdate }
                     min="5"
                     max="150"
                     className="rounded-xl border-emerald-200 focus:border-emerald-500"
-                    required={!isNightTour}
                   />
                 </div>
                 <div>
@@ -155,8 +152,8 @@ export function ParticipantForm({ participants, minAge, selectedPlan, onUpdate }
               </>
             ) : (
               <>
-                • 身長・体重・足のサイズは器材選定のために必要です
-                <br />• 安全のため、正確な情報をご入力ください
+                • 足のサイズはフィン準備のため必須です
+                <br />• 身長・体重は任意です（分かる範囲でご入力ください）
                 <br />• 当日、大幅に異なる場合は器材の変更をお願いする場合があります
               </>
             )}
