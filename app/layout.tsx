@@ -26,15 +26,8 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/",
   },
-  icons: {
-    icon: [
-      { url: "/favicon.ico", sizes: "any" },
-      { url: "/favicon-32x32.png", type: "image/png", sizes: "32x32" },
-      { url: "/favicon-16x16.png", type: "image/png", sizes: "16x16" },
-      { url: "/icon.png", type: "image/png", sizes: "512x512" },
-    ],
-    apple: "/apple-touch-icon.png",
-  },
+  // ファビコン類は app/ 直下の favicon.ico / icon.png / apple-icon.png から
+  // Next.js が自動生成するため、ここでは手動指定しない（二重指定を避ける）
   robots: {
     index: true,
     follow: true,
