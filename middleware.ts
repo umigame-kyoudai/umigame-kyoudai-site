@@ -19,7 +19,8 @@ export function middleware(request: NextRequest) {
     const url = request.nextUrl.clone()
     url.pathname = PAGE_MAP[page]
     url.searchParams.delete('page')
-    return NextResponse.redirect(url)
+    // 旧 ?page= URL の恒久統合（308 Permanent）でリンク評価を集約する
+    return NextResponse.redirect(url, 308)
   }
 }
 

@@ -38,7 +38,7 @@ export default function BlogPage() {
         <div className="absolute inset-0">
           <Image
             src="/images/hero-aerial-ocean.jpg"
-            alt=""
+            alt="宮古島の海の航空写真"
             fill
             priority
             quality={80}

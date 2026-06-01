@@ -116,3 +116,37 @@ export function BreadcrumbJsonLd({ items }: { items: { name: string; url: string
     />
   )
 }
+
+// BlogPosting schema for blog article pages
+export function BlogPostingJsonLd({
+  post,
+}: {
+  post: { id: string; title: string; excerpt: string; image: string; author: string; publishedAt: string; date?: string }
+}) {
+  const url = `${SITE_URL}/blog/${post.id}`
+  const image = post.image?.startsWith("http") ? post.image : `${SITE_URL}${post.image}`
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: post.title,
+    description: post.excerpt,
+    image,
+    datePublished: post.publishedAt,
+    dateModified: post.date || post.publishedAt,
+    author: { "@type": "Organization", name: post.author || "海亀兄弟" },
+    publisher: {
+      "@type": "Organization",
+      name: "海亀兄弟",
+      logo: { "@type": "ImageObject", url: `${SITE_URL}/icon.png` },
+    },
+    mainEntityOfPage: { "@type": "WebPage", "@id": url },
+    url,
+  }
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+    />
+  )
+}

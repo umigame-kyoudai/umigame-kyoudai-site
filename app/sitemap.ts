@@ -7,6 +7,8 @@ const SITE_URL = "https://www.umigamekyoudaimiyakojima.com"
 export default function sitemap(): MetadataRoute.Sitemap {
   const staticPages: MetadataRoute.Sitemap = [
     { url: SITE_URL, lastModified: new Date(), changeFrequency: "weekly", priority: 1.0 },
+    // 非指名「宮古島 ウミガメ」系の受け皿となるピラーページ
+    { url: `${SITE_URL}/miyakojima-sea-turtle`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.9 },
     // /book は noindex のため検索流入対象外。サイトマップには含めない。
     { url: `${SITE_URL}/gallery`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.7 },
     { url: `${SITE_URL}/staff`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.6 },
@@ -25,7 +27,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     .filter((post) => post && typeof post === "object" && post.id)
     .map((post) => ({
       url: `${SITE_URL}/blog/${post.id}`,
-      lastModified: new Date(),
+      lastModified: new Date(post.date || post.publishedAt),
       changeFrequency: "monthly" as const,
       priority: 0.5,
     }))

@@ -6,6 +6,7 @@ import { HeroSection } from "@/components/home/hero-section"
 import { FeaturesSection } from "@/components/home/features-section"
 import { StatsSection } from "@/components/home/stats-section"
 import { ExperienceSection } from "@/components/home/experience-section"
+import { TurtleGuideSection } from "@/components/home/turtle-guide-section"
 import { PlansSection } from "@/components/home/plans-section"
 import { GallerySection } from "@/components/home/gallery-section"
 import { TestimonialsSection } from "@/components/home/testimonials-section"
@@ -34,6 +35,9 @@ export default function Page() {
 
         {/* ⑤ 体験ビジュアル */}
         <ExperienceSection />
+
+        {/* ⑤.5 ウミガメガイド（/miyakojima-sea-turtle）への導線 */}
+        <TurtleGuideSection />
 
         {/* ⑥ 撮影ギャラリー */}
         <GallerySection />

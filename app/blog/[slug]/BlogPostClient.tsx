@@ -130,6 +130,14 @@ export default function BlogPostClient({ params }: BlogPostPageProps) {
                           <ul className="list-disc list-inside mb-4 space-y-2 text-gray-700">{children}</ul>
                         ),
                         li: ({ children }) => <li className="text-gray-700">{children}</li>,
+                        a: ({ href, children }) => (
+                          <a
+                            href={href}
+                            className="text-teal-600 underline underline-offset-2 hover:text-teal-700 font-medium"
+                          >
+                            {children}
+                          </a>
+                        ),
                       }}
                     >
                       {post.content}

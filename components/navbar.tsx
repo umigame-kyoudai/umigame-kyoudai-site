@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { href: "/staff", label: "スタッフ" },
   { href: "/gallery", label: "ギャラリー" },
   { href: "/blog", label: "ブログ" },
+  { href: "/miyakojima-sea-turtle", label: "ウミガメガイド" },
   { href: "/faq", label: "よくある質問" },
 ] as const
 
@@ -39,7 +40,7 @@ export default function Navbar() {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="hidden md:flex items-center space-x-5 lg:space-x-8">
             {NAV_ITEMS.map((item) => (
               <Link
                 key={item.href}

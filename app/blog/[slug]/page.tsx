@@ -1,6 +1,8 @@
 import BlogPostClient from "./BlogPostClient"
 import { BLOG_POSTS } from "@/lib/data"
 import { notFound } from "next/navigation"
+import { BlogPostingJsonLd, BreadcrumbJsonLd } from "@/components/json-ld"
+import { SITE_URL } from "@/lib/seo"
 
 export async function generateStaticParams() {
   return BLOG_POSTS.filter((post) => post && typeof post === "object" && post.id && typeof post.id === "string").map(
@@ -45,5 +47,17 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
     notFound()
   }
 
-  return <BlogPostClient params={params} />
+  return (
+    <>
+      <BlogPostingJsonLd post={post} />
+      <BreadcrumbJsonLd
+        items={[
+          { name: "ホーム", url: `${SITE_URL}/` },
+          { name: "ブログ", url: `${SITE_URL}/blog` },
+          { name: post.title, url: `${SITE_URL}/blog/${post.id}` },
+        ]}
+      />
+      <BlogPostClient params={params} />
+    </>
+  )
 }

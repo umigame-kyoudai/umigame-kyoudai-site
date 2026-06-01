@@ -481,7 +481,7 @@ export function PlansSection() {
   }, [])
 
   return (
-    <section className="py-12 sm:py-16 md:py-24 bg-gray-50 relative overflow-hidden">
+    <section id="plans" className="py-12 sm:py-16 md:py-24 bg-gray-50 relative overflow-hidden scroll-mt-16">
       <div className="max-w-7xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 30, filter: "blur(10px)" }}

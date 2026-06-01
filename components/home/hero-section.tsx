@@ -4,7 +4,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { motion, useScroll, useTransform } from "framer-motion"
 import { useRef } from "react"
-import { CalendarCheck, Camera, ChevronDown, MessageCircle, Shield, Star } from "lucide-react"
+import { CalendarCheck, Camera, ChevronDown, MapPin, MessageCircle, Shield, Star } from "lucide-react"
 import { BLUR_DATA_URLS } from "@/lib/data"
 
 export function HeroSection() {
@@ -101,7 +101,23 @@ export function HeroSection() {
             ))}
           </motion.div>
 
-          <div className="hidden sm:flex flex-col sm:flex-row gap-3 mb-5">
+          {/* モバイル専用：ウミガメガイドへのサブ導線（ヒーロー内） */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.44 }}
+            className="sm:hidden mt-4"
+          >
+            <Link
+              href="/miyakojima-sea-turtle"
+              className="inline-flex w-full items-center justify-center gap-2 bg-white/15 backdrop-blur-sm hover:bg-white/25 text-white font-bold text-[15px] px-6 py-3 rounded-full border border-white/40 transition-all active:scale-95"
+            >
+              <MapPin className="w-5 h-5" />
+              ウミガメに会える場所を見る
+            </Link>
+          </motion.div>
+
+          <div className="hidden sm:flex flex-col sm:flex-row sm:flex-wrap gap-3 mb-5">
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
@@ -129,6 +145,19 @@ export function HeroSection() {
                 <MessageCircle className="w-5 h-5" />
                 LINEで相談
               </a>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ type: "spring", stiffness: 120, damping: 20, delay: 0.56 }}
+            >
+              <Link
+                href="/miyakojima-sea-turtle"
+                className="inline-flex w-full sm:w-auto items-center justify-center gap-2 bg-white/15 backdrop-blur-sm hover:bg-white/25 text-white font-bold text-base px-7 py-3.5 rounded-full border border-white/35 transition-all active:scale-95"
+              >
+                <MapPin className="w-5 h-5" />
+                ウミガメに会える場所を見る
+              </Link>
             </motion.div>
           </div>
 
