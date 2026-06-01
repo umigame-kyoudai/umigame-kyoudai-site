@@ -1,34 +1,24 @@
 "use client"
 
-import { notFound } from "next/navigation"
-import { ArrowLeft, Calendar, Clock, User, Tag, Share2 } from "lucide-react"
+import { ArrowLeft, Calendar, Clock, User, Tag, Share2, Waves } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { BLOG_POSTS } from "@/lib/data"
 import Link from "next/link"
 import Image from "next/image"
 import ReactMarkdown from "react-markdown"
-import { usePathname } from "next/navigation"
 import Navbar from "@/components/navbar"
-import { BLUR_DATA_URLS } from "@/lib/data"
+import { BLUR_DATA_URLS } from "@/lib/image-placeholders"
+import type { BlogCta, BlogPostSummary } from "@/lib/blog"
+import type { BlogPost } from "@/lib/data"
 
 interface BlogPostPageProps {
-  params: {
-    slug: string
-  }
+  post: BlogPost
+  relatedPosts: BlogPostSummary[]
+  cta: BlogCta
 }
 
-export default function BlogPostClient({ params }: BlogPostPageProps) {
-  const pathname = usePathname()
-  const post = BLOG_POSTS.filter((p) => p && typeof p === "object" && p.id && typeof p.id === "string").find(
-    (p) => p.id === params.slug,
-  )
-
-  if (!post) {
-    notFound()
-  }
-
+export default function BlogPostClient({ post, relatedPosts, cta }: BlogPostPageProps) {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
     return date.toLocaleDateString("ja-JP", {
@@ -37,17 +27,6 @@ export default function BlogPostClient({ params }: BlogPostPageProps) {
       day: "numeric",
     })
   }
-
-  const relatedPosts = BLOG_POSTS.filter(
-    (p) =>
-      p &&
-      typeof p === "object" &&
-      p.id &&
-      typeof p.id === "string" &&
-      p.category &&
-      p.category === post.category &&
-      p.id !== post.id,
-  ).slice(0, 3)
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-teal-50 to-emerald-50">
@@ -142,6 +121,35 @@ export default function BlogPostClient({ params }: BlogPostPageProps) {
                     >
                       {post.content}
                     </ReactMarkdown>
+                  </div>
+
+                  <div className="mt-10 rounded-2xl bg-gradient-to-br from-emerald-50 to-cyan-50 p-6 sm:p-7 border border-emerald-100">
+                    <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="max-w-xl">
+                        <div className="inline-flex items-center gap-2 text-xs font-bold text-emerald-700 mb-3">
+                          <Waves className="h-4 w-4" />
+                          {cta.eyebrow}
+                        </div>
+                        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3">{cta.title}</h2>
+                        <p className="text-sm sm:text-base leading-relaxed text-gray-600">{cta.description}</p>
+                      </div>
+                      <div className="flex shrink-0 flex-col gap-2 sm:min-w-44">
+                        <Link
+                          href={cta.primaryHref}
+                          className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-emerald-700"
+                        >
+                          {cta.primaryLabel}
+                        </Link>
+                        {cta.secondaryHref && cta.secondaryLabel && (
+                          <Link
+                            href={cta.secondaryHref}
+                            className="inline-flex items-center justify-center rounded-xl bg-white px-4 py-3 text-sm font-bold text-emerald-700 ring-1 ring-emerald-200 transition-colors hover:bg-emerald-50"
+                          >
+                            {cta.secondaryLabel}
+                          </Link>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
                   {/* Tags */}

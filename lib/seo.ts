@@ -21,7 +21,11 @@ export function createMetadata({
   type?: "website" | "article"
 }): Metadata {
   const url = `${SITE_URL}${path}`
-  const ogImage = image || OG_IMAGE
+  const ogImage = image
+    ? image.startsWith("http")
+      ? image
+      : `${SITE_URL}${image.startsWith("/") ? image : `/${image}`}`
+    : OG_IMAGE
 
   return {
     title,

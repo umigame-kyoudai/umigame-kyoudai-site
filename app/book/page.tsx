@@ -1,10 +1,13 @@
 import type { Metadata } from "next"
 import { Navbar } from "@/components/navbar"
+import { createMetadata } from "@/lib/seo"
 
 export const metadata: Metadata = {
-  title: "ご予約",
-  description: "海亀兄弟のツアー予約ページ。ウミガメシュノーケル、【貸切】ウミガメシュノーケルツアー、ナイトツアー、サンセットSUP。前日までキャンセル無料。",
-  alternates: { canonical: "https://www.umigamekyoudaimiyakojima.com/book" },
+  ...createMetadata({
+    title: "ご予約",
+    description: "海亀兄弟のツアー予約ページ。ウミガメシュノーケル、【貸切】ウミガメシュノーケルツアー、ナイトツアー、サンセットSUP。前日までキャンセル無料。",
+    path: "/book",
+  }),
   robots: { index: false, follow: true },
 }
 import { MobileCTA } from "@/components/mobile-cta"

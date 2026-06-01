@@ -12,7 +12,21 @@ const PAGE_MAP: Record<string, string> = {
   blog: '/blog',
 }
 
+const BLOG_REDIRECTS: Record<string, string> = {
+  '/blog/16': '/blog/miyakojima-sup-beginner-guide',
+  '/blog/shimojishima-airport-2025-summer-schedule-access':
+    '/blog/shimojishima-airport-2026-summer-schedule-access',
+}
+
 export function middleware(request: NextRequest) {
+  const blogRedirectPath = BLOG_REDIRECTS[request.nextUrl.pathname]
+
+  if (blogRedirectPath) {
+    const url = request.nextUrl.clone()
+    url.pathname = blogRedirectPath
+    return NextResponse.redirect(url, 308)
+  }
+
   const page = request.nextUrl.searchParams.get('page')
 
   if (page && PAGE_MAP[page]) {
@@ -25,5 +39,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/', '/book'],
+  matcher: ['/', '/book', '/blog/16', '/blog/shimojishima-airport-2025-summer-schedule-access'],
 }

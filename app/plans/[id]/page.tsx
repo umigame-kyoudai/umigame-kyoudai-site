@@ -5,6 +5,7 @@ import { PlanJsonLd, BreadcrumbJsonLd } from "@/components/json-ld"
 import { Navbar } from "@/components/navbar"
 import { MobileCTA } from "@/components/mobile-cta"
 import { Footer } from "@/components/footer"
+import { createMetadata } from "@/lib/seo"
 import type { Metadata } from "next"
 
 export function generateStaticParams() {
@@ -14,18 +15,12 @@ export function generateStaticParams() {
 export function generateMetadata({ params }: { params: { id: string } }): Metadata {
   const plan = PLAN_DETAILS[params.id]
   if (!plan) return { title: "プランが見つかりません" }
-  return {
+  return createMetadata({
     title: plan.name,
     description: plan.heroDescription,
-    alternates: {
-      canonical: `https://www.umigamekyoudaimiyakojima.com/plans/${params.id}`,
-    },
-    openGraph: {
-      title: `${plan.name} | 海亀兄弟`,
-      description: plan.heroDescription,
-      images: [{ url: plan.image, width: 1200, height: 630, alt: plan.name }],
-    },
-  }
+    path: `/plans/${params.id}`,
+    image: plan.image,
+  })
 }
 
 export default function Page({ params }: { params: { id: string } }) {

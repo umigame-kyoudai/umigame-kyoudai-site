@@ -1,21 +1,17 @@
 import BlogPostClient from "./BlogPostClient"
-import { BLOG_POSTS } from "@/lib/data"
 import { notFound } from "next/navigation"
 import { BlogPostingJsonLd, BreadcrumbJsonLd } from "@/components/json-ld"
-import { SITE_URL } from "@/lib/seo"
+import { getBlogPost, getBlogPostCta, getBlogPostSummaries, getRelatedBlogPostSummaries } from "@/lib/blog"
+import { createMetadata, SITE_URL } from "@/lib/seo"
 
 export async function generateStaticParams() {
-  return BLOG_POSTS.filter((post) => post && typeof post === "object" && post.id && typeof post.id === "string").map(
-    (post) => ({
-      slug: post.id,
-    }),
-  )
+  return getBlogPostSummaries().map((post) => ({
+    slug: post.id,
+  }))
 }
 
 export async function generateMetadata({ params }: { params: { slug: string } }) {
-  const post = BLOG_POSTS.filter((p) => p && typeof p === "object" && p.id && typeof p.id === "string").find(
-    (p) => p.id === params.slug,
-  )
+  const post = getBlogPost(params.slug)
 
   if (!post) {
     return {
@@ -23,25 +19,17 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     }
   }
 
-  return {
+  return createMetadata({
     title: post.title,
     description: post.excerpt,
-    alternates: {
-      canonical: `https://www.umigamekyoudaimiyakojima.com/blog/${params.slug}`,
-    },
-    openGraph: {
-      title: post.title,
-      description: post.excerpt,
-      type: "article",
-      images: post.image ? [{ url: post.image, width: 1200, height: 630, alt: post.title }] : undefined,
-    },
-  }
+    path: `/blog/${params.slug}`,
+    image: post.image,
+    type: "article",
+  })
 }
 
 export default function BlogPostPage({ params }: { params: { slug: string } }) {
-  const post = BLOG_POSTS.filter((p) => p && typeof p === "object" && p.id && typeof p.id === "string").find(
-    (p) => p.id === params.slug,
-  )
+  const post = getBlogPost(params.slug)
 
   if (!post) {
     notFound()
@@ -57,7 +45,7 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
           { name: post.title, url: `${SITE_URL}/blog/${post.id}` },
         ]}
       />
-      <BlogPostClient params={params} />
+      <BlogPostClient post={post} relatedPosts={getRelatedBlogPostSummaries(post)} cta={getBlogPostCta(post)} />
     </>
   )
 }
