@@ -20,49 +20,8 @@ import { calculateCouponDiscount } from "@/lib/constants/coupons"
 import { todayStr, localDateFromYMD } from "@/lib/date-utils"
 import BookingTimeSlots from "@/components/booking-time-slots"
 import { ComingSoonBadge } from "@/components/coming-soon"
-import { PLAN_DETAILS } from "@/lib/plan-details"
-import { getPlanPriceDisplay, PLAN_PRICE_DATA } from "@/lib/plan-price-display"
-
-const STAFF_FEE = 1000
-const ADULT_PRICE = PLAN_PRICE_DATA.S1.price
-const CHILD_PRICE = PLAN_PRICE_DATA.S1.childPrice ?? ADULT_PRICE
-
-interface BookingPlanSummary {
-  id: string
-  status?: "active" | "coming_soon"
-  name: string
-  description: string
-  price: number
-  childPrice?: number
-  vipSurcharge?: number
-  durationHours: number
-  rating: number
-  features: string[]
-  ageRange: string
-}
-
-const PLANS = Object.values(PLAN_DETAILS).reduce<BookingPlanSummary[]>((items, plan) => {
-  const price = PLAN_PRICE_DATA[plan.id]
-  if (!price) return items
-
-  const durationHours = Number(plan.duration.match(/[\d.]+/)?.[0] ?? 0)
-
-  items.push({
-    id: plan.id,
-    ...(plan.status ? { status: plan.status } : {}),
-    name: plan.name,
-    description: plan.heroDescription,
-    price: price.price,
-    ...(price.childPrice ? { childPrice: price.childPrice } : {}),
-    vipSurcharge: 0,
-    durationHours,
-    rating: plan.rating,
-    features: plan.highlights.map((highlight) => highlight.title),
-    ageRange: plan.age,
-  })
-
-  return items
-}, [])
+import { ADULT_PRICE, BOOKING_PLANS, CHILD_PRICE, STAFF_FEE } from "@/lib/booking-plans"
+import { getPlanPriceDisplay } from "@/lib/plan-price-display"
 
 interface ParticipantDetails {
   id: string // Added unique ID for each participant
@@ -189,7 +148,7 @@ export function BookingForm() {
 
     const planParam = searchParams?.get("plan")
     const dateParam = searchParams?.get("date")
-    const planFromParam = planParam ? PLANS.find((plan) => plan.id === planParam) : undefined
+    const planFromParam = planParam ? BOOKING_PLANS.find((plan) => plan.id === planParam) : undefined
     const canPreselectPlan = !!planFromParam && planFromParam.status !== "coming_soon"
 
     if (planParam || dateParam) {
@@ -211,7 +170,7 @@ export function BookingForm() {
     }
   }, [liffUserId, liffDisplayName])
 
-  const selectedPlanData = PLANS.find((plan) => plan.id === bookingData.selectedPlan)
+  const selectedPlanData = BOOKING_PLANS.find((plan) => plan.id === bookingData.selectedPlan)
   const selectedPlanIsComingSoon = selectedPlanData?.status === "coming_soon"
 
   const getCurrentPrices = () => {
@@ -611,8 +570,8 @@ export function BookingForm() {
           <div className="space-y-4">
             {/* ウミガメシュノーケル */}
             {(() => {
-              const s1 = PLANS.find(p => p.id === "S1")!
-              const s2 = PLANS.find(p => p.id === "S2")!
+              const s1 = BOOKING_PLANS.find(p => p.id === "S1")!
+              const s2 = BOOKING_PLANS.find(p => p.id === "S2")!
               const isS1Selected = bookingData.selectedPlan === "S1"
               const isS2Selected = bookingData.selectedPlan === "S2"
               const isSnorkelSelected = isS1Selected || isS2Selected
@@ -643,8 +602,8 @@ export function BookingForm() {
 
             {/* ナイトツアー */}
             {(() => {
-              const s3 = PLANS.find(p => p.id === "S3")!
-              const s5 = PLANS.find(p => p.id === "S5")
+              const s3 = BOOKING_PLANS.find(p => p.id === "S3")!
+              const s5 = BOOKING_PLANS.find(p => p.id === "S5")
               const isS3Selected = bookingData.selectedPlan === "S3"
               const isS5Selected = bookingData.selectedPlan === "S5"
               const isNightSelected = isS3Selected || isS5Selected
@@ -677,7 +636,7 @@ export function BookingForm() {
 
             {/* サンセットSUP */}
             {(() => {
-              const s4 = PLANS.find(p => p.id === "S4")!
+              const s4 = BOOKING_PLANS.find(p => p.id === "S4")!
               const isS4Selected = bookingData.selectedPlan === "S4"
               return (
                 <label className={`block cursor-pointer rounded-2xl border-2 transition-all ${isS4Selected ? "border-emerald-500 shadow-lg" : "border-gray-200 hover:border-emerald-300"}`}>
@@ -705,7 +664,7 @@ export function BookingForm() {
 
             {/* スライダーボートシュノーケル（近日公開） */}
             {(() => {
-              const slideBoat = PLANS.find(p => p.id === "slide-boat")
+              const slideBoat = BOOKING_PLANS.find(p => p.id === "slide-boat")
               if (!slideBoat) return null
 
               return (
