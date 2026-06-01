@@ -4,9 +4,9 @@ import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ChevronDown, ChevronUp, MessageSquare, Phone } from "lucide-react"
-import { FAQS } from "@/lib/data"
+import type { FAQ } from "@/lib/data"
 
-export function FAQSection() {
+export function FAQSection({ faqs }: { faqs: FAQ[] }) {
   const [openItems, setOpenItems] = useState<Set<number>>(new Set([0])) // First item open by default
 
   const toggleItem = (index: number) => {
@@ -24,7 +24,7 @@ export function FAQSection() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* FAQ List */}
         <div className="space-y-4">
-          {FAQS.map((faq, index) => (
+          {faqs.map((faq, index) => (
             <Card
               key={index}
               className="glass-card bg-white/70 backdrop-blur-xl rounded-2xl ring-1 ring-emerald-100 shadow-lg overflow-hidden"

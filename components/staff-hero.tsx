@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import { motion } from "framer-motion"
-import { BLUR_DATA_URLS } from "@/lib/data"
+import { BLUR_DATA_URLS } from "@/lib/image-placeholders"
 
 export function StaffHero() {
   return (

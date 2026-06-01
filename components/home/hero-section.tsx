@@ -5,7 +5,7 @@ import Link from "next/link"
 import { motion, useScroll, useTransform } from "framer-motion"
 import { useRef } from "react"
 import { CalendarCheck, Camera, ChevronDown, MapPin, MessageCircle, Shield, Star } from "lucide-react"
-import { BLUR_DATA_URLS } from "@/lib/data"
+import { BLUR_DATA_URLS } from "@/lib/image-placeholders"
 
 export function HeroSection() {
   const sectionRef = useRef<HTMLElement>(null)

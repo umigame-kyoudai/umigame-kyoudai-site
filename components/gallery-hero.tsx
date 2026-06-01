@@ -3,7 +3,7 @@
 import Image from "next/image"
 import { motion } from "framer-motion"
 import { Camera, ImageIcon, Heart } from "lucide-react"
-import { BLUR_DATA_URLS } from "@/lib/data"
+import { BLUR_DATA_URLS } from "@/lib/image-placeholders"
 
 export function GalleryHero() {
   return (

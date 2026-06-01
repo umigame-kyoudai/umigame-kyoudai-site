@@ -5,7 +5,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 import { X, ChevronLeft, ChevronRight, Heart } from "lucide-react"
-import { BLUR_DATA_URLS } from "@/lib/data"
+import { BLUR_DATA_URLS } from "@/lib/image-placeholders"
 import {
   galleryImages,
   getGalleryCategories,

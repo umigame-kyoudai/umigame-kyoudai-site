@@ -4,7 +4,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { motion, useScroll, useTransform } from "framer-motion"
 import { useRef } from "react"
-import { BLUR_DATA_URLS } from "@/lib/data"
+import { BLUR_DATA_URLS } from "@/lib/image-placeholders"
 
 export function CTASection() {
   const sectionRef = useRef<HTMLElement>(null)

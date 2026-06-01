@@ -16,12 +16,53 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import { Calendar, Clock, Users, Calculator, Star, CheckCircle, UserCheck, Check } from "lucide-react"
-import { ADULT_PRICE, CHILD_PRICE, PLANS, STAFF_FEE } from "@/lib/data"
 import { calculateCouponDiscount } from "@/lib/constants/coupons"
 import { todayStr, localDateFromYMD } from "@/lib/date-utils"
 import BookingTimeSlots from "@/components/booking-time-slots"
 import { ComingSoonBadge } from "@/components/coming-soon"
-import { getPlanPriceDisplay } from "@/lib/plan-price-display"
+import { PLAN_DETAILS } from "@/lib/plan-details"
+import { getPlanPriceDisplay, PLAN_PRICE_DATA } from "@/lib/plan-price-display"
+
+const STAFF_FEE = 1000
+const ADULT_PRICE = PLAN_PRICE_DATA.S1.price
+const CHILD_PRICE = PLAN_PRICE_DATA.S1.childPrice ?? ADULT_PRICE
+
+interface BookingPlanSummary {
+  id: string
+  status?: "active" | "coming_soon"
+  name: string
+  description: string
+  price: number
+  childPrice?: number
+  vipSurcharge?: number
+  durationHours: number
+  rating: number
+  features: string[]
+  ageRange: string
+}
+
+const PLANS = Object.values(PLAN_DETAILS).reduce<BookingPlanSummary[]>((items, plan) => {
+  const price = PLAN_PRICE_DATA[plan.id]
+  if (!price) return items
+
+  const durationHours = Number(plan.duration.match(/[\d.]+/)?.[0] ?? 0)
+
+  items.push({
+    id: plan.id,
+    ...(plan.status ? { status: plan.status } : {}),
+    name: plan.name,
+    description: plan.heroDescription,
+    price: price.price,
+    ...(price.childPrice ? { childPrice: price.childPrice } : {}),
+    vipSurcharge: 0,
+    durationHours,
+    rating: plan.rating,
+    features: plan.highlights.map((highlight) => highlight.title),
+    ageRange: plan.age,
+  })
+
+  return items
+}, [])
 
 interface ParticipantDetails {
   id: string // Added unique ID for each participant

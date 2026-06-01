@@ -25,7 +25,7 @@ export default function FAQPage() {
 
       <main>
         <FAQHero />
-        <FAQSection />
+        <FAQSection faqs={FAQS} />
       </main>
 
       <Footer />

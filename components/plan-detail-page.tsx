@@ -9,7 +9,7 @@ import {
   MapPin, CreditCard, Backpack, AlertTriangle, Gift, Crown,
   Bug, Compass, Heart, Sun, Baby, LifeBuoy, Sparkles, ArrowRight
 } from "lucide-react"
-import { BLUR_DATA_URLS } from "@/lib/data"
+import { BLUR_DATA_URLS } from "@/lib/image-placeholders"
 import type { PlanDetail } from "@/lib/plan-details"
 import { PLAN_DETAILS } from "@/lib/plan-details"
 import { ComingSoonBadge, ComingSoonBanner } from "@/components/coming-soon"

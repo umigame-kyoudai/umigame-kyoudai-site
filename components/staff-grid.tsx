@@ -4,7 +4,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { Shield, Star, Award, Plane, Compass } from "lucide-react"
-import { BLUR_DATA_URLS } from "@/lib/data"
+import { BLUR_DATA_URLS } from "@/lib/image-placeholders"
 
 const staff = [
   {

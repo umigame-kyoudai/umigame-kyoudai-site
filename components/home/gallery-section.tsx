@@ -3,7 +3,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { motion } from "framer-motion"
-import { BLUR_DATA_URLS } from "@/lib/data"
+import { BLUR_DATA_URLS } from "@/lib/image-placeholders"
 import { getFeaturedGalleryImages } from "@/lib/data/images"
 
 // トップページに表示する写真は lib/data/images.ts で featured: true を付けて管理

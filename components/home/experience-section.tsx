@@ -4,7 +4,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { motion, useScroll, useTransform } from "framer-motion"
 import { useRef } from "react"
-import { BLUR_DATA_URLS } from "@/lib/data"
+import { BLUR_DATA_URLS } from "@/lib/image-placeholders"
 import { PLAN_DETAILS } from "@/lib/plan-details"
 import { ComingSoonBadge } from "@/components/coming-soon"
 

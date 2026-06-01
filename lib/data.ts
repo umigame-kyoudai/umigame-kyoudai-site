@@ -1,3 +1,7 @@
+import { PLAN_COVER_IMAGE, TOUR_IMAGE_PATHS } from "@/lib/tour-assets"
+
+export { PLAN_COVER_IMAGE, TOUR_IMAGE_PATHS } from "@/lib/tour-assets"
+
 export const ADULT_PRICE = 6500
 export const CHILD_PRICE = 6000
 
@@ -13,44 +17,6 @@ export const BLUR_DATA_URLS = {
   staff:
     "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAb/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWEREiMxUf/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q==",
 }
-
-export const TOUR_IMAGE_PATHS = {
-  snorkel: [
-    "/images/tours/snorkel/snorkel-01.webp",
-    "/images/tours/snorkel/snorkel-02.webp",
-    "/images/tours/snorkel/snorkel-03.webp",
-    "/images/tours/snorkel/snorkel-04.webp",
-    "/images/tours/snorkel/snorkel-05.webp",
-    "/images/tours/snorkel/snorkel-06.webp",
-  ],
-  night: [
-    "/images/tours/night/night-01.webp",
-    "/images/tours/night/night-02.webp",
-    "/images/tours/night/night-03.webp",
-    "/images/tours/night/night-04.webp",
-    "/images/tours/night/night-05.webp",
-    "/images/tours/night/night-06.webp",
-  ],
-  sup: [
-    "/images/tours/sup/sup-01.webp",
-    "/images/tours/sup/sup-02.webp",
-    "/images/tours/sup/sup-03.webp",
-    "/images/tours/sup/sup-04.webp",
-    "/images/tours/sup/sup-05.webp",
-    "/images/tours/sup/sup-06.webp",
-  ],
-  slideBoat: ["/images/slide-boat-photo.jpg"],
-} as const
-
-/** プラン表紙画像（各プランのヒーロー・カードで共通利用） */
-export const PLAN_COVER_IMAGE = {
-  snorkel: TOUR_IMAGE_PATHS.snorkel[0],
-  snorkelPrivate: TOUR_IMAGE_PATHS.snorkel[2],
-  night: TOUR_IMAGE_PATHS.night[0],
-  nightPrivate: TOUR_IMAGE_PATHS.night[2],
-  sup: TOUR_IMAGE_PATHS.sup[3],
-  slideBoat: TOUR_IMAGE_PATHS.slideBoat[0],
-} as const
 
 export function formatPriceWithTilde(item: { price: number; childPrice?: number }): string {
   if (item.childPrice && item.childPrice !== item.price) {

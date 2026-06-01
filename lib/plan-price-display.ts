@@ -1,5 +1,3 @@
-import { PLANS } from "@/lib/data"
-
 export interface PlanPriceRow {
   label: string
   price: string
@@ -14,6 +12,15 @@ export interface PlanPriceDisplay {
 
 const UNDER3_FREE_PLAN_IDS = new Set(["S3", "S5"])
 
+export const PLAN_PRICE_DATA: Record<string, { price: number; childPrice?: number; status?: "active" | "coming_soon" }> = {
+  S1: { price: 6500, childPrice: 6000 },
+  S2: { price: 9000, childPrice: 9000 },
+  S3: { price: 4000, childPrice: 4000 },
+  S4: { price: 8000, childPrice: 6000 },
+  S5: { price: 8000, childPrice: 8000 },
+  "slide-boat": { price: 14000, childPrice: 12000, status: "coming_soon" },
+}
+
 function formatYen(price: number): string {
   return `¥${price.toLocaleString()}`
 }
@@ -25,7 +32,7 @@ function getChildAgeNote(planId: string): string {
 }
 
 export function getPlanPriceDisplay(planId: string): PlanPriceDisplay | null {
-  const plan = PLANS.find((item) => item.id === planId)
+  const plan = PLAN_PRICE_DATA[planId]
   if (!plan) return null
 
   const adultPrice = formatYen(plan.price)

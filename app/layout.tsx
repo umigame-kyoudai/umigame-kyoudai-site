@@ -4,6 +4,7 @@ import { Inter, JetBrains_Mono, Noto_Serif_JP } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { Suspense } from "react"
 import { LiffProvider } from "@/components/liff-provider"
+import { RouteScrollManager } from "@/components/route-scroll-manager"
 import { Toaster } from "sonner"
 import "./globals.css"
 
@@ -85,6 +86,7 @@ export default function RootLayout({
       <body className="font-sans antialiased" suppressHydrationWarning>
         <Suspense fallback={null}>
           <LiffProvider>
+            <RouteScrollManager />
             {children}
             <Analytics />
             <Toaster position="top-center" richColors />

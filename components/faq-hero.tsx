@@ -1,6 +1,6 @@
 import Image from "next/image"
 import { HelpCircle, MessageCircle, MessageSquare } from "lucide-react"
-import { BLUR_DATA_URLS } from "@/lib/data"
+import { BLUR_DATA_URLS } from "@/lib/image-placeholders"
 
 export function FAQHero() {
   return (

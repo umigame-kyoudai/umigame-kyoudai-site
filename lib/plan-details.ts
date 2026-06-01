@@ -1,4 +1,4 @@
-import { PLAN_COVER_IMAGE, TOUR_IMAGE_PATHS } from "@/lib/data"
+import { PLAN_COVER_IMAGE, TOUR_IMAGE_PATHS } from "@/lib/tour-assets"
 
 export interface PlanDetail {
   id: string
