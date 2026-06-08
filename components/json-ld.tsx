@@ -2,8 +2,10 @@ const SITE_URL = "https://www.umigamekyoudaimiyakojima.com"
 const SITE_NAME = "海亀兄弟"
 
 // SNS等の公式プロフィールURL（ナレッジグラフ強化用）。
-// 受領次第ここに追加すると Organization / TouristAttraction の sameAs に反映される。
-const SITE_SAME_AS: string[] = []
+// ここに追加すると Organization / TouristAttraction の sameAs に反映される。
+const SITE_SAME_AS: string[] = [
+  "https://www.instagram.com/umigamekyoudai",
+]
 
 // 全ページ共通：Google検索上のサイト名を明示する（WebSite）。
 export function WebSiteJsonLd() {
