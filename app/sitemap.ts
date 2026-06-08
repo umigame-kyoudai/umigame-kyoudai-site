@@ -4,21 +4,35 @@ import { PLAN_DETAILS } from "@/lib/plan-details"
 
 const SITE_URL = "https://www.umigamekyoudaimiyakojima.com"
 
+// 静的ページ・プランの最終更新日。new Date() だと毎ビルドで全URLが「今日」になり
+// 鮮度シグナルとして信頼されにくいため、内容更新時に手動で更新する固定日を使う。
+const CONTENT_LAST_UPDATED = new Date("2026-06-08")
+
 export default function sitemap(): MetadataRoute.Sitemap {
+  // /blog 一覧の更新日は最新記事の日付から導出（記事追加で自動更新）。
+  const blogDates = BLOG_POSTS
+    .filter((post) => post && typeof post === "object" && post.id)
+    .map((post) => new Date(post.date || post.publishedAt).getTime())
+  const blogIndexUpdated = blogDates.length
+    ? new Date(Math.max(...blogDates))
+    : CONTENT_LAST_UPDATED
+
   const staticPages: MetadataRoute.Sitemap = [
-    { url: SITE_URL, lastModified: new Date(), changeFrequency: "weekly", priority: 1.0 },
+    { url: SITE_URL, lastModified: CONTENT_LAST_UPDATED, changeFrequency: "weekly", priority: 1.0 },
     // 非指名「宮古島 ウミガメ」系の受け皿となるピラーページ
-    { url: `${SITE_URL}/miyakojima-sea-turtle`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.9 },
+    { url: `${SITE_URL}/miyakojima-sea-turtle`, lastModified: CONTENT_LAST_UPDATED, changeFrequency: "monthly", priority: 0.9 },
+    // プラン一覧ハブ（各 /plans/[id] への内部リンク集約点）
+    { url: `${SITE_URL}/plans`, lastModified: CONTENT_LAST_UPDATED, changeFrequency: "monthly", priority: 0.8 },
     // /book は noindex のため検索流入対象外。サイトマップには含めない。
-    { url: `${SITE_URL}/gallery`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.7 },
-    { url: `${SITE_URL}/staff`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.6 },
-    { url: `${SITE_URL}/faq`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.6 },
-    { url: `${SITE_URL}/blog`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.7 },
+    { url: `${SITE_URL}/gallery`, lastModified: CONTENT_LAST_UPDATED, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${SITE_URL}/staff`, lastModified: CONTENT_LAST_UPDATED, changeFrequency: "monthly", priority: 0.6 },
+    { url: `${SITE_URL}/faq`, lastModified: CONTENT_LAST_UPDATED, changeFrequency: "monthly", priority: 0.6 },
+    { url: `${SITE_URL}/blog`, lastModified: blogIndexUpdated, changeFrequency: "weekly", priority: 0.7 },
   ]
 
   const planPages: MetadataRoute.Sitemap = Object.keys(PLAN_DETAILS).map((id) => ({
     url: `${SITE_URL}/plans/${id}`,
-    lastModified: new Date(),
+    lastModified: CONTENT_LAST_UPDATED,
     changeFrequency: "weekly" as const,
     priority: 0.8,
   }))

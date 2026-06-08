@@ -1,21 +1,98 @@
 const SITE_URL = "https://www.umigamekyoudaimiyakojima.com"
+const SITE_NAME = "海亀兄弟"
+
+// SNS等の公式プロフィールURL（ナレッジグラフ強化用）。
+// 受領次第ここに追加すると Organization / TouristAttraction の sameAs に反映される。
+const SITE_SAME_AS: string[] = []
+
+// 全ページ共通：Google検索上のサイト名を明示する（WebSite）。
+export function WebSiteJsonLd() {
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "@id": `${SITE_URL}/#website`,
+    url: SITE_URL,
+    name: SITE_NAME,
+    inLanguage: "ja-JP",
+    publisher: { "@id": `${SITE_URL}/#organization` },
+  }
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+    />
+  )
+}
+
+// 全ページ共通：発行元の事業者（Organization）。サイト・記事の publisher として参照される。
+export function OrganizationJsonLd() {
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "@id": `${SITE_URL}/#organization`,
+    name: SITE_NAME,
+    url: SITE_URL,
+    logo: { "@type": "ImageObject", url: `${SITE_URL}/icon.png` },
+    image: `${SITE_URL}/images/gemini-generated-image-rq969urq969urq96.jpeg`,
+    telephone: "+81-80-5344-2439",
+    areaServed: ["宮古島", "沖縄県宮古島市"],
+    ...(SITE_SAME_AS.length ? { sameAs: SITE_SAME_AS } : {}),
+  }
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+    />
+  )
+}
+
+// スタッフ紹介（/staff）：実在ガイドを Person として明示し E-E-A-T を補強。
+export function StaffPersonJsonLd({
+  staff,
+}: {
+  staff: { id: string; name: string; role?: string; image?: string }[]
+}) {
+  const schema = staff.map((person) => ({
+    "@context": "https://schema.org",
+    "@type": "Person",
+    name: person.name,
+    ...(person.role ? { jobTitle: person.role } : {}),
+    ...(person.image
+      ? { image: person.image.startsWith("http") ? person.image : `${SITE_URL}${person.image}` }
+      : {}),
+    worksFor: { "@id": `${SITE_URL}/#organization` },
+    url: `${SITE_URL}/staff`,
+  }))
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+    />
+  )
+}
 
 // LocalBusiness schema for the homepage
 export function LocalBusinessJsonLd() {
   const schema = {
     "@context": "https://schema.org",
     "@type": "TouristAttraction",
-    name: "海亀兄弟",
+    "@id": `${SITE_URL}/#business`,
+    name: SITE_NAME,
     description: "宮古島で家族向け少人数制マリン体験。ウミガメシュノーケル、貸切ツアー、ナイトツアー、サンセットSUP。",
     url: SITE_URL,
     telephone: "+81-80-5344-2439",
     address: {
       "@type": "PostalAddress",
-      streetAddress: "平良西里861-5",
+      postalCode: "906-0014",
+      streetAddress: "平良松原107-1",
       addressLocality: "宮古島市",
       addressRegion: "沖縄県",
       addressCountry: "JP",
     },
+    hasMap: "https://maps.app.goo.gl/j3nA2ug4iijmbR6j7",
     areaServed: ["宮古島", "沖縄県宮古島市"],
     geo: {
       "@type": "GeoCoordinates",
@@ -30,6 +107,7 @@ export function LocalBusinessJsonLd() {
       opens: "07:00",
       closes: "18:00",
     },
+    ...(SITE_SAME_AS.length ? { sameAs: SITE_SAME_AS } : {}),
     // 検証可能な口コミ・評価データと紐づかないため aggregateRating は出力しない。
   }
 
@@ -133,12 +211,8 @@ export function BlogPostingJsonLd({
     image,
     datePublished: post.publishedAt,
     dateModified: post.date || post.publishedAt,
-    author: { "@type": "Organization", name: post.author || "海亀兄弟" },
-    publisher: {
-      "@type": "Organization",
-      name: "海亀兄弟",
-      logo: { "@type": "ImageObject", url: `${SITE_URL}/icon.png` },
-    },
+    author: { "@type": "Organization", name: post.author || SITE_NAME },
+    publisher: { "@id": `${SITE_URL}/#organization` },
     mainEntityOfPage: { "@type": "WebPage", "@id": url },
     url,
   }

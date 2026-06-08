@@ -5,6 +5,7 @@ import { Analytics } from "@vercel/analytics/next"
 import { Suspense } from "react"
 import { LiffProvider } from "@/components/liff-provider"
 import { RouteScrollManager } from "@/components/route-scroll-manager"
+import { WebSiteJsonLd, OrganizationJsonLd } from "@/components/json-ld"
 import { Toaster } from "sonner"
 import "./globals.css"
 
@@ -84,6 +85,9 @@ export default function RootLayout({
         */}
       </head>
       <body className="font-sans antialiased" suppressHydrationWarning>
+        {/* 全ページ共通の構造化データ（サイト名・発行元の事業者）。@id で他schemaから参照される */}
+        <WebSiteJsonLd />
+        <OrganizationJsonLd />
         <Suspense fallback={null}>
           <LiffProvider>
             <RouteScrollManager />

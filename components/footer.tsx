@@ -5,7 +5,7 @@ import { Phone, MessageSquare, MapPin, Clock } from "lucide-react"
 const CONTACT_INFO = {
   phone: "08053442439",
   lineUrl: "https://lin.ee/jfp4laz",
-  address: "沖縄県宮古島市平良西里861-5",
+  address: "〒906-0014 沖縄県宮古島市平良松原107-1",
 } as const
 
 const QUICK_LINKS = [

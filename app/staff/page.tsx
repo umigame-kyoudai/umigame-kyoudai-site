@@ -12,10 +12,13 @@ import { MobileCTA } from "@/components/mobile-cta"
 import { StaffHero } from "@/components/staff-hero"
 import { StaffGrid } from "@/components/staff-grid"
 import { Footer } from "@/components/footer"
+import { StaffPersonJsonLd } from "@/components/json-ld"
+import { STAFFS } from "@/lib/data"
 
 export default function StaffPage() {
   return (
     <div className="min-h-screen">
+      <StaffPersonJsonLd staff={STAFFS} />
       <Navbar />
       <main>
         <StaffHero />
