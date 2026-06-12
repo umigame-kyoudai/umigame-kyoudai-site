@@ -1132,7 +1132,14 @@ export function BookingForm() {
               className="mt-1"
             />
             <Label htmlFor="terms" className="text-sm text-gray-600 leading-relaxed">
-              利用規約・キャンセルポリシーに同意します。
+              <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-emerald-700 underline">
+                利用規約・キャンセルポリシー
+              </a>
+              および
+              <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-emerald-700 underline">
+                プライバシーポリシー
+              </a>
+              に同意します。
               <br />
               <span className="text-xs text-gray-500">
                 ※前日までのキャンセルは無料です。

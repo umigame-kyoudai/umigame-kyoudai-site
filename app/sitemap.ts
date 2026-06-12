@@ -28,6 +28,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${SITE_URL}/staff`, lastModified: CONTENT_LAST_UPDATED, changeFrequency: "monthly", priority: 0.6 },
     { url: `${SITE_URL}/faq`, lastModified: CONTENT_LAST_UPDATED, changeFrequency: "monthly", priority: 0.6 },
     { url: `${SITE_URL}/blog`, lastModified: blogIndexUpdated, changeFrequency: "weekly", priority: 0.7 },
+    // 法的ページ（信頼性シグナル。検索流入は想定しないため低priority）
+    { url: `${SITE_URL}/terms`, lastModified: CONTENT_LAST_UPDATED, changeFrequency: "yearly", priority: 0.3 },
+    { url: `${SITE_URL}/privacy`, lastModified: CONTENT_LAST_UPDATED, changeFrequency: "yearly", priority: 0.3 },
+    { url: `${SITE_URL}/tokushoho`, lastModified: CONTENT_LAST_UPDATED, changeFrequency: "yearly", priority: 0.3 },
   ]
 
   const planPages: MetadataRoute.Sitemap = Object.keys(PLAN_DETAILS).map((id) => ({

@@ -4,17 +4,26 @@ import { Phone, MessageSquare, MapPin, Clock } from "lucide-react"
 
 const CONTACT_INFO = {
   phone: "08053442439",
+  phoneDisplay: "080-5344-2439",
   lineUrl: "https://lin.ee/jfp4laz",
   address: "〒906-0014 沖縄県宮古島市平良松原107-1",
 } as const
 
 const QUICK_LINKS = [
   { href: "/", label: "ホーム" },
-  { href: "/book", label: "プラン・予約" },
+  { href: "/plans", label: "ツアープラン一覧" },
+  { href: "/book", label: "ご予約" },
+  { href: "/miyakojima-sea-turtle", label: "宮古島ウミガメガイド" },
   { href: "/staff", label: "スタッフ紹介" },
   { href: "/gallery", label: "ギャラリー" },
   { href: "/blog", label: "ブログ" },
   { href: "/faq", label: "よくある質問" },
+] as const
+
+const LEGAL_LINKS = [
+  { href: "/terms", label: "利用規約・キャンセルポリシー" },
+  { href: "/privacy", label: "プライバシーポリシー" },
+  { href: "/tokushoho", label: "特定商取引法に基づく表記" },
 ] as const
 
 const BUSINESS_HOURS = {
@@ -45,7 +54,7 @@ export function Footer() {
               <div className="flex items-center">
                 <Phone className="w-4 h-4 mr-2 flex-shrink-0" />
                 <a href={`tel:${CONTACT_INFO.phone}`} className="hover:text-white transition-colors">
-                  {CONTACT_INFO.phone}
+                  {CONTACT_INFO.phoneDisplay}
                 </a>
               </div>
               <div className="flex items-center">
@@ -90,7 +99,16 @@ export function Footer() {
         </div>
 
         <div className="border-t border-emerald-800 mt-8 pt-8 text-center text-emerald-200">
-          <p className="text-sm">© 2025 海亀兄弟. All rights reserved.</p>
+          <ul className="flex flex-wrap justify-center gap-x-6 gap-y-2 mb-4 text-sm">
+            {LEGAL_LINKS.map((link) => (
+              <li key={link.href}>
+                <Link href={link.href} className="hover:text-white transition-colors">
+                  {link.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <p className="text-sm">© {new Date().getFullYear()} 海亀兄弟. All rights reserved.</p>
         </div>
       </div>
     </footer>
