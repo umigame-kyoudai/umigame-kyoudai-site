@@ -26,3 +26,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 public/.DS_Store
+
+# macOS
+.DS_Store
