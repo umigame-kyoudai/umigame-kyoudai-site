@@ -10,6 +10,7 @@ export const metadata: Metadata = {
   }),
   robots: { index: false, follow: true },
 }
+import { Suspense } from "react"
 import { MobileCTA } from "@/components/mobile-cta"
 import { BubbleBackground } from "@/components/bubble-background"
 import { BookingForm } from "@/components/booking-form"
@@ -30,7 +31,10 @@ export default function BookPage() {
             </p>
           </div>
 
-          <BookingForm />
+          {/* BookingForm は useSearchParams を使うため個別の Suspense で包む */}
+          <Suspense fallback={<div className="text-center text-gray-500 py-12">読み込み中...</div>}>
+            <BookingForm />
+          </Suspense>
         </div>
       </main>
 

@@ -89,16 +89,22 @@ export default function RootLayout({
         {/* 全ページ共通の構造化データ（サイト名・発行元の事業者）。@id で他schemaから参照される */}
         <WebSiteJsonLd />
         <OrganizationJsonLd />
-        <Suspense fallback={null}>
-          <MotionProvider>
-            <LiffProvider>
+        {/*
+          Suspense は useSearchParams を使う RouteScrollManager だけに限定する。
+          以前はツリー全体を <Suspense fallback={null}> で包んでいたため、
+          プリレンダー時に全ページの body が空になり、サイト全体が
+          クライアントレンダリングに退化していた（LCP・SEOに悪影響）。
+        */}
+        <MotionProvider>
+          <LiffProvider>
+            <Suspense fallback={null}>
               <RouteScrollManager />
-              {children}
-              <Analytics />
-              <Toaster position="top-center" richColors />
-            </LiffProvider>
-          </MotionProvider>
-        </Suspense>
+            </Suspense>
+            {children}
+            <Analytics />
+            <Toaster position="top-center" richColors />
+          </LiffProvider>
+        </MotionProvider>
       </body>
     </html>
   )
