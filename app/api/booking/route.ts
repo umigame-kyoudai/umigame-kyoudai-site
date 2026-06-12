@@ -50,6 +50,10 @@ const isNightTourPlan = (planId: string) => planId === 'S3' || planId === 'S5'
 const isPositiveNumber = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value) && value > 0
 
+// 任意項目用: 未入力（undefined/null/空文字）は許容し、入力があれば正の数を要求
+const isEmptyOrPositiveNumber = (value: unknown): boolean =>
+  value === undefined || value === null || value === '' || isPositiveNumber(value)
+
 const getTodayInJapan = (): string =>
   new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Tokyo' }).format(new Date())
 
@@ -104,14 +108,18 @@ const validateParticipant = (
     }
   }
 
+  // 身長・体重は全プランで任意（フォームの案内文と一致させる）。入力された場合のみ正の数を要求
+  if (!isEmptyOrPositiveNumber(participant.height) || !isEmptyOrPositiveNumber(participant.weight)) {
+    return { valid: false, error: `${label}の身長・体重の値が正しくありません` }
+  }
+
   if (!isNightTourPlan(plan.id)) {
-    if (
-      !isPositiveNumber(participant.height) ||
-      !isPositiveNumber(participant.weight) ||
-      !isPositiveNumber(participant.footSize)
-    ) {
-      return { valid: false, error: `${label}の身長・体重・足のサイズが必須です` }
+    // シュノーケル系はフィン準備のため足のサイズのみ必須
+    if (!isPositiveNumber(participant.footSize)) {
+      return { valid: false, error: `${label}の足のサイズが必須です` }
     }
+  } else if (!isEmptyOrPositiveNumber(participant.footSize)) {
+    return { valid: false, error: `${label}の足のサイズの値が正しくありません` }
   }
 
   return { valid: true }

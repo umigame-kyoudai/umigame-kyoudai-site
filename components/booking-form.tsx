@@ -422,8 +422,9 @@ export function BookingForm() {
     !selectedPlanIsComingSoon &&
     !hasSeniorOnRegularSnorkel &&
     bookingData.participants.every((p) => {
-      // 年齢は全プランで必須（氏名・身長・体重は任意）
-      if (typeof p.age !== "number" || p.age <= 0) {
+      // 年齢は全プランで必須（氏名・身長・体重は任意）。3歳以下は0歳も有効
+      const minValidAge = p.category === "under3" ? 0 : 1
+      if (typeof p.age !== "number" || p.age < minValidAge) {
         return false
       }
 
