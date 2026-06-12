@@ -10,6 +10,7 @@ const LINE_URL = "https://lin.ee/jfp4laz"
 
 const NAV_ITEMS = [
   { href: "/", label: "ホーム" },
+  { href: "/plans", label: "プラン" },
   { href: "/staff", label: "スタッフ" },
   { href: "/gallery", label: "ギャラリー" },
   { href: "/blog", label: "ブログ" },
