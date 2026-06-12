@@ -1,11 +1,12 @@
 import { format, parseISO } from "date-fns"
 
 /**
- * Get today's date in local 'yyyy-MM-dd' format
- * Avoids UTC timezone issues
+ * Get today's date in Japan (JST) as 'yyyy-MM-dd'
+ * ツアーは日本時間で運用されるため、海外からのアクセスでも
+ * サーバー側の検証（Asia/Tokyo基準）と同じ「今日」を返す
  */
 export const todayStr = (): string => {
-  return format(new Date(), "yyyy-MM-dd")
+  return new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Tokyo" }).format(new Date())
 }
 
 /**

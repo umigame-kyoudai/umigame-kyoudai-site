@@ -95,8 +95,9 @@ export default function BlogPostClient({ post, relatedPosts, cta }: BlogPostPage
                   <div className="prose prose-lg max-w-none">
                     <ReactMarkdown
                       components={{
+                        // ページのh1は記事タイトルが担うため、本文中の # はh2として描画（h1重複防止）
                         h1: ({ children }) => (
-                          <h1 className="text-3xl font-bold text-gray-900 mb-6 mt-8">{children}</h1>
+                          <h2 className="text-3xl font-bold text-gray-900 mb-6 mt-8">{children}</h2>
                         ),
                         h2: ({ children }) => (
                           <h2 className="text-2xl font-bold text-gray-900 mb-4 mt-8">{children}</h2>
