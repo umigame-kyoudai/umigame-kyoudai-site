@@ -16,7 +16,6 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import { Calendar, Clock, Users, Calculator, Star, CheckCircle, UserCheck, Check } from "lucide-react"
-import { calculateCouponDiscount } from "@/lib/constants/coupons"
 import { todayStr, localDateFromYMD } from "@/lib/date-utils"
 import BookingTimeSlots from "@/components/booking-time-slots"
 import { ComingSoonBadge } from "@/components/coming-soon"
@@ -141,6 +140,7 @@ export function BookingForm() {
 
   const [totalPrice, setTotalPrice] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
 
   useEffect(() => {
@@ -321,18 +321,32 @@ export function BookingForm() {
     }))
   }
 
-  const handleCouponApply = () => {
-    // 共通関数で割引プレビューを計算（最終的な金額はサーバー側で再検証される）
-    const participants = [
-      ...Array(bookingData.adultCount).fill({ category: "adult" }),
-      ...Array(bookingData.childCount).fill({ category: "child" }),
-    ]
-    const { discount, code } = calculateCouponDiscount(bookingData.couponCode, participants)
-    if (code) {
-      setBookingData((prev) => ({ ...prev, couponDiscount: discount }))
-    } else {
+  const handleCouponApply = async () => {
+    // コード一覧をバンドルに含めないため、検証はサーバーAPIで行う
+    // （最終的な割引額も予約API側で再計算される）
+    setIsApplyingCoupon(true)
+    try {
+      const response = await fetch("/api/coupon", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          couponCode: bookingData.couponCode,
+          adultCount: bookingData.adultCount,
+          childCount: bookingData.childCount,
+        }),
+      })
+      const result = await response.json().catch(() => ({ valid: false, discount: 0 }))
+      if (response.ok && result.valid) {
+        setBookingData((prev) => ({ ...prev, couponDiscount: result.discount }))
+      } else {
+        setBookingData((prev) => ({ ...prev, couponDiscount: 0 }))
+        toast.error(result.error || "クーポンコードが正しくありません")
+      }
+    } catch {
       setBookingData((prev) => ({ ...prev, couponDiscount: 0 }))
-      toast.error("クーポンコードが正しくありません")
+      toast.error("クーポンの確認に失敗しました。通信環境をご確認ください。")
+    } finally {
+      setIsApplyingCoupon(false)
     }
   }
 
@@ -986,9 +1000,10 @@ export function BookingForm() {
                   <Button
                     type="button"
                     onClick={handleCouponApply}
+                    disabled={isApplyingCoupon}
                     className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl px-4"
                   >
-                    適用
+                    {isApplyingCoupon ? "確認中..." : "適用"}
                   </Button>
                 </div>
                 {bookingData.couponDiscount > 0 && (

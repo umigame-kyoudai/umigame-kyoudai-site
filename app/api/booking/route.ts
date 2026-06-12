@@ -47,6 +47,31 @@ const STAFF_NAMES: Record<string, string> = {
 
 const isNightTourPlan = (planId: string) => planId === 'S3' || planId === 'S5'
 
+// 簡易レートリミット（インスタンス内メモリ）。Vercelはインスタンスを再利用するため
+// 完全ではないが、スパム送信によるGAS予約シート・LINE通知の氾濫を抑止する
+const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000
+const RATE_LIMIT_MAX = 5
+const rateLimitMap = new Map<string, number[]>()
+
+const isRateLimited = (clientKey: string): boolean => {
+  const now = Date.now()
+  const windowStart = now - RATE_LIMIT_WINDOW_MS
+  const timestamps = (rateLimitMap.get(clientKey) || []).filter((t) => t > windowStart)
+  if (timestamps.length >= RATE_LIMIT_MAX) {
+    rateLimitMap.set(clientKey, timestamps)
+    return true
+  }
+  timestamps.push(now)
+  rateLimitMap.set(clientKey, timestamps)
+  // Mapの肥大化防止: 定員超過時に期限切れエントリを掃除
+  if (rateLimitMap.size > 1000) {
+    for (const [key, ts] of rateLimitMap) {
+      if (!ts.some((t) => t > windowStart)) rateLimitMap.delete(key)
+    }
+  }
+  return false
+}
+
 const isPositiveNumber = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value) && value > 0
 
@@ -248,6 +273,14 @@ const buildGASPayload = (
 
 export async function POST(request: Request) {
   try {
+    const clientIp = (request.headers.get('x-forwarded-for') || 'unknown').split(',')[0].trim()
+    if (isRateLimited(clientIp)) {
+      return NextResponse.json(
+        { success: false, error: 'リクエストが多すぎます。しばらく時間をおいてからお試しください。', timestamp: new Date().toISOString() },
+        { status: 429 }
+      )
+    }
+
     let bookingData: BookingRequest
     try {
       bookingData = await request.json()
