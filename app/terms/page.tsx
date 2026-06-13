@@ -10,6 +10,8 @@ export const metadata: Metadata = createMetadata({
   description:
     "海亀兄弟（宮古島ウミガメシュノーケルツアー）の利用規約とキャンセルポリシー。予約の成立、お支払い、キャンセル料、天候による中止の取り扱いをご確認いただけます。",
   path: "/terms",
+  locale: "ja",
+  altLocalePath: "/en/terms",
 })
 
 const SECTIONS: Array<{ title: string; body: React.ReactNode }> = [

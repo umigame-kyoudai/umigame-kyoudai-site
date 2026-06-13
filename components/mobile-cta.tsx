@@ -4,10 +4,14 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { MessageSquare, Calendar } from "lucide-react"
+import { EN_UI } from "@/lib/i18n/en"
 
-export function MobileCTA() {
+const JA = { line: "LINEで質問", book: "予約する", bookHref: "/book" } as const
+
+export function MobileCTA({ locale = "ja" }: { locale?: "ja" | "en" }) {
   const pathname = usePathname()
-  const isBookingPage = pathname === "/book"
+  const t = locale === "en" ? EN_UI.mobileCta : JA
+  const isBookingPage = pathname === t.bookHref
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
@@ -20,7 +24,7 @@ export function MobileCTA() {
             onClick={() => window.open("https://lin.ee/jfp4laz", "_blank")}
           >
             <MessageSquare className="w-4 h-4 mr-2" />
-            LINEで質問
+            {t.line}
           </Button>
           {!isBookingPage && (
             <Button
@@ -28,9 +32,9 @@ export function MobileCTA() {
               size="lg"
               className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold"
             >
-              <Link href="/book">
+              <Link href={t.bookHref}>
                 <Calendar className="w-4 h-4 mr-2" />
-                予約する
+                {t.book}
               </Link>
             </Button>
           )}

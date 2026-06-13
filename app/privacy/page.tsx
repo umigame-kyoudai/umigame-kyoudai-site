@@ -9,6 +9,8 @@ export const metadata: Metadata = createMetadata({
   description:
     "海亀兄弟（宮古島ウミガメシュノーケルツアー）のプライバシーポリシー。ご予約時にお預かりする個人情報の利用目的と取り扱いについてご説明します。",
   path: "/privacy",
+  locale: "ja",
+  altLocalePath: "/en/privacy",
 })
 
 const SECTIONS: Array<{ title: string; body: React.ReactNode }> = [

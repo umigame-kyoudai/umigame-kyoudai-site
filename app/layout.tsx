@@ -29,6 +29,12 @@ export const metadata: Metadata = {
     "宮古島でウミガメと泳ぐシュノーケルツアー。初心者・5歳のお子様連れも安心の少人数制。写真・動画データ無料、前日までキャンセル無料。海亀兄弟が宮古島の海を安全にご案内します。",
   alternates: {
     canonical: "/",
+    // 英語版トップ（/en）とのhreflang相互リンク。日本語をx-defaultとする
+    languages: {
+      ja: "/",
+      en: "/en",
+      "x-default": "/",
+    },
   },
   // ファビコン類は app/ 直下の favicon.ico / icon.png / apple-icon.png から
   // Next.js が自動生成するため、ここでは手動指定しない（二重指定を避ける）

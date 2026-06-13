@@ -19,6 +19,8 @@ export function generateMetadata({ params }: { params: { id: string } }): Metada
     title: plan.name,
     description: plan.heroDescription,
     path: `/plans/${params.id}`,
+    locale: "ja",
+    altLocalePath: `/en/plans/${params.id}`,
     image: plan.image,
   })
 }

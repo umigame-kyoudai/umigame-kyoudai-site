@@ -11,6 +11,8 @@ export const metadata: Metadata = createMetadata({
   description:
     "海亀兄弟の宮古島ツアー一覧。ウミガメシュノーケル、貸切ツアー、本格ナイトツアー、サンセットSUPを料金・対象年齢で比較。写真・動画データ無料、前日までキャンセル無料。",
   path: "/plans",
+  locale: "ja",
+  altLocalePath: "/en/plans",
 })
 
 export default function PlansPage() {

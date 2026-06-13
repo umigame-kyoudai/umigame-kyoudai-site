@@ -7,6 +7,8 @@ export const metadata: Metadata = {
     title: "ご予約",
     description: "海亀兄弟のツアー予約ページ。ウミガメシュノーケル、【貸切】ウミガメシュノーケルツアー、ナイトツアー、サンセットSUP。前日までキャンセル無料。",
     path: "/book",
+    locale: "ja",
+    altLocalePath: "/en/book",
   }),
   robots: { index: false, follow: true },
 }

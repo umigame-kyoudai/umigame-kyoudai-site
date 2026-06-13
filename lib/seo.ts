@@ -13,12 +13,18 @@ export function createMetadata({
   path = "",
   image,
   type = "website",
+  locale = "ja",
+  altLocalePath,
 }: {
   title: string
   description: string
   path?: string
   image?: string
   type?: "website" | "article"
+  /** このページ自身の言語 */
+  locale?: "ja" | "en"
+  /** もう一方の言語の対応ページパス（あれば hreflang を相互リンク） */
+  altLocalePath?: string
 }): Metadata {
   const url = `${SITE_URL}${path}`
   const ogImage = image
@@ -27,18 +33,35 @@ export function createMetadata({
       : `${SITE_URL}${image.startsWith("/") ? image : `/${image}`}`
     : OG_IMAGE
 
+  // hreflang: 日本語を x-default とする（主要市場が日本のため）
+  const languages =
+    altLocalePath !== undefined
+      ? locale === "ja"
+        ? {
+            ja: url,
+            en: `${SITE_URL}${altLocalePath}`,
+            "x-default": url,
+          }
+        : {
+            ja: `${SITE_URL}${altLocalePath}`,
+            en: url,
+            "x-default": `${SITE_URL}${altLocalePath}`,
+          }
+      : undefined
+
   return {
     title,
     description,
     alternates: {
       canonical: url,
+      ...(languages ? { languages } : {}),
     },
     openGraph: {
       title,
       description,
       url,
-      siteName: SITE_NAME,
-      locale: "ja_JP",
+      siteName: locale === "en" ? "Sea Turtle Brothers" : SITE_NAME,
+      locale: locale === "en" ? "en_US" : "ja_JP",
       type,
       images: [
         {
