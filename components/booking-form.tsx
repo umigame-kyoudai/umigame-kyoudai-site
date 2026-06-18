@@ -169,7 +169,7 @@ export function BookingForm() {
   }, [searchParams])
 
   // LIFFコンテキストからlineUserIdを取得
-  const { lineUserId: liffUserId, lineDisplayName: liffDisplayName, isLiffReady, isLiffLoggedIn, liffError, loginLiff, retryLiff } = useLiff()
+  const { lineUserId: liffUserId, lineDisplayName: liffDisplayName, isLiffReady, isLiffLoggedIn, isInClient, liffError, loginLiff, retryLiff, closeWindow } = useLiff()
 
   useEffect(() => {
     if (liffUserId) {
@@ -537,18 +537,22 @@ export function BookingForm() {
           </div>
           <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
             <p className="text-sm text-green-800">
-              予約の確定・変更・キャンセルはすべてLINEのトーク画面からご連絡いただけます。
+              このあとスタッフが確認し、LINE公式アカウントから確定のご連絡をお送りします。
+              <br />
+              そのままLINEでご連絡をお待ちください。予約の確定・変更・キャンセルもLINEのトーク画面から承ります。
             </p>
           </div>
-          {bookingData.lineUserId ? (
+          {/* LINEアプリ内で開いている時だけウィンドウを閉じてトークに戻す。
+              通常ブラウザ（closeWindow不可）では確実に動く「ホームに戻る」を表示する。 */}
+          {isInClient ? (
             <Button
-              onClick={() => { if (typeof window !== 'undefined' && (window as any).liff) (window as any).liff.closeWindow() }}
+              onClick={closeWindow}
               className="bg-[#06C755] hover:bg-[#05b34d] text-white rounded-xl w-full"
             >
-              LINEに戻る
+              LINEのトークに戻る
             </Button>
           ) : (
-            <Button asChild className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl">
+            <Button asChild className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl w-full">
               <a href="/">ホームに戻る</a>
             </Button>
           )}

@@ -7,9 +7,11 @@ interface LiffContextType {
   lineDisplayName: string | null
   isLiffReady: boolean
   isLiffLoggedIn: boolean
+  isInClient: boolean
   liffError: string | null
   loginLiff: () => void
   retryLiff: () => void
+  closeWindow: () => void
 }
 
 const LiffContext = createContext<LiffContextType>({
@@ -17,9 +19,11 @@ const LiffContext = createContext<LiffContextType>({
   lineDisplayName: null,
   isLiffReady: false,
   isLiffLoggedIn: false,
+  isInClient: false,
   liffError: null,
   loginLiff: () => {},
   retryLiff: () => {},
+  closeWindow: () => {},
 })
 
 export const useLiff = () => useContext(LiffContext)
@@ -51,6 +55,7 @@ export function LiffProvider({ children }: { children: ReactNode }) {
   const [lineDisplayName, setLineDisplayName] = useState<string | null>(null)
   const [isLiffReady, setIsLiffReady] = useState(false)
   const [isLiffLoggedIn, setIsLiffLoggedIn] = useState(false)
+  const [isInClient, setIsInClient] = useState(false)
   const [liffError, setLiffError] = useState<string | null>(null)
   const initialized = useRef(false)
 
@@ -78,6 +83,9 @@ export function LiffProvider({ children }: { children: ReactNode }) {
           throw initError
         }
       }
+
+      // LINEアプリ内ブラウザ（LIFF client）で開かれているか。closeWindow可否の判定に使う。
+      try { setIsInClient(liff.isInClient()) } catch {}
 
       // 既にログイン済みならプロフィールを取得
       if (liff.isLoggedIn()) {
@@ -135,8 +143,13 @@ export function LiffProvider({ children }: { children: ReactNode }) {
     initLiff()
   }
 
+  // LINEアプリ内ブラウザのときだけウィンドウを閉じてトークに戻す。通常ブラウザでは何もしない（呼び出し側でフォールバック表示）。
+  const closeWindow = () => {
+    try { liffInstance?.closeWindow?.() } catch {}
+  }
+
   return (
-    <LiffContext.Provider value={{ lineUserId, lineDisplayName, isLiffReady, isLiffLoggedIn, liffError, loginLiff, retryLiff }}>
+    <LiffContext.Provider value={{ lineUserId, lineDisplayName, isLiffReady, isLiffLoggedIn, isInClient, liffError, loginLiff, retryLiff, closeWindow }}>
       {children}
     </LiffContext.Provider>
   )
