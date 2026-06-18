@@ -9,6 +9,7 @@ import { BreadcrumbJsonLd } from "@/components/json-ld"
 import { createMetadata, SITE_URL } from "@/lib/seo"
 import { PLANS } from "@/lib/data"
 import { EN_PLAN_BY_ID, EN_PLANS } from "@/lib/i18n/en"
+import { getEnPrice, EN_PRICE_SUPPORT_NOTE } from "@/lib/i18n/en-prices"
 import { Clock, Users, MapPin, CalendarCheck, Check, AlertTriangle, Backpack, Camera } from "lucide-react"
 
 export function generateStaticParams() {
@@ -66,11 +67,12 @@ export default function EnglishPlanDetailPage({ params }: { params: { id: string
           <section className="-mt-6 relative z-10 bg-white rounded-3xl shadow-lg ring-1 ring-emerald-100 p-6 grid grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <p className="text-xs font-semibold text-gray-500 mb-1">Price (adult)</p>
-              <p className="text-emerald-700 font-black text-xl">¥{plan.price.toLocaleString()}</p>
-              {plan.childPrice && plan.childPrice !== plan.price && (
-                <p className="text-xs text-gray-500">Child ¥{plan.childPrice.toLocaleString()}</p>
+              <p className="text-emerald-700 font-black text-xl">¥{getEnPrice(plan).price.toLocaleString()}</p>
+              {getEnPrice(plan).childPrice !== getEnPrice(plan).price && (
+                <p className="text-xs text-gray-500">Child ¥{getEnPrice(plan).childPrice.toLocaleString()}</p>
               )}
               {en.priceNote && <p className="text-xs text-gray-500 mt-1">{en.priceNote}</p>}
+              <p className="text-xs text-gray-400 mt-1">{EN_PRICE_SUPPORT_NOTE}</p>
             </div>
             <div>
               <p className="text-xs font-semibold text-gray-500 mb-1">Duration</p>

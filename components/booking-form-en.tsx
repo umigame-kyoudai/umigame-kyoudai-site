@@ -19,6 +19,7 @@ import { useLiff } from "@/components/liff-provider"
 import { todayStr } from "@/lib/date-utils"
 import { PLANS, STAFF_FEE } from "@/lib/data"
 import { EN_PLAN_BY_ID } from "@/lib/i18n/en"
+import { getEnPrice, EN_PRICE_SUPPORT_NOTE } from "@/lib/i18n/en-prices"
 
 const NIGHT_PLAN_IDS = new Set(["S3", "S5"])
 const FREE_UNDER3_PLAN_IDS = NIGHT_PLAN_IDS
@@ -92,9 +93,10 @@ export function BookingFormEn() {
 
   const totalPrice = useMemo(() => {
     if (!plan) return 0
-    const childPrice = plan.childPrice ?? plan.price
+    // 英語サイトは英語価格（日本語＋¥2,000）で計算。サーバーも同じ getEnPrice で再計算する。
+    const { price: adultPrice, childPrice } = getEnPrice(plan)
     const under3Price = FREE_UNDER3_PLAN_IDS.has(plan.id) ? 0 : childPrice
-    const base = counts.adult * plan.price + counts.child * childPrice + counts.under3 * under3Price
+    const base = counts.adult * adultPrice + counts.child * childPrice + counts.under3 * under3Price
     const staffFee = staffId && staffAvailable ? STAFF_FEE : 0
     return Math.max(0, base + (plan.vipSurcharge ?? 0) + staffFee - couponDiscount)
   }, [plan, counts, staffId, staffAvailable, couponDiscount])
@@ -185,6 +187,7 @@ export function BookingFormEn() {
           customerEmail: customerEmail.trim(),
           customerPhone: customerPhone.trim(),
           planName: plan.name,
+          locale: "en",
           selectedStaff: staffAvailable ? staffId || undefined : undefined,
           participants: participants.map((p, i) => ({
             ...p,
@@ -262,7 +265,7 @@ export function BookingFormEn() {
               >
                 <span className="block font-bold text-gray-900 text-sm">{pe.name}</span>
                 <span className="block text-xs text-gray-500 mt-1">
-                  ¥{p.price.toLocaleString()} / adult ・ {pe.ageNote}
+                  ¥{getEnPrice(p).price.toLocaleString()} / adult ・ {pe.ageNote}
                 </span>
               </button>
             )
@@ -498,6 +501,7 @@ export function BookingFormEn() {
                 Estimated total: ¥{totalPrice.toLocaleString()}
                 <span className="text-xs font-medium text-gray-500 ml-2">cash on the day</span>
               </p>
+              <p className="text-xs text-gray-500">{EN_PRICE_SUPPORT_NOTE}</p>
             </div>
           )}
 

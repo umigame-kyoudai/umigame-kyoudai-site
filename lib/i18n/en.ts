@@ -92,7 +92,7 @@ export const EN_PLANS: EnPlanContent[] = [
     ],
     ageNote: "Ages 5 to 65",
     locationNote: "Aragusuku Beach or Shigira Beach (chosen by wind direction on the day; meet 15 minutes before your start time)",
-    priceNote: "¥9,000 per person, up to 6 guests. For 7 or more, contact us on LINE.",
+    priceNote: "¥11,000 per person, up to 6 guests. For 7 or more, contact us on LINE.",
   },
   {
     id: "S3",
@@ -115,7 +115,7 @@ export const EN_PLANS: EnPlanContent[] = [
     ageNote: "Ages 0 to 75",
     timeNote: "Two departures nightly: 7:20 PM and 9:10 PM (meet at the start time)",
     locationNote: "Meeting point shared via LINE on the day of your tour",
-    priceNote: "Flat ¥4,000 per person (free for ages 3 and under)",
+    priceNote: "Flat ¥6,000 per person (free for ages 3 and under)",
   },
   {
     id: "S4",
@@ -163,7 +163,7 @@ export const EN_PLANS: EnPlanContent[] = [
     ageNote: "Ages 0 to 75",
     timeNote: "Two departures nightly: 7:20 PM and 9:10 PM (meet at the start time)",
     locationNote: "Meeting point shared via LINE on the day of your tour",
-    priceNote: "Flat ¥8,000 per person (free for ages 3 and under)",
+    priceNote: "Flat ¥10,000 per person (free for ages 3 and under)",
   },
   {
     id: "slide-boat",
@@ -250,11 +250,11 @@ export const EN_GUIDE: EnSectionsContent = {
 
 export const EN_HOME = {
   metaTitle: "Sea Turtle Snorkeling in Miyakojima | Sea Turtle Brothers",
-  metaDescription: "Sea Turtle Brothers offers small-group sea turtle snorkeling in Miyakojima from ¥6,500. Free photos & videos. Free cancellation until the day before.",
+  metaDescription: "Sea Turtle Brothers offers small-group sea turtle snorkeling in Miyakojima from ¥8,500. Free photos & videos. Free cancellation until the day before.",
   hero: {
     badge: "Family-Friendly Marine Tours in Miyakojima",
     title: "Swim with Sea Turtles in Miyakojima",
-    subtitle: "Small-group snorkeling tours built for beginners and families. Adults ¥6,500, children ¥6,000, ages 5 and up — with free photos and videos, and free cancellation until the day before your tour.",
+    subtitle: "Small-group snorkeling tours built for beginners and families. Adults ¥8,500, children ¥8,000, ages 5 and up — with free photos and videos, and free cancellation until the day before your tour.",
   },
   trustItems: [
     "Small-group tours, fully insured",
@@ -270,7 +270,7 @@ export const EN_HOME = {
   ],
   howToBookHeading: "How Booking Works",
   howToBook: [
-    { title: "Choose your plan", text: "Browse our tours and pick the plan and date that fit your trip. Sea turtle snorkeling starts at ¥6,500 for adults and ¥6,000 for children (ages 5 and up)." },
+    { title: "Choose your plan", text: "Browse our tours and pick the plan and date that fit your trip. Sea turtle snorkeling starts at ¥8,500 for adults and ¥8,000 for children (ages 5 and up)." },
     { title: "Send a booking request", text: "Submit a booking request through our website. You'll need to log in with LINE, a free messaging app, to send it. Please note: a booking request is not a confirmed reservation." },
     { title: "Get confirmation via LINE", text: "Our staff will check availability and reply to you on LINE. Your booking is confirmed only after you receive our reply." },
     { title: "Pay cash on the day", text: "No prepayment needed — simply pay in cash on site on the day of your tour. Cancellation is free until the day before your tour." },

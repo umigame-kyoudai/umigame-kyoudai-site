@@ -7,6 +7,7 @@ import { MobileCTA } from "@/components/mobile-cta"
 import { BreadcrumbJsonLd } from "@/components/json-ld"
 import { createMetadata, SITE_URL } from "@/lib/seo"
 import { PLANS, formatPriceWithTilde } from "@/lib/data"
+import { getEnPrice } from "@/lib/i18n/en-prices"
 import { EN_HOME, EN_PLAN_BY_ID, EN_FAQS } from "@/lib/i18n/en"
 import { Shield, Camera, CalendarCheck, Users, MessageCircle, Phone, Mail, ChevronRight, Star } from "lucide-react"
 
@@ -139,7 +140,7 @@ export default function EnglishHomePage() {
                       <p className="text-sm text-gray-600 mb-3 line-clamp-2">{en.tagline}</p>
                       <div className="flex items-baseline justify-between">
                         <span className="text-emerald-700 font-black text-xl">
-                          {en.priceNote ? formatPriceWithTilde(plan) : `¥${plan.price.toLocaleString()}`}
+                          {en.priceNote ? formatPriceWithTilde(getEnPrice(plan)) : `¥${getEnPrice(plan).price.toLocaleString()}`}
                           <span className="text-xs font-medium text-gray-500 ml-1">/ adult</span>
                         </span>
                         <span className="text-xs text-gray-500">{en.ageNote}</span>

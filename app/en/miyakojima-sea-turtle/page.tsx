@@ -73,7 +73,7 @@ export default function EnglishSeaTurtleGuidePage() {
           <div className="mt-12 text-center bg-emerald-50 rounded-3xl p-8">
             <h2 className="text-xl font-bold text-gray-900 mb-3">Ready to meet the turtles?</h2>
             <p className="text-gray-600 text-sm mb-6">
-              Small-group tours from ¥6,500 with free photos & videos. Free cancellation until the day before.
+              Small-group tours from ¥8,500 with free photos & videos. Free cancellation until the day before.
             </p>
             <Link
               href="/en/book"

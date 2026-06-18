@@ -8,12 +8,13 @@ import { BreadcrumbJsonLd } from "@/components/json-ld"
 import { createMetadata, SITE_URL } from "@/lib/seo"
 import { PLANS } from "@/lib/data"
 import { EN_PLAN_BY_ID } from "@/lib/i18n/en"
+import { getEnPrice } from "@/lib/i18n/en-prices"
 import { Clock, Users, ChevronRight } from "lucide-react"
 
 export const metadata: Metadata = createMetadata({
   title: "Tours & Prices | Sea Turtle Brothers Miyakojima",
   description:
-    "All Sea Turtle Brothers tours in Miyakojima: sea turtle snorkeling from ¥6,500, private tours, jungle night tours and sunset SUP. Free photos & videos, free cancellation until the day before.",
+    "All Sea Turtle Brothers tours in Miyakojima: sea turtle snorkeling from ¥8,500, private tours, jungle night tours and sunset SUP. Free photos & videos, free cancellation until the day before.",
   path: "/en/plans",
   locale: "en",
   altLocalePath: "/plans",
@@ -85,10 +86,10 @@ export default function EnglishPlansPage() {
                           <span className="text-emerald-700 font-black text-2xl">{en.priceNote.split(",")[0].split(".")[0]}</span>
                         ) : (
                           <>
-                            <span className="text-emerald-700 font-black text-2xl">¥{plan.price.toLocaleString()}</span>
+                            <span className="text-emerald-700 font-black text-2xl">¥{getEnPrice(plan).price.toLocaleString()}</span>
                             <span className="text-xs font-medium text-gray-500 ml-1">/ adult</span>
-                            {plan.childPrice && plan.childPrice !== plan.price && (
-                              <span className="text-sm text-gray-500 ml-3">¥{plan.childPrice.toLocaleString()} / child</span>
+                            {getEnPrice(plan).childPrice !== getEnPrice(plan).price && (
+                              <span className="text-sm text-gray-500 ml-3">¥{getEnPrice(plan).childPrice.toLocaleString()} / child</span>
                             )}
                           </>
                         )}

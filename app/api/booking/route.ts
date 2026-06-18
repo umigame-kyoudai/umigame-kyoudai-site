@@ -3,6 +3,7 @@ import { generateBookingNumber, sendToGAS, createAPIResponse, createAPIError } f
 import { validateEmail, validatePhoneNumber, validateRequired } from '@/lib/utils/validation'
 import { PLANS, STAFF_FEE } from '@/lib/data'
 import { calculateCouponDiscount } from '@/lib/constants/coupons'
+import { getEnPrice } from '@/lib/i18n/en-prices'
 
 interface BookingParticipant {
   name?: string
@@ -20,6 +21,7 @@ interface BookingRequest {
   customerEmail?: string
   customerPhone?: string
   planName: string
+  locale?: string
   selectedTime?: string
   nightTime?: string
   selectedStaff?: string
@@ -242,11 +244,14 @@ const calculateServerSidePrice = (
   plan: typeof PLANS[number],
   participants: BookingParticipant[],
   selectedStaff: string | undefined,
-  couponDiscount: number
+  couponDiscount: number,
+  isEnglish: boolean
 ): number => {
   const { adultCount, childCount, under3Count } = countParticipantsByCategory(participants)
-  const adultPrice = plan.price
-  const childPrice = plan.childPrice ?? plan.price
+  // 英語サイト経由（locale==='en'）は英語価格（日本語＋¥2,000）で請求。フォームと同じ getEnPrice を使う。
+  const { price: adultPrice, childPrice } = isEnglish
+    ? getEnPrice(plan)
+    : { price: plan.price, childPrice: plan.childPrice ?? plan.price }
   const under3Price = FREE_UNDER3_PLAN_IDS.has(plan.id) ? 0 : childPrice
 
   const baseTotal = adultCount * adultPrice + childCount * childPrice + under3Count * under3Price
@@ -355,7 +360,8 @@ export async function POST(request: Request) {
       plan,
       bookingData.participants,
       bookingData.selectedStaff,
-      validatedCoupon.discount
+      validatedCoupon.discount,
+      bookingData.locale === 'en'
     )
 
     const gasPayload = buildGASPayload(bookingData, plan, bookingNumber, validatedCoupon, serverTotalPrice)
