@@ -268,7 +268,7 @@ const buildSpecialRequests = (bookingData: BookingRequest, plan: typeof PLANS[nu
 
   const comboBlock = [
     '[COMBO booking]',
-    'プラン：宮古島まるごと昼夜プラン',
+    'プラン：ウミガメ＆ジャングルナイト まるごと1日プラン',
     '内容：S1 ウミガメシュノーケル + S3 ナイトツアー',
     `海亀希望時間：${bookingData.selectedTime || ''}`,
     `ナイト希望時間：${bookingData.nightTime || ''}`,

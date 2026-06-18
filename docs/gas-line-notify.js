@@ -111,10 +111,11 @@ function formatCouponInfo(couponCode, couponDiscount) {
   return 'なし';
 }
 
-// 複合プラン C1「宮古島まるごと昼夜プラン」かどうか（doPost受信データから判定）
+// 複合プラン C1「ウミガメ＆ジャングルナイト まるごと1日プラン」かどうか（doPost受信データから判定）
+// 主判定は specialRequests の [COMBO booking] マーカー。プラン名はリネームされても壊れないよう補助的に見る。
 function isComboBooking(data) {
   return String(data && data.specialRequests || '').indexOf('[COMBO booking]') !== -1
-      || String(data && data.planName || '').indexOf('昼夜') !== -1;
+      || String(data && data.planName || '').indexOf('まるごと1日') !== -1;
 }
 
 // specialRequests の [COMBO booking] ブロックから「ナイト希望時間：HH:MM」を抽出
@@ -238,9 +239,10 @@ function getConfirmMessage(planName, customerName, bookingNumber, selectedDate, 
     'ご不明な点はお気軽にご連絡ください。\n' +
     '海亀兄弟';
 
-  // C1（複合プラン）は最優先で専用メッセージ。名称に「ナイトツアー」を含まないため
-  // 必ず他の分岐より前に判定する。
-  if (planName.indexOf('昼夜') !== -1) {
+  // C1（複合プラン）は最優先で専用メッセージ。
+  // 判定はプラン名に依存せず、D列の時間が「海亀 / ナイト」併記（"/"を含む）かどうかで行う。
+  // これによりプラン名をリネームしても複合判定が壊れない（名前は補助的に見る）。
+  if (String(selectedTime).indexOf('/') !== -1 || planName.indexOf('まるごと1日') !== -1) {
     return comboMessage;
   } else if (planName.indexOf('ナイトツアー') !== -1) {
     return nightMessage;
@@ -663,7 +665,7 @@ function addToCalendar(data, headcount) {
       var baseName = data.customerName || '名前なし';
 
       // 1件目：ウミガメシュノーケル（昼・2時間）
-      var turtleTitle = 'WEB 🐢 宮古島まるごと昼夜プラン（海亀）/ ' + baseName + ' / ' + headcount;
+      var turtleTitle = 'WEB 🐢 ウミガメ＆ジャングルナイト（海亀）/ ' + baseName + ' / ' + headcount;
       var tStart = new Date(year, month, day, startHour, startMin);
       var tEnd   = new Date(year, month, day, startHour + 2, startMin);
       var ev1 = calendar.createEvent(turtleTitle, tStart, tEnd, { description: description, location: '宮古島' });
@@ -675,7 +677,7 @@ function addToCalendar(data, headcount) {
       if (nightParts) {
         var nH = parseInt(nightParts[1], 10);
         var nM = parseInt(nightParts[2], 10);
-        var nightTitle = 'WEB 🦀 宮古島まるごと昼夜プラン（ナイト）/ ' + baseName + ' / ' + headcount;
+        var nightTitle = 'WEB 🦀 ウミガメ＆ジャングルナイト（ナイト）/ ' + baseName + ' / ' + headcount;
         var nStart = new Date(year, month, day, nH, nM);
         var nEnd   = new Date(year, month, day, nH + 1, nM + 30); // +1.5h（Dateが分の繰り上がりを正規化）
         var ev2 = calendar.createEvent(nightTitle, nStart, nEnd, { description: description, location: '宮古島' });

@@ -6,7 +6,7 @@ export const COUPON_LIST: Record<string, number> = {
 }
 
 // クーポン対象外のプラン。
-// C1（宮古島まるごと昼夜プラン）は既に1人¥1,000のセット割引済みのため、
+// C1（ウミガメ＆ジャングルナイト まるごと1日プラン）は既に1人¥1,000のセット割引済みのため、
 // クーポンの重ねがけ（二重割引）を不可とする。
 export const COUPON_INELIGIBLE_PLAN_IDS = new Set(['C1'])
 

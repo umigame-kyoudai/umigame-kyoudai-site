@@ -404,7 +404,7 @@ export function BookingForm() {
     const finalSpecialRequests = isComboPlan
       ? [
           "[COMBO booking]",
-          "プラン：宮古島まるごと昼夜プラン",
+          "プラン：ウミガメ＆ジャングルナイト まるごと1日プラン",
           "内容：S1 ウミガメシュノーケル + S3 ナイトツアー",
           `海亀希望時間：${bookingData.selectedTime}`,
           `ナイト希望時間：${bookingData.nightTime}`,
@@ -731,7 +731,7 @@ export function BookingForm() {
               )
             })()}
 
-            {/* 宮古島まるごと昼夜プラン（複合プラン） */}
+            {/* ウミガメ＆ジャングルナイト まるごと1日プラン（複合プラン C1） */}
             {(() => {
               const c1 = BOOKING_PLANS.find(p => p.id === "C1")
               if (!c1) return null
@@ -743,7 +743,7 @@ export function BookingForm() {
                     <div className="flex items-center justify-between gap-3">
                       <div>
                         <div className="mb-1 flex flex-wrap items-center gap-2">
-                          <h3 className="font-bold text-gray-900 text-base">宮古島まるごと昼夜プラン</h3>
+                          <h3 className="font-bold text-gray-900 text-base">ウミガメ＆ジャングルナイト まるごと1日プラン</h3>
                           <span className="text-[10px] bg-emerald-600 text-white px-2 py-0.5 rounded-full font-bold">セットでお得</span>
                         </div>
                         <p className="text-xs text-gray-600 mb-1">昼：ウミガメシュノーケル ＋ 夜：ナイトツアー</p>
@@ -1315,7 +1315,7 @@ export function BookingForm() {
               {isComboPlan ? (
                 <p>
                   安全面を考慮し、60歳以上の方がご参加のグループは
-                  <strong>複合プラン（宮古島まるごと昼夜プラン）</strong>
+                  <strong>複合プラン（ウミガメ＆ジャングルナイト まるごと1日プラン）</strong>
                   をご利用いただけません。LINEよりお気軽にご相談ください。
                 </p>
               ) : (
