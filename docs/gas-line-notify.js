@@ -12,26 +12,14 @@
  * Q: クーポンコード
  * R: クーポン割引額
  * S: LINE送信（ここにメッセージを入力すると送信される）
- *
- * セットアップ:
- * 1. 「プロジェクトの設定」→「スクリプトプロパティ」に NOTIFY_SECRET を登録
- * 2. メニュー「🐢 海亀兄弟」→「シートを初期化する」を実行
- * 3. トリガー: onSheetEdit を スプレッドシートから／編集時 に設定
  */
 
 // === 設定 ===
 var NOTIFY_API_URL = 'https://www.umigamekyoudaimiyakojima.com/api/line/notify';
+var NOTIFY_SECRET  = '';
 var SHEET_NAME     = '予約一覧';
 var CALENDAR_ID    = 'genkidama2439@gmail.com';
 var ADMIN_EMAIL    = 'genkidama2439@gmail.com';
-
-function getNotifySecret() {
-  var secret = PropertiesService.getScriptProperties().getProperty('NOTIFY_SECRET');
-  if (!secret) {
-    throw new Error('NOTIFY_SECRET がスクリプトプロパティに未設定です');
-  }
-  return secret;
-}
 
 var COLUMNS = {
   TIMESTAMP:       1,  // A
@@ -64,7 +52,7 @@ var HEADERS = [
 
 var LOCATION_OPTIONS = [
   '新城海岸',
-  'ボラビーチ',
+  '東平安名ビーチ',
   'ワイワイビーチ',
   'シギラビーチ',
   'ナイトツアー（遺跡）',
@@ -75,6 +63,7 @@ var LOCATION_OPTIONS = [
 // ユーティリティ
 // ============================================================
 function formatDate(value) {
+  if (value === null || typeof value === 'undefined' || value === '') return '';
   if (value instanceof Date) {
     var y  = value.getFullYear();
     var mo = value.getMonth() + 1;
@@ -85,6 +74,7 @@ function formatDate(value) {
 }
 
 function formatTime(value) {
+  if (value === null || typeof value === 'undefined' || value === '') return '';
   if (value instanceof Date) {
     var h = value.getHours();
     var m = value.getMinutes();
@@ -93,24 +83,91 @@ function formatTime(value) {
   return String(value);
 }
 
+function valueOrNone(value) {
+  if (value === null || typeof value === 'undefined' || value === '') return 'なし';
+  var s = String(value).trim();
+  return s ? s : 'なし';
+}
+
+function formatYen(value) {
+  if (value === null || typeof value === 'undefined' || value === '') return '¥0';
+  if (typeof value === 'string' && value.indexOf('¥') !== -1) return value;
+
+  var normalized = String(value).replace(/[¥,円\s]/g, '');
+  var n = Number(normalized);
+  if (isNaN(n)) return String(value);
+  return '¥' + n.toLocaleString('ja-JP');
+}
+
+function formatCouponInfo(couponCode, couponDiscount) {
+  var code = String(couponCode || '').trim();
+  var normalized = String(couponDiscount || '').replace(/[¥,円\s]/g, '');
+  var discount = Number(normalized);
+  if (isNaN(discount)) discount = 0;
+
+  if (code && discount) return code + '（-' + formatYen(discount) + '）';
+  if (code) return code;
+  if (discount) return '割引のみ（-' + formatYen(discount) + '）';
+  return 'なし';
+}
+
+// 複合プラン C1「宮古島まるごと昼夜プラン」かどうか（doPost受信データから判定）
+function isComboBooking(data) {
+  return String(data && data.specialRequests || '').indexOf('[COMBO booking]') !== -1
+      || String(data && data.planName || '').indexOf('昼夜') !== -1;
+}
+
+// specialRequests の [COMBO booking] ブロックから「ナイト希望時間：HH:MM」を抽出
+function extractComboNightTime(data) {
+  var m = String(data && data.specialRequests || '').match(/ナイト希望時間：\s*(\d{1,2}:\d{2})/);
+  return m ? m[1] : '';
+}
+
+// D列の値（C1は「海亀 / ナイト」併記）から、ナイトの集合時間だけを取り出す。
+// 単体ナイト（S3/S5）はD列がそのまま夜時間なのでそのまま返す。
+function nightTimeFromCell(timeCellValue) {
+  var s = String(timeCellValue || '');
+  if (s.indexOf('/') !== -1) return s.split('/')[1].trim();
+  return s.trim();
+}
+
 // ============================================================
 // プランごとの確定メッセージ
 // ============================================================
-function getConfirmMessage(planName, customerName, bookingNumber, selectedDate, selectedTime) {
+function getConfirmMessage(planName, customerName, bookingNumber, selectedDate, selectedTime, details) {
+  details = details || {};
+
+  var opening =
+    '以下の内容でご予約を確定いたしました。\n' +
+    '内容にお間違いがないかご確認ください。\n\n';
+
+  var detailBlock =
+    '【ご予約内容】\n' +
+    '予約番号：' + bookingNumber + '\n' +
+    'プラン：' + planName + '\n' +
+    '日時：' + selectedDate + ' ' + selectedTime + '\n' +
+    '人数：' + valueOrNone(details.headcount) + '\n' +
+    '合計金額：' + formatYen(details.totalPrice) + '\n\n' +
+    '【お客様情報】\n' +
+    '電話番号：' + valueOrNone(details.phone) + '\n' +
+    'LINE名：' + valueOrNone(details.lineName) + '\n' +
+    'スタッフ指名：' + valueOrNone(details.staffName || '指名なし') + '\n' +
+    'クーポン：' + formatCouponInfo(details.couponCode, details.couponDiscount) + '\n\n' +
+    '【参加者詳細】\n' +
+    valueOrNone(details.participantsDetail);
 
   var snorkelMessage =
     '🐢 ご予約が確定しました！\n\n' +
     customerName + ' 様\n\n' +
-    '予約番号：' + bookingNumber + '\n' +
-    'プラン：' + planName + '\n' +
-    '日時：' + selectedDate + ' ' + selectedTime + '\n\n' +
+    opening +
+    detailBlock + '\n\n' +
     '【当日の持ち物】\n' +
     '・水着（着替えは現地でできます）\n' +
     '・タオル\n' +
     '・酔い止め（必要な方）\n\n' +
     '【集合場所について】\n' +
     '開催場所は新城海岸・シギラビーチ・\n' +
-    'ボラビーチ・ワイワイビーチの\n' +
+    '東平安名ビーチ・ワイワイビーチの\n' +
     'いずれかになります。\n' +
     '海況や風向きを考慮した上で、\n' +
     '前日にLINEにてご連絡いたします。\n\n' +
@@ -123,15 +180,14 @@ function getConfirmMessage(planName, customerName, bookingNumber, selectedDate, 
   var nightMessage =
     '🦀 ご予約が確定しました！\n\n' +
     customerName + ' 様\n\n' +
-    '予約番号：' + bookingNumber + '\n' +
-    'プラン：' + planName + '\n' +
-    '日時：' + selectedDate + ' ' + selectedTime + '\n\n' +
+    opening +
+    detailBlock + '\n\n' +
     '【当日持ってくると便利なもの】\n' +
     '・虫よけスプレー\n' +
     '・靴（サンダル不可・推奨）\n' +
     '・長ズボン（虫刺されが気になる方）\n\n' +
     '【集合場所について】\n' +
-    '前日にLINEにてご連絡いたします。\n\n' +
+    '当日にLINEにてご連絡いたします。\n\n' +
     '【ご注意】\n' +
     '足腰が悪い方・体が不自由な方は\n' +
     '事前に一度ご相談ください。\n\n' +
@@ -141,12 +197,35 @@ function getConfirmMessage(planName, customerName, bookingNumber, selectedDate, 
     'ご不明な点はお気軽にご連絡ください。\n' +
     '海亀兄弟';
 
+  var comboMessage = (function () {
+    var turtleT = String(selectedTime).split('/')[0] ? String(selectedTime).split('/')[0].trim() : '';
+    var nightT  = nightTimeFromCell(selectedTime);
+    return '🐢🦀 ご予約が確定しました！\n\n' +
+      customerName + ' 様\n\n' +
+      opening +
+      detailBlock + '\n\n' +
+      '【プラン内容】\n' +
+      '（ウミガメシュノーケル＋ナイトツアーの複合プラン）\n' +
+      '🐢 ウミガメシュノーケル：' + turtleT + '\n' +
+      '🦀 ナイトツアー：' + nightT + '\n\n' +
+      '【集合場所のご案内】\n' +
+      '・ウミガメシュノーケル：前日にLINEでご連絡します\n' +
+      '・ナイトツアー：当日にLINEでご連絡します\n\n' +
+      '【当日の持ち物】\n' +
+      '〔昼・ウミガメ〕水着・タオル・酔い止め（必要な方）\n' +
+      '〔夜・ナイト〕虫よけスプレー・歩きやすい靴（サンダル不可）・飲み物\n\n' +
+      '【キャンセルポリシー】\n' +
+      '前日まで：無料\n' +
+      '当日：100%\n\n' +
+      'ご不明な点はお気軽にご連絡ください。\n' +
+      '海亀兄弟';
+  })();
+
   var supMessage =
     '🌅 ご予約が確定しました！\n\n' +
     customerName + ' 様\n\n' +
-    '予約番号：' + bookingNumber + '\n' +
-    'プラン：' + planName + '\n' +
-    '日時：' + selectedDate + ' ' + selectedTime + '\n\n' +
+    opening +
+    detailBlock + '\n\n' +
     '【当日の持ち物】\n' +
     '・水着（水着を着て集合していただけると助かります）\n' +
     '・タオル\n' +
@@ -159,7 +238,11 @@ function getConfirmMessage(planName, customerName, bookingNumber, selectedDate, 
     'ご不明な点はお気軽にご連絡ください。\n' +
     '海亀兄弟';
 
-  if (planName.indexOf('ナイトツアー') !== -1) {
+  // C1（複合プラン）は最優先で専用メッセージ。名称に「ナイトツアー」を含まないため
+  // 必ず他の分岐より前に判定する。
+  if (planName.indexOf('昼夜') !== -1) {
+    return comboMessage;
+  } else if (planName.indexOf('ナイトツアー') !== -1) {
     return nightMessage;
   } else if (planName.indexOf('SUP') !== -1) {
     return supMessage;
@@ -190,6 +273,9 @@ function getFullMessage(customerName, bookingNumber, planName, selectedDate, sel
 // ============================================================
 function getLocationMessage(location, selectedTime) {
 
+  // C1はD列が「海亀 / ナイト」併記。ナイトの集合時間は「/」の後ろ。単体ナイトはそのまま。
+  var nightTimeStr = nightTimeFromCell(selectedTime);
+
   var snorkelFooter =
     '\n\n【到着推奨時間・駐車場について】\n' +
     '5〜10月：開始30〜40分前\n' +
@@ -209,6 +295,20 @@ function getLocationMessage(location, selectedTime) {
     '動きやすい格好・長袖長ズボン・靴（完全舗装ではないためサンダル不可）でお越しください。\n' +
     '🚻 トイレがありませんので、事前に済ませてからお越しください。\n\n';
 
+  var higashihennaMessage =
+    '明日のツアー開催場所のご案内です。\n' +
+    '明日は東平安名ビーチにて開催いたします。\n\n' +
+    'ウミガメ遭遇率：80%\n' +
+    'サンゴ・熱帯魚：観察できます\n' +
+    '🅿️ 駐車場：無料\n' +
+    '🚻 トイレ：なし／🚿 シャワー：なし\n' +
+    '※トイレ・シャワーがありませんので事前にお済ませください。\n' +
+    '📍 https://maps.google.com/?cid=13840352828513930953\n\n' +
+    'Googleマップ上では韓国語表示される駐車場が表示される場合があります。\n' +
+    '当日はナンバー「7127」のシルバーの車を目印にお越しください。\n' +
+    '現地は電波が不安定な場合がございますので、事前に地図をご確認ください。' +
+    snorkelFooter;
+
   var messages = {
     '新城海岸':
       '明日のツアー開催場所のご案内です。\n' +
@@ -220,16 +320,8 @@ function getLocationMessage(location, selectedTime) {
       '📍 https://maps.google.com/?cid=4444603144121769337' +
       snorkelFooter,
 
-    'ボラビーチ':
-      '明日のツアー開催場所のご案内です。\n' +
-      '明日はボラビーチにて開催いたします。\n\n' +
-      'ウミガメ遭遇率：80%\n' +
-      'サンゴ・熱帯魚：観察できます\n' +
-      '🅿️ 駐車場：無料\n' +
-      '🚻 トイレ：なし／🚿 シャワー：なし\n' +
-      '※トイレ・シャワーがありませんので事前にお済ませください。\n' +
-      '📍 https://maps.google.com/?cid=13840352828513930953' +
-      snorkelFooter,
+    '東平安名ビーチ': higashihennaMessage,
+    'ボラビーチ': higashihennaMessage,
 
     'ワイワイビーチ':
       '明日のツアー開催場所のご案内です。\n' +
@@ -254,17 +346,17 @@ function getLocationMessage(location, selectedTime) {
       snorkelFooter,
 
     'ナイトツアー（遺跡）':
-      '明日のツアー開催場所のご案内です。\n' +
-      '明日の集合場所はこちらになります。\n\n' +
+      '本日のナイトツアー集合場所のご案内です。\n' +
+      '本日の集合場所はこちらになります。\n\n' +
       nightCommon +
       '📍 集合場所：https://maps.app.goo.gl/ugnwv2zcUReYTsuR6\n' +
       '上比屋山遺跡と記された石碑がありますので、その道路沿いにお車をお停めください。\n\n' +
-      '19:20にお待ちしております。' +
+      '本日 ' + (nightTimeStr || '集合時間') + ' にお待ちしております。' +
       nightFooter,
 
     'ナイトツアー（インディアンマリンガーデン）':
-      '明日のツアー開催場所のご案内です。\n' +
-      '明日の集合場所はこちらになります。\n\n' +
+      '本日のナイトツアー集合場所のご案内です。\n' +
+      '本日の集合場所はこちらになります。\n\n' +
       nightCommon +
       '📍 集合場所（第一駐車場）：https://maps.app.goo.gl/jyKBqL2WtUkP8MSJA?g_st=ic\n' +
       '第一駐車場にてお待ちください。\n\n' +
@@ -287,7 +379,7 @@ function getOrCreateSheet() {
 }
 
 // ============================================================
-// シート初期化（メニューから1回だけ実行）
+// シート初期化
 // ============================================================
 function setupSheet() {
   var sheet = getOrCreateSheet();
@@ -355,10 +447,7 @@ function sendBookingEmail(data, headcount, participantsDetail) {
       ' 様 / ' + (data.selectedDate || '') +
       ' ' + (data.selectedTime || '');
 
-    var couponInfo = 'なし';
-    if (data.couponCode) {
-      couponInfo = data.couponCode + '（-¥' + (data.couponDiscount || 0).toLocaleString() + '）';
-    }
+    var couponInfo = formatCouponInfo(data.couponCode, data.couponDiscount);
 
     var staffInfo = data.staffName || '指名なし';
 
@@ -377,7 +466,7 @@ function sendBookingEmail(data, headcount, participantsDetail) {
       '参加日　　：' + (data.selectedDate  || '') + '\n' +
       '時間　　　：' + (data.selectedTime  || '') + '\n' +
       '人数　　　：' + headcount           + '\n' +
-      '合計金額　：¥' + (data.totalPrice   || 0).toLocaleString() + '\n' +
+      '合計金額　：' + formatYen(data.totalPrice) + '\n' +
       'クーポン　：' + couponInfo + '\n' +
       'スタッフ指名：' + staffInfo + '\n\n' +
       '【参加者詳細】\n' +
@@ -406,7 +495,7 @@ function doPost(e) {
     var headcount =
       '大人' + (data.adultCount    || 0) + '名 / ' +
       '子供' + (data.childCount    || 0) + '名 / ' +
-      '3歳以下' + (data.under3Count || 0) + '名';
+      '3歳未満' + (data.under3Count || 0) + '名';
 
     var participantsDetail = '';
     if (data.participants && Array.isArray(data.participants)) {
@@ -422,11 +511,22 @@ function doPost(e) {
       }).join('\n');
     }
 
+    // 複合プラン C1 のみ、D列「時間」を「海亀時間 / ナイト時間」で併記する。
+    // ナイト時間は specialRequests の [COMBO booking] ブロックから抽出。
+    // 通常プランは従来通り単一時間。
+    var timeCell = data.selectedTime || '';
+    if (isComboBooking(data)) {
+      var nightTime = extractComboNightTime(data);
+      if (nightTime) {
+        timeCell = (data.selectedTime || '') + ' / ' + nightTime;
+      }
+    }
+
     var newRow = [
       new Date(),                     // A
       data.bookingNumber   || '',     // B
       data.selectedDate    || '',     // C
-      data.selectedTime    || '',     // D
+      timeCell,                       // D（C1のみ「海亀 / ナイト」併記）
       data.customerName    || '',     // E
       data.planName        || '',     // F
       data.totalPrice      || 0,      // G
@@ -503,10 +603,7 @@ function addToCalendar(data, headcount) {
     }).join('\n');
   }
 
-  var couponInfo = 'なし';
-  if (data.couponCode) {
-    couponInfo = data.couponCode + '（-¥' + (data.couponDiscount || 0).toLocaleString() + '）';
-  }
+  var couponInfo = formatCouponInfo(data.couponCode, data.couponDiscount);
 
   var staffInfo = data.staffName || '指名なし';
 
@@ -546,7 +643,7 @@ function addToCalendar(data, headcount) {
     '\n参加日: '      + (data.selectedDate    || '') +
     '\n時間: '        + (data.selectedTime    || '') +
     '\n人数: '        + (headcount            || '') +
-    '\n合計: ¥'       + (data.totalPrice      || 0).toLocaleString() +
+    '\n合計: '        + formatYen(data.totalPrice) +
     '\nクーポン: '    + couponInfo +
     '\nスタッフ指名: ' + staffInfo +
     '\n\n【参加者詳細】\n' +
@@ -554,25 +651,57 @@ function addToCalendar(data, headcount) {
     '\n\n【特別なご要望・アレルギー等】\n' +
     (data.specialRequests || 'なし');
 
+  // 複合プラン C1 は「海亀（昼）」「ナイト（夜）」の2件を登録する。
+  var isCombo = isComboBooking(data);
+  var comboNightTime = isCombo ? extractComboNightTime(data) : '';
+
   if (timeParts) {
     var startHour = parseInt(timeParts[1], 10);
     var startMin  = parseInt(timeParts[2], 10);
-    var startTime = new Date(year, month, day, startHour, startMin);
-    var endTime   = new Date(year, month, day, startHour + 2, startMin);
-    var event = calendar.createEvent(title, startTime, endTime, {
-      description: description,
-      location: '宮古島',
-    });
-    event.setColor(color);
+
+    if (isCombo) {
+      var baseName = data.customerName || '名前なし';
+
+      // 1件目：ウミガメシュノーケル（昼・2時間）
+      var turtleTitle = 'WEB 🐢 宮古島まるごと昼夜プラン（海亀）/ ' + baseName + ' / ' + headcount;
+      var tStart = new Date(year, month, day, startHour, startMin);
+      var tEnd   = new Date(year, month, day, startHour + 2, startMin);
+      var ev1 = calendar.createEvent(turtleTitle, tStart, tEnd, { description: description, location: '宮古島' });
+      ev1.setColor('2'); // 緑系（海亀）
+      Logger.log('カレンダー登録完了(海亀): ' + turtleTitle);
+
+      // 2件目：ナイトツアー（夜・1.5時間）
+      var nightParts = String(comboNightTime).match(/^(\d{1,2}):(\d{2})/);
+      if (nightParts) {
+        var nH = parseInt(nightParts[1], 10);
+        var nM = parseInt(nightParts[2], 10);
+        var nightTitle = 'WEB 🦀 宮古島まるごと昼夜プラン（ナイト）/ ' + baseName + ' / ' + headcount;
+        var nStart = new Date(year, month, day, nH, nM);
+        var nEnd   = new Date(year, month, day, nH + 1, nM + 30); // +1.5h（Dateが分の繰り上がりを正規化）
+        var ev2 = calendar.createEvent(nightTitle, nStart, nEnd, { description: description, location: '宮古島' });
+        ev2.setColor('8'); // グレー系（ナイト）
+        Logger.log('カレンダー登録完了(ナイト): ' + nightTitle);
+      } else {
+        Logger.log('C1だがナイト時間を取得できず、ナイトイベントをスキップ');
+      }
+    } else {
+      var startTime = new Date(year, month, day, startHour, startMin);
+      var endTime   = new Date(year, month, day, startHour + 2, startMin);
+      var event = calendar.createEvent(title, startTime, endTime, {
+        description: description,
+        location: '宮古島',
+      });
+      event.setColor(color);
+      Logger.log('カレンダー登録完了: ' + title);
+    }
   } else {
     var allDayEvent = calendar.createAllDayEvent(title, new Date(year, month, day), {
       description: description,
       location: '宮古島',
     });
     allDayEvent.setColor(color);
+    Logger.log('カレンダー登録完了: ' + title);
   }
-
-  Logger.log('カレンダー登録完了: ' + title);
 }
 
 // ============================================================
@@ -619,10 +748,29 @@ function onSheetEdit(e) {
       var planName      = String(sheet.getRange(row, COLUMNS.PLAN).getValue());
       var selectedDate  = formatDate(sheet.getRange(row, COLUMNS.DATE).getValue());
       var selectedTime  = formatTime(sheet.getRange(row, COLUMNS.TIME).getValue());
+      var totalPrice    = sheet.getRange(row, COLUMNS.TOTAL_PRICE).getValue();
+      var phone         = String(sheet.getRange(row, COLUMNS.PHONE).getValue());
+      var headcount     = String(sheet.getRange(row, COLUMNS.HEADCOUNT).getValue());
+      var participants  = String(sheet.getRange(row, COLUMNS.PARTICIPANTS).getValue());
+      var lineName      = String(sheet.getRange(row, COLUMNS.LINE_NAME).getValue());
+      var staffName     = String(sheet.getRange(row, COLUMNS.STAFF).getValue());
+      var couponCode    = String(sheet.getRange(row, COLUMNS.COUPON_CODE).getValue());
+      var couponDiscount = sheet.getRange(row, COLUMNS.COUPON_DISCOUNT).getValue();
+
+      var confirmDetails = {
+        totalPrice: totalPrice || 0,
+        phone: phone,
+        headcount: headcount,
+        participantsDetail: participants || 'なし',
+        lineName: lineName,
+        staffName: staffName || '指名なし',
+        couponCode: couponCode,
+        couponDiscount: couponDiscount || 0,
+      };
 
       var message = '';
       if (status === '確定') {
-        message = getConfirmMessage(planName, customerName, bookingNumber, selectedDate, selectedTime);
+        message = getConfirmMessage(planName, customerName, bookingNumber, selectedDate, selectedTime, confirmDetails);
       } else if (status === '満席') {
         message = getFullMessage(customerName, bookingNumber, planName, selectedDate, selectedTime);
       }
@@ -706,7 +854,7 @@ function sendLineNotify(payload, row) {
     var options = {
       method: 'post',
       contentType: 'application/json',
-      headers: { 'Authorization': 'Bearer ' + getNotifySecret() },
+      headers: { 'Authorization': 'Bearer ' + NOTIFY_SECRET },
       payload: JSON.stringify(payload),
       muteHttpExceptions: true,
     };

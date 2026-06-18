@@ -32,10 +32,15 @@ interface ParticipantDetails {
   category: "adult" | "child" | "under3"
 }
 
+// 複合プラン C1（昼:ウミガメ + 夜:ナイト）の時間候補
+const C1_TURTLE_TIMES = ["09:00", "11:00", "14:00", "16:00"]
+const C1_NIGHT_TIMES = ["19:20", "21:10"]
+
 interface BookingData {
   selectedPlan: string
   selectedDate: string
   selectedTime: string
+  nightTime: string
   adultCount: number
   childCount: number
   under3Count: number
@@ -121,6 +126,7 @@ export function BookingForm() {
     selectedPlan: "",
     selectedDate: "",
     selectedTime: "",
+    nightTime: "",
     adultCount: 0,
     childCount: 0,
     under3Count: 0,
@@ -281,12 +287,15 @@ export function BookingForm() {
 
   const isNightHunterPlan = bookingData.selectedPlan === "S3" || bookingData.selectedPlan === "S4" || bookingData.selectedPlan === "S5" || bookingData.selectedPlan === "slide-boat"
   const isUnder3FreePlan = bookingData.selectedPlan === "S3" || bookingData.selectedPlan === "S5"
+  // 複合プラン C1 はスタッフ指名不可。夜系プランも従来どおり指名不可。
+  const isComboPlan = bookingData.selectedPlan === "C1"
+  const staffSelectable = !isNightHunterPlan && !isComboPlan
 
   useEffect(() => {
-    if (isNightHunterPlan && bookingData.selectedStaff) {
+    if (!staffSelectable && bookingData.selectedStaff) {
       setBookingData((prev) => ({ ...prev, selectedStaff: "" }))
     }
-  }, [isNightHunterPlan, bookingData.selectedStaff])
+  }, [staffSelectable, bookingData.selectedStaff])
 
   useEffect(() => {
     // Calculate per-person pricing for all plans
@@ -297,7 +306,7 @@ export function BookingForm() {
 
     const vipSurcharge = selectedPlanData?.vipSurcharge || 0
 
-    const staffFee = bookingData.selectedStaff && !isNightHunterPlan ? STAFF_FEE : 0
+    const staffFee = bookingData.selectedStaff && staffSelectable ? STAFF_FEE : 0
 
     setTotalPrice(Math.max(0, baseTotal + under3Total + vipSurcharge + staffFee - bookingData.couponDiscount))
   }, [
@@ -312,6 +321,7 @@ export function BookingForm() {
     childPrice,
     isNightHunterPlan,
     isUnder3FreePlan,
+    staffSelectable,
   ])
 
   const handleInputChange = (field: keyof BookingData, value: any) => {
@@ -380,6 +390,19 @@ export function BookingForm() {
       name: p.name.trim() === "" ? `参加者${index + 1}` : p.name.trim(),
     }))
 
+    // 複合プラン C1 は1件の予約として受付し、詳細を備考欄の [COMBO booking] ブロックに残す。
+    // selectedTime には海亀ツアー時間を入れ、ナイトツアー時間は備考に格納する。
+    const finalSpecialRequests = isComboPlan
+      ? [
+          "[COMBO booking]",
+          "プラン：宮古島まるごと昼夜プラン",
+          "内容：S1 ウミガメシュノーケル + S3 ナイトツアー",
+          `海亀希望時間：${bookingData.selectedTime}`,
+          `ナイト希望時間：${bookingData.nightTime}`,
+          ...(bookingData.specialRequests.trim() ? ["───", bookingData.specialRequests.trim()] : []),
+        ].join("\n")
+      : bookingData.specialRequests
+
     try {
       const response = await fetch("/api/booking", {
         method: "POST",
@@ -389,6 +412,8 @@ export function BookingForm() {
         body: JSON.stringify({
           ...bookingData,
           participants: participantsForSubmit,
+          // 複合プランは備考に [COMBO booking] ブロックを付与（...bookingData の specialRequests を上書き）
+          specialRequests: finalSpecialRequests,
           // LIFFから最新のuserIdを直接取得（レースコンディション対策）
           lineUserId: liffUserId || bookingData.lineUserId,
           lineDisplayName: liffDisplayName || bookingData.lineDisplayName,
@@ -419,16 +444,20 @@ export function BookingForm() {
     }
   }
 
+  // S1（通常シュノーケル）と C1（複合プラン）は60歳以上をお断り
   const hasSeniorOnRegularSnorkel =
-    bookingData.selectedPlan === "S1" &&
+    (bookingData.selectedPlan === "S1" || bookingData.selectedPlan === "C1") &&
     bookingData.participants.some((p) => typeof p.age === "number" && p.age >= 60)
   const isNightTourForDetails =
     bookingData.selectedPlan === "S3" || bookingData.selectedPlan === "S5" || bookingData.selectedPlan === "night-hunter"
+  // 複合プラン C1 は海亀時間（selectedTime）と夜時間（nightTime）の両方が必須
+  const comboTimesSelected = !isComboPlan || (!!bookingData.selectedTime && !!bookingData.nightTime)
 
   const isFormValid =
     bookingData.selectedPlan &&
     bookingData.selectedDate &&
     (getPlanType(bookingData.selectedPlan) === "sunset-sup" || bookingData.selectedTime) &&
+    comboTimesSelected &&
     (bookingData.adultCount > 0 || bookingData.childCount > 0 || bookingData.under3Count > 0) &&
     bookingData.customerName &&
     bookingData.customerPhone &&
@@ -466,12 +495,21 @@ export function BookingForm() {
             <h3 className="font-semibold text-emerald-800 mb-2">予約内容</h3>
             <div className="text-sm text-gray-600 space-y-1">
               <p>プラン: {selectedPlanData?.name}</p>
-              <p>
-                日時: {bookingData.selectedDate}{" "}
-                {getPlanType(bookingData.selectedPlan) === "sunset-sup"
-                  ? "(時間は後日ご連絡)"
-                  : bookingData.selectedTime}
-              </p>
+              {isComboPlan ? (
+                <>
+                  <p>日付: {bookingData.selectedDate}</p>
+                  <p>🐢 ウミガメツアー: {bookingData.selectedTime}</p>
+                  <p>🌙 ナイトツアー: {bookingData.nightTime}</p>
+                  <p className="text-xs text-emerald-700">※集合場所は、ウミガメは前日・ナイトは当日にLINEでご案内します</p>
+                </>
+              ) : (
+                <p>
+                  日時: {bookingData.selectedDate}{" "}
+                  {getPlanType(bookingData.selectedPlan) === "sunset-sup"
+                    ? "(時間は後日ご連絡)"
+                    : bookingData.selectedTime}
+                </p>
+              )}
               <p>
                 人数: 大人{bookingData.adultCount}名 子ども{bookingData.childCount}名
                 {bookingData.under3Count > 0 && ` 3歳以下${bookingData.under3Count}名`}
@@ -677,6 +715,35 @@ export function BookingForm() {
               )
             })()}
 
+            {/* 宮古島まるごと昼夜プラン（複合プラン） */}
+            {(() => {
+              const c1 = BOOKING_PLANS.find(p => p.id === "C1")
+              if (!c1) return null
+              const isC1Selected = bookingData.selectedPlan === "C1"
+              return (
+                <label className={`block cursor-pointer rounded-2xl border-2 transition-all ${isC1Selected ? "border-emerald-500 shadow-lg bg-emerald-50/40" : "border-gray-200 hover:border-emerald-300"}`}>
+                  <input type="radio" name="plan" value="C1" checked={isC1Selected} onChange={(e) => handleInputChange("selectedPlan", e.target.value)} className="sr-only" />
+                  <div className="p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <div className="mb-1 flex flex-wrap items-center gap-2">
+                          <h3 className="font-bold text-gray-900 text-base">宮古島まるごと昼夜プラン</h3>
+                          <span className="text-[10px] bg-emerald-600 text-white px-2 py-0.5 rounded-full font-bold">セットでお得</span>
+                        </div>
+                        <p className="text-xs text-gray-600 mb-1">昼：ウミガメシュノーケル ＋ 夜：ナイトツアー</p>
+                        <div className="flex items-center gap-3 text-sm text-gray-500">
+                          <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" />昼2h＋夜1.5h</span>
+                        </div>
+                      </div>
+                      <div className="w-40 flex-shrink-0">
+                        <BookingPlanPrice planId="C1" />
+                      </div>
+                    </div>
+                  </div>
+                </label>
+              )
+            })()}
+
             {/* スライダーボートシュノーケル（近日公開） */}
             {(() => {
               const slideBoat = BOOKING_PLANS.find(p => p.id === "slide-boat")
@@ -778,23 +845,73 @@ export function BookingForm() {
 
           <div>
             <Label className="text-sm font-medium text-gray-700 mb-3 block">開始時間</Label>
-            {bookingData.selectedDate && bookingData.selectedPlan ? (
-              <BookingTimeSlots
-                selectedPlan={getPlanType(bookingData.selectedPlan)}
-                selectedDate={localDateFromYMD(bookingData.selectedDate)}
-                selectedTime={bookingData.selectedTime}
-                onPick={(time) => handleInputChange("selectedTime", time)}
-              />
-            ) : (
+            {!bookingData.selectedDate || !bookingData.selectedPlan ? (
               <div className="text-sm text-gray-500 p-4 bg-gray-50 rounded-xl">プランと日付を選択してください</div>
-            )}
-            {selectedPlanData && getPlanType(bookingData.selectedPlan) !== "sunset-sup" && (
-              <p className="text-xs text-gray-500 mt-2">
-                選択中のプラン「{selectedPlanData.name}」の利用可能時間が表示されています
-                {getPlanType(bookingData.selectedPlan) === "night-hunter" && (
-                  <span className="text-purple-600"> (夜間限定)</span>
+            ) : bookingData.selectedPlan === "C1" ? (
+              <div className="space-y-5">
+                <div>
+                  <p className="text-sm font-semibold text-emerald-800 mb-2">🐢 ウミガメツアー時間 *</p>
+                  <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
+                    {C1_TURTLE_TIMES.map((time) => (
+                      <Button
+                        key={time}
+                        type="button"
+                        variant={bookingData.selectedTime === time ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => handleInputChange("selectedTime", time)}
+                        className={`rounded-xl ${
+                          bookingData.selectedTime === time
+                            ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                            : "border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                        }`}
+                      >
+                        {time}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-indigo-800 mb-2">🌙 ナイトツアー時間 *</p>
+                  <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
+                    {C1_NIGHT_TIMES.map((time) => (
+                      <Button
+                        key={time}
+                        type="button"
+                        variant={bookingData.nightTime === time ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => handleInputChange("nightTime", time)}
+                        className={`rounded-xl ${
+                          bookingData.nightTime === time
+                            ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                            : "border-indigo-200 text-indigo-700 hover:bg-indigo-50"
+                        }`}
+                      >
+                        {time}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500">
+                  昼のウミガメツアーと夜のナイトツアー、両方の時間をお選びください。海況・天候により時間が変更になる場合があります。
+                </p>
+              </div>
+            ) : (
+              <>
+                <BookingTimeSlots
+                  selectedPlan={getPlanType(bookingData.selectedPlan)}
+                  selectedDate={localDateFromYMD(bookingData.selectedDate)}
+                  selectedTime={bookingData.selectedTime}
+                  onPick={(time) => handleInputChange("selectedTime", time)}
+                />
+                {selectedPlanData && getPlanType(bookingData.selectedPlan) !== "sunset-sup" && (
+                  <p className="text-xs text-gray-500 mt-2">
+                    選択中のプラン「{selectedPlanData.name}」の利用可能時間が表示されています
+                    {getPlanType(bookingData.selectedPlan) === "night-hunter" && (
+                      <span className="text-purple-600"> (夜間限定)</span>
+                    )}
+                  </p>
                 )}
-              </p>
+              </>
             )}
           </div>
         </CardContent>
@@ -1086,7 +1203,7 @@ export function BookingForm() {
       </Card>
 
       {/* Staff Selection */}
-      {!isNightHunterPlan && (
+      {staffSelectable && (
       <Card className="glass-card bg-white/70 backdrop-blur-xl rounded-3xl ring-1 ring-emerald-100 shadow-lg">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-emerald-800">
@@ -1169,11 +1286,19 @@ export function BookingForm() {
           {hasSeniorOnRegularSnorkel && (
             <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
               <p className="font-semibold mb-1">60歳以上の方がいるため、このプランではご予約いただけません</p>
-              <p>
-                安全面を考慮し、60歳以上の方がご参加のグループは
-                <strong>【貸切】ウミガメシュノーケルツアー</strong>
-                のみのご案内となります。上部のプラン選択から貸切プランへ変更してください。
-              </p>
+              {isComboPlan ? (
+                <p>
+                  安全面を考慮し、60歳以上の方がご参加のグループは
+                  <strong>複合プラン（宮古島まるごと昼夜プラン）</strong>
+                  をご利用いただけません。LINEよりお気軽にご相談ください。
+                </p>
+              ) : (
+                <p>
+                  安全面を考慮し、60歳以上の方がご参加のグループは
+                  <strong>【貸切】ウミガメシュノーケルツアー</strong>
+                  のみのご案内となります。上部のプラン選択から貸切プランへ変更してください。
+                </p>
+              )}
             </div>
           )}
 

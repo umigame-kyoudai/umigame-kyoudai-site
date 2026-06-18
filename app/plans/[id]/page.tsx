@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation"
 import { PLAN_DETAILS } from "@/lib/plan-details"
+import { EN_PLAN_BY_ID } from "@/lib/i18n/en"
 import { PlanDetailPage } from "@/components/plan-detail-page"
 import { PlanJsonLd, BreadcrumbJsonLd } from "@/components/json-ld"
 import { Navbar } from "@/components/navbar"
@@ -20,7 +21,7 @@ export function generateMetadata({ params }: { params: { id: string } }): Metada
     description: plan.heroDescription,
     path: `/plans/${params.id}`,
     locale: "ja",
-    altLocalePath: `/en/plans/${params.id}`,
+    altLocalePath: EN_PLAN_BY_ID[params.id] ? `/en/plans/${params.id}` : undefined,
     image: plan.image,
   })
 }

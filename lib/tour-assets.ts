@@ -24,6 +24,16 @@ export const TOUR_IMAGE_PATHS = {
     "/images/tours/sup/sup-06.webp",
   ],
   slideBoat: ["/images/slide-boat-photo.jpg"],
+  // 複合プラン（昼:シュノーケル + 夜:ナイト）。先頭は昼夜を対角合成したラベル付きカバー、
+  // 続けて昼・夜の個別写真を並べ、カルーセルで「昼と夜の両方」が一目で分かるようにする。
+  // 合成画像は scripts/generate-combo-cover.mjs で生成。
+  combo: [
+    "/images/tours/combo/combo-day-night.webp",
+    "/images/tours/snorkel/snorkel-01.webp",
+    "/images/tours/night/night-01.webp",
+    "/images/tours/snorkel/snorkel-03.webp",
+    "/images/tours/night/night-03.webp",
+  ],
 } as const
 
 export const PLAN_COVER_IMAGE = {
@@ -33,4 +43,6 @@ export const PLAN_COVER_IMAGE = {
   nightPrivate: TOUR_IMAGE_PATHS.night[2],
   sup: TOUR_IMAGE_PATHS.sup[3],
   slideBoat: TOUR_IMAGE_PATHS.slideBoat[0],
+  // 詳細ページのヒーロー背景はラベルなしの合成（ページ側がタイトルを重ねるため）
+  combo: "/images/tours/combo/combo-hero.webp",
 } as const

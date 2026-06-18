@@ -114,7 +114,7 @@ export const EN_PLANS: EnPlanContent[] = [
     precautions: ["If you have any mobility or health concerns, please consult us in advance"],
     ageNote: "Ages 0 to 75",
     timeNote: "Two departures nightly: 7:20 PM and 9:10 PM (meet at the start time)",
-    locationNote: "Meeting point shared via LINE when your booking is confirmed",
+    locationNote: "Meeting point shared via LINE on the day of your tour",
     priceNote: "Flat ¥4,000 per person (free for ages 3 and under)",
   },
   {
@@ -162,7 +162,7 @@ export const EN_PLANS: EnPlanContent[] = [
     precautions: ["If you have any mobility or health concerns, please consult us in advance"],
     ageNote: "Ages 0 to 75",
     timeNote: "Two departures nightly: 7:20 PM and 9:10 PM (meet at the start time)",
-    locationNote: "Meeting point shared via LINE when your booking is confirmed",
+    locationNote: "Meeting point shared via LINE on the day of your tour",
     priceNote: "Flat ¥8,000 per person (free for ages 3 and under)",
   },
   {

@@ -74,7 +74,7 @@ function PlanHero({ plan }: { plan: PlanDetail }) {
           <div className="flex items-center gap-2 mb-3">
             {isComingSoon ? (
               <ComingSoonBadge className="bg-white/90 text-cyan-800 ring-white/40" />
-            ) : (
+            ) : plan.reviews > 0 ? (
               <>
                 <div className="flex gap-0.5">
                   {Array.from({ length: 5 }).map((_, i) => (
@@ -84,7 +84,7 @@ function PlanHero({ plan }: { plan: PlanDetail }) {
                 <span className="text-white font-bold text-sm sm:text-base">{plan.rating}</span>
                 <span className="text-white/70 text-xs sm:text-sm">({plan.reviews.toLocaleString()}件)</span>
               </>
-            )}
+            ) : null}
           </div>
 
           <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white mb-2 sm:mb-3 drop-shadow-2xl">
@@ -696,6 +696,9 @@ function PlanFAQ({ plan }: { plan: PlanDetail }) {
 function PlanReviews({ plan }: { plan: PlanDetail }) {
   const isComingSoon = plan.status === "coming_soon"
 
+  // レビューがまだ無いプラン（新設の複合プランなど）はセクションごと非表示
+  if (!isComingSoon && plan.reviews_data.length === 0) return null
+
   return (
     <section className="py-10 sm:py-16 md:py-24 bg-gray-50">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -808,6 +811,7 @@ const otherPlansMeta: Record<string, { name: string; tagline: string; price: str
   S3: { name: "本格ナイトツアー", tagline: "夜の大冒険へ出かけよう", price: "¥4,000", badge: "家族人気No.1", badgeColor: "bg-emerald-500 text-white" },
   S4: { name: "サンセットSUP【1日1組限定】", tagline: "1日1組だけの特別な夕日体験", price: "¥6,000〜", badge: "映え度No.1", badgeColor: "bg-orange-500 text-white" },
   S5: { name: "【貸切】本格ナイトツアー", tagline: "専属ガイドとプライベート冒険", price: "¥8,000", badge: "貸切プラン", badgeColor: "bg-violet-500 text-white" },
+  C1: { name: "宮古島まるごと昼夜プラン", tagline: "昼はウミガメ、夜はヤシガニと星空", price: "¥9,500", badge: "セットでお得", badgeColor: "bg-emerald-600 text-white" },
   "slide-boat": { name: "スライダーボートシュノーケル", tagline: "滑り台付きボートの新プラン", price: "大人¥14,000", badge: "Coming Soon", badgeColor: "bg-cyan-100 text-cyan-800", comingSoon: true },
 }
 
@@ -900,13 +904,14 @@ function FloatingPlanNav({ currentId }: { currentId: string }) {
     setVisible(latest > 600)
   })
 
-  const allIds = ["S1", "S2", "S3", "S4", "S5", "slide-boat"]
+  const allIds = ["S1", "S2", "S3", "S4", "S5", "C1", "slide-boat"]
   const shortNames: Record<string, string> = {
     S1: "シュノーケル",
     S2: "貸切シュノーケル",
     S3: "ナイト",
     S4: "SUP",
     S5: "貸切ナイト",
+    C1: "昼夜セット",
     "slide-boat": "スライダーボート",
   }
   const currentPlan = PLAN_DETAILS[currentId]

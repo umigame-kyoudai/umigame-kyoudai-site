@@ -21,6 +21,7 @@ interface BookingRequest {
   customerPhone?: string
   planName: string
   selectedTime?: string
+  nightTime?: string
   selectedStaff?: string
   participants: BookingParticipant[]
   totalPrice?: number
@@ -34,8 +35,13 @@ interface BookingRequest {
 
 const SUNSET_SUP_TIME_NOTE = 'サンセット時刻（予約確定時にご案内）'
 const FREE_UNDER3_PLAN_IDS = new Set(['S3', 'S5'])
-const STAFF_UNAVAILABLE_PLAN_IDS = new Set(['S3', 'S4', 'S5', 'slide-boat'])
+// C1（複合プラン）はスタッフ指名不可
+const STAFF_UNAVAILABLE_PLAN_IDS = new Set(['S3', 'S4', 'S5', 'slide-boat', 'C1'])
 const TIME_OPTIONAL_PLAN_IDS = new Set(['S4'])
+// 通常シュノーケルを含み、60歳以上をお断りするプラン（S1 と複合プラン C1）
+const SENIOR_RESTRICTED_PLAN_IDS = new Set(['S1', 'C1'])
+const COMBO_PLAN_ID = 'C1'
+const COMBO_NIGHT_TIMES = new Set(['19:20', '21:10'])
 const VALID_STAFF_IDS = new Set(['staff1', 'staff2', 'staff3', 'staff4', 'staff5'])
 const STAFF_NAMES: Record<string, string> = {
   staff1: 'やまちゃん',
@@ -126,10 +132,12 @@ const validateParticipant = (
     }
   }
 
-  if (plan.id === 'S1' && age >= 60) {
+  if (SENIOR_RESTRICTED_PLAN_IDS.has(plan.id) && age >= 60) {
     return {
       valid: false,
-      error: '60歳以上の方がいるグループは【貸切】ウミガメシュノーケルツアーをご予約ください',
+      error: plan.id === 'C1'
+        ? '60歳以上の方がいるグループは複合プランをご予約いただけません。LINEよりご相談ください'
+        : '60歳以上の方がいるグループは【貸切】ウミガメシュノーケルツアーをご予約ください',
     }
   }
 
@@ -177,6 +185,15 @@ const validateBookingRequest = (data: BookingRequest): { valid: boolean; error?:
     const availableTimes = plan.timeTags.filter((time) => /^\d{2}:\d{2}$/.test(time))
     if (availableTimes.length > 0 && !availableTimes.includes(selectedTime || '')) {
       return { valid: false, error: '選択された開始時間がプランの時間帯と一致しません' }
+    }
+  }
+
+  if (plan.id === COMBO_PLAN_ID) {
+    if (!validateRequired(data.nightTime || '').valid) {
+      return { valid: false, error: 'ナイトツアーの開始時間が必須です' }
+    }
+    if (!COMBO_NIGHT_TIMES.has(data.nightTime || '')) {
+      return { valid: false, error: '選択されたナイトツアー時間がプランの時間帯と一致しません' }
     }
   }
 
@@ -239,6 +256,26 @@ const calculateServerSidePrice = (
   return Math.max(0, baseTotal + vipSurcharge + staffFee - couponDiscount)
 }
 
+const buildSpecialRequests = (bookingData: BookingRequest, plan: typeof PLANS[number]): string => {
+  const rawRequests = bookingData.specialRequests?.trim() || ''
+
+  if (plan.id !== COMBO_PLAN_ID) return rawRequests
+
+  const comboBlock = [
+    '[COMBO booking]',
+    'プラン：宮古島まるごと昼夜プラン',
+    '内容：S1 ウミガメシュノーケル + S3 ナイトツアー',
+    `海亀希望時間：${bookingData.selectedTime || ''}`,
+    `ナイト希望時間：${bookingData.nightTime || ''}`,
+  ].join('\n')
+
+  const cleanedRequests = rawRequests
+    .replace(/\[COMBO booking\][\s\S]*?(?:\n───\n|$)/, '')
+    .trim()
+
+  return cleanedRequests ? `${comboBlock}\n───\n${cleanedRequests}` : comboBlock
+}
+
 // GAS用ペイロードを構築
 const buildGASPayload = (
   bookingData: BookingRequest,
@@ -263,7 +300,7 @@ const buildGASPayload = (
     under3Count,
     totalPrice: serverTotalPrice,
     staffName: getStaffName(bookingData.selectedStaff),
-    specialRequests: bookingData.specialRequests || '',
+    specialRequests: buildSpecialRequests(bookingData, plan),
     lineUserId: bookingData.lineUserId || '',
     lineDisplayName: bookingData.lineDisplayName || '',
     couponCode: validatedCoupon.code,

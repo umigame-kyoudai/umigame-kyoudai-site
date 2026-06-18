@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next"
 import { BLOG_POSTS } from "@/lib/data"
 import { PLAN_DETAILS } from "@/lib/plan-details"
+import { EN_PLAN_BY_ID } from "@/lib/i18n/en"
 
 const SITE_URL = "https://www.umigamekyoudaimiyakojima.com"
 
@@ -49,13 +50,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.8,
   }))
 
-  // 英語版プラン詳細（/en/plans/[id] は日本語と同じID構成）
-  const enPlanPages: MetadataRoute.Sitemap = Object.keys(PLAN_DETAILS).map((id) => ({
-    url: `${SITE_URL}/en/plans/${id}`,
-    lastModified: CONTENT_LAST_UPDATED,
-    changeFrequency: "monthly" as const,
-    priority: 0.5,
-  }))
+  // 英語版プラン詳細。英語ページが存在する（EN_PLAN_BY_ID にある）IDのみ。
+  // C1（複合プラン）は日本語限定のため /en/plans/C1 は生成されず、ここから除外する。
+  const enPlanPages: MetadataRoute.Sitemap = Object.keys(PLAN_DETAILS)
+    .filter((id) => EN_PLAN_BY_ID[id])
+    .map((id) => ({
+      url: `${SITE_URL}/en/plans/${id}`,
+      lastModified: CONTENT_LAST_UPDATED,
+      changeFrequency: "monthly" as const,
+      priority: 0.5,
+    }))
 
   const blogPages: MetadataRoute.Sitemap = BLOG_POSTS
     .filter((post) => post && typeof post === "object" && post.id)

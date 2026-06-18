@@ -148,6 +148,36 @@ const tours: Tour[] = [
     ],
   },
   {
+    name: "宮古島まるごと昼夜プラン",
+    tagline: "昼はウミガメ、夜はヤシガニと星空",
+    description: "人気のウミガメシュノーケル（昼）と本格ナイトツアー（夜）をセットに。海と夜の自然を1日で楽しめる、通常より1,000円お得な複合プランです。",
+    image: PLAN_COVER_IMAGE.combo,
+    images: TOUR_IMAGE_PATHS.combo,
+    imageAlts: [
+      "宮古島の昼ウミガメシュノーケルと夜ナイトツアーをセットにした複合プラン",
+      "宮古島でウミガメと泳ぐ昼のシュノーケルツアー",
+      "宮古島の夜にヤシガニを探すナイトツアー",
+      "透明度の高い宮古島の海を楽しむシュノーケル",
+      "ガイドと一緒に夜の生き物を観察する宮古島ナイトツアー",
+    ],
+    duration: "昼2h＋夜1.5h",
+    age: "5〜65歳",
+    rating: 5.0,
+    reviews: 0,
+    badge: "セットでお得",
+    badgeColor: "bg-emerald-600 text-white",
+    variants: [
+      {
+        id: "C1",
+        label: "",
+        price: "¥9,500",
+        priceNote: "子供¥9,000",
+        highlights: ["昼:ウミガメシュノーケル", "夜:ヤシガニ・星空", "海と夜を1日で", "通常より1,000円お得"],
+        included: ["シュノーケル器材", "懐中電灯", "写真・動画データ", "保険"],
+      },
+    ],
+  },
+  {
     name: "スライダーボートシュノーケル",
     tagline: "滑り台付きボートで遊ぶ新プラン",
     description: "トゥリバーマリーナ集合の滑り台付きボートシュノーケルがまもなく登場。滑り台・飛び込み台・ボートシュノーケルで、宮古島の海をもっとアクティブに楽しめます。",
@@ -178,6 +208,7 @@ const quickCompare = [
   { id: "S1", name: "ウミガメ", age: "5〜65歳", time: "約2時間", bestFor: "初めて・家族・友人" },
   { id: "S3", name: "ナイト", age: "0〜75歳", time: "約1.5時間", bestFor: "小さな子連れ・三世代" },
   { id: "S4", name: "サンセットSUP", age: "5〜65歳", time: "約2時間", bestFor: "カップル・夕日撮影" },
+  { id: "C1", name: "昼夜セット", age: "5〜65歳", time: "昼2h＋夜1.5h", bestFor: "海と夜を1日で満喫" },
   { id: "slide-boat", name: "スライダーボート", age: "5〜65歳予定", time: "約3時間", bestFor: "家族・グループ・アクティブ", status: "coming_soon" },
 ]
 
@@ -292,12 +323,16 @@ function TourImageCarousel({ tour, isComingSoon }: { tour: Tour; isComingSoon: b
 
       {isComingSoon ? (
         <ComingSoonBadge className="absolute bottom-3 left-3 z-20 bg-white/90" />
-      ) : (
+      ) : tour.reviews > 0 ? (
         <div className="absolute bottom-3 left-3 z-20 flex items-center gap-1.5 bg-black/50 backdrop-blur-sm rounded-full px-2.5 py-1">
           <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" />
           <span className="text-white font-bold text-xs">{tour.rating}</span>
           <span className="text-white/70 text-[10px]">({tour.reviews.toLocaleString()}件)</span>
         </div>
+      ) : (
+        <span className="absolute bottom-3 left-3 z-20 rounded-full bg-emerald-600 px-2.5 py-1 text-[10px] font-bold text-white">
+          NEW
+        </span>
       )}
 
       {hasMultipleImages && (
