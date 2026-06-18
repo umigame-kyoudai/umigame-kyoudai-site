@@ -37,12 +37,12 @@ interface BookingRequest {
 
 const SUNSET_SUP_TIME_NOTE = 'サンセット時刻（予約確定時にご案内）'
 const FREE_UNDER3_PLAN_IDS = new Set(['S3', 'S5'])
-// C1（複合プラン）はスタッフ指名不可
-const STAFF_UNAVAILABLE_PLAN_IDS = new Set(['S3', 'S4', 'S5', 'slide-boat', 'C1'])
+// 昼夜セットはスタッフ指名不可
+const COMBO_PLAN_IDS = new Set(['C1', 'C2'])
+const STAFF_UNAVAILABLE_PLAN_IDS = new Set(['S3', 'S4', 'S5', 'slide-boat', 'C1', 'C2'])
 const TIME_OPTIONAL_PLAN_IDS = new Set(['S4'])
-// 通常シュノーケルを含み、60歳以上をお断りするプラン（S1 と複合プラン C1）
-const SENIOR_RESTRICTED_PLAN_IDS = new Set(['S1', 'C1'])
-const COMBO_PLAN_ID = 'C1'
+// 通常シュノーケルを含み、60歳以上をお断りするプラン（S1 と昼夜セット）
+const SENIOR_RESTRICTED_PLAN_IDS = new Set(['S1', 'C1', 'C2'])
 const COMBO_NIGHT_TIMES = new Set(['19:20', '21:10'])
 const VALID_STAFF_IDS = new Set(['staff1', 'staff2', 'staff3', 'staff4', 'staff5'])
 const STAFF_NAMES: Record<string, string> = {
@@ -54,6 +54,7 @@ const STAFF_NAMES: Record<string, string> = {
 }
 
 const isNightTourPlan = (planId: string) => planId === 'S3' || planId === 'S5'
+const isComboPlan = (planId: string) => COMBO_PLAN_IDS.has(planId)
 
 // 簡易レートリミット（インスタンス内メモリ）。Vercelはインスタンスを再利用するため
 // 完全ではないが、スパム送信によるGAS予約シート・LINE通知の氾濫を抑止する
@@ -137,8 +138,8 @@ const validateParticipant = (
   if (SENIOR_RESTRICTED_PLAN_IDS.has(plan.id) && age >= 60) {
     return {
       valid: false,
-      error: plan.id === 'C1'
-        ? '60歳以上の方がいるグループは複合プランをご予約いただけません。LINEよりご相談ください'
+      error: isComboPlan(plan.id)
+        ? '60歳以上の方がいるグループは昼夜セットをご予約いただけません。LINEよりご相談ください'
         : '60歳以上の方がいるグループは【貸切】ウミガメシュノーケルツアーをご予約ください',
     }
   }
@@ -190,12 +191,12 @@ const validateBookingRequest = (data: BookingRequest): { valid: boolean; error?:
     }
   }
 
-  if (plan.id === COMBO_PLAN_ID) {
+  if (isComboPlan(plan.id)) {
     if (!validateRequired(data.nightTime || '').valid) {
-      return { valid: false, error: 'ナイトツアーの開始時間が必須です' }
+      return { valid: false, error: 'ヤシガニ探検の開始時間が必須です' }
     }
     if (!COMBO_NIGHT_TIMES.has(data.nightTime || '')) {
-      return { valid: false, error: '選択されたナイトツアー時間がプランの時間帯と一致しません' }
+      return { valid: false, error: '選択されたヤシガニ探検時間がプランの時間帯と一致しません' }
     }
   }
 
@@ -264,14 +265,17 @@ const calculateServerSidePrice = (
 const buildSpecialRequests = (bookingData: BookingRequest, plan: typeof PLANS[number]): string => {
   const rawRequests = bookingData.specialRequests?.trim() || ''
 
-  if (plan.id !== COMBO_PLAN_ID) return rawRequests
+  if (!isComboPlan(plan.id)) return rawRequests
+  const comboContent = plan.id === 'C2'
+    ? '内容：S2 【貸切】ウミガメシュノーケル + S5 【貸切】ヤシガニ探検'
+    : '内容：S1 ウミガメシュノーケル + S3 ヤシガニ探検'
 
   const comboBlock = [
     '[COMBO booking]',
-    'プラン：ウミガメ＆ジャングルナイト まるごと1日プラン',
-    '内容：S1 ウミガメシュノーケル + S3 ナイトツアー',
+    `プラン：${plan.name}`,
+    comboContent,
     `海亀希望時間：${bookingData.selectedTime || ''}`,
-    `ナイト希望時間：${bookingData.nightTime || ''}`,
+    `ヤシガニ探検希望時間：${bookingData.nightTime || ''}`,
   ].join('\n')
 
   const cleanedRequests = rawRequests
@@ -352,7 +356,7 @@ export async function POST(request: Request) {
     const bookingNumber = generateBookingNumber()
 
     // クーポンをサーバー側で再計算（コードから直接金額を算出）
-    // C1 など対象外プランは plan.id を渡すことで割引0に強制する
+    // 昼夜セットなど対象外プランは plan.id を渡すことで割引0に強制する
     const validatedCoupon = calculateCouponDiscount(bookingData.couponCode, bookingData.participants, plan.id)
 
     // 合計金額もサーバー側で再計算（クライアント値は参考情報として無視）

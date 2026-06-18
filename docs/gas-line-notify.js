@@ -25,6 +25,7 @@ var CALENDAR_ID = 'genkidama2439@gmail.com';
 var ADMIN_EMAIL = 'genkidama2439@gmail.com';
 
 var COMBO_PLAN_NAME = 'ウミガメシュノーケル＆ヤシガニ探検 昼夜セット';
+var PRIVATE_COMBO_PLAN_NAME = '【貸切】ウミガメシュノーケル＆ヤシガニ探検 昼夜セット';
 var LEGACY_COMBO_PLAN_NAME = 'ウミガメ＆ジャングルナイト まるごと1日プラン';
 
 var COLUMNS = {
@@ -131,6 +132,7 @@ function formatCouponInfo(couponCode, couponDiscount) {
 function isComboPlanName(planName) {
   var plan = String(planName || '');
   return plan.indexOf(COMBO_PLAN_NAME) !== -1 ||
+         plan.indexOf(PRIVATE_COMBO_PLAN_NAME) !== -1 ||
          plan.indexOf(LEGACY_COMBO_PLAN_NAME) !== -1 ||
          plan.indexOf('ウミガメ＆ジャングルナイト') !== -1 ||
          plan.indexOf('まるごと1日') !== -1 ||
@@ -141,7 +143,7 @@ function isComboPlanName(planName) {
          );
 }
 
-// 複合プラン C1 かどうか
+// 昼夜セット（C1/C2）かどうか
 // 主判定は specialRequests の [COMBO booking] マーカー。補助的に新旧プラン名も見る。
 function isComboBooking(data) {
   return String(data && data.specialRequests || '').indexOf('[COMBO booking]') !== -1 ||
@@ -202,7 +204,7 @@ function getConfirmMessage(planName, customerName, bookingNumber, selectedDate, 
   details = details || {};
 
   var plan = String(planName || '');
-  // 複合プラン判定：D列の時間が「海亀 / 夜」併記（"/"を含む）か、新旧プラン名に一致
+  // 昼夜セット判定：D列の時間が「海亀 / 夜」併記（"/"を含む）か、新旧プラン名に一致
   var isCombo = isComboPlanName(plan) || String(selectedTime || '').indexOf('/') !== -1;
 
   var opening =
@@ -742,9 +744,12 @@ function addToCalendar(data, headcount) {
 
   if (combo) {
     var baseName = data.customerName || '名前なし';
+    var comboCalendarLabel = String(data.planName || '').indexOf('貸切') !== -1
+      ? '貸切昼夜セット'
+      : '昼夜セット';
 
     var turtleTitle =
-      'WEB 🐢 昼夜セット（ウミガメ）/ ' +
+      'WEB 🐢 ' + comboCalendarLabel + '（ウミガメ）/ ' +
       baseName + ' / ' + headcount;
 
     var tStart = new Date(year, month, day, startHour, startMin);
@@ -765,7 +770,7 @@ function addToCalendar(data, headcount) {
       var nM = parseInt(nightParts[2], 10);
 
       var nightTitle =
-        'WEB 🦀 昼夜セット（ヤシガニ）/ ' +
+        'WEB 🦀 ' + comboCalendarLabel + '（ヤシガニ）/ ' +
         baseName + ' / ' + headcount;
 
       var nStart = new Date(year, month, day, nH, nM);
@@ -779,7 +784,7 @@ function addToCalendar(data, headcount) {
       nightEvent.setColor('8');
       Logger.log('カレンダー登録完了（ナイト）: ' + nightTitle);
     } else {
-      Logger.log('C1複合プランですが、ナイト時間を取得できませんでした。');
+      Logger.log('昼夜セットですが、ナイト時間を取得できませんでした。');
     }
 
     return;

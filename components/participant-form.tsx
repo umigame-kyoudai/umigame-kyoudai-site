@@ -27,6 +27,7 @@ export function ParticipantForm({ participants, minAge, selectedPlan, onUpdate }
 
   // ナイトツアーかどうかを判定
   const isNightTour = selectedPlan === "night-hunter" || selectedPlan === "S3" || selectedPlan === "S5"
+  const isComboPlan = selectedPlan === "C1" || selectedPlan === "C2"
 
   return (
     <Card className="glass-card bg-white/70 backdrop-blur-xl rounded-3xl ring-1 ring-emerald-100 shadow-lg">
@@ -44,7 +45,7 @@ export function ParticipantForm({ participants, minAge, selectedPlan, onUpdate }
           const categoryLabel =
             participant.category === "adult" ? "大人" : participant.category === "child" ? "子ども" : "3歳以下"
           const isOverSixty =
-            (selectedPlan === "S1" || selectedPlan === "C1") && typeof participant.age === "number" && participant.age >= 60
+            (selectedPlan === "S1" || isComboPlan) && typeof participant.age === "number" && participant.age >= 60
 
           return (
             <div key={participant.id} className="bg-gray-50 rounded-2xl p-6">
@@ -80,10 +81,10 @@ export function ParticipantForm({ participants, minAge, selectedPlan, onUpdate }
                     <p className="mt-2 text-xs text-red-600 flex items-start gap-1.5">
                       <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
                       <span>
-                        {selectedPlan === "C1" ? (
+                        {isComboPlan ? (
                           <>
                             安全面を考慮し、60歳以上の方がいるグループは
-                            <strong>複合プラン</strong>
+                            <strong>昼夜セットプラン</strong>
                             をご利用いただけません。LINEよりご相談ください。
                           </>
                         ) : (

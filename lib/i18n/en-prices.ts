@@ -6,7 +6,7 @@
 // 英語各ページ（ホーム/一覧/詳細）が共通参照することで、表示と請求の食い違いを防ぐ。
 //
 // 対象は英語サイトに掲載される稼働プランのみ（S1〜S5）。
-// C1（昼夜プラン）は英語サイト対象外、slide-boatはComing Soonのため含めない
+// 昼夜セット（C1/C2）は英語サイト対象外、slide-boatはComing Soonのため含めない
 //（マップに無いIDは getEnPrice が日本語価格にフォールバックする）。
 
 export const EN_PRICE_DATA: Record<string, { price: number; childPrice: number }> = {

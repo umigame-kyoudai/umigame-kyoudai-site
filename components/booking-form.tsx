@@ -33,9 +33,20 @@ interface ParticipantDetails {
   category: "adult" | "child" | "under3"
 }
 
-// 複合プラン C1（昼:ウミガメ + 夜:ナイト）の時間候補
-const C1_TURTLE_TIMES = ["09:00", "11:00", "14:00", "16:00"]
-const C1_NIGHT_TIMES = ["19:20", "21:10"]
+// 昼夜セット（昼:ウミガメ + 夜:ヤシガニ探検）の時間候補
+const COMBO_PLAN_IDS = new Set(["C1", "C2"])
+const COMBO_TURTLE_TIMES = ["09:00", "11:00", "14:00", "16:00"]
+const COMBO_NIGHT_TIMES = ["19:20", "21:10"]
+
+function isComboPlanId(planId: string): boolean {
+  return COMBO_PLAN_IDS.has(planId)
+}
+
+function getComboContentText(planId: string): string {
+  return planId === "C2"
+    ? "内容：S2 【貸切】ウミガメシュノーケル + S5 【貸切】ヤシガニ探検"
+    : "内容：S1 ウミガメシュノーケル + S3 ヤシガニ探検"
+}
 
 interface BookingData {
   selectedPlan: string
@@ -87,7 +98,7 @@ const STAFF_LIST = [
 ]
 
 function getPlanTone(planId: string): "emerald" | "purple" | "cyan" {
-  if (planId === "S2" || planId === "S5") return "purple"
+  if (planId === "S2" || planId === "S5" || planId === "C2") return "purple"
   if (planId === "slide-boat") return "cyan"
   return "emerald"
 }
@@ -288,8 +299,8 @@ export function BookingForm() {
 
   const isNightHunterPlan = bookingData.selectedPlan === "S3" || bookingData.selectedPlan === "S4" || bookingData.selectedPlan === "S5" || bookingData.selectedPlan === "slide-boat"
   const isUnder3FreePlan = bookingData.selectedPlan === "S3" || bookingData.selectedPlan === "S5"
-  // 複合プラン C1 はスタッフ指名不可。夜系プランも従来どおり指名不可。
-  const isComboPlan = bookingData.selectedPlan === "C1"
+  // 昼夜セットはスタッフ指名不可。夜系プランも従来どおり指名不可。
+  const isComboPlan = isComboPlanId(bookingData.selectedPlan)
   const staffSelectable = !isNightHunterPlan && !isComboPlan
 
   useEffect(() => {
@@ -298,7 +309,7 @@ export function BookingForm() {
     }
   }, [staffSelectable, bookingData.selectedStaff])
 
-  // 複合プラン C1 はクーポン対象外。他プランで適用済みの割引を引き継がないようクリア。
+  // 昼夜セットはクーポン対象外。他プランで適用済みの割引を引き継がないようクリア。
   useEffect(() => {
     if (isComboPlan && bookingData.couponDiscount > 0) {
       setBookingData((prev) => ({ ...prev, couponDiscount: 0 }))
@@ -399,15 +410,15 @@ export function BookingForm() {
       name: p.name.trim() === "" ? `参加者${index + 1}` : p.name.trim(),
     }))
 
-    // 複合プラン C1 は1件の予約として受付し、詳細を備考欄の [COMBO booking] ブロックに残す。
-    // selectedTime には海亀ツアー時間を入れ、ナイトツアー時間は備考に格納する。
+    // 昼夜セットは1件の予約として受付し、詳細を備考欄の [COMBO booking] ブロックに残す。
+    // selectedTime には海亀ツアー時間を入れ、ヤシガニ探検時間は備考に格納する。
     const finalSpecialRequests = isComboPlan
       ? [
           "[COMBO booking]",
-          "プラン：ウミガメ＆ジャングルナイト まるごと1日プラン",
-          "内容：S1 ウミガメシュノーケル + S3 ナイトツアー",
+          `プラン：${selectedPlanData?.name || "ウミガメシュノーケル＆ヤシガニ探検 昼夜セット"}`,
+          getComboContentText(bookingData.selectedPlan),
           `海亀希望時間：${bookingData.selectedTime}`,
-          `ナイト希望時間：${bookingData.nightTime}`,
+          `ヤシガニ探検希望時間：${bookingData.nightTime}`,
           ...(bookingData.specialRequests.trim() ? ["───", bookingData.specialRequests.trim()] : []),
         ].join("\n")
       : bookingData.specialRequests
@@ -421,7 +432,7 @@ export function BookingForm() {
         body: JSON.stringify({
           ...bookingData,
           participants: participantsForSubmit,
-          // 複合プランは備考に [COMBO booking] ブロックを付与（...bookingData の specialRequests を上書き）
+          // 昼夜セットは備考に [COMBO booking] ブロックを付与（...bookingData の specialRequests を上書き）
           specialRequests: finalSpecialRequests,
           // LIFFから最新のuserIdを直接取得（レースコンディション対策）
           lineUserId: liffUserId || bookingData.lineUserId,
@@ -453,13 +464,13 @@ export function BookingForm() {
     }
   }
 
-  // S1（通常シュノーケル）と C1（複合プラン）は60歳以上をお断り
+  // S1（通常シュノーケル）と昼夜セットは60歳以上をお断り
   const hasSeniorOnRegularSnorkel =
-    (bookingData.selectedPlan === "S1" || bookingData.selectedPlan === "C1") &&
+    (bookingData.selectedPlan === "S1" || isComboPlan) &&
     bookingData.participants.some((p) => typeof p.age === "number" && p.age >= 60)
   const isNightTourForDetails =
     bookingData.selectedPlan === "S3" || bookingData.selectedPlan === "S5" || bookingData.selectedPlan === "night-hunter"
-  // 複合プラン C1 は海亀時間（selectedTime）と夜時間（nightTime）の両方が必須
+  // 昼夜セットは海亀時間（selectedTime）と夜時間（nightTime）の両方が必須
   const comboTimesSelected = !isComboPlan || (!!bookingData.selectedTime && !!bookingData.nightTime)
 
   const isFormValid =
@@ -509,8 +520,8 @@ export function BookingForm() {
                 <>
                   <p>日付: {bookingData.selectedDate}</p>
                   <p>🐢 ウミガメツアー: {bookingData.selectedTime}</p>
-                  <p>🌙 ナイトツアー: {bookingData.nightTime}</p>
-                  <p className="text-xs text-emerald-700">※集合場所は、ウミガメは前日・ナイトは当日にLINEでご案内します</p>
+                  <p>🦀 ヤシガニ探検: {bookingData.nightTime}</p>
+                  <p className="text-xs text-emerald-700">※集合場所は、ウミガメは前日・ヤシガニ探検は当日にLINEでご案内します</p>
                 </>
               ) : (
                 <p>
@@ -731,32 +742,71 @@ export function BookingForm() {
               )
             })()}
 
-            {/* ウミガメ＆ジャングルナイト まるごと1日プラン（複合プラン C1） */}
+            {/* ウミガメシュノーケル＆ヤシガニ探検 昼夜セット */}
             {(() => {
               const c1 = BOOKING_PLANS.find(p => p.id === "C1")
-              if (!c1) return null
+              const c2 = BOOKING_PLANS.find(p => p.id === "C2")
+              const comboPlans = [c1, c2].filter(Boolean) as NonNullable<typeof c1>[]
+              if (!comboPlans.length) return null
               const isC1Selected = bookingData.selectedPlan === "C1"
+              const isC2Selected = bookingData.selectedPlan === "C2"
+              const isComboSelected = isC1Selected || isC2Selected
               return (
-                <label className={`block cursor-pointer rounded-2xl border-2 transition-all ${isC1Selected ? "border-emerald-500 shadow-lg bg-emerald-50/40" : "border-gray-200 hover:border-emerald-300"}`}>
-                  <input type="radio" name="plan" value="C1" checked={isC1Selected} onChange={(e) => handleInputChange("selectedPlan", e.target.value)} className="sr-only" />
+                <div className={`rounded-2xl border-2 transition-all ${isComboSelected ? isC2Selected ? "border-purple-500 shadow-lg bg-purple-50/30" : "border-emerald-500 shadow-lg bg-emerald-50/40" : "border-gray-200 hover:border-emerald-300"}`}>
                   <div className="p-4">
-                    <div className="flex items-center justify-between gap-3">
+                    <div className="flex flex-col gap-3">
                       <div>
                         <div className="mb-1 flex flex-wrap items-center gap-2">
-                          <h3 className="font-bold text-gray-900 text-base">ウミガメ＆ジャングルナイト まるごと1日プラン</h3>
+                          <h3 className="font-bold text-gray-900 text-base">ウミガメシュノーケル＆ヤシガニ探検 昼夜セット</h3>
                           <span className="text-[10px] bg-emerald-600 text-white px-2 py-0.5 rounded-full font-bold">セットでお得</span>
                         </div>
-                        <p className="text-xs text-gray-600 mb-1">昼：ウミガメシュノーケル ＋ 夜：ナイトツアー</p>
+                        <p className="text-xs text-gray-600 mb-1">昼：ウミガメシュノーケル ＋ 夜：ヤシガニ探検</p>
                         <div className="flex items-center gap-3 text-sm text-gray-500">
                           <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" />昼2h＋夜1.5h</span>
                         </div>
                       </div>
-                      <div className="w-40 flex-shrink-0">
-                        <BookingPlanPrice planId="C1" />
+
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        {comboPlans.map((plan) => {
+                          const isPrivate = plan.id === "C2"
+                          const isSelected = bookingData.selectedPlan === plan.id
+                          return (
+                            <label
+                              key={plan.id}
+                              className={`block cursor-pointer rounded-xl border-2 p-3 transition-all ${
+                                isSelected
+                                  ? isPrivate
+                                    ? "border-purple-500 bg-purple-50 ring-2 ring-purple-100"
+                                    : "border-emerald-500 bg-emerald-50 ring-2 ring-emerald-100"
+                                  : "border-gray-200 bg-white hover:border-emerald-300"
+                              }`}
+                            >
+                              <input
+                                type="radio"
+                                name="plan"
+                                value={plan.id}
+                                checked={isSelected}
+                                onChange={(e) => handleInputChange("selectedPlan", e.target.value)}
+                                className="sr-only"
+                              />
+                              <div className="mb-2 flex items-center justify-between gap-2">
+                                <span className={`text-xs font-bold ${isSelected && isPrivate ? "text-purple-700" : "text-gray-700"}`}>
+                                  {isPrivate ? "貸切セット" : "通常セット"}
+                                </span>
+                                <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                                  isPrivate ? "bg-purple-100 text-purple-700" : "bg-emerald-100 text-emerald-700"
+                                }`}>
+                                  {isPrivate ? "完全貸切" : "1,000円お得"}
+                                </span>
+                              </div>
+                              <BookingPlanPrice planId={plan.id} />
+                            </label>
+                          )
+                        })}
                       </div>
                     </div>
                   </div>
-                </label>
+                </div>
               )
             })()}
 
@@ -863,12 +913,12 @@ export function BookingForm() {
             <Label className="text-sm font-medium text-gray-700 mb-3 block">開始時間</Label>
             {!bookingData.selectedDate || !bookingData.selectedPlan ? (
               <div className="text-sm text-gray-500 p-4 bg-gray-50 rounded-xl">プランと日付を選択してください</div>
-            ) : bookingData.selectedPlan === "C1" ? (
+            ) : isComboPlan ? (
               <div className="space-y-5">
                 <div>
                   <p className="text-sm font-semibold text-emerald-800 mb-2">🐢 ウミガメツアー時間 *</p>
                   <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
-                    {C1_TURTLE_TIMES.map((time) => (
+                    {COMBO_TURTLE_TIMES.map((time) => (
                       <Button
                         key={time}
                         type="button"
@@ -887,9 +937,9 @@ export function BookingForm() {
                   </div>
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-indigo-800 mb-2">🌙 ナイトツアー時間 *</p>
+                  <p className="text-sm font-semibold text-indigo-800 mb-2">🦀 ヤシガニ探検時間 *</p>
                   <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
-                    {C1_NIGHT_TIMES.map((time) => (
+                    {COMBO_NIGHT_TIMES.map((time) => (
                       <Button
                         key={time}
                         type="button"
@@ -908,7 +958,7 @@ export function BookingForm() {
                   </div>
                 </div>
                 <p className="text-xs text-gray-500">
-                  昼のウミガメツアーと夜のナイトツアー、両方の時間をお選びください。海況・天候により時間が変更になる場合があります。
+                  昼のウミガメツアーと夜のヤシガニ探検、両方の時間をお選びください。海況・天候により時間が変更になる場合があります。
                 </p>
               </div>
             ) : (
@@ -1119,7 +1169,7 @@ export function BookingForm() {
                 <span>￥{totalPrice.toLocaleString()}</span>
               </div>
 
-              {/* クーポンコード（C1は対象外） */}
+              {/* クーポンコード（昼夜セットは対象外） */}
               <div className="mt-4 pt-4 border-t border-emerald-200">
                 <p className="text-sm font-medium text-gray-700 mb-2">
                   クーポンコード
@@ -1315,7 +1365,7 @@ export function BookingForm() {
               {isComboPlan ? (
                 <p>
                   安全面を考慮し、60歳以上の方がご参加のグループは
-                  <strong>複合プラン（ウミガメ＆ジャングルナイト まるごと1日プラン）</strong>
+                  <strong>昼夜セットプラン</strong>
                   をご利用いただけません。LINEよりお気軽にご相談ください。
                 </p>
               ) : (

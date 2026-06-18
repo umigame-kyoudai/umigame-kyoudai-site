@@ -51,7 +51,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   }))
 
   // 英語版プラン詳細。英語ページが存在する（EN_PLAN_BY_ID にある）IDのみ。
-  // C1（複合プラン）は日本語限定のため /en/plans/C1 は生成されず、ここから除外する。
+  // 昼夜セット（C1/C2）は日本語限定のため /en/plans/C1 などは生成されず、ここから除外する。
   const enPlanPages: MetadataRoute.Sitemap = Object.keys(PLAN_DETAILS)
     .filter((id) => EN_PLAN_BY_ID[id])
     .map((id) => ({

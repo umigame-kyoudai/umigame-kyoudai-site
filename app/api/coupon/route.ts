@@ -54,7 +54,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ valid: false, discount: 0, error: 'リクエストの形式が正しくありません' }, { status: 400 })
     }
 
-    // 対象外プラン（C1など）はコードを問わず割引不可。専用メッセージで明示する。
+    // 対象外プラン（昼夜セットなど）はコードを問わず割引不可。専用メッセージで明示する。
     const planId = typeof body.planId === 'string' ? body.planId : undefined
     if (!isCouponEligiblePlan(planId)) {
       return NextResponse.json({ valid: false, discount: 0, error: 'このプランはクーポン対象外です' })
