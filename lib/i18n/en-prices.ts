@@ -28,5 +28,6 @@ export function getEnPrice(plan: { id: string; price: number; childPrice?: numbe
 }
 
 // 価格の根拠を明示する一文（付加価値としての提示）。英語各ページ・予約フォームで価格脇に表示する。
+// 実態に合わせた文言: 予約・連絡は英語、ツアー中も英語でサポート（ガイドの流暢さは約束しない）。
 export const EN_PRICE_SUPPORT_NOTE =
-  "Includes an English-speaking guide and full English-language support."
+  "Includes English-language support for your booking and during the tour."
