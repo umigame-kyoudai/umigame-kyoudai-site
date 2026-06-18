@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { generateBookingNumber, sendToGAS, createAPIResponse, createAPIError } from '@/lib/services/gas-service'
 import { validateEmail, validatePhoneNumber, validateRequired } from '@/lib/utils/validation'
-import { PLANS, STAFF_FEE } from '@/lib/data'
+import { PLANS, getStaffFee } from '@/lib/data'
 import { calculateCouponDiscount } from '@/lib/constants/coupons'
 import { getEnPrice } from '@/lib/i18n/en-prices'
 
@@ -256,7 +256,7 @@ const calculateServerSidePrice = (
 
   const baseTotal = adultCount * adultPrice + childCount * childPrice + under3Count * under3Price
   const vipSurcharge = plan.vipSurcharge ?? 0
-  const staffFee = selectedStaff && !STAFF_UNAVAILABLE_PLAN_IDS.has(plan.id) ? STAFF_FEE : 0
+  const staffFee = selectedStaff && !STAFF_UNAVAILABLE_PLAN_IDS.has(plan.id) ? getStaffFee(selectedStaff) : 0
 
   return Math.max(0, baseTotal + vipSurcharge + staffFee - couponDiscount)
 }

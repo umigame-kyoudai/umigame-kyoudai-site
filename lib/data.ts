@@ -5,7 +5,20 @@ export { PLAN_COVER_IMAGE, TOUR_IMAGE_PATHS } from "@/lib/tour-assets"
 export const ADULT_PRICE = 6500
 export const CHILD_PRICE = 6000
 
+// 指名料のデフォルト額。スタッフ別の例外は STAFF_FEES で上書きする。
 export const STAFF_FEE = 1000
+
+// スタッフ別の指名料（円）。ここに無いスタッフは STAFF_FEE（デフォルト）。
+// staff1=やまちゃん（山ちゃん）は人気のため¥3,000。
+export const STAFF_FEES: Record<string, number> = {
+  staff1: 3000,
+}
+
+// 指名スタッフ1名あたりの指名料を返す。未指名（空）は0。
+export function getStaffFee(staffId: string | null | undefined): number {
+  if (!staffId) return 0
+  return STAFF_FEES[staffId] ?? STAFF_FEE
+}
 
 export const TIME_SLOTS = ["07:00", "09:00", "11:00", "14:00", "16:00"]
 

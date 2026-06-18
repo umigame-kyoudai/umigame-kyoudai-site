@@ -19,7 +19,8 @@ import { Calendar, Clock, Users, Calculator, Star, CheckCircle, UserCheck, Check
 import { todayStr, localDateFromYMD } from "@/lib/date-utils"
 import BookingTimeSlots from "@/components/booking-time-slots"
 import { ComingSoonBadge } from "@/components/coming-soon"
-import { ADULT_PRICE, BOOKING_PLANS, CHILD_PRICE, STAFF_FEE } from "@/lib/booking-plans"
+import { ADULT_PRICE, BOOKING_PLANS, CHILD_PRICE } from "@/lib/booking-plans"
+import { getStaffFee } from "@/lib/data"
 import { getPlanPriceDisplay } from "@/lib/plan-price-display"
 
 interface ParticipantDetails {
@@ -313,7 +314,7 @@ export function BookingForm() {
 
     const vipSurcharge = selectedPlanData?.vipSurcharge || 0
 
-    const staffFee = bookingData.selectedStaff && staffSelectable ? STAFF_FEE : 0
+    const staffFee = staffSelectable ? getStaffFee(bookingData.selectedStaff) : 0
 
     setTotalPrice(Math.max(0, baseTotal + under3Total + vipSurcharge + staffFee - bookingData.couponDiscount))
   }, [
@@ -525,7 +526,7 @@ export function BookingForm() {
               {bookingData.selectedStaff && (
                 <p className="text-emerald-600">
                   スタッフ指名: {STAFF_LIST.find((s) => s.id === bookingData.selectedStaff)?.name} (+¥
-                  {STAFF_FEE.toLocaleString()})
+                  {getStaffFee(bookingData.selectedStaff).toLocaleString()})
                 </p>
               )}
               {(selectedPlanData?.vipSurcharge ?? 0) > 0 && (
@@ -1097,7 +1098,7 @@ export function BookingForm() {
               {bookingData.selectedStaff && (
                 <div className="flex justify-between text-emerald-600">
                   <span>スタッフ指名料</span>
-                  <span>￥{STAFF_FEE.toLocaleString()}</span>
+                  <span>￥{getStaffFee(bookingData.selectedStaff).toLocaleString()}</span>
                 </div>
               )}
               {bookingData.couponDiscount > 0 && (
@@ -1231,7 +1232,7 @@ export function BookingForm() {
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
             <p className="text-sm text-blue-800">
               <strong>スタッフ指名について:</strong>
-              <br />• お好みのスタッフを指名できます（追加料金: ¥{STAFF_FEE.toLocaleString()}）
+              <br />• お好みのスタッフを指名できます（追加料金はスタッフにより異なります）
               <br />• 指名は任意です。指名なしでも素晴らしい体験をお約束します
               <br />• スタッフの都合により、ご希望に添えない場合がございます
             </p>
@@ -1250,7 +1251,7 @@ export function BookingForm() {
               {STAFF_LIST.map((staff) => (
                 <option key={staff.id} value={staff.id}>
                   {staff.name}
-                  {staff.id && ` (+¥${STAFF_FEE.toLocaleString()})`}
+                  {staff.id && ` (+¥${getStaffFee(staff.id).toLocaleString()})`}
                 </option>
               ))}
             </select>
@@ -1261,7 +1262,7 @@ export function BookingForm() {
               <p className="text-sm text-emerald-800">
                 <strong>{STAFF_LIST.find((s) => s.id === bookingData.selectedStaff)?.name}</strong>を指名しました
                 <br />
-                <span className="text-emerald-600">指名料金: ¥{STAFF_FEE.toLocaleString()}</span>
+                <span className="text-emerald-600">指名料金: ¥{getStaffFee(bookingData.selectedStaff).toLocaleString()}</span>
               </p>
             </div>
           )}

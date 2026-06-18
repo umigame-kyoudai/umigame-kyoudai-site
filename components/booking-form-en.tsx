@@ -17,7 +17,7 @@ import { toast } from "sonner"
 import { CheckCircle, MessageCircle, Plus, Trash2 } from "lucide-react"
 import { useLiff } from "@/components/liff-provider"
 import { todayStr } from "@/lib/date-utils"
-import { PLANS, STAFF_FEE } from "@/lib/data"
+import { PLANS, getStaffFee } from "@/lib/data"
 import { EN_PLAN_BY_ID } from "@/lib/i18n/en"
 import { getEnPrice, EN_PRICE_SUPPORT_NOTE } from "@/lib/i18n/en-prices"
 
@@ -97,7 +97,7 @@ export function BookingFormEn() {
     const { price: adultPrice, childPrice } = getEnPrice(plan)
     const under3Price = FREE_UNDER3_PLAN_IDS.has(plan.id) ? 0 : childPrice
     const base = counts.adult * adultPrice + counts.child * childPrice + counts.under3 * under3Price
-    const staffFee = staffId && staffAvailable ? STAFF_FEE : 0
+    const staffFee = staffAvailable ? getStaffFee(staffId) : 0
     return Math.max(0, base + (plan.vipSurcharge ?? 0) + staffFee - couponDiscount)
   }, [plan, counts, staffId, staffAvailable, couponDiscount])
 
@@ -427,7 +427,7 @@ export function BookingFormEn() {
       {staffAvailable && (
         <Card className="bg-white/80 rounded-3xl ring-1 ring-emerald-100 shadow-lg">
           <CardHeader>
-            <CardTitle className="text-emerald-800">4. Request a guide (optional, +¥{STAFF_FEE.toLocaleString()})</CardTitle>
+            <CardTitle className="text-emerald-800">4. Request a guide (optional)</CardTitle>
             <p className="text-sm text-gray-600">No preference is perfectly fine — every guide will give you a great tour.</p>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-2">
@@ -441,6 +441,7 @@ export function BookingFormEn() {
                 }`}
               >
                 {s.name}
+                {s.id && <span className="ml-1 text-xs opacity-70">+¥{getStaffFee(s.id).toLocaleString()}</span>}
               </button>
             ))}
           </CardContent>
@@ -495,7 +496,7 @@ export function BookingFormEn() {
                 {counts.child > 0 && `, ${counts.child} child${counts.child !== 1 ? "ren" : ""}`}
                 {counts.under3 > 0 && `, ${counts.under3} under 3 (free)`}
               </p>
-              {staffId && staffAvailable && <p>Guide request: +¥{STAFF_FEE.toLocaleString()}</p>}
+              {staffId && staffAvailable && <p>Guide request: +¥{getStaffFee(staffId).toLocaleString()}</p>}
               {couponDiscount > 0 && <p>Coupon: −¥{couponDiscount.toLocaleString()}</p>}
               <p className="font-black text-lg text-emerald-800">
                 Estimated total: ¥{totalPrice.toLocaleString()}
