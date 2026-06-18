@@ -297,6 +297,13 @@ export function BookingForm() {
     }
   }, [staffSelectable, bookingData.selectedStaff])
 
+  // 複合プラン C1 はクーポン対象外。他プランで適用済みの割引を引き継がないようクリア。
+  useEffect(() => {
+    if (isComboPlan && bookingData.couponDiscount > 0) {
+      setBookingData((prev) => ({ ...prev, couponDiscount: 0 }))
+    }
+  }, [isComboPlan, bookingData.couponDiscount])
+
   useEffect(() => {
     // Calculate per-person pricing for all plans
     const baseTotal = bookingData.adultCount * adultPrice + bookingData.childCount * childPrice
@@ -343,6 +350,7 @@ export function BookingForm() {
           couponCode: bookingData.couponCode,
           adultCount: bookingData.adultCount,
           childCount: bookingData.childCount,
+          planId: bookingData.selectedPlan,
         }),
       })
       const result = await response.json().catch(() => ({ valid: false, discount: 0 }))
@@ -1103,30 +1111,38 @@ export function BookingForm() {
                 <span>￥{totalPrice.toLocaleString()}</span>
               </div>
 
-              {/* クーポンコード */}
+              {/* クーポンコード（C1は対象外） */}
               <div className="mt-4 pt-4 border-t border-emerald-200">
                 <p className="text-sm font-medium text-gray-700 mb-2">
                   クーポンコード
                 </p>
-                <div className="flex gap-2">
-                  <Input
-                    value={bookingData.couponCode}
-                    onChange={(e) => handleInputChange("couponCode", e.target.value)}
-                    className="rounded-xl border-emerald-200 focus:border-emerald-500"
-                  />
-                  <Button
-                    type="button"
-                    onClick={handleCouponApply}
-                    disabled={isApplyingCoupon}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl px-4"
-                  >
-                    {isApplyingCoupon ? "確認中..." : "適用"}
-                  </Button>
-                </div>
-                {bookingData.couponDiscount > 0 && (
-                  <p className="text-emerald-600 text-sm font-semibold mt-2">
-                    🎉 クーポン適用済み！ -{bookingData.couponDiscount.toLocaleString()}円引き
+                {isComboPlan ? (
+                  <p className="text-xs text-gray-500 rounded-xl bg-gray-50 p-3">
+                    このプランは既にセット割引（1名¥1,000お得）が適用されているため、クーポンはご利用いただけません。
                   </p>
+                ) : (
+                  <>
+                    <div className="flex gap-2">
+                      <Input
+                        value={bookingData.couponCode}
+                        onChange={(e) => handleInputChange("couponCode", e.target.value)}
+                        className="rounded-xl border-emerald-200 focus:border-emerald-500"
+                      />
+                      <Button
+                        type="button"
+                        onClick={handleCouponApply}
+                        disabled={isApplyingCoupon}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl px-4"
+                      >
+                        {isApplyingCoupon ? "確認中..." : "適用"}
+                      </Button>
+                    </div>
+                    {bookingData.couponDiscount > 0 && (
+                      <p className="text-emerald-600 text-sm font-semibold mt-2">
+                        🎉 クーポン適用済み！ -{bookingData.couponDiscount.toLocaleString()}円引き
+                      </p>
+                    )}
+                  </>
                 )}
               </div>
             </div>

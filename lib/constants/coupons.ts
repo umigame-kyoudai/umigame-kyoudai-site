@@ -5,13 +5,24 @@ export const COUPON_LIST: Record<string, number> = {
   カメハメハ: 1000,
 }
 
+// クーポン対象外のプラン。
+// C1（宮古島まるごと昼夜プラン）は既に1人¥1,000のセット割引済みのため、
+// クーポンの重ねがけ（二重割引）を不可とする。
+export const COUPON_INELIGIBLE_PLAN_IDS = new Set(['C1'])
+
+export const isCouponEligiblePlan = (planId: string | undefined | null): boolean =>
+  !planId || !COUPON_INELIGIBLE_PLAN_IDS.has(planId)
+
 export type ParticipantCategory = 'adult' | 'child' | 'under3'
 
 export function calculateCouponDiscount(
   couponCode: string | undefined | null,
-  participants: Array<{ category: string }>
+  participants: Array<{ category: string }>,
+  planId?: string | null
 ): { discount: number; code: string } {
   if (!couponCode) return { discount: 0, code: '' }
+  // 対象外プランはコードが有効でも割引0
+  if (!isCouponEligiblePlan(planId)) return { discount: 0, code: '' }
   const discountPerPerson = COUPON_LIST[couponCode]
   if (!discountPerPerson) return { discount: 0, code: '' }
   const eligibleCount = participants.filter(

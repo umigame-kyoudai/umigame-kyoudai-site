@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { calculateCouponDiscount } from '@/lib/constants/coupons'
+import { calculateCouponDiscount, isCouponEligiblePlan } from '@/lib/constants/coupons'
 
 // クーポンコードの検証はサーバー側でのみ行う。
 // クライアントバンドルにコード一覧（COUPON_LIST）を含めないためのエンドポイント。
@@ -31,6 +31,7 @@ interface CouponRequest {
   couponCode?: string
   adultCount?: number
   childCount?: number
+  planId?: string
 }
 
 const toCount = (value: unknown): number =>
@@ -53,6 +54,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ valid: false, discount: 0, error: 'リクエストの形式が正しくありません' }, { status: 400 })
     }
 
+    // 対象外プラン（C1など）はコードを問わず割引不可。専用メッセージで明示する。
+    const planId = typeof body.planId === 'string' ? body.planId : undefined
+    if (!isCouponEligiblePlan(planId)) {
+      return NextResponse.json({ valid: false, discount: 0, error: 'このプランはクーポン対象外です' })
+    }
+
     const participants = [
       ...Array(toCount(body.adultCount)).fill({ category: 'adult' }),
       ...Array(toCount(body.childCount)).fill({ category: 'child' }),
@@ -60,7 +67,8 @@ export async function POST(request: Request) {
 
     const { discount, code } = calculateCouponDiscount(
       typeof body.couponCode === 'string' ? body.couponCode.trim() : '',
-      participants
+      participants,
+      planId
     )
 
     if (!code) {

@@ -347,7 +347,8 @@ export async function POST(request: Request) {
     const bookingNumber = generateBookingNumber()
 
     // クーポンをサーバー側で再計算（コードから直接金額を算出）
-    const validatedCoupon = calculateCouponDiscount(bookingData.couponCode, bookingData.participants)
+    // C1 など対象外プランは plan.id を渡すことで割引0に強制する
+    const validatedCoupon = calculateCouponDiscount(bookingData.couponCode, bookingData.participants, plan.id)
 
     // 合計金額もサーバー側で再計算（クライアント値は参考情報として無視）
     const serverTotalPrice = calculateServerSidePrice(
