@@ -490,7 +490,7 @@ export function BookingForm() {
 
   if (isSubmitted) {
     return (
-      <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm">
+      <div className="fixed inset-0 z-[100] overflow-y-auto bg-black/50 backdrop-blur-sm">
       <div className="flex min-h-full items-center justify-center p-4">
       <Card className="glass-card bg-white/95 backdrop-blur-xl rounded-3xl ring-1 ring-emerald-100 shadow-2xl max-w-2xl w-full mx-auto my-4 animate-in fade-in zoom-in duration-300">
         <CardContent className="p-6 sm:p-8 text-center">
