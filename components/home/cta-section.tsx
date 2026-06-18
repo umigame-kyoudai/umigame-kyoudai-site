@@ -95,7 +95,7 @@ export function CTASection() {
           transition={{ delay: 0.8, duration: 0.6 }}
           className="text-emerald-200 text-sm mt-6"
         >
-          ※ 前日までキャンセル無料 ・ 天候不良の場合は全額返金
+          ※ 前日までキャンセル無料 ・ 天候不良の中止もキャンセル料なし ・ お支払いは当日現地現金決済
         </motion.p>
       </div>
     </section>

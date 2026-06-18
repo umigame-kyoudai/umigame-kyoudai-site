@@ -572,7 +572,7 @@ export function PlansSection() {
           <div className="mt-3 flex flex-wrap gap-2 text-xs text-gray-600">
             <span className="rounded-full bg-white px-3 py-1 border border-gray-200">写真・動画無料</span>
             <span className="rounded-full bg-white px-3 py-1 border border-gray-200">前日までキャンセル無料</span>
-            <span className="rounded-full bg-white px-3 py-1 border border-gray-200">天候不良は全額返金</span>
+            <span className="rounded-full bg-white px-3 py-1 border border-gray-200">天候不良の中止も無料</span>
           </div>
         </div>
 
@@ -637,8 +637,8 @@ export function PlansSection() {
             {[
               { icon: Camera, text: "写真・動画データ無料", sub: "枚数制限なし" },
               { icon: Shield, text: "保険加入済み", sub: "安全講習あり" },
-              { icon: Clock, text: "前日までキャンセル無料", sub: "天候不良は全額返金" },
-              { icon: Users, text: "現地集合・現地解散", sub: "現金決済" },
+              { icon: Clock, text: "前日までキャンセル無料", sub: "天候不良の中止も無料" },
+              { icon: Users, text: "現地集合・現地解散", sub: "現地現金決済" },
             ].map((item) => (
               <div key={item.text} className="flex items-start gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-lg sm:rounded-xl bg-gray-50">
                 <item.icon className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500 mt-0.5 flex-shrink-0" />

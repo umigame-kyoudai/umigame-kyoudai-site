@@ -534,6 +534,7 @@ export function BookingForm() {
                 <p className="text-orange-600">貸切追加料金: ¥{selectedPlanData!.vipSurcharge!.toLocaleString()}</p>
               )}
               <p className="font-semibold text-emerald-800">合計金額: ¥{totalPrice.toLocaleString()}</p>
+              <p className="text-emerald-700">お支払い方法: 現地現金決済（ツアー当日・現金）</p>
             </div>
           </div>
           <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
@@ -1297,11 +1298,13 @@ export function BookingForm() {
               に同意します。
               <br />
               <span className="text-xs text-gray-500">
+                ※お支払いはツアー当日・現地での現金決済です。
+                <br />
                 ※前日までのキャンセルは無料です。
                 <br />
                 ※当日キャンセル・無断キャンセルは100%のキャンセル料が発生します。
                 <br />
-                ※悪天候による中止の場合は全額返金いたします。
+                ※悪天候による中止の場合、キャンセル料はかかりません。
               </span>
             </Label>
           </div>

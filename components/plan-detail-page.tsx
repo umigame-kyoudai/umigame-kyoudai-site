@@ -776,7 +776,7 @@ function PlanCTA({ plan }: { plan: PlanDetail }) {
             {plan.name}を予約する
           </h2>
           <p className="text-emerald-100 text-sm sm:text-lg mb-2">{priceDisplay?.compact ?? `${plan.price}〜`} / {plan.duration}</p>
-          <p className="text-emerald-100 text-xs sm:text-base mb-6 sm:mb-8">前日までキャンセル無料 ・ 天候不良の場合は全額返金</p>
+          <p className="text-emerald-100 text-xs sm:text-base mb-6 sm:mb-8">前日までキャンセル無料 ・ 天候不良の中止もキャンセル料なし ・ お支払いは当日現地現金決済</p>
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center px-2">
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}>
