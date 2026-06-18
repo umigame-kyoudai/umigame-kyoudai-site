@@ -24,7 +24,7 @@ export const TOUR_IMAGE_PATHS = {
     "/images/tours/sup/sup-06.webp",
   ],
   slideBoat: ["/images/slide-boat-photo.jpg"],
-  // 複合プラン（昼:シュノーケル + 夜:ナイト）。先頭は昼夜を対角合成したラベル付きカバー、
+  // 複合プラン（昼:シュノーケル + 夜:ナイト）。先頭は昼夜を対角合成したカバー、
   // 続けて昼・夜の個別写真を並べ、カルーセルで「昼と夜の両方」が一目で分かるようにする。
   // 合成画像は scripts/generate-combo-cover.mjs で生成。
   combo: [
