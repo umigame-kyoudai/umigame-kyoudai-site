@@ -1,19 +1,15 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Inter, JetBrains_Mono, Noto_Serif_JP } from "next/font/google"
+import { Inter } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { Suspense } from "react"
 import { RouteScrollManager } from "@/components/route-scroll-manager"
 import { WebSiteJsonLd, OrganizationJsonLd } from "@/components/json-ld"
 import "./globals.css"
 
+// 実際に使うのは Inter（本文）のみ。Noto Serif JP / JetBrains Mono は
+// サイト内で参照されていなかったため読み込みを削除（CWV/フォント取得の無駄を解消）。
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
-const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains-mono" })
-const notoSerifJP = Noto_Serif_JP({
-  subsets: ["latin"],
-  weight: ["300", "400", "500"],
-  variable: "--font-noto-serif-jp",
-})
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.umigamekyoudaimiyakojima.com"),
@@ -76,7 +72,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="ja" className={`${inter.variable} ${jetbrainsMono.variable} ${notoSerifJP.variable}`} suppressHydrationWarning>
+    <html lang="ja" className={inter.variable} suppressHydrationWarning>
       <head>
         <link key="preconnect-blob" rel="preconnect" href="https://hebbkx1anhila5yf.public.blob.vercel-storage.com" crossOrigin="anonymous" />
         <link key="dns-prefetch-blob" rel="dns-prefetch" href="https://hebbkx1anhila5yf.public.blob.vercel-storage.com" />

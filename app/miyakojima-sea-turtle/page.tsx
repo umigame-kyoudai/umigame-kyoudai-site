@@ -9,13 +9,13 @@ import { createMetadata, SITE_URL } from "@/lib/seo"
 
 const PAGE_PATH = "/miyakojima-sea-turtle"
 // ユーザー指定の長尺タイトル。ルートの title.template による二重サフィックスを避けるため absolute で指定する。
-const PAGE_TITLE = "宮古島でウミガメに会える場所と泳げる時期｜遭遇率・おすすめビーチ・注意点を解説"
+const PAGE_TITLE = "宮古島でウミガメ（海亀）に会える場所と時期｜遭遇率・おすすめビーチ・ツアー解説"
 
 export const metadata: Metadata = {
   ...createMetadata({
     title: PAGE_TITLE,
     description:
-      "宮古島でウミガメに会えるビーチや遭遇率が高い時期、初心者・子どもでも泳げるか、個人で行く際の注意点まで解説。安全にウミガメシュノーケルを楽しむなら少人数制ツアーの海亀兄弟へ。",
+      "宮古島でウミガメ（海亀）に会えるビーチや遭遇率が高い時期、初心者・子どもでも泳げるか、個人で行く際の注意点まで解説。安全に宮古島のウミガメツアー・シュノーケルを楽しむなら少人数制の海亀兄弟へ。",
     path: PAGE_PATH,
     locale: "ja",
     altLocalePath: "/en/miyakojima-sea-turtle",
@@ -76,7 +76,7 @@ export default function MiyakojimaSeaTurtlePage() {
           <div className="max-w-4xl mx-auto px-5 pt-24 pb-14 sm:pt-28 sm:pb-20">
             <p className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm rounded-full px-3.5 py-1.5 text-sm font-semibold mb-5">
               <MapPin className="w-4 h-4" />
-              宮古島 ウミガメ完全ガイド
+              宮古島 ウミガメ（海亀）完全ガイド
             </p>
             <h1 className="text-3xl sm:text-5xl font-black leading-tight tracking-tight mb-5 text-balance">
               宮古島でウミガメに会える場所と
@@ -84,7 +84,7 @@ export default function MiyakojimaSeaTurtlePage() {
               シュノーケリング完全ガイド
             </h1>
             <p className="text-base sm:text-lg text-white/90 leading-relaxed max-w-2xl text-pretty">
-              宮古島は、一年を通してウミガメに出会えるチャンスが高い人気のスポットです。このページでは、ウミガメに会いやすい場所や時期、初心者・お子様でも泳げるのか、個人で行く際の注意点、そしてツアー参加がおすすめな理由までをまとめました。
+              宮古島は、一年を通してウミガメ（海亀）に出会えるチャンスが高い人気のスポットです。このページでは、宮古島でウミガメに会いやすい場所や時期、初心者・お子様でも泳げるのか、個人で行く際の注意点、そして宮古島のウミガメツアーに参加するのがおすすめな理由までをまとめました。
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3 mt-7">
