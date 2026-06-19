@@ -15,7 +15,7 @@ export function MobileCTA({ locale = "ja" }: { locale?: "ja" | "en" }) {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
-      <div className="bg-white/98 backdrop-blur-xl border-t border-emerald-200/50 px-4 py-4 shadow-lg">
+      <div className="bg-white border-t border-emerald-200/50 px-4 py-4 shadow-lg">
         <div className="flex space-x-4">
           <Button
             variant="outline"

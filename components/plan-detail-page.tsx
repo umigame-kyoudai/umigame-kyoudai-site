@@ -927,7 +927,7 @@ function FloatingPlanNav({ currentId }: { currentId: string }) {
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: -80, opacity: 0 }}
           transition={{ type: "spring", stiffness: 200, damping: 25 }}
-          className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-lg border-b border-gray-100 shadow-sm"
+          className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100 shadow-sm"
         >
           <div className="max-w-5xl mx-auto px-4 py-2.5 flex items-center justify-between">
             {/* Plan tabs */}
