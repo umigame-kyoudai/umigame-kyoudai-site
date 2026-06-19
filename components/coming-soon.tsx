@@ -1,5 +1,5 @@
-import Link from "next/link"
 import { Bell, CalendarClock } from "lucide-react"
+import { TrackedCta } from "@/components/tracked-cta"
 
 type ComingSoonBadgeProps = {
   className?: string
@@ -45,14 +45,15 @@ export function ComingSoonBanner({
           <ComingSoonBadge className="mb-3" label="Coming Soon" />
           <h3 className="text-lg font-bold text-gray-900">{title}</h3>
           <p className="mt-2 text-sm leading-relaxed text-gray-600">{description}</p>
-          <Link
+          <TrackedCta
+            event={actionHref.startsWith("http") ? "line_click" : "book_cta_click"}
+            eventProps={{ location: "coming_soon" }}
             href={actionHref}
-            target={actionHref.startsWith("http") ? "_blank" : undefined}
-            rel={actionHref.startsWith("http") ? "noopener noreferrer" : undefined}
+            external={actionHref.startsWith("http")}
             className="mt-4 inline-flex rounded-full bg-cyan-700 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-cyan-800"
           >
             {actionLabel}
-          </Link>
+          </TrackedCta>
         </div>
       </div>
     </div>

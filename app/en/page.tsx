@@ -6,6 +6,7 @@ import { Footer } from "@/components/footer"
 import { MobileCTA } from "@/components/mobile-cta"
 import { BreadcrumbJsonLd } from "@/components/json-ld"
 import { createMetadata, SITE_URL } from "@/lib/seo"
+import { TrackedCta } from "@/components/tracked-cta"
 import { PLANS, formatPriceWithTilde } from "@/lib/data"
 import { getEnPrice } from "@/lib/i18n/en-prices"
 import { EN_HOME, EN_PLAN_BY_ID, EN_FAQS } from "@/lib/i18n/en"
@@ -55,13 +56,15 @@ export default function EnglishHomePage() {
               {EN_HOME.hero.subtitle}
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
-              <Link
+              <TrackedCta
+                event="book_cta_click"
+                eventProps={{ location: "en_home" }}
                 href="/en/book"
                 className="inline-flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-base px-7 py-3.5 rounded-full shadow-lg transition-all"
               >
                 <CalendarCheck className="w-5 h-5" />
                 Check Availability & Book
-              </Link>
+              </TrackedCta>
               <Link
                 href="/en/plans"
                 className="inline-flex items-center justify-center gap-2 bg-white/15 backdrop-blur-sm hover:bg-white/25 text-white font-bold text-base px-7 py-3.5 rounded-full border border-white/35 transition-all"
@@ -209,15 +212,16 @@ export default function EnglishHomePage() {
             <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">{EN_HOME.contactHeading}</h2>
             <p className="text-gray-600 mb-8">{EN_HOME.contactText}</p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <a
+              <TrackedCta
+                event="line_click"
+                eventProps={{ location: "en_home" }}
                 href="https://lin.ee/jfp4laz"
-                target="_blank"
-                rel="noopener noreferrer"
+                external
                 className="inline-flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-bold px-6 py-3 rounded-full transition-colors"
               >
                 <MessageCircle className="w-5 h-5" />
                 Message us on LINE
-              </a>
+              </TrackedCta>
               <a
                 href="mailto:info@umigamekyoudaimiyakojima.com"
                 className="inline-flex items-center justify-center gap-2 bg-white ring-1 ring-emerald-200 hover:bg-emerald-50 text-emerald-700 font-bold px-6 py-3 rounded-full transition-colors"

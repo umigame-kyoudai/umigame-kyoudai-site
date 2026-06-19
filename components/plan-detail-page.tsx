@@ -10,6 +10,7 @@ import {
   Bug, Compass, Heart, Sun, Baby, LifeBuoy, Sparkles, ArrowRight
 } from "lucide-react"
 import { BLUR_DATA_URLS } from "@/lib/image-placeholders"
+import { trackEvent } from "@/lib/analytics"
 import type { PlanDetail } from "@/lib/plan-details"
 import { PLAN_DETAILS } from "@/lib/plan-details"
 import { ComingSoonBadge, ComingSoonBanner } from "@/components/coming-soon"
@@ -782,6 +783,7 @@ function PlanCTA({ plan }: { plan: PlanDetail }) {
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}>
               <Link
                 href={`/book?plan=${plan.id}`}
+                onClick={() => trackEvent("book_cta_click", { location: "plan_detail", plan: plan.id })}
                 className="block bg-white text-emerald-700 font-bold text-base px-8 py-3.5 rounded-full shadow-xl transition-colors hover:bg-emerald-50"
               >
                 日付を選んで予約する
@@ -792,6 +794,7 @@ function PlanCTA({ plan }: { plan: PlanDetail }) {
                 href="https://lin.ee/jfp4laz"
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => trackEvent("line_click", { location: "plan_detail", plan: plan.id })}
                 className="block bg-[#06C755] text-white font-bold text-base px-8 py-3.5 rounded-full shadow-xl transition-colors hover:bg-[#05b34d]"
               >
                 LINEで質問・相談する
@@ -958,6 +961,7 @@ function FloatingPlanNav({ currentId }: { currentId: string }) {
             ) : (
               <Link
                 href={`/book?plan=${currentId}`}
+                onClick={() => trackEvent("book_cta_click", { location: "plan_floating_nav", plan: currentId })}
                 className="flex-shrink-0 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold px-5 py-2 rounded-full transition-colors ml-3"
               >
                 予約する

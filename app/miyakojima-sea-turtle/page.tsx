@@ -6,6 +6,7 @@ import { Footer } from "@/components/footer"
 import { MobileCTA } from "@/components/mobile-cta"
 import { BreadcrumbJsonLd, FAQJsonLd } from "@/components/json-ld"
 import { createMetadata, SITE_URL } from "@/lib/seo"
+import { TrackedCta } from "@/components/tracked-cta"
 
 const PAGE_PATH = "/miyakojima-sea-turtle"
 // ユーザー指定の長尺タイトル。ルートの title.template による二重サフィックスを避けるため absolute で指定する。
@@ -88,22 +89,25 @@ export default function MiyakojimaSeaTurtlePage() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3 mt-7">
-              <Link
+              <TrackedCta
+                event="book_cta_click"
+                eventProps={{ location: "pillar" }}
                 href="/book"
                 className="inline-flex items-center justify-center gap-2 bg-white text-emerald-700 font-bold px-7 py-3.5 rounded-full shadow-lg transition-all active:scale-95 hover:bg-emerald-50"
               >
                 <CalendarCheck className="w-5 h-5" />
                 空き確認・予約する
-              </Link>
-              <a
+              </TrackedCta>
+              <TrackedCta
+                event="line_click"
+                eventProps={{ location: "pillar" }}
                 href="https://lin.ee/jfp4laz"
-                target="_blank"
-                rel="noopener noreferrer"
+                external
                 className="inline-flex items-center justify-center gap-2 bg-white/15 backdrop-blur-sm hover:bg-white/25 text-white font-bold px-7 py-3.5 rounded-full border border-white/35 transition-all active:scale-95"
               >
                 <MessageCircle className="w-5 h-5" />
                 LINEで相談
-              </a>
+              </TrackedCta>
             </div>
           </div>
         </section>
@@ -250,9 +254,9 @@ export default function MiyakojimaSeaTurtlePage() {
                 ツアープラン一覧
               </Link>
               をご覧ください。空き状況の確認・ご予約は
-              <Link href="/book" className="text-teal-600 underline underline-offset-2 hover:text-teal-700 font-medium">
+              <TrackedCta event="book_cta_click" eventProps={{ location: "pillar_body" }} href="/book" className="text-teal-600 underline underline-offset-2 hover:text-teal-700 font-medium">
                 予約フォーム
-              </Link>
+              </TrackedCta>
               から承っています。
             </p>
           </section>
@@ -276,22 +280,25 @@ export default function MiyakojimaSeaTurtlePage() {
               初心者・お子様連れも安心の少人数制ツアー。写真・動画データ無料、前日までキャンセル無料です。
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link
+              <TrackedCta
+                event="book_cta_click"
+                eventProps={{ location: "pillar" }}
                 href="/book"
                 className="inline-flex items-center justify-center gap-2 bg-white text-emerald-700 font-bold px-7 py-3.5 rounded-full shadow-lg transition-all active:scale-95 hover:bg-emerald-50"
               >
                 <CalendarCheck className="w-5 h-5" />
                 空き確認・予約する
-              </Link>
-              <a
+              </TrackedCta>
+              <TrackedCta
+                event="line_click"
+                eventProps={{ location: "pillar" }}
                 href="https://lin.ee/jfp4laz"
-                target="_blank"
-                rel="noopener noreferrer"
+                external
                 className="inline-flex items-center justify-center gap-2 bg-white/15 backdrop-blur-sm hover:bg-white/25 text-white font-bold px-7 py-3.5 rounded-full border border-white/35 transition-all active:scale-95"
               >
                 <MessageCircle className="w-5 h-5" />
                 LINEで相談
-              </a>
+              </TrackedCta>
             </div>
           </section>
         </article>

@@ -10,6 +10,7 @@ import ReactMarkdown from "react-markdown"
 import Navbar from "@/components/navbar"
 import { BLUR_DATA_URLS } from "@/lib/image-placeholders"
 import type { BlogCta, BlogPostSummary } from "@/lib/blog"
+import { trackEvent } from "@/lib/analytics"
 import type { BlogPost } from "@/lib/data"
 
 interface BlogPostPageProps {
@@ -251,7 +252,7 @@ export default function BlogPostClient({ post, relatedPosts, cta }: BlogPostPage
                   <CardContent className="p-6 text-center">
                     <h3 className="font-bold mb-2">海亀と泳ごう！</h3>
                     <p className="text-sm mb-4 text-white/90">宮古島で感動の海亀体験を</p>
-                    <Link href="/book">
+                    <Link href="/book" onClick={() => trackEvent("book_cta_click", { location: "blog" })}>
                       <Button variant="secondary" size="sm" className="w-full">
                         今すぐ予約
                       </Button>

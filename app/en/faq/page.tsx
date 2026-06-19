@@ -5,6 +5,7 @@ import { Footer } from "@/components/footer"
 import { MobileCTA } from "@/components/mobile-cta"
 import { BreadcrumbJsonLd, FAQJsonLd } from "@/components/json-ld"
 import { createMetadata, SITE_URL } from "@/lib/seo"
+import { TrackedCta } from "@/components/tracked-cta"
 import { EN_FAQS } from "@/lib/i18n/en"
 import { ChevronRight, MessageCircle } from "lucide-react"
 
@@ -53,15 +54,16 @@ export default function EnglishFaqPage() {
 
           <div className="mt-10 bg-green-50 border border-green-200 rounded-2xl p-6 text-center">
             <p className="text-gray-700 mb-4">Still have questions? We reply carefully during business hours (7:00 AM – 6:00 PM).</p>
-            <a
+            <TrackedCta
+              event="line_click"
+              eventProps={{ location: "en_faq" }}
               href="https://lin.ee/jfp4laz"
-              target="_blank"
-              rel="noopener noreferrer"
+              external
               className="inline-flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-bold px-6 py-3 rounded-full transition-colors"
             >
               <MessageCircle className="w-5 h-5" />
               Ask on LINE
-            </a>
+            </TrackedCta>
             <p className="mt-3 text-sm text-gray-500">
               or email{" "}
               <a href="mailto:info@umigamekyoudaimiyakojima.com" className="text-emerald-700 underline">
@@ -71,9 +73,9 @@ export default function EnglishFaqPage() {
           </div>
 
           <div className="mt-8 text-center">
-            <Link href="/en/book" className="text-emerald-700 font-semibold underline">
+            <TrackedCta event="book_cta_click" eventProps={{ location: "en_faq" }} href="/en/book" className="text-emerald-700 font-semibold underline">
               Ready to book? Check availability here
-            </Link>
+            </TrackedCta>
           </div>
         </section>
       </main>

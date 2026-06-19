@@ -2,8 +2,8 @@
 
 import { useState, useRef, useEffect } from "react"
 import Image from "next/image"
-import Link from "next/link"
 import { X, ChevronLeft, ChevronRight } from "lucide-react"
+import { TrackedCta } from "@/components/tracked-cta"
 import { BLUR_DATA_URLS } from "@/lib/image-placeholders"
 import {
   galleryImages,
@@ -247,20 +247,23 @@ export function ImageGallery() {
               ギャラリーの写真のような素晴らしい体験があなたを待っています。写真は全て無料でプレゼント。
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link
+              <TrackedCta
+                event="book_cta_click"
+                eventProps={{ location: "gallery" }}
                 href="/book"
                 className="bg-white text-emerald-700 font-bold text-sm sm:text-base px-8 py-3.5 rounded-full shadow-xl transition-all active:scale-95 hover:bg-emerald-50"
               >
                 今すぐ予約する
-              </Link>
-              <a
+              </TrackedCta>
+              <TrackedCta
+                event="line_click"
+                eventProps={{ location: "gallery" }}
                 href="https://lin.ee/jfp4laz"
-                target="_blank"
-                rel="noopener noreferrer"
+                external
                 className="bg-white/20 text-white font-bold text-sm sm:text-base px-8 py-3.5 rounded-full border border-white/30 transition-all active:scale-95"
               >
                 LINEで相談
-              </a>
+              </TrackedCta>
             </div>
           </div>
         </div>

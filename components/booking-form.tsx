@@ -4,6 +4,7 @@ import type React from "react"
 import Link from "next/link"
 import { ParticipantForm } from "./participant-form"
 import { useLiff } from "./liff-provider"
+import { trackEvent } from "@/lib/analytics"
 
 import { useState, useEffect, useCallback, useRef } from "react"
 import { useSearchParams } from "next/navigation"
@@ -461,9 +462,16 @@ export function BookingForm() {
       }
 
       // fetch が成功したら即座に完了と判断（response.json は無視）
+      trackEvent("booking_submitted", {
+        plan: bookingData.selectedPlan,
+        planName: selectedPlanData?.name ?? "",
+        headcount: bookingData.adultCount + bookingData.childCount + bookingData.under3Count,
+        total: totalPrice,
+      })
       setIsSubmitted(true)
       setIsSubmitting(false)
     } catch (error) {
+      trackEvent("booking_failed", { plan: bookingData.selectedPlan })
       const errorMessage = error instanceof Error ? error.message : "予約の送信中にエラーが発生しました。もう一度お試しください。"
       toast.error(errorMessage)
       setIsSubmitting(false)

@@ -2,6 +2,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { Phone, MessageSquare, MapPin, Clock } from "lucide-react"
 import { EN_UI } from "@/lib/i18n/en"
+import { TrackedCta } from "@/components/tracked-cta"
 
 const CONTACT_INFO = {
   phone: "08053442439",
@@ -71,9 +72,9 @@ export function Footer({ locale = "ja" }: { locale?: "ja" | "en" }) {
               </div>
               <div className="flex items-center">
                 <MessageSquare className="w-4 h-4 mr-2 flex-shrink-0" />
-                <a href={CONTACT_INFO.lineUrl} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
+                <TrackedCta event="line_click" eventProps={{ location: "footer" }} href={CONTACT_INFO.lineUrl} external className="hover:text-white transition-colors">
                   {t.lineLabel}
-                </a>
+                </TrackedCta>
               </div>
               <div className="flex items-center">
                 <MapPin className="w-4 h-4 mr-2 flex-shrink-0" />

@@ -5,6 +5,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Menu, X, MessageSquare, Globe } from "lucide-react"
+import { trackEvent } from "@/lib/analytics"
 
 const LINE_URL = "https://lin.ee/jfp4laz"
 
@@ -54,7 +55,11 @@ export default function Navbar({ locale = "ja" }: { locale?: "ja" | "en" }) {
   const navItems = locale === "en" ? NAV_ITEMS_EN : NAV_ITEMS_JA
   const t = NAV_LABELS[locale]
 
-  const handleLineClick = () => window.open(LINE_URL, "_blank", "noopener,noreferrer")
+  const handleLineClick = () => {
+    trackEvent("line_click", { location: "navbar" })
+    window.open(LINE_URL, "_blank", "noopener,noreferrer")
+  }
+  const handleBookClick = () => trackEvent("book_cta_click", { location: "navbar" })
   const closeMenu = () => setIsOpen(false)
 
   return (
@@ -105,7 +110,7 @@ export default function Navbar({ locale = "ja" }: { locale?: "ja" | "en" }) {
               {t.line}
             </Button>
             <Button asChild className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl px-6">
-              <Link href={t.bookHref}>{t.book}</Link>
+              <Link href={t.bookHref} onClick={handleBookClick}>{t.book}</Link>
             </Button>
           </div>
 
@@ -157,7 +162,7 @@ export default function Navbar({ locale = "ja" }: { locale?: "ja" | "en" }) {
                   {t.line}
                 </Button>
                 <Button asChild className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl">
-                  <Link href={t.bookHref}>{t.book}</Link>
+                  <Link href={t.bookHref} onClick={handleBookClick}>{t.book}</Link>
                 </Button>
               </div>
             </div>

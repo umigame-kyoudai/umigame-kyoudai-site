@@ -2,6 +2,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { CalendarCheck, Camera, ChevronDown, MapPin, MessageCircle, Shield, Star } from "lucide-react"
 import { BLUR_DATA_URLS } from "@/lib/image-placeholders"
+import { TrackedCta } from "@/components/tracked-cta"
 
 export function HeroSection() {
   const proofItems = [
@@ -76,24 +77,27 @@ export function HeroSection() {
 
           <div className="hidden sm:flex flex-col sm:flex-row sm:flex-wrap gap-3 mb-5">
             <div>
-              <Link
+              <TrackedCta
+                event="book_cta_click"
+                eventProps={{ location: "hero" }}
                 href="/book"
                 className="inline-flex w-full sm:w-auto items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-base px-7 py-3.5 rounded-full shadow-lg transition-all active:scale-95"
               >
                 <CalendarCheck className="w-5 h-5" />
                 空き確認・予約する
-              </Link>
+              </TrackedCta>
             </div>
             <div>
-              <a
+              <TrackedCta
+                event="line_click"
+                eventProps={{ location: "hero" }}
                 href="https://lin.ee/jfp4laz"
-                target="_blank"
-                rel="noopener noreferrer"
+                external
                 className="inline-flex w-full sm:w-auto items-center justify-center gap-2 bg-white/15 backdrop-blur-sm hover:bg-white/25 text-white font-bold text-base px-7 py-3.5 rounded-full border border-white/35 transition-all active:scale-95"
               >
                 <MessageCircle className="w-5 h-5" />
                 LINEで相談
-              </a>
+              </TrackedCta>
             </div>
             <div>
               <Link

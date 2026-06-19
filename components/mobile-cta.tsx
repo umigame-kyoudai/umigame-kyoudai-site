@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { MessageSquare, Calendar } from "lucide-react"
 import { EN_UI } from "@/lib/i18n/en"
+import { trackEvent } from "@/lib/analytics"
 
 const JA = { line: "LINE相談", book: "空き確認・予約", bookHref: "/book" } as const
 
@@ -21,7 +22,10 @@ export function MobileCTA({ locale = "ja" }: { locale?: "ja" | "en" }) {
             variant="outline"
             size="lg"
             className={`${isBookingPage ? "w-full" : "flex-1"} border-green-300 text-green-700 hover:bg-green-50 bg-white/80 font-semibold`}
-            onClick={() => window.open("https://lin.ee/jfp4laz", "_blank", "noopener,noreferrer")}
+            onClick={() => {
+              trackEvent("line_click", { location: "mobile_cta" })
+              window.open("https://lin.ee/jfp4laz", "_blank", "noopener,noreferrer")
+            }}
           >
             <MessageSquare className="w-4 h-4 mr-2" />
             {t.line}
@@ -32,7 +36,7 @@ export function MobileCTA({ locale = "ja" }: { locale?: "ja" | "en" }) {
               size="lg"
               className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold"
             >
-              <Link href={t.bookHref}>
+              <Link href={t.bookHref} onClick={() => trackEvent("book_cta_click", { location: "mobile_cta" })}>
                 <Calendar className="w-4 h-4 mr-2" />
                 {t.book}
               </Link>

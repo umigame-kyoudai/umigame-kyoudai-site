@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ChevronDown, ChevronUp, MessageSquare, Phone } from "lucide-react"
 import type { FAQ } from "@/lib/data"
+import { trackEvent } from "@/lib/analytics"
 
 export function FAQSection({ faqs }: { faqs: FAQ[] }) {
   const [openItems, setOpenItems] = useState<Set<number>>(new Set([0])) // First item open by default
@@ -75,7 +76,10 @@ export function FAQSection({ faqs }: { faqs: FAQ[] }) {
                   variant="outline"
                   size="lg"
                   className="border-green-200 text-green-700 hover:bg-green-50 rounded-xl bg-transparent"
-                  onClick={() => window.open("https://lin.ee/jfp4laz", "_blank", "noopener,noreferrer")}
+                  onClick={() => {
+                    trackEvent("line_click", { location: "faq" })
+                    window.open("https://lin.ee/jfp4laz", "_blank", "noopener,noreferrer")
+                  }}
                 >
                   <MessageSquare className="w-5 h-5 mr-2" />
                   LINEで問い合わせ

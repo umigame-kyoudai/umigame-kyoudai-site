@@ -7,6 +7,7 @@ import { Footer } from "@/components/footer"
 import { MobileCTA } from "@/components/mobile-cta"
 import { BreadcrumbJsonLd } from "@/components/json-ld"
 import { createMetadata, SITE_URL } from "@/lib/seo"
+import { TrackedCta } from "@/components/tracked-cta"
 import { PLANS } from "@/lib/data"
 import { EN_PLAN_BY_ID, EN_PLANS } from "@/lib/i18n/en"
 import { getEnPrice, EN_PRICE_SUPPORT_NOTE } from "@/lib/i18n/en-prices"
@@ -203,19 +204,21 @@ export default function EnglishPlanDetailPage({ params }: { params: { id: string
             {comingSoon ? (
               <p className="text-gray-600">
                 This plan is coming soon. Follow us on{" "}
-                <a href="https://lin.ee/jfp4laz" target="_blank" rel="noopener noreferrer" className="text-emerald-700 underline">
+                <TrackedCta event="line_click" eventProps={{ location: "en_plan_detail", plan: plan.id }} href="https://lin.ee/jfp4laz" external className="text-emerald-700 underline">
                   LINE
-                </a>{" "}
+                </TrackedCta>{" "}
                 to hear when booking opens.
               </p>
             ) : (
-              <Link
+              <TrackedCta
+                event="book_cta_click"
+                eventProps={{ location: "en_plan_detail", plan: plan.id }}
                 href={`/en/book?plan=${plan.id}`}
                 className="inline-flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-lg px-10 py-4 rounded-full shadow-lg transition-all"
               >
                 <CalendarCheck className="w-5 h-5" />
                 Book this tour
-              </Link>
+              </TrackedCta>
             )}
           </section>
         </div>

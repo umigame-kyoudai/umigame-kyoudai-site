@@ -6,6 +6,7 @@ import { Footer } from "@/components/footer"
 import { MobileCTA } from "@/components/mobile-cta"
 import { BreadcrumbJsonLd } from "@/components/json-ld"
 import { createMetadata, SITE_URL } from "@/lib/seo"
+import { TrackedCta } from "@/components/tracked-cta"
 import { EN_GUIDE } from "@/lib/i18n/en"
 import { CalendarCheck } from "lucide-react"
 
@@ -75,13 +76,15 @@ export default function EnglishSeaTurtleGuidePage() {
             <p className="text-gray-600 text-sm mb-6">
               Small-group tours from ¥8,500 with free photos & videos. Free cancellation until the day before.
             </p>
-            <Link
+            <TrackedCta
+              event="book_cta_click"
+              eventProps={{ location: "en_pillar" }}
               href="/en/book"
               className="inline-flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-8 py-3.5 rounded-full shadow-lg transition-all"
             >
               <CalendarCheck className="w-5 h-5" />
               Check Availability & Book
-            </Link>
+            </TrackedCta>
           </div>
         </article>
       </main>
