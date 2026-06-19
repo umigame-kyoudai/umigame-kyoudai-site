@@ -2,7 +2,7 @@ const SITE_URL = "https://www.umigamekyoudaimiyakojima.com"
 const SITE_NAME = "海亀兄弟"
 
 // SNS等の公式プロフィールURL（ナレッジグラフ強化用）。
-// ここに追加すると Organization / TouristAttraction の sameAs に反映される。
+// ここに追加すると Organization / LocalBusiness の sameAs に反映される。
 const SITE_SAME_AS: string[] = [
   "https://www.instagram.com/umigamekyoudai",
 ]
@@ -80,10 +80,10 @@ export function StaffPersonJsonLd({
 export function LocalBusinessJsonLd() {
   const schema = {
     "@context": "https://schema.org",
-    "@type": "TouristAttraction",
+    "@type": ["LocalBusiness", "SportsActivityLocation", "TouristAttraction"],
     "@id": `${SITE_URL}/#business`,
     name: SITE_NAME,
-    description: "宮古島で家族向け少人数制マリン体験。ウミガメシュノーケル、貸切ツアー、ナイトツアー、サンセットSUP。",
+    description: "宮古島で家族向け少人数制マリン体験。ウミガメシュノーケル、貸切ツアー、ヤシガニ探検、サンセットSUP、昼夜セット。",
     url: SITE_URL,
     telephone: "+81-80-5344-2439",
     address: {
@@ -102,7 +102,37 @@ export function LocalBusinessJsonLd() {
       longitude: 125.28,
     },
     image: `${SITE_URL}/images/gemini-generated-image-rq969urq969urq96.jpeg`,
-    priceRange: "¥4,000〜¥9,000",
+    priceRange: "¥4,000〜¥16,000",
+    makesOffer: [
+      {
+        "@type": "Offer",
+        name: "ウミガメシュノーケルツアー",
+        price: "6500",
+        priceCurrency: "JPY",
+        url: `${SITE_URL}/plans/S1`,
+      },
+      {
+        "@type": "Offer",
+        name: "本格ナイトツアー",
+        price: "4000",
+        priceCurrency: "JPY",
+        url: `${SITE_URL}/plans/S3`,
+      },
+      {
+        "@type": "Offer",
+        name: "ウミガメシュノーケル＆ヤシガニ探検 昼夜セット",
+        price: "9500",
+        priceCurrency: "JPY",
+        url: `${SITE_URL}/plans/C1`,
+      },
+      {
+        "@type": "Offer",
+        name: "【貸切】ウミガメシュノーケル＆ヤシガニ探検 昼夜セット",
+        price: "16000",
+        priceCurrency: "JPY",
+        url: `${SITE_URL}/plans/C2`,
+      },
+    ],
     openingHoursSpecification: {
       "@type": "OpeningHoursSpecification",
       dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],

@@ -217,6 +217,12 @@ export function BookingForm() {
 
   const { childLabel, minAge, showUnder3, ageRestrictionMessage } = getAgeCategories()
 
+  useEffect(() => {
+    if (!showUnder3 && bookingData.under3Count > 0) {
+      setBookingData((prev) => ({ ...prev, under3Count: 0 }))
+    }
+  }, [showUnder3, bookingData.under3Count])
+
   const createParticipants = useCallback(
     (adultCount: number, childCount: number, under3Count: number, existingParticipants: ParticipantDetails[]) => {
       const newParticipants: ParticipantDetails[] = []
@@ -992,11 +998,11 @@ export function BookingForm() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          {bookingData.selectedPlan && bookingData.selectedPlan !== "S3" && (
+          {bookingData.selectedPlan && !showUnder3 && (
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
               <p className="text-sm text-amber-800">
                 <strong>年齢制限:</strong> このプランは5歳以上のお客様が対象です。
-                3歳以下のお子様が参加できるのは【アマゾン帰りの男と行く】本格ナイトツアーのみとなります。
+                3歳以下のお子様は、3歳以下無料対象のナイトツアー（通常・貸切）で参加できます。
               </p>
             </div>
           )}

@@ -217,6 +217,7 @@ const quickCompare = [
   { id: "S3", name: "ナイト", age: "0〜75歳", time: "約1.5時間", bestFor: "小さな子連れ・三世代" },
   { id: "S4", name: "サンセットSUP", age: "5〜65歳", time: "約2時間", bestFor: "カップル・夕日撮影" },
   { id: "C1", name: "昼夜セット", age: "5〜65歳", time: "昼2h＋夜1.5h", bestFor: "海と夜を1日で満喫" },
+  { id: "C2", name: "貸切昼夜", age: "5〜65歳", time: "昼2h＋夜1.5h", bestFor: "家族・貸切で満喫" },
   { id: "slide-boat", name: "スライダーボート", age: "5〜65歳予定", time: "約3時間", bestFor: "家族・グループ・アクティブ", status: "coming_soon" },
 ]
 
@@ -598,6 +599,8 @@ export function PlansSection() {
 
           {canScrollLeft && (
             <button
+              type="button"
+              aria-label="前のプランを見る"
               onClick={() => scrollTo("left")}
               className="hidden md:flex absolute left-2 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-lg items-center justify-center hover:bg-white transition-colors z-10"
             >
@@ -606,6 +609,8 @@ export function PlansSection() {
           )}
           {canScrollRight && (
             <button
+              type="button"
+              aria-label="次のプランを見る"
               onClick={() => scrollTo("right")}
               className="hidden md:flex absolute right-2 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-lg items-center justify-center hover:bg-white transition-colors z-10"
             >
@@ -618,7 +623,10 @@ export function PlansSection() {
         <div className="flex justify-center gap-2 mt-5">
           {tours.map((_, i) => (
             <button
+              type="button"
               key={i}
+              aria-label={`${i + 1}番目のプランへ移動`}
+              aria-current={i === activeIndex ? "true" : undefined}
               onClick={() => {
                 const el = scrollRef.current
                 if (!el) return

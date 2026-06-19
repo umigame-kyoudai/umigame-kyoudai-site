@@ -4,7 +4,7 @@ import type { NextRequest } from 'next/server'
 const PAGE_MAP: Record<string, string> = {
   home: '/',
   staff: '/staff',
-  plan: '/',
+  plan: '/plans',
   book: '/book',
   booking: '/book',
   gallery: '/gallery',

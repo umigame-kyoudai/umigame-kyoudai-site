@@ -31,7 +31,10 @@ export function FAQSection({ faqs }: { faqs: FAQ[] }) {
             >
               <CardContent className="p-0">
                 <button
+                  type="button"
                   onClick={() => toggleItem(index)}
+                  aria-expanded={openItems.has(index)}
+                  aria-controls={`faq-answer-${index}`}
                   className="w-full p-6 text-left hover:bg-emerald-50/50 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-inset"
                 >
                   <div className="flex items-center justify-between">
@@ -45,7 +48,7 @@ export function FAQSection({ faqs }: { faqs: FAQ[] }) {
                 </button>
 
                 {openItems.has(index) && (
-                  <div className="px-6 pb-6">
+                  <div id={`faq-answer-${index}`} className="px-6 pb-6">
                     <div className="border-t border-emerald-100 pt-4">
                       <p className="text-gray-600 leading-relaxed">{faq.answer}</p>
                     </div>
@@ -72,7 +75,7 @@ export function FAQSection({ faqs }: { faqs: FAQ[] }) {
                   variant="outline"
                   size="lg"
                   className="border-green-200 text-green-700 hover:bg-green-50 rounded-xl bg-transparent"
-                  onClick={() => window.open("https://lin.ee/jfp4laz", "_blank")}
+                  onClick={() => window.open("https://lin.ee/jfp4laz", "_blank", "noopener,noreferrer")}
                 >
                   <MessageSquare className="w-5 h-5 mr-2" />
                   LINEで問い合わせ

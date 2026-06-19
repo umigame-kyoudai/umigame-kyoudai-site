@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { MessageSquare, Calendar } from "lucide-react"
 import { EN_UI } from "@/lib/i18n/en"
 
-const JA = { line: "LINEで質問", book: "予約する", bookHref: "/book" } as const
+const JA = { line: "LINE相談", book: "空き確認・予約", bookHref: "/book" } as const
 
 export function MobileCTA({ locale = "ja" }: { locale?: "ja" | "en" }) {
   const pathname = usePathname()
@@ -21,7 +21,7 @@ export function MobileCTA({ locale = "ja" }: { locale?: "ja" | "en" }) {
             variant="outline"
             size="lg"
             className={`${isBookingPage ? "w-full" : "flex-1"} border-green-300 text-green-700 hover:bg-green-50 bg-white/80 font-semibold`}
-            onClick={() => window.open("https://lin.ee/jfp4laz", "_blank")}
+            onClick={() => window.open("https://lin.ee/jfp4laz", "_blank", "noopener,noreferrer")}
           >
             <MessageSquare className="w-4 h-4 mr-2" />
             {t.line}

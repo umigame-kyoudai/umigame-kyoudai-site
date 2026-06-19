@@ -22,12 +22,13 @@ const filterLabel = (value: FilterValue) =>
   value === "all" ? "すべて" : GALLERY_CATEGORY_LABELS[value]
 
 // --- Lightbox ---
-function Lightbox({ images, index, onClose, onPrev, onNext }: {
+function Lightbox({ images, index, onClose, onPrev, onNext, onSelect }: {
   images: GalleryImage[]
   index: number
   onClose: () => void
   onPrev: () => void
   onNext: () => void
+  onSelect: (index: number) => void
 }) {
   const img = images[index]
 
@@ -59,7 +60,12 @@ function Lightbox({ images, index, onClose, onPrev, onNext }: {
           <p className="text-white/60 text-xs">{index + 1} / {images.length}</p>
           <p className="text-white text-sm font-semibold">{img.title}</p>
         </div>
-        <button onClick={onClose} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 text-white active:scale-90">
+        <button
+          type="button"
+          aria-label="ギャラリーを閉じる"
+          onClick={onClose}
+          className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 text-white active:scale-90"
+        >
           <X className="w-5 h-5" />
         </button>
       </div>
@@ -80,12 +86,16 @@ function Lightbox({ images, index, onClose, onPrev, onNext }: {
 
         {/* Nav arrows */}
         <button
+          type="button"
+          aria-label="前の写真を見る"
           onClick={(e) => { e.stopPropagation(); onPrev() }}
           className="absolute left-1 sm:left-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 active:scale-90 transition-all"
         >
           <ChevronLeft className="w-6 h-6" />
         </button>
         <button
+          type="button"
+          aria-label="次の写真を見る"
           onClick={(e) => { e.stopPropagation(); onNext() }}
           className="absolute right-1 sm:right-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 active:scale-90 transition-all"
         >
@@ -98,8 +108,11 @@ function Lightbox({ images, index, onClose, onPrev, onNext }: {
         <div className="flex gap-1.5 overflow-x-auto scrollbar-hide justify-center">
           {images.map((thumb, i) => (
             <button
+              type="button"
               key={i}
-              onClick={() => { /* navigate to index */ }}
+              aria-label={`${thumb.title}を表示`}
+              aria-current={i === index ? "true" : undefined}
+              onClick={() => onSelect(i)}
               className={`relative flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-lg overflow-hidden transition-all ${
                 i === index ? "ring-2 ring-emerald-400 opacity-100" : "opacity-40 hover:opacity-70"
               }`}
@@ -181,7 +194,15 @@ export function ImageGallery() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: Math.min(index * 0.05, 0.3) }}
               className="break-inside-avoid cursor-pointer group"
+              role="button"
+              tabIndex={0}
               onClick={() => openLightbox(index)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault()
+                  openLightbox(index)
+                }
+              }}
             >
               <div className="relative overflow-hidden rounded-lg sm:rounded-xl">
                 <div className="relative w-full" style={{ aspectRatio: index % 3 === 0 ? "3/4" : "4/3" }}>
@@ -268,6 +289,7 @@ export function ImageGallery() {
             onClose={() => setLightboxIndex(null)}
             onPrev={() => setLightboxIndex((lightboxIndex - 1 + filteredImages.length) % filteredImages.length)}
             onNext={() => setLightboxIndex((lightboxIndex + 1) % filteredImages.length)}
+            onSelect={setLightboxIndex}
           />
         )}
       </AnimatePresence>

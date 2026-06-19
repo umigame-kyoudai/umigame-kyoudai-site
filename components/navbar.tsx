@@ -54,7 +54,7 @@ export default function Navbar({ locale = "ja" }: { locale?: "ja" | "en" }) {
   const navItems = locale === "en" ? NAV_ITEMS_EN : NAV_ITEMS_JA
   const t = NAV_LABELS[locale]
 
-  const handleLineClick = () => window.open(LINE_URL, "_blank")
+  const handleLineClick = () => window.open(LINE_URL, "_blank", "noopener,noreferrer")
   const closeMenu = () => setIsOpen(false)
 
   return (
