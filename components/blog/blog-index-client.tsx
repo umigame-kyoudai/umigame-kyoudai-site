@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react"
 import { Calendar, Clock, Tag } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
-import { motion } from "framer-motion"
 import { Navbar } from "@/components/navbar"
 import { MobileCTA } from "@/components/mobile-cta"
 import { Footer } from "@/components/footer"
@@ -63,13 +62,13 @@ export function BlogIndexClient({
           <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/60 to-transparent" />
         </div>
         <div className="relative z-10 w-full max-w-5xl mx-auto px-5 sm:px-6 lg:px-8 pb-8 sm:pb-12 pt-24 sm:pt-32">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+          <div>
             <p className="text-emerald-400 font-semibold text-xs sm:text-sm tracking-widest uppercase mb-2">Blog</p>
             <h1 className="text-3xl sm:text-5xl font-black text-white mb-2">海亀兄弟ブログ</h1>
             <p className="text-sm sm:text-lg text-white/60 max-w-lg">
               宮古島の海・ウミガメ・アクティビティの最新情報をお届け
             </p>
-          </motion.div>
+          </div>
         </div>
       </section>
 
@@ -102,12 +101,7 @@ export function BlogIndexClient({
         ) : (
           <>
             {featured && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="mb-8 sm:mb-12"
-              >
+              <div className="mb-8 sm:mb-12">
                 <Link href={`/blog/${featured.id}`} className="group block">
                   <div className="flex flex-col md:flex-row gap-0 bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl transition-shadow duration-500">
                     <div className="relative w-full md:w-1/2 aspect-[16/10] md:aspect-auto md:min-h-[320px] overflow-hidden">
@@ -147,17 +141,12 @@ export function BlogIndexClient({
                     </div>
                   </div>
                 </Link>
-              </motion.div>
+              </div>
             )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
-              {rest.map((post, i) => (
-                <motion.div
-                  key={post.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: Math.min(i * 0.05, 0.3) }}
-                >
+              {rest.map((post) => (
+                <div key={post.id}>
                   <Link href={`/blog/${post.id}`} className="group block h-full">
                     <div className="bg-white rounded-xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-lg transition-all duration-300 h-full flex flex-col">
                       <div className="relative aspect-[16/10] overflow-hidden">
@@ -192,7 +181,7 @@ export function BlogIndexClient({
                       </div>
                     </div>
                   </Link>
-                </motion.div>
+                </div>
               ))}
             </div>
 

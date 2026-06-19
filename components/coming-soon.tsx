@@ -1,5 +1,3 @@
-"use client"
-
 import Link from "next/link"
 import { Bell, CalendarClock } from "lucide-react"
 

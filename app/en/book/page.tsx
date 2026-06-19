@@ -4,7 +4,9 @@ import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { MobileCTA } from "@/components/mobile-cta"
 import { BookingFormEn } from "@/components/booking-form-en"
+import { LiffProvider } from "@/components/liff-provider"
 import { createMetadata } from "@/lib/seo"
+import { Toaster } from "sonner"
 
 export const metadata: Metadata = {
   ...createMetadata({
@@ -33,9 +35,12 @@ export default function EnglishBookPage() {
           </div>
 
           {/* BookingFormEn は useSearchParams を使うため個別の Suspense で包む */}
-          <Suspense fallback={<div className="text-center text-gray-500 py-12">Loading…</div>}>
-            <BookingFormEn />
-          </Suspense>
+          <LiffProvider>
+            <Suspense fallback={<div className="text-center text-gray-500 py-12">Loading…</div>}>
+              <BookingFormEn />
+            </Suspense>
+            <Toaster position="top-center" richColors />
+          </LiffProvider>
         </div>
       </main>
       <Footer locale="en" />

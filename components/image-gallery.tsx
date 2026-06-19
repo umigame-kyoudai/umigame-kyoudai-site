@@ -1,10 +1,9 @@
 "use client"
 
-import { useState, useRef, useEffect, useCallback } from "react"
+import { useState, useRef, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { motion, AnimatePresence } from "framer-motion"
-import { X, ChevronLeft, ChevronRight, Heart } from "lucide-react"
+import { X, ChevronLeft, ChevronRight } from "lucide-react"
 import { BLUR_DATA_URLS } from "@/lib/image-placeholders"
 import {
   galleryImages,
@@ -47,10 +46,7 @@ function Lightbox({ images, index, onClose, onPrev, onNext, onSelect }: {
   }, [onClose, onPrev, onNext])
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
+    <div
       className="fixed inset-0 z-50 bg-black/95 flex flex-col"
       onClick={onClose}
     >
@@ -122,7 +118,7 @@ function Lightbox({ images, index, onClose, onPrev, onNext, onSelect }: {
           ))}
         </div>
       </div>
-    </motion.div>
+    </div>
   )
 }
 
@@ -188,11 +184,8 @@ export function ImageGallery() {
         {/* Grid */}
         <div className="columns-2 sm:columns-2 md:columns-3 gap-2 sm:gap-3 space-y-2 sm:space-y-3">
           {visibleImages.map((image, index) => (
-            <motion.div
+            <div
               key={image.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: Math.min(index * 0.05, 0.3) }}
               className="break-inside-avoid cursor-pointer group"
               role="button"
               tabIndex={0}
@@ -228,7 +221,7 @@ export function ImageGallery() {
                   </div>
                 </div>
               </div>
-            </motion.div>
+            </div>
           ))}
         </div>
 
@@ -237,11 +230,9 @@ export function ImageGallery() {
           <div ref={loadMoreRef} className="h-16 flex items-center justify-center mt-6">
             <div className="flex gap-1">
               {[0, 1, 2].map((i) => (
-                <motion.div
+                <div
                   key={i}
-                  animate={{ scale: [1, 1.3, 1] }}
-                  transition={{ duration: 0.6, delay: i * 0.15, repeat: Infinity }}
-                  className="w-2 h-2 rounded-full bg-emerald-400"
+                  className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"
                 />
               ))}
             </div>
@@ -249,12 +240,7 @@ export function ImageGallery() {
         )}
 
         {/* CTA */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="mt-12 sm:mt-20 text-center"
-        >
+        <div className="mt-12 sm:mt-20 text-center">
           <div className="bg-gradient-to-br from-emerald-600 to-cyan-600 rounded-2xl sm:rounded-3xl p-8 sm:p-12 max-w-3xl mx-auto">
             <h3 className="text-xl sm:text-3xl font-bold text-white mb-3">あなたも感動体験を</h3>
             <p className="text-emerald-100 text-sm sm:text-base mb-6 max-w-lg mx-auto">
@@ -277,22 +263,20 @@ export function ImageGallery() {
               </a>
             </div>
           </div>
-        </motion.div>
+        </div>
       </div>
 
       {/* Lightbox */}
-      <AnimatePresence>
-        {lightboxIndex !== null && (
-          <Lightbox
-            images={filteredImages}
-            index={lightboxIndex}
-            onClose={() => setLightboxIndex(null)}
-            onPrev={() => setLightboxIndex((lightboxIndex - 1 + filteredImages.length) % filteredImages.length)}
-            onNext={() => setLightboxIndex((lightboxIndex + 1) % filteredImages.length)}
-            onSelect={setLightboxIndex}
-          />
-        )}
-      </AnimatePresence>
+      {lightboxIndex !== null && (
+        <Lightbox
+          images={filteredImages}
+          index={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+          onPrev={() => setLightboxIndex((lightboxIndex - 1 + filteredImages.length) % filteredImages.length)}
+          onNext={() => setLightboxIndex((lightboxIndex + 1) % filteredImages.length)}
+          onSelect={setLightboxIndex}
+        />
+      )}
     </section>
   )
 }

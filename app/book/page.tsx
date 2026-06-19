@@ -17,6 +17,8 @@ import { MobileCTA } from "@/components/mobile-cta"
 import { BubbleBackground } from "@/components/bubble-background"
 import { BookingForm } from "@/components/booking-form"
 import { Footer } from "@/components/footer"
+import { LiffProvider } from "@/components/liff-provider"
+import { Toaster } from "sonner"
 
 export default function BookPage() {
   return (
@@ -34,9 +36,12 @@ export default function BookPage() {
           </div>
 
           {/* BookingForm は useSearchParams を使うため個別の Suspense で包む */}
-          <Suspense fallback={<div className="text-center text-gray-500 py-12">読み込み中...</div>}>
-            <BookingForm />
-          </Suspense>
+          <LiffProvider>
+            <Suspense fallback={<div className="text-center text-gray-500 py-12">読み込み中...</div>}>
+              <BookingForm />
+            </Suspense>
+            <Toaster position="top-center" richColors />
+          </LiffProvider>
         </div>
       </main>
 

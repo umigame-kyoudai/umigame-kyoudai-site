@@ -1,6 +1,3 @@
-"use client"
-
-import { motion } from "framer-motion"
 import { Star } from "lucide-react"
 
 const testimonials = [
@@ -48,42 +45,15 @@ const testimonials = [
   },
 ]
 
-function ReviewCard({ review, index }: { review: typeof testimonials[0]; index: number }) {
+function ReviewCard({ review }: { review: typeof testimonials[0] }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 60, rotate: index % 2 === 0 ? -3 : 3 }}
-      whileInView={{ opacity: 1, y: 0, rotate: 0 }}
-      viewport={{ once: true, margin: "-30px" }}
-      transition={{
-        type: "spring",
-        stiffness: 80,
-        damping: 18,
-        delay: index * 0.08,
-      }}
-      whileHover={{
-        y: -6,
-        scale: 1.02,
-        transition: { type: "spring", stiffness: 400, damping: 20 },
-      }}
-      className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm hover:shadow-xl transition-shadow duration-300 border border-gray-100"
-    >
+    <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm hover:-translate-y-1 hover:shadow-xl transition-all duration-300 border border-gray-100">
       {/* Stars - cascade in */}
       <div className="flex gap-1 mb-4">
         {Array.from({ length: review.rating }).map((_, j) => (
-          <motion.div
-            key={j}
-            initial={{ opacity: 0, scale: 0 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{
-              type: "spring",
-              stiffness: 300,
-              damping: 15,
-              delay: index * 0.08 + j * 0.06,
-            }}
-          >
+          <span key={j}>
             <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-          </motion.div>
+          </span>
         ))}
       </div>
 
@@ -98,7 +68,7 @@ function ReviewCard({ review, index }: { review: typeof testimonials[0]; index: 
           {review.plan}
         </span>
       </div>
-    </motion.div>
+    </div>
   )
 }
 
@@ -106,23 +76,17 @@ export function TestimonialsSection() {
   return (
     <section className="py-12 sm:py-16 md:py-28 bg-emerald-50/50 relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-          className="text-center mb-16"
-        >
+        <div className="text-center mb-16">
           <p className="text-emerald-600 font-semibold text-sm tracking-widest uppercase mb-3">Testimonials</p>
           <h2 className="text-3xl md:text-5xl font-bold text-gray-900 mb-4">
             お客様の<span className="text-emerald-600">声</span>
           </h2>
           <p className="text-gray-500 text-lg">実際に体験されたお客様からの口コミをご紹介</p>
-        </motion.div>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {testimonials.map((review, i) => (
-            <ReviewCard key={i} review={review} index={i} />
+            <ReviewCard key={i} review={review} />
           ))}
         </div>
       </div>

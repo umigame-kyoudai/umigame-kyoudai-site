@@ -3,11 +3,8 @@ import type { Metadata } from "next"
 import { Inter, JetBrains_Mono, Noto_Serif_JP } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { Suspense } from "react"
-import { LiffProvider } from "@/components/liff-provider"
-import { MotionProvider } from "@/components/motion-provider"
 import { RouteScrollManager } from "@/components/route-scroll-manager"
 import { WebSiteJsonLd, OrganizationJsonLd } from "@/components/json-ld"
-import { Toaster } from "sonner"
 import "./globals.css"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
@@ -101,16 +98,11 @@ export default function RootLayout({
           プリレンダー時に全ページの body が空になり、サイト全体が
           クライアントレンダリングに退化していた（LCP・SEOに悪影響）。
         */}
-        <MotionProvider>
-          <LiffProvider>
-            <Suspense fallback={null}>
-              <RouteScrollManager />
-            </Suspense>
-            {children}
-            <Analytics />
-            <Toaster position="top-center" richColors />
-          </LiffProvider>
-        </MotionProvider>
+        <Suspense fallback={null}>
+          <RouteScrollManager />
+        </Suspense>
+        {children}
+        <Analytics />
       </body>
     </html>
   )

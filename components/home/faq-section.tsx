@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { motion, AnimatePresence } from "framer-motion"
 import { ChevronDown } from "lucide-react"
 
 const faqs = [
@@ -24,52 +23,31 @@ const faqs = [
   },
 ]
 
-function FAQItem({ faq, index }: { faq: typeof faqs[0]; index: number }) {
+function FAQItem({ faq }: { faq: typeof faqs[0] }) {
   const [isOpen, setIsOpen] = useState(false)
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: index % 2 === 0 ? -30 : 30 }}
-      whileInView={{ opacity: 1, x: 0 }}
-      viewport={{ once: true, margin: "-30px" }}
-      transition={{ type: "spring", stiffness: 100, damping: 20, delay: index * 0.1 }}
-      className="border-b border-gray-200 last:border-0"
-    >
-      <motion.button
+    <div className="border-b border-gray-200 last:border-0">
+      <button
         onClick={() => setIsOpen(!isOpen)}
-        whileTap={{ scale: 0.98 }}
+        aria-expanded={isOpen}
         className="w-full flex items-center justify-between py-5 text-left group"
       >
         <span className="text-gray-900 font-semibold text-sm md:text-base pr-4 group-hover:text-emerald-600 transition-colors">
           {faq.question}
         </span>
-        <motion.div
-          animate={{ rotate: isOpen ? 180 : 0 }}
-          transition={{ type: "spring", stiffness: 300, damping: 25 }}
-        >
+        <div className={`transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}>
           <ChevronDown className="w-5 h-5 text-gray-400 flex-shrink-0" />
-        </motion.div>
-      </motion.button>
-      <AnimatePresence initial={false}>
-        {isOpen && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            className="overflow-hidden"
-          >
-            <motion.p
-              initial={{ y: -10 }}
-              animate={{ y: 0 }}
-              className="text-gray-500 text-sm leading-relaxed pb-5"
-            >
-              {faq.answer}
-            </motion.p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
+        </div>
+      </button>
+      {isOpen && (
+        <div className="overflow-hidden">
+          <p className="text-gray-500 text-sm leading-relaxed pb-5">
+            {faq.answer}
+          </p>
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -77,45 +55,27 @@ export function FAQSection() {
   return (
     <section className="py-12 sm:py-16 md:py-28 bg-white">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 30, scale: 0.95 }}
-          whileInView={{ opacity: 1, y: 0, scale: 1 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ type: "spring", stiffness: 100, damping: 20 }}
-          className="text-center mb-12"
-        >
+        <div className="text-center mb-12">
           <p className="text-emerald-600 font-semibold text-sm tracking-widest uppercase mb-3">FAQ</p>
           <h2 className="text-3xl md:text-5xl font-bold text-gray-900">
             よくある<span className="text-emerald-600">質問</span>
           </h2>
-        </motion.div>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-50px" }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="bg-gray-50 rounded-2xl p-6 md:p-8"
-        >
+        <div className="bg-gray-50 rounded-2xl p-6 md:p-8">
           {faqs.map((faq, i) => (
-            <FAQItem key={i} faq={faq} index={i} />
+            <FAQItem key={i} faq={faq} />
           ))}
-        </motion.div>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.5 }}
-          className="text-center mt-8"
-        >
+        <div className="text-center mt-8">
           <Link
             href="/faq"
             className="inline-flex items-center text-emerald-600 hover:text-emerald-700 font-semibold transition-colors"
           >
             すべてのFAQを見る →
           </Link>
-        </motion.div>
+        </div>
       </div>
     </section>
   )

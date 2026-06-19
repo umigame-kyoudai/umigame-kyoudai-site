@@ -1,8 +1,5 @@
-"use client"
-
 import Image from "next/image"
 import Link from "next/link"
-import { motion } from "framer-motion"
 import { Shield, Star, Award, Plane, Compass } from "lucide-react"
 import { BLUR_DATA_URLS } from "@/lib/image-placeholders"
 
@@ -104,15 +101,9 @@ const staff = [
   },
 ]
 
-function StaffCard({ member, index }: { member: typeof staff[0]; index: number }) {
+function StaffCard({ member }: { member: typeof staff[0] }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 40 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-50px" }}
-      transition={{ duration: 0.6, delay: index * 0.1 }}
-      className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-xl transition-shadow duration-500"
-    >
+    <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-xl transition-shadow duration-500">
       {/* Photo */}
       <div className="relative aspect-[4/5] overflow-hidden">
         <Image
@@ -166,7 +157,7 @@ function StaffCard({ member, index }: { member: typeof staff[0]; index: number }
           </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   )
 }
 
@@ -176,19 +167,13 @@ export function StaffGrid() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Grid - 1col mobile, 2col desktop */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-          {staff.map((member, i) => (
-            <StaffCard key={member.id} member={member} index={i} />
+          {staff.map((member) => (
+            <StaffCard key={member.id} member={member} />
           ))}
         </div>
 
         {/* Team values */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="mt-12 sm:mt-20"
-        >
+        <div className="mt-12 sm:mt-20">
           <div className="text-center mb-8 sm:mb-12">
             <p className="text-emerald-600 font-semibold text-xs sm:text-sm tracking-widest uppercase mb-2">Our Values</p>
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
@@ -213,30 +198,21 @@ export function StaffGrid() {
                 title: "思い出をカタチに",
                 text: "高画質カメラで全力撮影。枚数制限なし・全データ無料プレゼント。「こんな写真が撮りたい」のリクエストにもお応えします。",
               },
-            ].map((value, i) => (
-              <motion.div
+            ].map((value) => (
+              <div
                 key={value.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: i * 0.1 }}
                 className="bg-white rounded-xl sm:rounded-2xl p-5 sm:p-6 border border-gray-100"
               >
                 <p className="text-2xl mb-3">{value.emoji}</p>
                 <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-2">{value.title}</h3>
                 <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">{value.text}</p>
-              </motion.div>
+              </div>
             ))}
           </div>
-        </motion.div>
+        </div>
 
         {/* CTA */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="mt-12 sm:mt-16 text-center"
-        >
+        <div className="mt-12 sm:mt-16 text-center">
           <div className="bg-gradient-to-br from-emerald-600 to-cyan-600 rounded-2xl sm:rounded-3xl p-8 sm:p-12 max-w-3xl mx-auto">
             <h3 className="text-xl sm:text-3xl font-bold text-white mb-3">
               このスタッフたちと、<br className="sm:hidden" />海に出かけよう
@@ -261,7 +237,7 @@ export function StaffGrid() {
               </a>
             </div>
           </div>
-        </motion.div>
+        </div>
       </div>
     </section>
   )

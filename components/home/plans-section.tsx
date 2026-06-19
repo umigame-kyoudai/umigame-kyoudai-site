@@ -2,7 +2,6 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { motion } from "framer-motion"
 import { useRef, useState, useEffect } from "react"
 import { Star, Clock, Users, Camera, Shield, Check, ChevronLeft, ChevronRight } from "lucide-react"
 import { BLUR_DATA_URLS } from "@/lib/image-placeholders"
@@ -528,13 +527,7 @@ export function PlansSection() {
   return (
     <section id="plans" className="py-12 sm:py-16 md:py-24 bg-gray-50 relative overflow-hidden scroll-mt-16">
       <div className="max-w-7xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 30, filter: "blur(10px)" }}
-          whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.8 }}
-          className="text-center mb-8 sm:mb-12 px-5 sm:px-6 lg:px-8"
-        >
+        <div className="text-center mb-8 sm:mb-12 px-5 sm:px-6 lg:px-8">
           <p className="text-emerald-600 font-semibold text-xs sm:text-sm tracking-widest uppercase mb-2">Tour Plans</p>
           <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold text-gray-900 mb-3">
             料金・対象年齢で<span className="text-emerald-600">すぐ比較</span>
@@ -542,7 +535,7 @@ export function PlansSection() {
           <p className="text-gray-500 text-sm sm:text-lg max-w-2xl mx-auto">
             迷ったら、まずは年齢と料金で選んでください。詳しい相談はLINEで確認できます。
           </p>
-        </motion.div>
+        </div>
 
         <div className="px-5 sm:px-6 lg:px-8 mb-8">
           <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
@@ -641,13 +634,7 @@ export function PlansSection() {
         </div>
 
         {/* Common info */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="mt-10 sm:mt-16 mx-5 sm:mx-6 lg:mx-8 bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8 border border-gray-100"
-        >
+        <div className="mt-10 sm:mt-16 mx-5 sm:mx-6 lg:mx-8 bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8 border border-gray-100">
           <h3 className="text-sm sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4 text-center">全プラン共通</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
             {[
@@ -665,7 +652,7 @@ export function PlansSection() {
               </div>
             ))}
           </div>
-        </motion.div>
+        </div>
       </div>
     </section>
   )
