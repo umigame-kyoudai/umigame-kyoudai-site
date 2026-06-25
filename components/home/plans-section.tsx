@@ -7,7 +7,7 @@ import { Star, Clock, Users, Camera, Shield, Check, ChevronLeft, ChevronRight } 
 import { BLUR_DATA_URLS } from "@/lib/image-placeholders"
 import { PLAN_COVER_IMAGE, TOUR_IMAGE_PATHS } from "@/lib/tour-assets"
 import { ComingSoonBadge } from "@/components/coming-soon"
-import { getPlanPriceDisplay } from "@/lib/plan-price-display"
+import { getPlanPriceDisplay, getPlanCode } from "@/lib/plan-price-display"
 
 interface PlanVariant {
   id: string
@@ -307,6 +307,9 @@ function PlanPricePair({ planId, tone = "emerald", dense = false }: { planId: st
 
   return (
     <div className={dense ? "mt-1" : ""}>
+      <div className="mb-1 flex justify-center">
+        <span className="inline-block rounded bg-gray-100 px-1.5 py-0.5 text-[9px] font-bold tracking-wider text-gray-500">{getPlanCode(planId)}</span>
+      </div>
       <div className="grid grid-cols-2 gap-1.5">
         {priceDisplay.rows.map((row) => (
           <div key={row.label} className={`rounded-lg bg-white/75 border border-white/80 ${dense ? "px-1.5 py-1" : "px-2.5 py-2"}`}>
@@ -626,7 +629,8 @@ export function PlansSection() {
               return (
                 <div key={item.name} className="grid grid-cols-4 border-t border-gray-100 text-[11px] sm:text-sm">
                   <div className="p-3 sm:p-4 font-bold text-gray-900">
-                    <span>{item.name}</span>
+                    <span className="mr-1 inline-block rounded bg-gray-100 px-1 py-0.5 align-middle text-[9px] font-bold tracking-wider text-gray-500">{getPlanCode(item.id)}</span>
+                    <span className="align-middle">{item.name}</span>
                     {item.status === "coming_soon" && <ComingSoonBadge className="mt-1 px-2 py-0.5 text-[10px]" />}
                   </div>
                   <div className="p-3 sm:p-4 font-bold leading-snug text-emerald-700">

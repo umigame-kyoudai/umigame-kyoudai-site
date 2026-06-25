@@ -27,6 +27,12 @@ export const PLAN_PRICE_DATA: Record<string, { price: number; childPrice?: numbe
   "slide-boat": { price: 14000, childPrice: 12000, status: "coming_soon" },
 }
 
+// プランの呼び名コード（お客様・スタッフが「S1のプラン」等と呼ぶための短い識別タグ）。
+// 内部IDがそのままコード（S1〜S7・C1〜C4）。slide-boatのみ短縮コードを割り当てる。
+export function getPlanCode(planId: string): string {
+  return planId === "slide-boat" ? "SB" : planId.toUpperCase()
+}
+
 function formatYen(price: number): string {
   return `¥${price.toLocaleString()}`
 }

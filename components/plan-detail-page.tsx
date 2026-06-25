@@ -14,7 +14,7 @@ import { trackEvent } from "@/lib/analytics"
 import type { PlanDetail } from "@/lib/plan-details"
 import { PLAN_DETAILS } from "@/lib/plan-details"
 import { ComingSoonBadge, ComingSoonBanner } from "@/components/coming-soon"
-import { getPlanPriceDisplay } from "@/lib/plan-price-display"
+import { getPlanPriceDisplay, getPlanCode } from "@/lib/plan-price-display"
 
 const iconMap: Record<string, any> = {
   turtle: Sparkles, camera: Camera, users: Users, shield: Shield,
@@ -88,6 +88,9 @@ function PlanHero({ plan }: { plan: PlanDetail }) {
             ) : null}
           </div>
 
+          <span className="mb-2 inline-block rounded-md bg-white/20 px-2 py-0.5 text-xs font-bold tracking-widest text-white ring-1 ring-white/30 backdrop-blur-sm">
+            {getPlanCode(plan.id)}
+          </span>
           <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white mb-2 sm:mb-3 drop-shadow-2xl">
             {plan.name}
           </h1>

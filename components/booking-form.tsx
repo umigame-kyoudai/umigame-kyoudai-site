@@ -22,7 +22,7 @@ import BookingTimeSlots from "@/components/booking-time-slots"
 import { ComingSoonBadge } from "@/components/coming-soon"
 import { ADULT_PRICE, BOOKING_PLANS, CHILD_PRICE } from "@/lib/booking-plans"
 import { getStaffFee } from "@/lib/data"
-import { getPlanPriceDisplay } from "@/lib/plan-price-display"
+import { getPlanPriceDisplay, getPlanCode } from "@/lib/plan-price-display"
 
 interface ParticipantDetails {
   id: string // Added unique ID for each participant
@@ -136,6 +136,9 @@ function BookingPlanPrice({ planId, className = "" }: { planId: string; classNam
 
   return (
     <div className={className}>
+      <div className="mb-1 flex justify-center">
+        <span className="inline-block rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-gray-500">{getPlanCode(planId)}</span>
+      </div>
       <div className="grid grid-cols-2 gap-1 sm:gap-1.5">
         {priceDisplay.rows.map((row) => (
           <div key={row.label} className="rounded-lg bg-white/75 px-1 py-1.5 text-center ring-1 ring-gray-100 sm:px-2">
