@@ -8,7 +8,7 @@ export const COUPON_LIST: Record<string, number> = {
 // クーポン対象外のプラン。
 // セットプラン（昼夜セットC1/C2・海空セットC3）は既に1人¥1,000のセット割引済みのため、
 // クーポンの重ねがけ（二重割引）を不可とする。
-export const COUPON_INELIGIBLE_PLAN_IDS = new Set(['C1', 'C2', 'C3', 'C4'])
+export const COUPON_INELIGIBLE_PLAN_IDS = new Set(['C1', 'C2', 'C3', 'C4', 'C5', 'C6'])
 
 export const isCouponEligiblePlan = (planId: string | undefined | null): boolean =>
   !planId || !COUPON_INELIGIBLE_PLAN_IDS.has(planId)

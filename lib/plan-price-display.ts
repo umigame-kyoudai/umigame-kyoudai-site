@@ -24,6 +24,8 @@ export const PLAN_PRICE_DATA: Record<string, { price: number; childPrice?: numbe
   C2: { price: 16000, childPrice: 16000 },
   C3: { price: 13000, childPrice: 11500 },
   C4: { price: 17500, childPrice: 16500 },
+  C5: { price: 16000, childPrice: 14500 },
+  C6: { price: 24500, childPrice: 23500 },
   "slide-boat": { price: 14000, childPrice: 12000, status: "coming_soon" },
 }
 
@@ -73,6 +75,10 @@ export function getPlanPriceDisplay(planId: string): PlanPriceDisplay | null {
     caption = "通常¥14,000・1,000円お得"
   } else if (planId === "C4") {
     caption = "貸切通常¥18,500・1,000円お得"
+  } else if (planId === "C5") {
+    caption = "通常¥18,000・2,000円お得"
+  } else if (planId === "C6") {
+    caption = "貸切通常¥26,500・2,000円お得"
   }
 
   return {

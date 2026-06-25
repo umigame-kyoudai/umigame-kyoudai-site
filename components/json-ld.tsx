@@ -102,7 +102,7 @@ export function LocalBusinessJsonLd() {
       longitude: 125.28,
     },
     image: `${SITE_URL}/images/gemini-generated-image-rq969urq969urq96.jpeg`,
-    priceRange: "¥4,000〜¥17,500",
+    priceRange: "¥4,000〜¥24,500",
     makesOffer: [
       {
         "@type": "Offer",
@@ -159,6 +159,20 @@ export function LocalBusinessJsonLd() {
         price: "17500",
         priceCurrency: "JPY",
         url: `${SITE_URL}/plans/C4`,
+      },
+      {
+        "@type": "Offer",
+        name: "ウミガメシュノーケル＆ドローンSUP＆ナイトツアー まるごと1日セット",
+        price: "16000",
+        priceCurrency: "JPY",
+        url: `${SITE_URL}/plans/C5`,
+      },
+      {
+        "@type": "Offer",
+        name: "【貸切】ウミガメシュノーケル＆ドローンSUP＆ナイトツアー まるごと1日セット",
+        price: "24500",
+        priceCurrency: "JPY",
+        url: `${SITE_URL}/plans/C6`,
       },
     ],
     openingHoursSpecification: {

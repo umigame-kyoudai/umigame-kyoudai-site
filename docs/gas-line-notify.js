@@ -135,7 +135,7 @@ function isComboPlanName(planName) {
          plan.indexOf(PRIVATE_COMBO_PLAN_NAME) !== -1 ||
          plan.indexOf(LEGACY_COMBO_PLAN_NAME) !== -1 ||
          plan.indexOf('ウミガメ＆ジャングルナイト') !== -1 ||
-         plan.indexOf('まるごと1日') !== -1 ||
+         plan.indexOf('まるごと1日プラン') !== -1 ||
          (
            plan.indexOf('ウミガメ') !== -1 &&
            plan.indexOf('ヤシガニ') !== -1 &&
@@ -143,18 +143,29 @@ function isComboPlanName(planName) {
          );
 }
 
-// 昼夜セット（C1/C2）かどうか
+// まるごと1日セット（C5/C6：朝シュノーケル + 昼ドローンSUP + 夜ナイトツアー）かどうか。
+// プラン名「まるごと1日セット」、または [COMBO booking] にドローンSUPと夜(ヤシガニ/ナイト)の両方を含む。
+// 3アクティビティのため、昼夜セット・海空セットより優先して振り分ける。
+function isTripleComboBooking(data) {
+  var plan = String(data && data.planName || '');
+  var sr = String(data && data.specialRequests || '');
+  if (plan.indexOf('まるごと1日セット') !== -1) return true;
+  return sr.indexOf('[COMBO booking]') !== -1 &&
+         sr.indexOf('ドローンSUP') !== -1 &&
+         (sr.indexOf('ヤシガニ') !== -1 || sr.indexOf('ナイト') !== -1);
+}
+
+// 昼夜セット（C1/C2）かどうか。トリプル・海空セットは別処理のため除外。
 // 主判定は specialRequests の [COMBO booking] マーカー。補助的に新旧プラン名も見る。
 function isComboBooking(data) {
+  if (isTripleComboBooking(data) || isSeaSkyComboBooking(data)) return false;
   return String(data && data.specialRequests || '').indexOf('[COMBO booking]') !== -1 ||
          isComboPlanName(data && data.planName);
 }
 
-// 海空セット（C3：昼ウミガメ + 昼ドローンSUP、夜時刻なし）かどうか。
-// プラン名「海空セット」、または [COMBO booking] ブロック内の「ドローンSUP」で判定する。
-// ※ C3 も [COMBO booking] を持つため isComboBooking() は true になる。C3 専用処理は
-//   この関数で先に振り分けること（夜時刻前提の C1/C2 処理に入れない）。
+// 海空セット（C3/C4：昼ウミガメ + 昼ドローンSUP、夜なし）かどうか。トリプルは除外。
 function isSeaSkyComboBooking(data) {
+  if (isTripleComboBooking(data)) return false;
   var plan = String(data && data.planName || '');
   var sr = String(data && data.specialRequests || '');
   return plan.indexOf('海空セット') !== -1 ||
@@ -169,10 +180,13 @@ function extractComboNightTime(data) {
 function getBookingDisplayTime(data) {
   var time = String(data && data.selectedTime || '');
 
-  if (!isComboBooking(data)) return time;
+  // トリプル(C5/C6)・昼夜セット(C1/C2)は「海亀 / 夜」併記。海空セット(C3/C4)は海亀のみ。
+  if (isTripleComboBooking(data) || isComboBooking(data)) {
+    var nightTime = extractComboNightTime(data);
+    return nightTime ? time + ' / ' + nightTime : time;
+  }
 
-  var nightTime = extractComboNightTime(data);
-  return nightTime ? time + ' / ' + nightTime : time;
+  return time;
 }
 
 function nightTimeFromCell(timeCellValue) {
@@ -215,11 +229,15 @@ function getConfirmMessage(planName, customerName, bookingNumber, selectedDate, 
   details = details || {};
 
   var plan = String(planName || '');
+  // まるごと1日セット（C5/C6）判定：プラン名で判定。昼夜・海空より先に振り分ける。
+  var isTriple = plan.indexOf('まるごと1日セット') !== -1 ||
+    (plan.indexOf('ドローンSUP') !== -1 && plan.indexOf('ナイトツアー') !== -1);
   // 昼夜セット判定：D列の時間が「海亀 / 夜」併記（"/"を含む）か、新旧プラン名に一致
-  var isCombo = isComboPlanName(plan) || String(selectedTime || '').indexOf('/') !== -1;
+  var isCombo = !isTriple && (isComboPlanName(plan) || String(selectedTime || '').indexOf('/') !== -1);
   // 海空セット（C3）判定：プラン名で判定（getConfirmMessage は specialRequests を受け取らない）
-  var isSeaSky = plan.indexOf('海空セット') !== -1 ||
-    (plan.indexOf('ドローンSUP') !== -1 && plan.indexOf('ウミガメ') !== -1);
+  var isSeaSky = !isTriple &&
+    (plan.indexOf('海空セット') !== -1 ||
+     (plan.indexOf('ドローンSUP') !== -1 && plan.indexOf('ウミガメ') !== -1));
 
   var opening =
     '以下の内容でご予約を確定いたしました。\n' +
@@ -346,6 +364,33 @@ function getConfirmMessage(planName, customerName, bookingNumber, selectedDate, 
       '海亀兄弟';
   })();
 
+  var tripleComboMessage = (function () {
+    var turtleTime = String(selectedTime || '').split('/')[0].trim();
+    var nightT = nightTimeFromCell(selectedTime);
+
+    return '🐢🛸🦀 ご予約が確定しました！\n\n' +
+      customerName + ' 様\n\n' +
+      opening +
+      detailBlock + '\n\n' +
+      '【プラン内容】\n' +
+      'ウミガメシュノーケル＋ドローンSUP＋ナイトツアーのまるごと1日セットです。\n\n' +
+      '🐢 ウミガメシュノーケル：' + valueOrNone(turtleTime) + '\n' +
+      '🛸 ドローンSUP：当日の海況・水位により調整し、予約確定時にLINEでご案内します\n' +
+      '🦀 ナイトツアー：' + valueOrNone(nightT) + '\n\n' +
+      '【集合場所のご案内】\n' +
+      '・ウミガメシュノーケル／ドローンSUP：前日にLINEでご連絡します\n' +
+      '・ナイトツアー：当日にLINEでご連絡します\n\n' +
+      '【当日の持ち物】\n' +
+      '〔昼〕水着・タオル・酔い止め（必要な方）\n' +
+      '〔夜〕虫よけスプレー・歩きやすい靴（サンダル不可）・飲み物\n\n' +
+      '【キャンセルポリシー】\n' +
+      '前日まで：無料\n' +
+      '当日：100%\n\n' +
+      'ご不明な点はお気軽にご連絡ください。\n' +
+      '海亀兄弟';
+  })();
+
+  if (isTriple) return tripleComboMessage;
   if (isCombo) return comboMessage;
   // 海空セット(C3)は名前に「SUP」を含むため、汎用SUP判定より前に分岐する
   if (isSeaSky) return seaSkyComboMessage;
@@ -717,7 +762,8 @@ function addToCalendar(data, headcount) {
 
   var combo = isComboBooking(data);
   var seaSky = isSeaSkyComboBooking(data);
-  var comboNightTime = (combo && !seaSky) ? extractComboNightTime(data) : '';
+  var triple = isTripleComboBooking(data);
+  var comboNightTime = (combo || triple) ? extractComboNightTime(data) : '';
   var displayTime = getBookingDisplayTime(data);
 
   var emoji  = '🐢';
@@ -781,6 +827,55 @@ function addToCalendar(data, headcount) {
 
   var startHour = parseInt(timeParts[1], 10);
   var startMin  = parseInt(timeParts[2], 10);
+
+  // まるごと1日セット(C5/C6)：朝ウミガメ(時刻) + 昼ドローンSUP(時刻未定・終日) + 夜ナイト(時刻)。
+  // カレンダーは3件（ウミガメ・ドローンSUP・ナイト）に分けて登録する。
+  if (triple) {
+    var tpName = data.customerName || '名前なし';
+    var tpLabel = String(data.planName || '').indexOf('貸切') !== -1
+      ? '貸切まるごと1日セット'
+      : 'まるごと1日セット';
+
+    var tpTurtleTitle =
+      'WEB 🐢 ' + tpLabel + '（ウミガメ）/ ' + tpName + ' / ' + headcount;
+    var tpTStart = new Date(year, month, day, startHour, startMin);
+    var tpTEnd   = new Date(year, month, day, startHour + 1, startMin + 30);
+    var tpTurtleEvent = calendar.createEvent(tpTurtleTitle, tpTStart, tpTEnd, {
+      description: description,
+      location: '宮古島'
+    });
+    tpTurtleEvent.setColor('2');
+    Logger.log('カレンダー登録完了（海亀）: ' + tpTurtleTitle);
+
+    var tpSupTitle =
+      'WEB 🛸 ' + tpLabel + '（ドローンSUP・時間調整中）/ ' + tpName + ' / ' + headcount;
+    var tpSupEvent = calendar.createAllDayEvent(tpSupTitle, new Date(year, month, day), {
+      description: description,
+      location: '宮古島'
+    });
+    tpSupEvent.setColor('6');
+    Logger.log('カレンダー登録完了（ドローンSUP・終日）: ' + tpSupTitle);
+
+    var tpNightParts = String(comboNightTime || '').match(/^(\d{1,2}):(\d{2})/);
+    if (tpNightParts) {
+      var tpNH = parseInt(tpNightParts[1], 10);
+      var tpNM = parseInt(tpNightParts[2], 10);
+      var tpNightTitle =
+        'WEB 🦀 ' + tpLabel + '（ナイトツアー）/ ' + tpName + ' / ' + headcount;
+      var tpNStart = new Date(year, month, day, tpNH, tpNM);
+      var tpNEnd   = new Date(year, month, day, tpNH + 1, tpNM + 30);
+      var tpNightEvent = calendar.createEvent(tpNightTitle, tpNStart, tpNEnd, {
+        description: description,
+        location: '宮古島'
+      });
+      tpNightEvent.setColor('8');
+      Logger.log('カレンダー登録完了（ナイト）: ' + tpNightTitle);
+    } else {
+      Logger.log('まるごと1日セットですが、ナイト時間を取得できませんでした。');
+    }
+
+    return;
+  }
 
   // 海空セット(C3=通常 / C4=貸切)：昼ウミガメ(時刻あり) + 昼ドローンSUP(時刻未定)。
   // ウミガメは時間指定イベント、ドローンSUPは時間調整中の終日イベントで登録する。

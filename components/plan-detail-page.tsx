@@ -823,6 +823,8 @@ const otherPlansMeta: Record<string, { name: string; tagline: string; price: str
   C2: { name: "【貸切】ウミガメシュノーケル＆ヤシガニ探検 昼夜セット", tagline: "昼も夜も貸切でゆっくり楽しむ", price: "¥16,000", badge: "貸切セット", badgeColor: "bg-purple-500 text-white" },
   C3: { name: "ウミガメシュノーケル＆ドローンSUP 海空セット", tagline: "昼は海でウミガメ、空からドローンSUP", price: "¥11,500〜", badge: "セットでお得", badgeColor: "bg-cyan-600 text-white" },
   C4: { name: "【貸切】ウミガメシュノーケル＆ドローンSUP 海空セット", tagline: "海空セットを1組貸切でゆっくり", price: "¥16,500〜", badge: "貸切セット", badgeColor: "bg-violet-500 text-white" },
+  C5: { name: "ウミガメシュノーケル＆ドローンSUP＆ナイトツアー まるごと1日セット", tagline: "海・空・夜を1日で遊び尽くす", price: "¥14,500〜", badge: "3つでお得", badgeColor: "bg-emerald-600 text-white" },
+  C6: { name: "【貸切】ウミガメシュノーケル＆ドローンSUP＆ナイトツアー まるごと1日セット", tagline: "1日まるごと完全貸切", price: "¥23,500〜", badge: "貸切セット", badgeColor: "bg-violet-500 text-white" },
   "slide-boat": { name: "スライダーボートシュノーケル", tagline: "滑り台付きボートの新プラン", price: "大人¥14,000", badge: "Coming Soon", badgeColor: "bg-cyan-100 text-cyan-800", comingSoon: true },
 }
 
@@ -915,7 +917,7 @@ function FloatingPlanNav({ currentId }: { currentId: string }) {
     setVisible(latest > 600)
   })
 
-  const allIds = ["S1", "S2", "S3", "S4", "S6", "S7", "S5", "C1", "C2", "C3", "C4", "slide-boat"]
+  const allIds = ["S1", "S2", "S3", "S4", "S6", "S7", "S5", "C1", "C2", "C3", "C4", "C5", "C6", "slide-boat"]
   const shortNames: Record<string, string> = {
     S1: "シュノーケル",
     S2: "貸切シュノーケル",
@@ -928,6 +930,8 @@ function FloatingPlanNav({ currentId }: { currentId: string }) {
     C2: "貸切昼夜",
     C3: "海空セット",
     C4: "貸切海空セット",
+    C5: "まるごと1日",
+    C6: "貸切まるごと1日",
     "slide-boat": "スライダーボート",
   }
   const currentPlan = PLAN_DETAILS[currentId]
