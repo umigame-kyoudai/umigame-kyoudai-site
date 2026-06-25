@@ -71,13 +71,15 @@ interface BookingData {
   lineDisplayName: string | null
 }
 
-function getPlanType(planId: string): "night-hunter" | "sunset-sup" | "slide-boat" | "other" {
+function getPlanType(planId: string): "night-hunter" | "sunset-sup" | "day-sup" | "slide-boat" | "other" {
   switch (planId) {
     case "S3":
     case "S5":
       return "night-hunter"
     case "S4":
       return "sunset-sup"
+    case "S6":
+      return "day-sup"
     case "slide-boat":
       return "slide-boat"
     default:
@@ -100,7 +102,7 @@ const STAFF_LIST = [
 
 function getPlanTone(planId: string): "emerald" | "purple" | "cyan" {
   if (planId === "S2" || planId === "S5" || planId === "C2") return "purple"
-  if (planId === "slide-boat") return "cyan"
+  if (planId === "S6" || planId === "slide-boat") return "cyan"
   return "emerald"
 }
 
@@ -304,7 +306,7 @@ export function BookingForm() {
     }
   }, [bookingData.adultCount, bookingData.childCount, bookingData.under3Count, createParticipants])
 
-  const isNightHunterPlan = bookingData.selectedPlan === "S3" || bookingData.selectedPlan === "S4" || bookingData.selectedPlan === "S5" || bookingData.selectedPlan === "slide-boat"
+  const isNightHunterPlan = bookingData.selectedPlan === "S3" || bookingData.selectedPlan === "S4" || bookingData.selectedPlan === "S5" || bookingData.selectedPlan === "S6" || bookingData.selectedPlan === "slide-boat"
   const isUnder3FreePlan = bookingData.selectedPlan === "S3" || bookingData.selectedPlan === "S5"
   // 昼夜セットはスタッフ指名不可。夜系プランも従来どおり指名不可。
   const isComboPlan = isComboPlanId(bookingData.selectedPlan)
@@ -490,7 +492,7 @@ export function BookingForm() {
   const isFormValid =
     bookingData.selectedPlan &&
     bookingData.selectedDate &&
-    (getPlanType(bookingData.selectedPlan) === "sunset-sup" || bookingData.selectedTime) &&
+    (getPlanType(bookingData.selectedPlan) === "sunset-sup" || getPlanType(bookingData.selectedPlan) === "day-sup" || bookingData.selectedTime) &&
     comboTimesSelected &&
     (bookingData.adultCount > 0 || bookingData.childCount > 0 || bookingData.under3Count > 0) &&
     bookingData.customerName &&
@@ -540,7 +542,7 @@ export function BookingForm() {
               ) : (
                 <p>
                   日時: {bookingData.selectedDate}{" "}
-                  {getPlanType(bookingData.selectedPlan) === "sunset-sup"
+                  {getPlanType(bookingData.selectedPlan) === "sunset-sup" || getPlanType(bookingData.selectedPlan) === "day-sup"
                     ? "(時間は後日ご連絡)"
                     : bookingData.selectedTime}
                 </p>
@@ -749,6 +751,36 @@ export function BookingForm() {
                       </div>
                       <div className="w-40">
                         <BookingPlanPrice planId="S4" />
+                      </div>
+                    </div>
+                  </div>
+                </label>
+              )
+            })()}
+
+            {/* 宮古島ドローンSUP体験 */}
+            {(() => {
+              const s6 = BOOKING_PLANS.find(p => p.id === "S6")
+              if (!s6) return null
+              const isS6Selected = bookingData.selectedPlan === "S6"
+              return (
+                <label className={`block cursor-pointer rounded-2xl border-2 transition-all ${isS6Selected ? "border-cyan-500 shadow-lg bg-cyan-50/40" : "border-gray-200 hover:border-cyan-300"}`}>
+                  <input type="radio" name="plan" value="S6" checked={isS6Selected} onChange={(e) => handleInputChange("selectedPlan", e.target.value)} className="sr-only" />
+                  <div className="p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                          <h3 className="font-bold text-gray-900 text-base">宮古島ドローンSUP体験</h3>
+                          <span className="text-[10px] bg-cyan-100 text-cyan-700 px-2 py-0.5 rounded-full font-bold">ドローン撮影付き</span>
+                        </div>
+                        <p className="text-xs text-gray-600 mb-2">日中の宮古ブルーを海上と空から撮影</p>
+                        <div className="flex items-center gap-3 text-sm text-gray-500">
+                          <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{s6.durationHours}時間</span>
+                          <span className="flex items-center gap-1"><Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />{s6.rating}</span>
+                        </div>
+                      </div>
+                      <div className="w-40">
+                        <BookingPlanPrice planId="S6" />
                       </div>
                     </div>
                   </div>
@@ -983,7 +1015,7 @@ export function BookingForm() {
                   selectedTime={bookingData.selectedTime}
                   onPick={(time) => handleInputChange("selectedTime", time)}
                 />
-                {selectedPlanData && getPlanType(bookingData.selectedPlan) !== "sunset-sup" && (
+                {selectedPlanData && getPlanType(bookingData.selectedPlan) !== "sunset-sup" && getPlanType(bookingData.selectedPlan) !== "day-sup" && (
                   <p className="text-xs text-gray-500 mt-2">
                     選択中のプラン「{selectedPlanData.name}」の利用可能時間が表示されています
                     {getPlanType(bookingData.selectedPlan) === "night-hunter" && (

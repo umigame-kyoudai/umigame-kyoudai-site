@@ -36,11 +36,12 @@ interface BookingRequest {
 }
 
 const SUNSET_SUP_TIME_NOTE = 'サンセット時刻（予約確定時にご案内）'
+const DAY_SUP_TIME_NOTE = '海況・水位により調整（予約確定時にご案内）'
 const FREE_UNDER3_PLAN_IDS = new Set(['S3', 'S5'])
 // 昼夜セットはスタッフ指名不可
 const COMBO_PLAN_IDS = new Set(['C1', 'C2'])
-const STAFF_UNAVAILABLE_PLAN_IDS = new Set(['S3', 'S4', 'S5', 'slide-boat', 'C1', 'C2'])
-const TIME_OPTIONAL_PLAN_IDS = new Set(['S4'])
+const STAFF_UNAVAILABLE_PLAN_IDS = new Set(['S3', 'S4', 'S5', 'S6', 'slide-boat', 'C1', 'C2'])
+const TIME_OPTIONAL_PLAN_IDS = new Set(['S4', 'S6'])
 // 通常シュノーケルを含み、60歳以上をお断りするプラン（S1 と昼夜セット）
 const SENIOR_RESTRICTED_PLAN_IDS = new Set(['S1', 'C1', 'C2'])
 const COMBO_NIGHT_TIMES = new Set(['19:20', '21:10'])
@@ -302,7 +303,11 @@ const buildGASPayload = (
     customerPhone: bookingData.customerPhone || '',
     planName: plan.name,
     selectedDate: bookingData.selectedDate,
-    selectedTime: plan.id === 'S4' ? SUNSET_SUP_TIME_NOTE : bookingData.selectedTime || '',
+    selectedTime: plan.id === 'S4'
+      ? SUNSET_SUP_TIME_NOTE
+      : plan.id === 'S6'
+        ? DAY_SUP_TIME_NOTE
+        : bookingData.selectedTime || '',
     participants: bookingData.participants,
     adultCount,
     childCount,

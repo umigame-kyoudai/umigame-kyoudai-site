@@ -7,7 +7,7 @@ import { ja } from "date-fns/locale"
 import { Button } from "@/components/ui/button"
 import { Clock, Info } from "lucide-react"
 
-type PlanId = "night-hunter" | "sunset-sup" | "slide-boat" | "other"
+type PlanId = "night-hunter" | "sunset-sup" | "day-sup" | "slide-boat" | "other"
 
 type Props = {
   selectedPlan: PlanId
@@ -58,6 +58,8 @@ function getTimeSlots(plan: PlanId, date: Date): string[] {
       return ["19:20", "21:10"]
     case "sunset-sup":
       return getSunsetSlots(date)
+    case "day-sup":
+      return []
     case "slide-boat":
       return ["09:00", "13:00"]
     default:
@@ -68,7 +70,9 @@ function getTimeSlots(plan: PlanId, date: Date): string[] {
 export default function BookingTimeSlots({ selectedPlan, selectedDate, selectedTime, onPick }: Props) {
   const slots = useMemo(() => getTimeSlots(selectedPlan, selectedDate), [selectedPlan, selectedDate])
 
-  if (selectedPlan === "sunset-sup") {
+  if (selectedPlan === "sunset-sup" || selectedPlan === "day-sup") {
+    const isDaySup = selectedPlan === "day-sup"
+
     return (
       <div className="bg-gradient-to-r from-orange-50 to-pink-50 border border-orange-200 rounded-xl p-6">
         <div className="flex items-start gap-3">
@@ -76,9 +80,13 @@ export default function BookingTimeSlots({ selectedPlan, selectedDate, selectedT
             <Clock className="w-5 h-5 text-orange-600" />
           </div>
           <div className="flex-1">
-            <h3 className="font-semibold text-orange-800 mb-2">サンセットSUP 時間について</h3>
+            <h3 className="font-semibold text-orange-800 mb-2">
+              {isDaySup ? "宮古島ドローンSUP体験 時間について" : "サンセットSUP 時間について"}
+            </h3>
             <p className="text-sm text-orange-700 mb-3">
-              サンセットSUPの開始時間は、当日の日没時刻と天候状況を考慮して最適な時間を決定いたします。
+              {isDaySup
+                ? "開始時間は、当日の海況・水位・風の状況を考慮して最適な時間をご案内します。"
+                : "サンセットSUPの開始時間は、当日の日没時刻と天候状況を考慮して最適な時間を決定いたします。"}
             </p>
             <div className="bg-white/60 rounded-lg p-3 border border-orange-200">
               <div className="flex items-center gap-2 mb-2">
@@ -86,9 +94,19 @@ export default function BookingTimeSlots({ selectedPlan, selectedDate, selectedT
                 <span className="text-sm font-medium text-orange-800">予約確定時にお知らせします</span>
               </div>
               <ul className="text-xs text-orange-600 space-y-1">
-                <li>• 通常17:00〜19:00の間で開始</li>
-                <li>• 日没30〜90分前の最適な時間</li>
-                <li>{""}</li>
+                {isDaySup ? (
+                  <>
+                    <li>• 日中の海が綺麗に見える時間帯で調整</li>
+                    <li>• 潮位・風・安全状況により前後する場合があります</li>
+                    <li>• ドローン撮影は天候・風・安全判断により実施します</li>
+                  </>
+                ) : (
+                  <>
+                    <li>• 通常17:00〜19:00の間で開始</li>
+                    <li>• 日没30〜90分前の最適な時間</li>
+                    <li>{""}</li>
+                  </>
+                )}
               </ul>
             </div>
           </div>

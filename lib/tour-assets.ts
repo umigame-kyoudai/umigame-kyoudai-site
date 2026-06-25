@@ -20,6 +20,11 @@ export const TOUR_IMAGE_PATHS = {
     "/images/tours/sup/sunset-sup-two-paddles-raised-002.jpg",
     "/images/tours/sup/sunset-sup-solo-sun-horizon-002.jpg",
   ],
+  daySup: [
+    "/images/tours/day-sup/day-sup-hero.webp",
+    "/images/tours/day-sup/day-sup-turquoise-aerial-013.webp",
+    "/images/tours/day-sup/day-sup-topdown-aerial-002.webp",
+  ],
   slideBoat: ["/images/slide-boat-photo.jpg"],
   // 複合プラン（昼:シュノーケル + 夜:ナイト）。先頭は昼夜を対角合成したカバー、
   // 続けて昼・夜の個別写真を並べ、カルーセルで「昼と夜の両方」が一目で分かるようにする。
@@ -39,6 +44,7 @@ export const PLAN_COVER_IMAGE = {
   night: TOUR_IMAGE_PATHS.night[0],
   nightPrivate: TOUR_IMAGE_PATHS.night[2],
   sup: TOUR_IMAGE_PATHS.sup[0],
+  daySup: TOUR_IMAGE_PATHS.daySup[0],
   slideBoat: TOUR_IMAGE_PATHS.slideBoat[0],
   // 詳細ページのヒーロー背景はラベルなしの合成（ページ側がタイトルを重ねるため）
   combo: "/images/tours/combo/combo-hero.webp",

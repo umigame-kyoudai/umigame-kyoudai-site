@@ -24,7 +24,7 @@ import { getEnPrice, EN_PRICE_SUPPORT_NOTE } from "@/lib/i18n/en-prices"
 const NIGHT_PLAN_IDS = new Set(["S3", "S5"])
 const FREE_UNDER3_PLAN_IDS = NIGHT_PLAN_IDS
 const STAFF_AVAILABLE_PLAN_IDS = new Set(["S1", "S2"])
-const TIME_OPTIONAL_PLAN_IDS = new Set(["S4"])
+const TIME_OPTIONAL_PLAN_IDS = new Set(["S4", "S6"])
 
 const STAFF_LIST_EN = [
   { id: "", name: "No preference" },
@@ -77,6 +77,7 @@ export function BookingFormEn() {
   const en = planId ? EN_PLAN_BY_ID[planId] : undefined
   const isNight = NIGHT_PLAN_IDS.has(planId)
   const timeOptional = TIME_OPTIONAL_PLAN_IDS.has(planId)
+  const isDaySup = planId === "S6"
   const staffAvailable = STAFF_AVAILABLE_PLAN_IDS.has(planId)
   const timeOptions = plan ? plan.timeTags.filter((t) => /^\d{2}:\d{2}$/.test(t)) : []
 
@@ -230,7 +231,12 @@ export function BookingFormEn() {
           <div className="bg-emerald-50 rounded-lg p-4 mb-6 text-left text-sm text-gray-700">
             <p>Tour: {en?.name}</p>
             <p>
-              Date & time: {date} {timeOptional ? "(start time will follow the sunset — we'll confirm it with you)" : time}
+              Date & time: {date}{" "}
+              {timeOptional
+                ? isDaySup
+                  ? "(start time will be adjusted for sea conditions and tide — we'll confirm it with you)"
+                  : "(start time will follow the sunset — we'll confirm it with you)"
+                : time}
             </p>
             <p>Guests: {participants.length}</p>
             <p>Estimated total: ¥{totalPrice.toLocaleString()} (cash, on the day)</p>
@@ -295,12 +301,13 @@ export function BookingFormEn() {
           </div>
           <div>
             <Label className="text-sm font-medium text-gray-700 mb-2 block">
-              Start time {timeOptional ? "(decided by sunset)" : "*"}
+              Start time {timeOptional ? (isDaySup ? "(confirmed after checking sea conditions)" : "(decided by sunset)") : "*"}
             </Label>
             {timeOptional ? (
               <p className="text-sm text-gray-500 leading-relaxed pt-2">
-                The start time follows the sunset and changes by season — we'll confirm the exact time with you after
-                booking.
+                {isDaySup
+                  ? "The start time is adjusted based on sea conditions, tide level and wind — we'll confirm the exact time with you after booking."
+                  : "The start time follows the sunset and changes by season — we'll confirm the exact time with you after booking."}
               </p>
             ) : (
               <div className="flex flex-wrap gap-2">

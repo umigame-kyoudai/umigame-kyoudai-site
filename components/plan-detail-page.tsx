@@ -814,6 +814,7 @@ const otherPlansMeta: Record<string, { name: string; tagline: string; price: str
   S3: { name: "本格ナイトツアー", tagline: "夜の大冒険へ出かけよう", price: "¥4,000", badge: "家族人気No.1", badgeColor: "bg-emerald-500 text-white" },
   S4: { name: "サンセットSUP【1日1組限定】", tagline: "1日1組だけの特別な夕日体験", price: "¥6,000〜", badge: "映え度No.1", badgeColor: "bg-orange-500 text-white" },
   S5: { name: "【貸切】本格ナイトツアー", tagline: "専属ガイドとプライベート冒険", price: "¥8,000", badge: "貸切プラン", badgeColor: "bg-violet-500 text-white" },
+  S6: { name: "宮古島ドローンSUP体験", tagline: "日中の宮古ブルーを空撮で残す", price: "¥6,500〜", badge: "ドローン撮影付き", badgeColor: "bg-cyan-600 text-white" },
   C1: { name: "ウミガメシュノーケル＆ヤシガニ探検 昼夜セット", tagline: "昼はウミガメ、夜はヤシガニ探検", price: "¥9,500", badge: "セットでお得", badgeColor: "bg-emerald-600 text-white" },
   C2: { name: "【貸切】ウミガメシュノーケル＆ヤシガニ探検 昼夜セット", tagline: "昼も夜も貸切でゆっくり楽しむ", price: "¥16,000", badge: "貸切セット", badgeColor: "bg-purple-500 text-white" },
   "slide-boat": { name: "スライダーボートシュノーケル", tagline: "滑り台付きボートの新プラン", price: "大人¥14,000", badge: "Coming Soon", badgeColor: "bg-cyan-100 text-cyan-800", comingSoon: true },
@@ -908,12 +909,13 @@ function FloatingPlanNav({ currentId }: { currentId: string }) {
     setVisible(latest > 600)
   })
 
-  const allIds = ["S1", "S2", "S3", "S4", "S5", "C1", "C2", "slide-boat"]
+  const allIds = ["S1", "S2", "S3", "S4", "S6", "S5", "C1", "C2", "slide-boat"]
   const shortNames: Record<string, string> = {
     S1: "シュノーケル",
     S2: "貸切シュノーケル",
     S3: "ナイト",
     S4: "SUP",
+    S6: "ドローンSUP",
     S5: "貸切ナイト",
     C1: "昼夜セット",
     C2: "貸切昼夜",

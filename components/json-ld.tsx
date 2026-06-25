@@ -83,7 +83,7 @@ export function LocalBusinessJsonLd() {
     "@type": ["LocalBusiness", "SportsActivityLocation", "TouristAttraction"],
     "@id": `${SITE_URL}/#business`,
     name: SITE_NAME,
-    description: "宮古島で家族向け少人数制マリン体験。ウミガメシュノーケル、貸切ツアー、ヤシガニ探検、サンセットSUP、昼夜セット。",
+    description: "宮古島で家族向け少人数制マリン体験。ウミガメシュノーケル、貸切ツアー、ヤシガニ探検、サンセットSUP、ドローンSUP、昼夜セット。",
     url: SITE_URL,
     telephone: "+81-80-5344-2439",
     address: {
@@ -117,6 +117,13 @@ export function LocalBusinessJsonLd() {
         price: "4000",
         priceCurrency: "JPY",
         url: `${SITE_URL}/plans/S3`,
+      },
+      {
+        "@type": "Offer",
+        name: "宮古島ドローンSUP体験",
+        price: "7500",
+        priceCurrency: "JPY",
+        url: `${SITE_URL}/plans/S6`,
       },
       {
         "@type": "Offer",

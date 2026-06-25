@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   ...createMetadata({
     title: "Book a Tour | Sea Turtle Brothers Miyakojima",
     description:
-      "Send a booking request for sea turtle snorkeling, night tours or sunset SUP in Miyakojima. Free cancellation until the day before. Confirmed via LINE.",
+      "Send a booking request for sea turtle snorkeling, night tours, sunset SUP or drone SUP in Miyakojima. Free cancellation until the day before. Confirmed via LINE.",
     path: "/en/book",
     locale: "en",
     altLocalePath: "/book",

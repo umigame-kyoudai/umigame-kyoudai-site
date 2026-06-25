@@ -143,6 +143,35 @@ export const EN_PLANS: EnPlanContent[] = [
     locationNote: "Location depends on the day's sea and weather conditions (your guide will tell you in advance)",
   },
   {
+    id: "S6",
+    name: "Miyakojima Drone SUP Experience",
+    tagline: "Paddle across Miyako blue water and capture the moment from above with drone footage.",
+    description: [
+      "Enjoy a daytime SUP session on Miyakojima's clear blue water, with both close-up photos from the water and aerial drone shots when conditions allow. This tour is designed for guests who want bright, tropical colors and wide-open island scenery in their photos and videos.",
+      "First time on a SUP board? No problem. We use stable boards and your guide explains the basics on land before you go out. You can paddle seated at first and stand up when you feel comfortable.",
+      "Because safety and photo quality depend on sea conditions, tide level and wind, the exact start time may change. We will confirm the best meeting time and location with you via LINE after checking the conditions.",
+    ],
+    highlights: [
+      "Drone photo and video shooting included when conditions allow",
+      "Daytime Miyako blue water and wide aerial views",
+      "Stable boards and beginner-friendly coaching",
+      "Free photos and videos from the tour",
+      "Start time adjusted for sea conditions, tide and safety",
+    ],
+    included: ["SUP board, paddle and life jacket", "On-land lesson", "Drone shooting when conditions allow", "Photo & video files", "Insurance"],
+    whatToBring: ["Swimsuit (worn under your clothes)", "Change of clothes & towel", "Sunscreen", "Drinks", "Sandals"],
+    precautions: [
+      "Guests who are pregnant cannot participate",
+      "Guests with serious pre-existing conditions cannot participate — please ask us first",
+      "Guests who have been drinking alcohol cannot participate",
+      "Drone shooting may not be possible due to wind, rain, flight restrictions or safety decisions",
+      "Start time and location may change depending on sea conditions, tide level and wind",
+    ],
+    ageNote: "Ages 5 to 65",
+    timeNote: "Start time is adjusted based on sea conditions, tide level and wind — we'll confirm the exact meeting time after your booking request.",
+    locationNote: "Location depends on the day's sea, tide and wind conditions (your guide will tell you via LINE)",
+  },
+  {
     id: "S5",
     name: "Private Jungle Night Tour",
     tagline: "The night expedition, fully reserved for your group — explore at exactly your own pace.",
@@ -219,7 +248,7 @@ export const EN_FAQS: EnFaq[] = [
   { question: "What should I wear on the day of the tour?", answer: "The smoothest option is to arrive with your swimsuit on under your clothes. On top, wear something easy to slip on and off, like a T-shirt and shorts. Flip-flops are fine for footwear. Changing space after the tour is limited, so please bring a towel and a change of clothes you can use in your car." },
   { question: "How far in advance should I book? Can I book on the same day?", answer: "Because our tours are small-group, they often sell out one to two weeks ahead during busy seasons (July through September, Golden Week in late April to early May, and the New Year holidays). Once you've decided on a date and time, please send your booking request early. If space is available, you can book up until the day before. Message us on LINE anytime and we'll let you know the latest availability right away. Please note that a booking is not confirmed until our staff replies via LINE." },
   { question: "Can I snorkel in winter?", answer: "Yes! Water temperatures around Miyakojima stay above 20°C (68°F) even in winter, so with a wetsuit you can enjoy snorkeling year-round. Summer (June to September) brings warm, comfortable water, while winter (December to March) is a hidden-gem season with fewer tourists and exceptionally clear water. Whatever the season, the ocean around Miyakojima is spectacular!" },
-  { question: "How long do the tours take?", answer: "Snorkeling tours run about 2 hours from meeting to dismissal, night tours about 1.5 hours, and sunset SUP about 2 hours. Time in the water is roughly 60 to 90 minutes. After we meet, we hold a safety briefing and fit your equipment, and after the experience you're free to head off on your own." },
+  { question: "How long do the tours take?", answer: "Snorkeling tours run about 2 hours from meeting to dismissal, night tours about 1.5 hours, and SUP tours about 2 hours. Time in the water is roughly 60 to 90 minutes. After we meet, we hold a safety briefing and fit your equipment, and after the experience you're free to head off on your own." },
   { question: "I have a pre-existing medical condition. Can I join?", answer: "For safety reasons, we may not be able to accept guests with conditions such as heart disease, epilepsy, or asthma. Please feel free to consult us via LINE before booking, and we'll respond to your situation individually. Please also note that guests who have been drinking alcohol cannot participate." },
 ]
 
@@ -266,7 +295,7 @@ export const EN_HOME = {
   aboutParagraphs: [
     "Sea Turtle Brothers (Umigame Kyodai) is a small-group marine tour operator on Miyakojima, Okinawa. Our signature experience is snorkeling with wild sea turtles in the island's clear, calm waters, where you can also meet clownfish and colorful tropical fish. Because these are wild animals, sightings can never be 100% guaranteed — but our encounter rate is high, and we keep groups small so you can spend slow, unhurried time with the turtles instead of jostling with a crowd.",
     "Safety always comes first. Every tour starts with a safety briefing, all tours are covered by insurance, and our guides are used to first-time snorkelers. Children from age 5 can join, and we provide kid-sized equipment, making this an easy choice for families building vacation memories together.",
-    "Your guide captures the whole experience with an underwater camera, and every high-quality photo and video is yours free of charge. Beyond turtle snorkeling, we also offer night tours and sunset SUP experiences across Miyakojima's sea and nature, from morning to night.",
+    "Your guide captures the whole experience with an underwater camera, and every high-quality photo and video is yours free of charge. Beyond turtle snorkeling, we also offer night tours, sunset SUP and drone SUP experiences across Miyakojima's sea and nature, from morning to night.",
   ],
   howToBookHeading: "How Booking Works",
   howToBook: [
@@ -280,7 +309,7 @@ export const EN_HOME = {
     text: "LINE is a free messaging app — it's the most popular way to chat in Japan, and it's how we confirm bookings and stay in touch with guests before the tour. To send a booking request, you'll need a LINE account, so we recommend downloading the app from the App Store or Google Play before booking (it only takes a minute). Remember, your booking is not confirmed until our staff replies to you on LINE. If you have questions or aren't able to use LINE, feel free to email us at info@umigamekyoudaimiyakojima.com or call +81-80-5344-2439.",
   },
   toursHeading: "Our Tours",
-  toursIntro: "Five experiences across Miyakojima's sea and nature — from our signature sea turtle snorkeling to night jungle expeditions and sunset SUP.",
+  toursIntro: "Six experiences across Miyakojima's sea and nature — from our signature sea turtle snorkeling to night jungle expeditions, sunset SUP and drone SUP.",
   faqHeading: "Frequently Asked Questions",
   faqIntro: "Planning your first snorkeling trip in Miyakojima? Here are answers to the questions travelers ask us most — from swimming ability and kids' participation to cancellation and payment.",
   contactHeading: "Questions? We're Happy to Help",
