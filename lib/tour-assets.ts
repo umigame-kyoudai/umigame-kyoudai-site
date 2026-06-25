@@ -16,12 +16,9 @@ export const TOUR_IMAGE_PATHS = {
     "/images/tours/night/night-06.webp",
   ],
   sup: [
-    "/images/tours/sup/sup-01.webp",
-    "/images/tours/sup/sup-02.webp",
-    "/images/tours/sup/sup-03.webp",
-    "/images/tours/sup/sup-04.webp",
-    "/images/tours/sup/sup-05.webp",
-    "/images/tours/sup/sup-06.webp",
+    "/images/tours/sup/sunset-sup-tandem-paddling-001.jpg",
+    "/images/tours/sup/sunset-sup-two-paddles-raised-002.jpg",
+    "/images/tours/sup/sunset-sup-solo-sun-horizon-002.jpg",
   ],
   slideBoat: ["/images/slide-boat-photo.jpg"],
   // 複合プラン（昼:シュノーケル + 夜:ナイト）。先頭は昼夜を対角合成したカバー、
@@ -41,7 +38,7 @@ export const PLAN_COVER_IMAGE = {
   snorkelPrivate: TOUR_IMAGE_PATHS.snorkel[2],
   night: TOUR_IMAGE_PATHS.night[0],
   nightPrivate: TOUR_IMAGE_PATHS.night[2],
-  sup: TOUR_IMAGE_PATHS.sup[3],
+  sup: TOUR_IMAGE_PATHS.sup[0],
   slideBoat: TOUR_IMAGE_PATHS.slideBoat[0],
   // 詳細ページのヒーロー背景はラベルなしの合成（ページ側がタイトルを重ねるため）
   combo: "/images/tours/combo/combo-hero.webp",

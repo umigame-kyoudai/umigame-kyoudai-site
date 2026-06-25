@@ -104,10 +104,10 @@ const GALLERY_IMAGE_SOURCE: GalleryImage[] = [
   },
   {
     id: "feat-sunset-sup",
-    src: "/images/sunset-sup-silhouettes.jpg",
+    src: "/images/tours/sup/sunset-sup-two-paddles-raised-002.jpg",
     category: "sunset",
     title: "サンセットSUP",
-    alt: "夕日をバックにしたSUPのシルエット",
+    alt: "夕日をバックにパドルを掲げる宮古島サンセットSUP",
     featured: true,
     order: 30,
     planType: "S4",

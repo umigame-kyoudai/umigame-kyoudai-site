@@ -212,7 +212,7 @@ export const PLAN_DETAILS: Record<string, PlanDetail> = {
     name: "サンセットSUP【1日1組限定】",
     tagline: "1日1組だけの特別な夕日。黄金に染まる海で極上のひとときを。",
     heroDescription: "1日1組限定だから叶う、完全プライベートのサンセット体験。海の上から眺める夕日のグラデーションは圧巻。初心者でも安定のボードで安心。エモーショナルなシルエット写真が大人気！",
-    image: "/images/sunset-sup-silhouettes.jpg",
+    image: PLAN_COVER_IMAGE.sup,
     images: TOUR_IMAGE_PATHS.sup,
     color: "orange",
     gradientFrom: "from-orange-500",
