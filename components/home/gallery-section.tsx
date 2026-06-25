@@ -1,9 +1,9 @@
 import Image from "next/image"
 import Link from "next/link"
 import { BLUR_DATA_URLS } from "@/lib/image-placeholders"
-import { getFeaturedGalleryImages } from "@/lib/data/images"
+import { getFeaturedGalleryImages } from "@/lib/gallery-images"
 
-// トップページに表示する写真は lib/data/images.ts で featured: true を付けて管理
+// トップページに表示する写真は lib/gallery-images.ts で featured: true を付けて管理
 const galleryImages = getFeaturedGalleryImages()
 
 export function GallerySection() {

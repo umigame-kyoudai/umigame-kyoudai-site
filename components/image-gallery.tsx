@@ -10,7 +10,7 @@ import {
   getGalleryCategories,
   GALLERY_CATEGORY_LABELS,
   type GalleryImage,
-} from "@/lib/data/images"
+} from "@/lib/gallery-images"
 
 // フィルタの選択状態。"all" は「すべて」を表す
 type FilterValue = "all" | GalleryImage["category"]
