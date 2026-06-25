@@ -788,33 +788,42 @@ export function BookingForm() {
               )
             })()}
 
-            {/* 宮古島ドローンSUP体験 */}
+            {/* 宮古島ドローンSUP体験（通常・貸切） */}
             {(() => {
               const s6 = BOOKING_PLANS.find(p => p.id === "S6")
+              const s7 = BOOKING_PLANS.find(p => p.id === "S7")
               if (!s6) return null
               const isS6Selected = bookingData.selectedPlan === "S6"
+              const isS7Selected = bookingData.selectedPlan === "S7"
+              const isDaySupSelected = isS6Selected || isS7Selected
               return (
-                <label className={`block cursor-pointer rounded-2xl border-2 transition-all ${isS6Selected ? "border-cyan-500 shadow-lg bg-cyan-50/40" : "border-gray-200 hover:border-cyan-300"}`}>
-                  <input type="radio" name="plan" value="S6" checked={isS6Selected} onChange={(e) => handleInputChange("selectedPlan", e.target.value)} className="sr-only" />
+                <div className={`rounded-2xl border-2 transition-all ${isDaySupSelected ? isS7Selected ? "border-purple-500 shadow-lg bg-purple-50/30" : "border-cyan-500 shadow-lg bg-cyan-50/40" : "border-gray-200 hover:border-cyan-300"}`}>
                   <div className="p-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <div className="flex flex-wrap items-center gap-2 mb-1">
-                          <h3 className="font-bold text-gray-900 text-base">宮古島ドローンSUP体験</h3>
-                          <span className="text-[10px] bg-cyan-100 text-cyan-700 px-2 py-0.5 rounded-full font-bold">ドローン撮影付き</span>
-                        </div>
-                        <p className="text-xs text-gray-600 mb-2">日中の宮古ブルーを海上と空から撮影</p>
-                        <div className="flex items-center gap-3 text-sm text-gray-500">
-                          <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{s6.durationHours}時間</span>
-                          <span className="flex items-center gap-1"><Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />{s6.rating}</span>
-                        </div>
-                      </div>
-                      <div className="w-40">
-                        <BookingPlanPrice planId="S6" />
-                      </div>
+                    <div className="mb-1 flex flex-wrap items-center gap-2">
+                      <h3 className="font-bold text-gray-900 text-base">宮古島ドローンSUP体験</h3>
+                      <span className="text-[10px] bg-cyan-100 text-cyan-700 px-2 py-0.5 rounded-full font-bold">ドローン撮影付き</span>
+                    </div>
+                    <p className="text-xs text-gray-600 mb-1">日中の宮古ブルーを海上と空から撮影</p>
+                    <div className="flex items-center gap-3 text-sm text-gray-500 mb-3">
+                      <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{s6.durationHours}時間</span>
+                      <span className="flex items-center gap-1"><Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />{s6.rating}</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <label className={`cursor-pointer p-2 sm:p-3 rounded-xl border-2 text-center transition-all ${isS6Selected ? "border-cyan-500 bg-cyan-50" : "border-gray-200 hover:border-cyan-300"}`}>
+                        <input type="radio" name="plan" value="S6" checked={isS6Selected} onChange={(e) => handleInputChange("selectedPlan", e.target.value)} className="sr-only" />
+                        <p className="text-xs text-gray-500 mb-0.5">通常プラン</p>
+                        <BookingPlanPrice planId="S6" className="mt-1" />
+                      </label>
+                      {s7 && (
+                        <label className={`cursor-pointer p-2 sm:p-3 rounded-xl border-2 text-center transition-all ${isS7Selected ? "border-purple-500 bg-purple-50" : "border-gray-200 hover:border-purple-300"}`}>
+                          <input type="radio" name="plan" value="S7" checked={isS7Selected} onChange={(e) => handleInputChange("selectedPlan", e.target.value)} className="sr-only" />
+                          <p className="text-xs text-purple-600 font-semibold mb-0.5">貸切プラン</p>
+                          <BookingPlanPrice planId="S7" className="mt-1" />
+                        </label>
+                      )}
                     </div>
                   </div>
-                </label>
+                </div>
               )
             })()}
 
@@ -886,91 +895,71 @@ export function BookingForm() {
               )
             })()}
 
-            {/* 【貸切】宮古島ドローンSUP体験 */}
-            {(() => {
-              const s7 = BOOKING_PLANS.find(p => p.id === "S7")
-              if (!s7) return null
-              const isS7Selected = bookingData.selectedPlan === "S7"
-              return (
-                <label className={`block cursor-pointer rounded-2xl border-2 transition-all ${isS7Selected ? "border-purple-500 shadow-lg bg-purple-50/40" : "border-gray-200 hover:border-purple-300"}`}>
-                  <input type="radio" name="plan" value="S7" checked={isS7Selected} onChange={(e) => handleInputChange("selectedPlan", e.target.value)} className="sr-only" />
-                  <div className="p-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <div className="flex flex-wrap items-center gap-2 mb-1">
-                          <h3 className="font-bold text-gray-900 text-base">【貸切】宮古島ドローンSUP体験</h3>
-                          <span className="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-bold">完全貸切</span>
-                        </div>
-                        <p className="text-xs text-gray-600 mb-2">1組貸切・専属ガイドで日中のドローンSUP</p>
-                        <div className="flex items-center gap-3 text-sm text-gray-500">
-                          <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{s7.durationHours}時間</span>
-                          <span className="flex items-center gap-1"><Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />{s7.rating}</span>
-                        </div>
-                      </div>
-                      <div className="w-40">
-                        <BookingPlanPrice planId="S7" />
-                      </div>
-                    </div>
-                  </div>
-                </label>
-              )
-            })()}
-
-            {/* ウミガメシュノーケル＆ドローンSUP 海空セット */}
+            {/* ウミガメシュノーケル＆ドローンSUP 海空セット（通常・貸切） */}
             {(() => {
               const c3 = BOOKING_PLANS.find(p => p.id === "C3")
-              if (!c3) return null
+              const c4 = BOOKING_PLANS.find(p => p.id === "C4")
+              const seaSkyPlans = [c3, c4].filter(Boolean) as NonNullable<typeof c3>[]
+              if (!seaSkyPlans.length) return null
               const isC3Selected = bookingData.selectedPlan === "C3"
+              const isC4Selected = bookingData.selectedPlan === "C4"
+              const isSeaSkySelected = isC3Selected || isC4Selected
               return (
-                <label className={`block cursor-pointer rounded-2xl border-2 transition-all ${isC3Selected ? "border-cyan-500 shadow-lg bg-cyan-50/40" : "border-gray-200 hover:border-cyan-300"}`}>
-                  <input type="radio" name="plan" value="C3" checked={isC3Selected} onChange={(e) => handleInputChange("selectedPlan", e.target.value)} className="sr-only" />
+                <div className={`rounded-2xl border-2 transition-all ${isSeaSkySelected ? isC4Selected ? "border-purple-500 shadow-lg bg-purple-50/30" : "border-cyan-500 shadow-lg bg-cyan-50/40" : "border-gray-200 hover:border-cyan-300"}`}>
                   <div className="p-4">
-                    <div className="flex items-center justify-between gap-3">
+                    <div className="flex flex-col gap-3">
                       <div>
                         <div className="mb-1 flex flex-wrap items-center gap-2">
                           <h3 className="font-bold text-gray-900 text-base">ウミガメシュノーケル＆ドローンSUP 海空セット</h3>
                           <span className="text-[10px] bg-cyan-600 text-white px-2 py-0.5 rounded-full font-bold">セットでお得</span>
                         </div>
-                        <p className="text-xs text-gray-600 mb-2">同じ浜で連続：ウミガメシュノーケル ＋ ドローンSUP</p>
+                        <p className="text-xs text-gray-600 mb-1">同じ浜で連続：ウミガメシュノーケル ＋ ドローンSUP</p>
                         <div className="flex items-center gap-3 text-sm text-gray-500">
                           <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" />約3時間</span>
                         </div>
                       </div>
-                      <div className="w-40">
-                        <BookingPlanPrice planId="C3" />
-                      </div>
-                    </div>
-                  </div>
-                </label>
-              )
-            })()}
 
-            {/* 【貸切】ウミガメシュノーケル＆ドローンSUP 海空セット */}
-            {(() => {
-              const c4 = BOOKING_PLANS.find(p => p.id === "C4")
-              if (!c4) return null
-              const isC4Selected = bookingData.selectedPlan === "C4"
-              return (
-                <label className={`block cursor-pointer rounded-2xl border-2 transition-all ${isC4Selected ? "border-purple-500 shadow-lg bg-purple-50/40" : "border-gray-200 hover:border-purple-300"}`}>
-                  <input type="radio" name="plan" value="C4" checked={isC4Selected} onChange={(e) => handleInputChange("selectedPlan", e.target.value)} className="sr-only" />
-                  <div className="p-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <div className="mb-1 flex flex-wrap items-center gap-2">
-                          <h3 className="font-bold text-gray-900 text-base">【貸切】ウミガメシュノーケル＆ドローンSUP 海空セット</h3>
-                          <span className="text-[10px] bg-purple-600 text-white px-2 py-0.5 rounded-full font-bold">貸切セット</span>
-                        </div>
-                        <p className="text-xs text-gray-600 mb-2">同じ浜で連続：貸切ウミガメシュノーケル ＋ 貸切ドローンSUP</p>
-                        <div className="flex items-center gap-3 text-sm text-gray-500">
-                          <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" />約3時間</span>
-                        </div>
-                      </div>
-                      <div className="w-40">
-                        <BookingPlanPrice planId="C4" />
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        {seaSkyPlans.map((plan) => {
+                          const isPrivate = plan.id === "C4"
+                          const isSelected = bookingData.selectedPlan === plan.id
+                          return (
+                            <label
+                              key={plan.id}
+                              className={`block cursor-pointer rounded-xl border-2 p-3 transition-all ${
+                                isSelected
+                                  ? isPrivate
+                                    ? "border-purple-500 bg-purple-50 ring-2 ring-purple-100"
+                                    : "border-cyan-500 bg-cyan-50 ring-2 ring-cyan-100"
+                                  : "border-gray-200 bg-white hover:border-cyan-300"
+                              }`}
+                            >
+                              <input
+                                type="radio"
+                                name="plan"
+                                value={plan.id}
+                                checked={isSelected}
+                                onChange={(e) => handleInputChange("selectedPlan", e.target.value)}
+                                className="sr-only"
+                              />
+                              <div className="mb-2 flex items-center justify-between gap-2">
+                                <span className={`text-xs font-bold ${isSelected && isPrivate ? "text-purple-700" : "text-gray-700"}`}>
+                                  {isPrivate ? "貸切セット" : "通常セット"}
+                                </span>
+                                <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                                  isPrivate ? "bg-purple-100 text-purple-700" : "bg-cyan-100 text-cyan-700"
+                                }`}>
+                                  {isPrivate ? "完全貸切" : "1,000円お得"}
+                                </span>
+                              </div>
+                              <BookingPlanPrice planId={plan.id} />
+                            </label>
+                          )
+                        })}
                       </div>
                     </div>
                   </div>
-                </label>
+                </div>
               )
             })()}
 
