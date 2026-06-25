@@ -27,7 +27,7 @@ export function ParticipantForm({ participants, minAge, selectedPlan, onUpdate }
 
   // ナイトツアーかどうかを判定
   const isNightTour = selectedPlan === "night-hunter" || selectedPlan === "S3" || selectedPlan === "S5"
-  const isComboPlan = selectedPlan === "C1" || selectedPlan === "C2"
+  const isComboPlan = selectedPlan === "C1" || selectedPlan === "C2" || selectedPlan === "C3"
 
   return (
     <Card className="glass-card bg-white/70 backdrop-blur-xl rounded-3xl ring-1 ring-emerald-100 shadow-lg">
@@ -84,7 +84,7 @@ export function ParticipantForm({ participants, minAge, selectedPlan, onUpdate }
                         {isComboPlan ? (
                           <>
                             安全面を考慮し、60歳以上の方がいるグループは
-                            <strong>昼夜セットプラン</strong>
+                            <strong>セットプラン</strong>
                             をご利用いただけません。LINEよりご相談ください。
                           </>
                         ) : (

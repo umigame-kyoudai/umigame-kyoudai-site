@@ -150,6 +150,17 @@ function isComboBooking(data) {
          isComboPlanName(data && data.planName);
 }
 
+// 海空セット（C3：昼ウミガメ + 昼ドローンSUP、夜時刻なし）かどうか。
+// プラン名「海空セット」、または [COMBO booking] ブロック内の「ドローンSUP」で判定する。
+// ※ C3 も [COMBO booking] を持つため isComboBooking() は true になる。C3 専用処理は
+//   この関数で先に振り分けること（夜時刻前提の C1/C2 処理に入れない）。
+function isSeaSkyComboBooking(data) {
+  var plan = String(data && data.planName || '');
+  var sr = String(data && data.specialRequests || '');
+  return plan.indexOf('海空セット') !== -1 ||
+         (sr.indexOf('[COMBO booking]') !== -1 && sr.indexOf('ドローンSUP') !== -1);
+}
+
 function extractComboNightTime(data) {
   var m = String(data && data.specialRequests || '').match(/(?:ナイト|ヤシガニ探検|夜)希望時間：\s*(\d{1,2}:\d{2})/);
   return m ? m[1] : '';
@@ -206,6 +217,9 @@ function getConfirmMessage(planName, customerName, bookingNumber, selectedDate, 
   var plan = String(planName || '');
   // 昼夜セット判定：D列の時間が「海亀 / 夜」併記（"/"を含む）か、新旧プラン名に一致
   var isCombo = isComboPlanName(plan) || String(selectedTime || '').indexOf('/') !== -1;
+  // 海空セット（C3）判定：プラン名で判定（getConfirmMessage は specialRequests を受け取らない）
+  var isSeaSky = plan.indexOf('海空セット') !== -1 ||
+    (plan.indexOf('ドローンSUP') !== -1 && plan.indexOf('ウミガメ') !== -1);
 
   var opening =
     '以下の内容でご予約を確定いたしました。\n' +
@@ -309,7 +323,32 @@ function getConfirmMessage(planName, customerName, bookingNumber, selectedDate, 
       '海亀兄弟';
   })();
 
+  var seaSkyComboMessage = (function () {
+    var turtleTime = String(selectedTime || '').split('/')[0].trim();
+
+    return '🐢🛸 ご予約が確定しました！\n\n' +
+      customerName + ' 様\n\n' +
+      opening +
+      detailBlock + '\n\n' +
+      '【プラン内容】\n' +
+      'ウミガメシュノーケル＋ドローンSUPの海空セットです。\n\n' +
+      '🐢 ウミガメシュノーケル：' + valueOrNone(turtleTime) + '\n' +
+      '🛸 ドローンSUP：当日の海況・水位により調整し、予約確定時にLINEでご案内します\n\n' +
+      '【集合場所のご案内】\n' +
+      '・ウミガメシュノーケル：前日にLINEでご連絡します\n' +
+      '・ドローンSUP：予約確定時にLINEでご連絡します\n\n' +
+      '【当日の持ち物】\n' +
+      '水着（着替えは現地でできます）・タオル・酔い止め（必要な方）\n\n' +
+      '【キャンセルポリシー】\n' +
+      '前日まで：無料\n' +
+      '当日：100%\n\n' +
+      'ご不明な点はお気軽にご連絡ください。\n' +
+      '海亀兄弟';
+  })();
+
   if (isCombo) return comboMessage;
+  // 海空セット(C3)は名前に「SUP」を含むため、汎用SUP判定より前に分岐する
+  if (isSeaSky) return seaSkyComboMessage;
   if (plan.indexOf('ナイトツアー') !== -1 || plan.indexOf('ヤシガニ探検') !== -1) return nightMessage;
   if (plan.indexOf('SUP') !== -1) return supMessage;
 
@@ -677,7 +716,8 @@ function addToCalendar(data, headcount) {
   var staffInfo = data.staffName || '指名なし';
 
   var combo = isComboBooking(data);
-  var comboNightTime = combo ? extractComboNightTime(data) : '';
+  var seaSky = isSeaSkyComboBooking(data);
+  var comboNightTime = (combo && !seaSky) ? extractComboNightTime(data) : '';
   var displayTime = getBookingDisplayTime(data);
 
   var emoji  = '🐢';
@@ -741,6 +781,38 @@ function addToCalendar(data, headcount) {
 
   var startHour = parseInt(timeParts[1], 10);
   var startMin  = parseInt(timeParts[2], 10);
+
+  // 海空セット(C3=通常 / C4=貸切)：昼ウミガメ(時刻あり) + 昼ドローンSUP(時刻未定)。
+  // ウミガメは時間指定イベント、ドローンSUPは時間調整中の終日イベントで登録する。
+  if (seaSky) {
+    var ssName = data.customerName || '名前なし';
+    var ssLabel = String(data.planName || '').indexOf('貸切') !== -1
+      ? '貸切海空セット'
+      : '海空セット';
+
+    var ssTurtleTitle =
+      'WEB 🐢 ' + ssLabel + '（ウミガメ）/ ' + ssName + ' / ' + headcount;
+    var ssStart = new Date(year, month, day, startHour, startMin);
+    var ssEnd   = new Date(year, month, day, startHour + 1, startMin + 30);
+
+    var ssTurtleEvent = calendar.createEvent(ssTurtleTitle, ssStart, ssEnd, {
+      description: description,
+      location: '宮古島'
+    });
+    ssTurtleEvent.setColor('2');
+    Logger.log('カレンダー登録完了（海亀）: ' + ssTurtleTitle);
+
+    var ssSupTitle =
+      'WEB 🛸 ' + ssLabel + '（ドローンSUP・時間調整中）/ ' + ssName + ' / ' + headcount;
+    var ssSupEvent = calendar.createAllDayEvent(ssSupTitle, new Date(year, month, day), {
+      description: description,
+      location: '宮古島'
+    });
+    ssSupEvent.setColor('6');
+    Logger.log('カレンダー登録完了（ドローンSUP・終日）: ' + ssSupTitle);
+
+    return;
+  }
 
   if (combo) {
     var baseName = data.customerName || '名前なし';

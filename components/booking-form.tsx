@@ -34,19 +34,34 @@ interface ParticipantDetails {
   category: "adult" | "child" | "under3"
 }
 
-// 昼夜セット（昼:ウミガメ + 夜:ヤシガニ探検）の時間候補
-const COMBO_PLAN_IDS = new Set(["C1", "C2"])
+// セットプラン。C1/C2＝昼夜セット（昼:ウミガメ + 夜:ヤシガニ探検）、
+// C3＝海空セット（昼:ウミガメ + 昼:ドローンSUP、夜時刻なし）
+const COMBO_PLAN_IDS = new Set(["C1", "C2", "C3"])
+// 夜のヤシガニ探検を含み、夜の開始時刻選択が必須なセット
+const NIGHT_COMBO_PLAN_IDS = new Set(["C1", "C2"])
 const COMBO_TURTLE_TIMES = ["09:00", "11:00", "14:00", "16:00"]
 const COMBO_NIGHT_TIMES = ["19:20", "21:10"]
+// ドローンSUPは海況・水位で調整するため時刻は確定時にご案内（夜時刻の代わりに表示）
+const DAY_SUP_TIME_NOTE = "海況・水位により調整（予約確定時にご案内）"
 
 function isComboPlanId(planId: string): boolean {
   return COMBO_PLAN_IDS.has(planId)
 }
 
+// 夜時刻の選択が必要なセット（C1/C2）。C3（海空セット）は昼+昼のため対象外。
+function isNightComboPlanId(planId: string): boolean {
+  return NIGHT_COMBO_PLAN_IDS.has(planId)
+}
+
+function isDayComboPlanId(planId: string): boolean {
+  return planId === "C3" || planId === "C4"
+}
+
 function getComboContentText(planId: string): string {
-  return planId === "C2"
-    ? "内容：S2 【貸切】ウミガメシュノーケル + S5 【貸切】ヤシガニ探検"
-    : "内容：S1 ウミガメシュノーケル + S3 ヤシガニ探検"
+  if (planId === "C2") return "内容：S2 【貸切】ウミガメシュノーケル + S5 【貸切】ヤシガニ探検"
+  if (planId === "C3") return "内容：S1 ウミガメシュノーケル + S6 ドローンSUP"
+  if (planId === "C4") return "内容：S2 【貸切】ウミガメシュノーケル + S7 【貸切】ドローンSUP"
+  return "内容：S1 ウミガメシュノーケル + S3 ヤシガニ探検"
 }
 
 interface BookingData {
@@ -79,6 +94,7 @@ function getPlanType(planId: string): "night-hunter" | "sunset-sup" | "day-sup" 
     case "S4":
       return "sunset-sup"
     case "S6":
+    case "S7":
       return "day-sup"
     case "slide-boat":
       return "slide-boat"
@@ -101,8 +117,8 @@ const STAFF_LIST = [
 ]
 
 function getPlanTone(planId: string): "emerald" | "purple" | "cyan" {
-  if (planId === "S2" || planId === "S5" || planId === "C2") return "purple"
-  if (planId === "S6" || planId === "slide-boat") return "cyan"
+  if (planId === "S2" || planId === "S5" || planId === "C2" || planId === "S7" || planId === "C4") return "purple"
+  if (planId === "S6" || planId === "slide-boat" || planId === "C3") return "cyan"
   return "emerald"
 }
 
@@ -306,7 +322,7 @@ export function BookingForm() {
     }
   }, [bookingData.adultCount, bookingData.childCount, bookingData.under3Count, createParticipants])
 
-  const isNightHunterPlan = bookingData.selectedPlan === "S3" || bookingData.selectedPlan === "S4" || bookingData.selectedPlan === "S5" || bookingData.selectedPlan === "S6" || bookingData.selectedPlan === "slide-boat"
+  const isNightHunterPlan = bookingData.selectedPlan === "S3" || bookingData.selectedPlan === "S4" || bookingData.selectedPlan === "S5" || bookingData.selectedPlan === "S6" || bookingData.selectedPlan === "S7" || bookingData.selectedPlan === "slide-boat"
   const isUnder3FreePlan = bookingData.selectedPlan === "S3" || bookingData.selectedPlan === "S5"
   // 昼夜セットはスタッフ指名不可。夜系プランも従来どおり指名不可。
   const isComboPlan = isComboPlanId(bookingData.selectedPlan)
@@ -424,10 +440,12 @@ export function BookingForm() {
     const finalSpecialRequests = isComboPlan
       ? [
           "[COMBO booking]",
-          `プラン：${selectedPlanData?.name || "ウミガメシュノーケル＆ヤシガニ探検 昼夜セット"}`,
+          `プラン：${selectedPlanData?.name || "セットプラン"}`,
           getComboContentText(bookingData.selectedPlan),
           `海亀希望時間：${bookingData.selectedTime}`,
-          `ヤシガニ探検希望時間：${bookingData.nightTime}`,
+          isDayComboPlanId(bookingData.selectedPlan)
+            ? `ドローンSUP希望時間：${DAY_SUP_TIME_NOTE}`
+            : `ヤシガニ探検希望時間：${bookingData.nightTime}`,
           ...(bookingData.specialRequests.trim() ? ["───", bookingData.specialRequests.trim()] : []),
         ].join("\n")
       : bookingData.specialRequests
@@ -486,8 +504,11 @@ export function BookingForm() {
     bookingData.participants.some((p) => typeof p.age === "number" && p.age >= 60)
   const isNightTourForDetails =
     bookingData.selectedPlan === "S3" || bookingData.selectedPlan === "S5" || bookingData.selectedPlan === "night-hunter"
-  // 昼夜セットは海亀時間（selectedTime）と夜時間（nightTime）の両方が必須
-  const comboTimesSelected = !isComboPlan || (!!bookingData.selectedTime && !!bookingData.nightTime)
+  // 昼夜セット(C1/C2)は海亀時間(selectedTime)と夜時間(nightTime)の両方が必須。
+  // 海空セット(C3)はドローンSUP時刻が確定時案内のため、海亀時間のみ必須。
+  const comboTimesSelected =
+    !isComboPlan ||
+    (!!bookingData.selectedTime && (!isNightComboPlanId(bookingData.selectedPlan) || !!bookingData.nightTime))
 
   const isFormValid =
     bookingData.selectedPlan &&
@@ -533,12 +554,21 @@ export function BookingForm() {
             <div className="text-sm text-gray-600 space-y-1">
               <p>プラン: {selectedPlanData?.name}</p>
               {isComboPlan ? (
-                <>
-                  <p>日付: {bookingData.selectedDate}</p>
-                  <p>🐢 ウミガメツアー: {bookingData.selectedTime}</p>
-                  <p>🦀 ヤシガニ探検: {bookingData.nightTime}</p>
-                  <p className="text-xs text-emerald-700">※集合場所は、ウミガメは前日・ヤシガニ探検は当日にLINEでご案内します</p>
-                </>
+                isDayComboPlanId(bookingData.selectedPlan) ? (
+                  <>
+                    <p>日付: {bookingData.selectedDate}</p>
+                    <p>🐢 ウミガメツアー: {bookingData.selectedTime}</p>
+                    <p>🛸 ドローンSUP: 予約確定時にLINEでご案内</p>
+                    <p className="text-xs text-emerald-700">※集合場所はウミガメは前日にLINE、ドローンSUPは予約確定時にLINEでご案内します</p>
+                  </>
+                ) : (
+                  <>
+                    <p>日付: {bookingData.selectedDate}</p>
+                    <p>🐢 ウミガメツアー: {bookingData.selectedTime}</p>
+                    <p>🦀 ヤシガニ探検: {bookingData.nightTime}</p>
+                    <p className="text-xs text-emerald-700">※集合場所は、ウミガメは前日・ヤシガニ探検は当日にLINEでご案内します</p>
+                  </>
+                )
               ) : (
                 <p>
                   日時: {bookingData.selectedDate}{" "}
@@ -856,6 +886,94 @@ export function BookingForm() {
               )
             })()}
 
+            {/* 【貸切】宮古島ドローンSUP体験 */}
+            {(() => {
+              const s7 = BOOKING_PLANS.find(p => p.id === "S7")
+              if (!s7) return null
+              const isS7Selected = bookingData.selectedPlan === "S7"
+              return (
+                <label className={`block cursor-pointer rounded-2xl border-2 transition-all ${isS7Selected ? "border-purple-500 shadow-lg bg-purple-50/40" : "border-gray-200 hover:border-purple-300"}`}>
+                  <input type="radio" name="plan" value="S7" checked={isS7Selected} onChange={(e) => handleInputChange("selectedPlan", e.target.value)} className="sr-only" />
+                  <div className="p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                          <h3 className="font-bold text-gray-900 text-base">【貸切】宮古島ドローンSUP体験</h3>
+                          <span className="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-bold">完全貸切</span>
+                        </div>
+                        <p className="text-xs text-gray-600 mb-2">1組貸切・専属ガイドで日中のドローンSUP</p>
+                        <div className="flex items-center gap-3 text-sm text-gray-500">
+                          <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{s7.durationHours}時間</span>
+                          <span className="flex items-center gap-1"><Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />{s7.rating}</span>
+                        </div>
+                      </div>
+                      <div className="w-40">
+                        <BookingPlanPrice planId="S7" />
+                      </div>
+                    </div>
+                  </div>
+                </label>
+              )
+            })()}
+
+            {/* ウミガメシュノーケル＆ドローンSUP 海空セット */}
+            {(() => {
+              const c3 = BOOKING_PLANS.find(p => p.id === "C3")
+              if (!c3) return null
+              const isC3Selected = bookingData.selectedPlan === "C3"
+              return (
+                <label className={`block cursor-pointer rounded-2xl border-2 transition-all ${isC3Selected ? "border-cyan-500 shadow-lg bg-cyan-50/40" : "border-gray-200 hover:border-cyan-300"}`}>
+                  <input type="radio" name="plan" value="C3" checked={isC3Selected} onChange={(e) => handleInputChange("selectedPlan", e.target.value)} className="sr-only" />
+                  <div className="p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <div className="mb-1 flex flex-wrap items-center gap-2">
+                          <h3 className="font-bold text-gray-900 text-base">ウミガメシュノーケル＆ドローンSUP 海空セット</h3>
+                          <span className="text-[10px] bg-cyan-600 text-white px-2 py-0.5 rounded-full font-bold">セットでお得</span>
+                        </div>
+                        <p className="text-xs text-gray-600 mb-2">同じ浜で連続：ウミガメシュノーケル ＋ ドローンSUP</p>
+                        <div className="flex items-center gap-3 text-sm text-gray-500">
+                          <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" />約3時間</span>
+                        </div>
+                      </div>
+                      <div className="w-40">
+                        <BookingPlanPrice planId="C3" />
+                      </div>
+                    </div>
+                  </div>
+                </label>
+              )
+            })()}
+
+            {/* 【貸切】ウミガメシュノーケル＆ドローンSUP 海空セット */}
+            {(() => {
+              const c4 = BOOKING_PLANS.find(p => p.id === "C4")
+              if (!c4) return null
+              const isC4Selected = bookingData.selectedPlan === "C4"
+              return (
+                <label className={`block cursor-pointer rounded-2xl border-2 transition-all ${isC4Selected ? "border-purple-500 shadow-lg bg-purple-50/40" : "border-gray-200 hover:border-purple-300"}`}>
+                  <input type="radio" name="plan" value="C4" checked={isC4Selected} onChange={(e) => handleInputChange("selectedPlan", e.target.value)} className="sr-only" />
+                  <div className="p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <div className="mb-1 flex flex-wrap items-center gap-2">
+                          <h3 className="font-bold text-gray-900 text-base">【貸切】ウミガメシュノーケル＆ドローンSUP 海空セット</h3>
+                          <span className="text-[10px] bg-purple-600 text-white px-2 py-0.5 rounded-full font-bold">貸切セット</span>
+                        </div>
+                        <p className="text-xs text-gray-600 mb-2">同じ浜で連続：貸切ウミガメシュノーケル ＋ 貸切ドローンSUP</p>
+                        <div className="flex items-center gap-3 text-sm text-gray-500">
+                          <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" />約3時間</span>
+                        </div>
+                      </div>
+                      <div className="w-40">
+                        <BookingPlanPrice planId="C4" />
+                      </div>
+                    </div>
+                  </div>
+                </label>
+              )
+            })()}
+
             {/* スライダーボートシュノーケル（近日公開） */}
             {(() => {
               const slideBoat = BOOKING_PLANS.find(p => p.id === "slide-boat")
@@ -982,29 +1100,40 @@ export function BookingForm() {
                     ))}
                   </div>
                 </div>
-                <div>
-                  <p className="text-sm font-semibold text-indigo-800 mb-2">🦀 ヤシガニ探検時間 *</p>
-                  <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
-                    {COMBO_NIGHT_TIMES.map((time) => (
-                      <Button
-                        key={time}
-                        type="button"
-                        variant={bookingData.nightTime === time ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => handleInputChange("nightTime", time)}
-                        className={`rounded-xl ${
-                          bookingData.nightTime === time
-                            ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                            : "border-indigo-200 text-indigo-700 hover:bg-indigo-50"
-                        }`}
-                      >
-                        {time}
-                      </Button>
-                    ))}
+                {isNightComboPlanId(bookingData.selectedPlan) ? (
+                  <div>
+                    <p className="text-sm font-semibold text-indigo-800 mb-2">🦀 ヤシガニ探検時間 *</p>
+                    <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
+                      {COMBO_NIGHT_TIMES.map((time) => (
+                        <Button
+                          key={time}
+                          type="button"
+                          variant={bookingData.nightTime === time ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => handleInputChange("nightTime", time)}
+                          className={`rounded-xl ${
+                            bookingData.nightTime === time
+                              ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                              : "border-indigo-200 text-indigo-700 hover:bg-indigo-50"
+                          }`}
+                        >
+                          {time}
+                        </Button>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div>
+                    <p className="text-sm font-semibold text-cyan-800 mb-2">🛸 ドローンSUP時間</p>
+                    <div className="rounded-xl border border-cyan-200 bg-cyan-50 p-3 text-sm text-cyan-900">
+                      ドローンSUPの開始時間は当日の海況・水位により調整し、予約確定時にLINEでご案内します。
+                    </div>
+                  </div>
+                )}
                 <p className="text-xs text-gray-500">
-                  昼のウミガメツアーと夜のヤシガニ探検、両方の時間をお選びください。海況・天候により時間が変更になる場合があります。
+                  {isNightComboPlanId(bookingData.selectedPlan)
+                    ? "昼のウミガメツアーと夜のヤシガニ探検、両方の時間をお選びください。海況・天候により時間が変更になる場合があります。"
+                    : "ウミガメツアーの時間をお選びください。ドローンSUPの時間は予約確定時にLINEでご案内します。海況・天候により時間が変更になる場合があります。"}
                 </p>
               </div>
             ) : (
@@ -1215,7 +1344,7 @@ export function BookingForm() {
                 <span>￥{totalPrice.toLocaleString()}</span>
               </div>
 
-              {/* クーポンコード（昼夜セットは対象外） */}
+              {/* クーポンコード（セットプランは対象外） */}
               <div className="mt-4 pt-4 border-t border-emerald-200">
                 <p className="text-sm font-medium text-gray-700 mb-2">
                   クーポンコード
@@ -1411,7 +1540,7 @@ export function BookingForm() {
               {isComboPlan ? (
                 <p>
                   安全面を考慮し、60歳以上の方がご参加のグループは
-                  <strong>昼夜セットプラン</strong>
+                  <strong>セットプラン</strong>
                   をご利用いただけません。LINEよりお気軽にご相談ください。
                 </p>
               ) : (

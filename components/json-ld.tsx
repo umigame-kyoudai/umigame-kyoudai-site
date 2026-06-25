@@ -102,7 +102,7 @@ export function LocalBusinessJsonLd() {
       longitude: 125.28,
     },
     image: `${SITE_URL}/images/gemini-generated-image-rq969urq969urq96.jpeg`,
-    priceRange: "¥4,000〜¥16,000",
+    priceRange: "¥4,000〜¥17,500",
     makesOffer: [
       {
         "@type": "Offer",
@@ -138,6 +138,27 @@ export function LocalBusinessJsonLd() {
         price: "16000",
         priceCurrency: "JPY",
         url: `${SITE_URL}/plans/C2`,
+      },
+      {
+        "@type": "Offer",
+        name: "ウミガメシュノーケル＆ドローンSUP 海空セット",
+        price: "13000",
+        priceCurrency: "JPY",
+        url: `${SITE_URL}/plans/C3`,
+      },
+      {
+        "@type": "Offer",
+        name: "【貸切】宮古島ドローンSUP体験",
+        price: "9500",
+        priceCurrency: "JPY",
+        url: `${SITE_URL}/plans/S7`,
+      },
+      {
+        "@type": "Offer",
+        name: "【貸切】ウミガメシュノーケル＆ドローンSUP 海空セット",
+        price: "17500",
+        priceCurrency: "JPY",
+        url: `${SITE_URL}/plans/C4`,
       },
     ],
     openingHoursSpecification: {

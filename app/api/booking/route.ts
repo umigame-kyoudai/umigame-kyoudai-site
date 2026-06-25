@@ -38,12 +38,17 @@ interface BookingRequest {
 const SUNSET_SUP_TIME_NOTE = 'サンセット時刻（予約確定時にご案内）'
 const DAY_SUP_TIME_NOTE = '海況・水位により調整（予約確定時にご案内）'
 const FREE_UNDER3_PLAN_IDS = new Set(['S3', 'S5'])
-// 昼夜セットはスタッフ指名不可
-const COMBO_PLAN_IDS = new Set(['C1', 'C2'])
-const STAFF_UNAVAILABLE_PLAN_IDS = new Set(['S3', 'S4', 'S5', 'S6', 'slide-boat', 'C1', 'C2'])
-const TIME_OPTIONAL_PLAN_IDS = new Set(['S4', 'S6'])
-// 通常シュノーケルを含み、60歳以上をお断りするプラン（S1 と昼夜セット）
-const SENIOR_RESTRICTED_PLAN_IDS = new Set(['S1', 'C1', 'C2'])
+// セットプラン全般（スタッフ指名不可・クーポン対象外・複合の備考ブロック付与の対象）
+// C1/C2＝昼夜セット（夜時刻あり）、C3＝海空セット（昼+昼、夜時刻なし）
+const COMBO_PLAN_IDS = new Set(['C1', 'C2', 'C3', 'C4'])
+// 夜のヤシガニ探検を含み、夜の開始時刻（nightTime）選択が必須なセット
+const NIGHT_COMBO_PLAN_IDS = new Set(['C1', 'C2'])
+// 昼+昼の海空セット（夜時刻なし）。C3=通常、C4=貸切
+const DAY_COMBO_PLAN_IDS = new Set(['C3', 'C4'])
+const STAFF_UNAVAILABLE_PLAN_IDS = new Set(['S3', 'S4', 'S5', 'S6', 'S7', 'slide-boat', 'C1', 'C2', 'C3', 'C4'])
+const TIME_OPTIONAL_PLAN_IDS = new Set(['S4', 'S6', 'S7'])
+// 通常シュノーケルを含み、60歳以上をお断りするプラン（S1 とセットプラン）
+const SENIOR_RESTRICTED_PLAN_IDS = new Set(['S1', 'C1', 'C2', 'C3', 'C4'])
 const COMBO_NIGHT_TIMES = new Set(['19:20', '21:10'])
 const VALID_STAFF_IDS = new Set(['staff1', 'staff2', 'staff3', 'staff4', 'staff5'])
 const STAFF_NAMES: Record<string, string> = {
@@ -56,6 +61,8 @@ const STAFF_NAMES: Record<string, string> = {
 
 const isNightTourPlan = (planId: string) => planId === 'S3' || planId === 'S5'
 const isComboPlan = (planId: string) => COMBO_PLAN_IDS.has(planId)
+// 夜時刻の選択が必要なセット（C1/C2）。C3（海空セット）は昼+昼のため対象外。
+const isNightComboPlan = (planId: string) => NIGHT_COMBO_PLAN_IDS.has(planId)
 
 // 簡易レートリミット（インスタンス内メモリ）。Vercelはインスタンスを再利用するため
 // 完全ではないが、スパム送信によるGAS予約シート・LINE通知の氾濫を抑止する
@@ -140,7 +147,7 @@ const validateParticipant = (
     return {
       valid: false,
       error: isComboPlan(plan.id)
-        ? '60歳以上の方がいるグループは昼夜セットをご予約いただけません。LINEよりご相談ください'
+        ? '60歳以上の方がいるグループはセットプランをご予約いただけません。LINEよりご相談ください'
         : '60歳以上の方がいるグループは【貸切】ウミガメシュノーケルツアーをご予約ください',
     }
   }
@@ -192,7 +199,7 @@ const validateBookingRequest = (data: BookingRequest): { valid: boolean; error?:
     }
   }
 
-  if (isComboPlan(plan.id)) {
+  if (isNightComboPlan(plan.id)) {
     if (!validateRequired(data.nightTime || '').valid) {
       return { valid: false, error: 'ヤシガニ探検の開始時間が必須です' }
     }
@@ -267,17 +274,28 @@ const buildSpecialRequests = (bookingData: BookingRequest, plan: typeof PLANS[nu
   const rawRequests = bookingData.specialRequests?.trim() || ''
 
   if (!isComboPlan(plan.id)) return rawRequests
-  const comboContent = plan.id === 'C2'
-    ? '内容：S2 【貸切】ウミガメシュノーケル + S5 【貸切】ヤシガニ探検'
-    : '内容：S1 ウミガメシュノーケル + S3 ヤシガニ探検'
 
-  const comboBlock = [
-    '[COMBO booking]',
-    `プラン：${plan.name}`,
-    comboContent,
-    `海亀希望時間：${bookingData.selectedTime || ''}`,
-    `ヤシガニ探検希望時間：${bookingData.nightTime || ''}`,
-  ].join('\n')
+  // 海空セット（C3=通常 / C4=貸切）は昼+昼。2つ目はドローンSUPで夜時刻が無いため別ブロックにする。
+  const comboBlock = (DAY_COMBO_PLAN_IDS.has(plan.id)
+    ? [
+        '[COMBO booking]',
+        `プラン：${plan.name}`,
+        plan.id === 'C4'
+          ? '内容：S2 【貸切】ウミガメシュノーケル + S7 【貸切】ドローンSUP'
+          : '内容：S1 ウミガメシュノーケル + S6 ドローンSUP',
+        `海亀希望時間：${bookingData.selectedTime || ''}`,
+        `ドローンSUP希望時間：${DAY_SUP_TIME_NOTE}`,
+      ]
+    : [
+        '[COMBO booking]',
+        `プラン：${plan.name}`,
+        plan.id === 'C2'
+          ? '内容：S2 【貸切】ウミガメシュノーケル + S5 【貸切】ヤシガニ探検'
+          : '内容：S1 ウミガメシュノーケル + S3 ヤシガニ探検',
+        `海亀希望時間：${bookingData.selectedTime || ''}`,
+        `ヤシガニ探検希望時間：${bookingData.nightTime || ''}`,
+      ]
+  ).join('\n')
 
   const cleanedRequests = rawRequests
     .replace(/\[COMBO booking\][\s\S]*?(?:\n───\n|$)/, '')
@@ -305,7 +323,7 @@ const buildGASPayload = (
     selectedDate: bookingData.selectedDate,
     selectedTime: plan.id === 'S4'
       ? SUNSET_SUP_TIME_NOTE
-      : plan.id === 'S6'
+      : (plan.id === 'S6' || plan.id === 'S7')
         ? DAY_SUP_TIME_NOTE
         : bookingData.selectedTime || '',
     participants: bookingData.participants,

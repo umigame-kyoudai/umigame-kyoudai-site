@@ -36,6 +36,15 @@ export const TOUR_IMAGE_PATHS = {
     "/images/tours/snorkel/snorkel-03.webp",
     "/images/tours/night/night-03.webp",
   ],
+  // 海空セット（昼:シュノーケル + 昼:ドローンSUP）。合成カバーは未作成のため、
+  // 実写のシュノーケル写真とドローンSUPの空撮を交互に並べ「海と空の両方」を見せる。
+  comboSeaSky: [
+    "/images/tours/day-sup/day-sup-turquoise-aerial-013.webp",
+    "/images/tours/snorkel/snorkel-01.webp",
+    "/images/tours/day-sup/day-sup-hero.webp",
+    "/images/tours/snorkel/snorkel-03.webp",
+    "/images/tours/day-sup/day-sup-topdown-aerial-002.webp",
+  ],
 } as const
 
 export const PLAN_COVER_IMAGE = {
@@ -48,4 +57,6 @@ export const PLAN_COVER_IMAGE = {
   slideBoat: TOUR_IMAGE_PATHS.slideBoat[0],
   // 詳細ページのヒーロー背景はラベルなしの合成（ページ側がタイトルを重ねるため）
   combo: "/images/tours/combo/combo-hero.webp",
+  // 海空セットは合成ヒーロー未作成。ドローンSUPの空撮（海と空が一枚に収まる）をヒーローに流用。
+  comboSeaSky: TOUR_IMAGE_PATHS.comboSeaSky[0],
 } as const
