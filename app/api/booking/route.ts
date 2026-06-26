@@ -4,6 +4,20 @@ import { validateEmail, validatePhoneNumber, validateRequired } from '@/lib/util
 import { PLANS, getStaffFee } from '@/lib/data'
 import { calculateCouponDiscount } from '@/lib/constants/coupons'
 import { getEnPrice } from '@/lib/i18n/en-prices'
+import {
+  COMBO_PLAN_IDS,
+  STAFF_UNAVAILABLE_PLAN_IDS,
+  TIME_OPTIONAL_PLAN_IDS,
+  SENIOR_RESTRICTED_PLAN_IDS,
+  FREE_UNDER3_PLAN_IDS,
+  COMBO_NIGHT_TIMES,
+  DAY_SUP_TIME_NOTE,
+  isNightTourPlan,
+  isComboPlan,
+  planHasSup,
+  planHasNight,
+  getComboContentText,
+} from '@/lib/plan-flags'
 
 interface BookingParticipant {
   name?: string
@@ -35,23 +49,8 @@ interface BookingRequest {
   couponDiscount?: number
 }
 
+// プラン分類は lib/plan-flags.ts を単一ソースとして参照する（予約フォーム等と共通）
 const SUNSET_SUP_TIME_NOTE = 'サンセット時刻（予約確定時にご案内）'
-const DAY_SUP_TIME_NOTE = '海況・水位により調整（予約確定時にご案内）'
-const FREE_UNDER3_PLAN_IDS = new Set(['S3', 'S5'])
-// セットプラン全般（スタッフ指名不可・クーポン対象外・複合の備考ブロック付与の対象）
-// C1/C2＝昼夜セット、C3/C4＝海空セット、C5/C6＝まるごと1日セット（トリプル）
-const COMBO_PLAN_IDS = new Set(['C1', 'C2', 'C3', 'C4', 'C5', 'C6'])
-// 夜のヤシガニ探検（ナイトツアー）を含む昼夜セット。C5/C6（トリプル）も夜を含む
-const NIGHT_COMBO_PLAN_IDS = new Set(['C1', 'C2'])
-// ドローンSUP（昼・連続）を含むセット。C3/C4＝海空セット、C5/C6＝トリプルも含む
-const DAY_COMBO_PLAN_IDS = new Set(['C3', 'C4'])
-// 朝シュノーケル＋昼SUP＋夜ナイトの3アクティビティ複合。夜時刻あり＋SUP連続の両方を持つ
-const TRIPLE_COMBO_PLAN_IDS = new Set(['C5', 'C6'])
-const STAFF_UNAVAILABLE_PLAN_IDS = new Set(['S3', 'S4', 'S5', 'S6', 'S7', 'slide-boat', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6'])
-const TIME_OPTIONAL_PLAN_IDS = new Set(['S4', 'S6', 'S7'])
-// 通常シュノーケルを含み、60歳以上をお断りするプラン（S1 とセットプラン）
-const SENIOR_RESTRICTED_PLAN_IDS = new Set(['S1', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6'])
-const COMBO_NIGHT_TIMES = new Set(['19:20', '21:10'])
 const VALID_STAFF_IDS = new Set(['staff1', 'staff2', 'staff3', 'staff4', 'staff5'])
 const STAFF_NAMES: Record<string, string> = {
   staff1: 'やまちゃん',
@@ -60,14 +59,6 @@ const STAFF_NAMES: Record<string, string> = {
   staff3: 'そういちろう',
   staff4: '凪',
 }
-
-const isNightTourPlan = (planId: string) => planId === 'S3' || planId === 'S5'
-const isComboPlan = (planId: string) => COMBO_PLAN_IDS.has(planId)
-const isTripleComboPlan = (planId: string) => TRIPLE_COMBO_PLAN_IDS.has(planId)
-// SUP（ドローンSUP・連続）を含むセット = 海空セット(C3/C4) + トリプル(C5/C6)
-const planHasSup = (planId: string) => DAY_COMBO_PLAN_IDS.has(planId) || isTripleComboPlan(planId)
-// 夜（ナイトツアー）を含み夜時刻の選択が必要なセット = 昼夜セット(C1/C2) + トリプル(C5/C6)
-const planHasNight = (planId: string) => NIGHT_COMBO_PLAN_IDS.has(planId) || isTripleComboPlan(planId)
 
 // 簡易レートリミット（インスタンス内メモリ）。Vercelはインスタンスを再利用するため
 // 完全ではないが、スパム送信によるGAS予約シート・LINE通知の氾濫を抑止する
@@ -208,7 +199,7 @@ const validateBookingRequest = (data: BookingRequest): { valid: boolean; error?:
     if (!validateRequired(data.nightTime || '').valid) {
       return { valid: false, error: 'ヤシガニ探検（ナイトツアー）の開始時間が必須です' }
     }
-    if (!COMBO_NIGHT_TIMES.has(data.nightTime || '')) {
+    if (!COMBO_NIGHT_TIMES.includes(data.nightTime || '')) {
       return { valid: false, error: '選択されたヤシガニ探検時間がプランの時間帯と一致しません' }
     }
   }
@@ -275,16 +266,6 @@ const calculateServerSidePrice = (
   return Math.max(0, baseTotal + vipSurcharge + staffFee - couponDiscount)
 }
 
-// 複合プランの「内容」行（含まれる単品ツアーの併記）
-const COMBO_CONTENT_TEXT: Record<string, string> = {
-  C1: '内容：S1 ウミガメシュノーケル + S3 ヤシガニ探検',
-  C2: '内容：S2 【貸切】ウミガメシュノーケル + S5 【貸切】ヤシガニ探検',
-  C3: '内容：S1 ウミガメシュノーケル + S6 ドローンSUP',
-  C4: '内容：S2 【貸切】ウミガメシュノーケル + S7 【貸切】ドローンSUP',
-  C5: '内容：S1 ウミガメシュノーケル + S6 ドローンSUP + S3 ナイトツアー',
-  C6: '内容：S2 【貸切】ウミガメシュノーケル + S7 【貸切】ドローンSUP + S5 【貸切】ナイトツアー',
-}
-
 const buildSpecialRequests = (bookingData: BookingRequest, plan: typeof PLANS[number]): string => {
   const rawRequests = bookingData.specialRequests?.trim() || ''
 
@@ -294,7 +275,7 @@ const buildSpecialRequests = (bookingData: BookingRequest, plan: typeof PLANS[nu
   const lines = [
     '[COMBO booking]',
     `プラン：${plan.name}`,
-    COMBO_CONTENT_TEXT[plan.id] || '',
+    getComboContentText(plan.id),
     `海亀希望時間：${bookingData.selectedTime || ''}`,
   ]
   if (planHasSup(plan.id)) lines.push(`ドローンSUP希望時間：${DAY_SUP_TIME_NOTE}`)

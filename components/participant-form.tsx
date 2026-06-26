@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { User, AlertTriangle } from "lucide-react"
+import { isComboPlan as isComboPlanFlag } from "@/lib/plan-flags"
 
 interface ParticipantDetails {
   id: string
@@ -27,7 +28,8 @@ export function ParticipantForm({ participants, minAge, selectedPlan, onUpdate }
 
   // ナイトツアーかどうかを判定
   const isNightTour = selectedPlan === "night-hunter" || selectedPlan === "S3" || selectedPlan === "S5"
-  const isComboPlan = selectedPlan === "C1" || selectedPlan === "C2" || selectedPlan === "C3"
+  // セット判定は lib/plan-flags.ts を単一ソースとして参照（C1〜C6を網羅）
+  const isComboPlan = isComboPlanFlag(selectedPlan)
 
   return (
     <Card className="glass-card bg-white/70 backdrop-blur-xl rounded-3xl ring-1 ring-emerald-100 shadow-lg">

@@ -23,6 +23,16 @@ import { ComingSoonBadge } from "@/components/coming-soon"
 import { ADULT_PRICE, BOOKING_PLANS, CHILD_PRICE } from "@/lib/booking-plans"
 import { getStaffFee } from "@/lib/data"
 import { getPlanPriceDisplay, getPlanCode } from "@/lib/plan-price-display"
+import {
+  COMBO_TURTLE_TIMES,
+  COMBO_NIGHT_TIMES,
+  DAY_SUP_TIME_NOTE,
+  isComboPlan as isComboPlanId,
+  isTripleComboPlan as isTripleComboPlanId,
+  planHasSup,
+  planHasNight,
+  getComboContentText,
+} from "@/lib/plan-flags"
 
 interface ParticipantDetails {
   id: string // Added unique ID for each participant
@@ -32,46 +42,6 @@ interface ParticipantDetails {
   weight: number | ""
   footSize: number | ""
   category: "adult" | "child" | "under3"
-}
-
-// セットプラン。C1/C2＝昼夜セット、C3/C4＝海空セット、C5/C6＝まるごと1日セット（トリプル）
-const COMBO_PLAN_IDS = new Set(["C1", "C2", "C3", "C4", "C5", "C6"])
-// 夜のヤシガニ探検（ナイトツアー）を含む昼夜セット
-const NIGHT_COMBO_PLAN_IDS = new Set(["C1", "C2"])
-// ドローンSUP（昼・連続）を含む海空セット
-const DAY_COMBO_PLAN_IDS = new Set(["C3", "C4"])
-// 朝シュノーケル＋昼SUP＋夜ナイトの3アクティビティ複合（夜時刻あり＋SUP連続の両方）
-const TRIPLE_COMBO_PLAN_IDS = new Set(["C5", "C6"])
-const COMBO_TURTLE_TIMES = ["09:00", "11:00", "14:00", "16:00"]
-const COMBO_NIGHT_TIMES = ["19:20", "21:10"]
-// ドローンSUPは海況・水位で調整するため時刻は確定時にご案内
-const DAY_SUP_TIME_NOTE = "海況・水位により調整（予約確定時にご案内）"
-
-function isComboPlanId(planId: string): boolean {
-  return COMBO_PLAN_IDS.has(planId)
-}
-
-function isTripleComboPlanId(planId: string): boolean {
-  return TRIPLE_COMBO_PLAN_IDS.has(planId)
-}
-
-// SUP（ドローンSUP・連続）を含む = 海空セット(C3/C4) + トリプル(C5/C6)
-function planHasSup(planId: string): boolean {
-  return DAY_COMBO_PLAN_IDS.has(planId) || isTripleComboPlanId(planId)
-}
-
-// 夜（ナイトツアー）を含み夜時刻の選択が必要 = 昼夜セット(C1/C2) + トリプル(C5/C6)
-function planHasNight(planId: string): boolean {
-  return NIGHT_COMBO_PLAN_IDS.has(planId) || isTripleComboPlanId(planId)
-}
-
-function getComboContentText(planId: string): string {
-  if (planId === "C2") return "内容：S2 【貸切】ウミガメシュノーケル + S5 【貸切】ヤシガニ探検"
-  if (planId === "C3") return "内容：S1 ウミガメシュノーケル + S6 ドローンSUP"
-  if (planId === "C4") return "内容：S2 【貸切】ウミガメシュノーケル + S7 【貸切】ドローンSUP"
-  if (planId === "C5") return "内容：S1 ウミガメシュノーケル + S6 ドローンSUP + S3 ナイトツアー"
-  if (planId === "C6") return "内容：S2 【貸切】ウミガメシュノーケル + S7 【貸切】ドローンSUP + S5 【貸切】ナイトツアー"
-  return "内容：S1 ウミガメシュノーケル + S3 ヤシガニ探検"
 }
 
 interface BookingData {
