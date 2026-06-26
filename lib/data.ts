@@ -995,6 +995,13 @@ export const STAFFS: Staff[] = [
     description: "国家資格を持つドローンパイロット。空からの美しい映像で思い出を記録します。",
     image: "/nagi-staff-photo.jpg",
   },
+  {
+    id: "mana",
+    name: "まなちゃん",
+    role: "宮古島出身ガイド",
+    description: "宮古島出身、身長147cmの小柄で明るいガイド。地元目線で宮古島の海を楽しくご案内します。女性やお子さま連れの方も安心してお任せください。",
+    image: "/mana-staff-photo.jpg",
+  },
 ]
 
 export interface FAQ {

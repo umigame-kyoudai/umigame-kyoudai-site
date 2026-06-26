@@ -38,6 +38,13 @@ const staffMembers = [
     description: "空からの絶景を記録するプロ",
     objectPosition: "center center",
   },
+  {
+    name: "まなちゃん",
+    role: "宮古島出身ガイド",
+    image: "/mana-staff-photo.jpg",
+    description: "地元目線で案内する小柄で明るいガイド",
+    objectPosition: "center 30%",
+  },
 ]
 
 export function StaffSection() {

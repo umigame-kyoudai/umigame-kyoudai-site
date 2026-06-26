@@ -1,5 +1,5 @@
 import Image from "next/image"
-import { Shield, Star, Award, Plane, Compass } from "lucide-react"
+import { Shield, Star, Award, Plane, Compass, MapPin } from "lucide-react"
 import { BLUR_DATA_URLS } from "@/lib/image-placeholders"
 import { TrackedCta } from "@/components/tracked-cta"
 
@@ -98,6 +98,25 @@ const staff = [
       "サンセットSUPの撮影担当",
     ],
     tours: ["サンセットSUP"],
+  },
+  {
+    id: "mana",
+    name: "まなちゃん",
+    role: "宮古島出身ガイド",
+    icon: MapPin,
+    iconColor: "text-rose-600",
+    badgeColor: "bg-rose-500",
+    image: "/mana-staff-photo.jpg",
+    objectPosition: "center 30%",
+    catchphrase: "地元目線で、宮古島の海をご案内します！",
+    description: "宮古島出身、身長147cmの小柄で明るいガイド。地元ならではの目線で宮古島の海を楽しくご案内します。女性やお子さま連れの方も安心してお任せください。",
+    details: [
+      "宮古島出身の地元ガイド",
+      "身長147cm・小柄で親しみやすい",
+      "女性・お子さま連れも安心",
+      "明るく元気なご案内",
+    ],
+    tours: ["ウミガメシュノーケル", "本格ナイトツアー"],
   },
 ]
 
