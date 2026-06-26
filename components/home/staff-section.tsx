@@ -1,51 +1,16 @@
 import Image from "next/image"
 import Link from "next/link"
 import { BLUR_DATA_URLS } from "@/lib/image-placeholders"
+import { STAFF_MEMBERS } from "@/lib/staff"
 
-const staffMembers = [
-  {
-    name: "やまちゃん",
-    role: "現場責任者",
-    image: "/yamachan-staff-photo.jpg",
-    description: "宮古島の海を知り尽くした頼れるリーダー",
-    objectPosition: "center 20%",
-  },
-  {
-    name: "ひかる",
-    role: "やまちゃんの右腕",
-    image: "/hikaru-staff-photo.jpg",
-    description: "海の生き物が大好きな優しいガイド",
-    objectPosition: "center center",
-  },
-  {
-    name: "そうたろう",
-    role: "ツアーガイド",
-    image: "/img-2102-staff-photo.jpg",
-    description: "初めての方にも寄り添うガイド",
-    objectPosition: "center center",
-  },
-  {
-    name: "そういちろう",
-    role: "ナイトツアー専門",
-    image: "/images/night-tour-coconut-crab.jpg",
-    description: "夜の冒険のスペシャリスト",
-    objectPosition: "center center",
-  },
-  {
-    name: "凪",
-    role: "ドローンパイロット",
-    image: "/nagi-staff-photo.jpg",
-    description: "空からの絶景を記録するプロ",
-    objectPosition: "center center",
-  },
-  {
-    name: "まなちゃん",
-    role: "宮古島出身ガイド",
-    image: "/mana-staff-photo.jpg",
-    description: "地元目線で案内する小柄で明るいガイド",
-    objectPosition: "center 30%",
-  },
-]
+// トップの Our Team は短い紹介文（shortDescription）を使う。スタッフ定義は lib/staff.ts が単一ソース。
+const staffMembers = STAFF_MEMBERS.map((m) => ({
+  name: m.name,
+  role: m.role,
+  image: m.image,
+  description: m.shortDescription,
+  objectPosition: m.objectPosition,
+}))
 
 export function StaffSection() {
   return (

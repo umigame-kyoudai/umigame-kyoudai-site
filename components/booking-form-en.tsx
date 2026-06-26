@@ -24,7 +24,7 @@ import { getEnPrice, EN_PRICE_SUPPORT_NOTE } from "@/lib/i18n/en-prices"
 const NIGHT_PLAN_IDS = new Set(["S3", "S5"])
 const FREE_UNDER3_PLAN_IDS = NIGHT_PLAN_IDS
 const STAFF_AVAILABLE_PLAN_IDS = new Set(["S1", "S2"])
-const TIME_OPTIONAL_PLAN_IDS = new Set(["S4", "S6"])
+const TIME_OPTIONAL_PLAN_IDS = new Set(["S4", "S6", "S7"])
 
 const STAFF_LIST_EN = [
   { id: "", name: "No preference" },
@@ -77,7 +77,7 @@ export function BookingFormEn() {
   const en = planId ? EN_PLAN_BY_ID[planId] : undefined
   const isNight = NIGHT_PLAN_IDS.has(planId)
   const timeOptional = TIME_OPTIONAL_PLAN_IDS.has(planId)
-  const isDaySup = planId === "S6"
+  const isDaySup = planId === "S6" || planId === "S7"
   const staffAvailable = STAFF_AVAILABLE_PLAN_IDS.has(planId)
   const timeOptions = plan ? plan.timeTags.filter((t) => /^\d{2}:\d{2}$/.test(t)) : []
 

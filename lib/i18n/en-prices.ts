@@ -5,8 +5,8 @@
 // この1モジュールを、英語予約フォーム（表示・合計）・予約API（サーバー請求）・
 // 英語各ページ（ホーム/一覧/詳細）が共通参照することで、表示と請求の食い違いを防ぐ。
 //
-// 対象は英語サイトに掲載される稼働プランのみ（S1〜S6）。
-// 昼夜セット（C1/C2）は英語サイト対象外、slide-boatはComing Soonのため含めない
+// 対象は英語サイトに掲載される稼働プランのみ（S1〜S7）。
+// セット（C1〜C6）は英語サイト対象外、slide-boatはComing Soonのため含めない
 //（マップに無いIDは getEnPrice が日本語価格にフォールバックする）。
 
 export const EN_PRICE_DATA: Record<string, { price: number; childPrice: number }> = {
@@ -16,6 +16,7 @@ export const EN_PRICE_DATA: Record<string, { price: number; childPrice: number }
   S4: { price: 10000, childPrice: 8000 },
   S5: { price: 10000, childPrice: 10000 },
   S6: { price: 9500, childPrice: 8500 },
+  S7: { price: 11500, childPrice: 10500 },
 }
 
 // 英語サイトで表示・請求する価格を返す。マップに無いプランは日本語価格にフォールバック。

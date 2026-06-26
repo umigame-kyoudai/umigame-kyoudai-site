@@ -1,4 +1,5 @@
 import { PLAN_COVER_IMAGE, TOUR_IMAGE_PATHS } from "@/lib/tour-assets"
+import { STAFF_MEMBERS } from "@/lib/staff"
 
 export { PLAN_COVER_IMAGE, TOUR_IMAGE_PATHS } from "@/lib/tour-assets"
 
@@ -959,50 +960,14 @@ export interface Staff {
   image: string
 }
 
-export const STAFFS: Staff[] = [
-  {
-    id: "yamachan",
-    name: "やまちゃん",
-    role: "現場責任者",
-    description: "宮古島の海を知り尽くした頼れるリーダー。安全第一で楽しい海の時間をお約束します。",
-    image: "/yamachan-staff-photo.jpg",
-  },
-  {
-    id: "hikaru",
-    name: "ひかる",
-    role: "やまちゃんの右腕",
-    description: "海の生き物が大好きな優しいガイド。初心者やお子さまも安心してお任せください。",
-    image: "/hikaru-staff-photo.jpg",
-  },
-  {
-    id: "sotaro",
-    name: "そうたろう",
-    role: "ツアーガイド",
-    description: "明るく丁寧なサポートで、初めての方にも安心して楽しんでいただけるようご案内します。",
-    image: "/img-2102-staff-photo.jpg",
-  },
-  {
-    id: "souichiro",
-    name: "そういちろう",
-    role: "ナイトツアー専門",
-    description: "夜の冒険のスペシャリスト。ワクワクする夜の生き物探しをご案内します。",
-    image: "/images/night-tour-coconut-crab.jpg",
-  },
-  {
-    id: "nagi",
-    name: "凪",
-    role: "ドローンパイロット",
-    description: "国家資格を持つドローンパイロット。空からの美しい映像で思い出を記録します。",
-    image: "/nagi-staff-photo.jpg",
-  },
-  {
-    id: "mana",
-    name: "まなちゃん",
-    role: "宮古島出身ガイド",
-    description: "宮古島出身、身長147cmの小柄で明るいガイド。地元目線で宮古島の海を楽しくご案内します。女性やお子さま連れの方も安心してお任せください。",
-    image: "/mana-staff-photo.jpg",
-  },
-]
+// スタッフ定義は lib/staff.ts(STAFF_MEMBERS) が単一ソース。ここは構造化データ用の簡易ビュー。
+export const STAFFS: Staff[] = STAFF_MEMBERS.map((m) => ({
+  id: m.id,
+  name: m.name,
+  role: m.role,
+  description: m.description,
+  image: m.image,
+}))
 
 export interface FAQ {
   question: string
