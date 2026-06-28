@@ -20,6 +20,7 @@ import { todayStr } from "@/lib/date-utils"
 import { PLANS, getStaffFee } from "@/lib/data"
 import { EN_PLAN_BY_ID } from "@/lib/i18n/en"
 import { getEnPrice, EN_PRICE_SUPPORT_NOTE } from "@/lib/i18n/en-prices"
+import { SENIOR_RESTRICTED_PLAN_IDS, PRIVATE_COUNTERPART } from "@/lib/plan-flags"
 
 const NIGHT_PLAN_IDS = new Set(["S3", "S5"])
 const FREE_UNDER3_PLAN_IDS = NIGHT_PLAN_IDS
@@ -148,7 +149,13 @@ export function BookingFormEn() {
     }
   }
 
-  const seniorOnS1 = planId === "S1" && participants.some((p) => typeof p.age === "number" && p.age >= 60)
+  // グループ版プランは60歳以上お断り → 対応する貸切版へ案内（判定は lib/plan-flags が単一ソース）
+  const seniorRestricted =
+    SENIOR_RESTRICTED_PLAN_IDS.has(planId) && participants.some((p) => typeof p.age === "number" && p.age >= 60)
+  const seniorCounterpart = PRIVATE_COUNTERPART[planId]
+  const seniorCounterpartName = seniorCounterpart
+    ? EN_PLAN_BY_ID[seniorCounterpart.id]?.name ?? "the private plan"
+    : ""
 
   const participantsValid = participants.every((p) => {
     const minAge = p.category === "under3" ? 0 : p.category === "child" ? childMinAge : 13
@@ -165,7 +172,7 @@ export function BookingFormEn() {
     counts.adult > 0 &&
     participants.length > 0 &&
     participantsValid &&
-    !seniorOnS1 &&
+    !seniorRestricted &&
     customerName.trim().length > 0 &&
     customerPhone.trim().length >= 10 &&
     agreed
@@ -413,11 +420,11 @@ export function BookingFormEn() {
           {participants.length > 0 && counts.adult === 0 && (
             <p className="text-sm text-red-600">At least one adult (13+) must join.</p>
           )}
-          {seniorOnS1 && (
+          {seniorRestricted && seniorCounterpart && (
             <p className="text-sm text-red-600">
               For safety, groups including guests aged 60+ should book the{" "}
-              <Link href="/en/plans/S2" className="underline font-semibold">
-                Private Sea Turtle Snorkeling Tour
+              <Link href={`/en/plans/${seniorCounterpart.id}`} className="underline font-semibold">
+                {seniorCounterpartName}
               </Link>{" "}
               instead.
             </p>

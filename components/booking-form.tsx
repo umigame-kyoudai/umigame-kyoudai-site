@@ -27,6 +27,8 @@ import {
   COMBO_TURTLE_TIMES,
   COMBO_NIGHT_TIMES,
   DAY_SUP_TIME_NOTE,
+  SENIOR_RESTRICTED_PLAN_IDS,
+  getPrivateCounterpartName,
   isComboPlan as isComboPlanId,
   isTripleComboPlan as isTripleComboPlanId,
   planHasSup,
@@ -481,9 +483,10 @@ export function BookingForm() {
     }
   }
 
-  // S1（通常シュノーケル）と昼夜セットは60歳以上をお断り
+  // グループ版プランは60歳以上をお断り（貸切版へ案内）。判定は lib/plan-flags を単一ソースに。
+  const seniorCounterpartName = getPrivateCounterpartName(bookingData.selectedPlan)
   const hasSeniorOnRegularSnorkel =
-    (bookingData.selectedPlan === "S1" || isComboPlan) &&
+    SENIOR_RESTRICTED_PLAN_IDS.has(bookingData.selectedPlan) &&
     bookingData.participants.some((p) => typeof p.age === "number" && p.age >= 60)
   const isNightTourForDetails =
     bookingData.selectedPlan === "S3" || bookingData.selectedPlan === "S5" || bookingData.selectedPlan === "night-hunter"
@@ -1572,19 +1575,11 @@ export function BookingForm() {
           {hasSeniorOnRegularSnorkel && (
             <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
               <p className="font-semibold mb-1">60歳以上の方がいるため、このプランではご予約いただけません</p>
-              {isComboPlan ? (
-                <p>
-                  安全面を考慮し、60歳以上の方がご参加のグループは
-                  <strong>セットプラン</strong>
-                  をご利用いただけません。LINEよりお気軽にご相談ください。
-                </p>
-              ) : (
-                <p>
-                  安全面を考慮し、60歳以上の方がご参加のグループは
-                  <strong>【貸切】ウミガメシュノーケルツアー</strong>
-                  のみのご案内となります。上部のプラン選択から貸切プランへ変更してください。
-                </p>
-              )}
+              <p>
+                安全面を考慮し、60歳以上の方がご参加のグループは
+                <strong>{seniorCounterpartName}</strong>
+                のみのご案内となります。上部のプラン選択から貸切プランへ変更してください。
+              </p>
             </div>
           )}
 

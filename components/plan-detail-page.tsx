@@ -15,6 +15,7 @@ import type { PlanDetail } from "@/lib/plan-details"
 import { PLAN_DETAILS } from "@/lib/plan-details"
 import { ComingSoonBadge, ComingSoonBanner } from "@/components/coming-soon"
 import { getPlanPriceDisplay, getPlanCode } from "@/lib/plan-price-display"
+import { SENIOR_RESTRICTED_PLAN_IDS, getPrivateCounterpartName } from "@/lib/plan-flags"
 
 const iconMap: Record<string, any> = {
   turtle: Sparkles, camera: Camera, users: Users, shield: Shield,
@@ -288,6 +289,11 @@ function PriceSection({ plan }: { plan: PlanDetail }) {
                 <div>
                   <p className="font-semibold text-sm">対象年齢</p>
                   <p className="text-emerald-100 text-sm">{plan.age}</p>
+                  {SENIOR_RESTRICTED_PLAN_IDS.has(plan.id) && getPrivateCounterpartName(plan.id) && (
+                    <p className="text-emerald-100/90 text-xs mt-0.5">
+                      ※60歳以上の方は{getPrivateCounterpartName(plan.id)}をご予約ください
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-3">

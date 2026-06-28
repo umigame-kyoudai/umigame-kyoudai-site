@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { User, AlertTriangle } from "lucide-react"
-import { isComboPlan as isComboPlanFlag } from "@/lib/plan-flags"
+import { SENIOR_RESTRICTED_PLAN_IDS, getPrivateCounterpartName } from "@/lib/plan-flags"
 
 interface ParticipantDetails {
   id: string
@@ -28,8 +28,8 @@ export function ParticipantForm({ participants, minAge, selectedPlan, onUpdate }
 
   // ナイトツアーかどうかを判定
   const isNightTour = selectedPlan === "night-hunter" || selectedPlan === "S3" || selectedPlan === "S5"
-  // セット判定は lib/plan-flags.ts を単一ソースとして参照（C1〜C6を網羅）
-  const isComboPlan = isComboPlanFlag(selectedPlan)
+  // 60歳以上お断りのグループ版プランと、その案内先（貸切版）は plan-flags を単一ソースに参照
+  const seniorCounterpartName = getPrivateCounterpartName(selectedPlan)
 
   return (
     <Card className="glass-card bg-white/70 backdrop-blur-xl rounded-3xl ring-1 ring-emerald-100 shadow-lg">
@@ -47,7 +47,7 @@ export function ParticipantForm({ participants, minAge, selectedPlan, onUpdate }
           const categoryLabel =
             participant.category === "adult" ? "大人" : participant.category === "child" ? "子ども" : "3歳以下"
           const isOverSixty =
-            (selectedPlan === "S1" || isComboPlan) && typeof participant.age === "number" && participant.age >= 60
+            SENIOR_RESTRICTED_PLAN_IDS.has(selectedPlan) && typeof participant.age === "number" && participant.age >= 60
 
           return (
             <div key={participant.id} className="bg-gray-50 rounded-2xl p-6">
@@ -83,19 +83,9 @@ export function ParticipantForm({ participants, minAge, selectedPlan, onUpdate }
                     <p className="mt-2 text-xs text-red-600 flex items-start gap-1.5">
                       <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
                       <span>
-                        {isComboPlan ? (
-                          <>
-                            安全面を考慮し、60歳以上の方がいるグループは
-                            <strong>セットプラン</strong>
-                            をご利用いただけません。LINEよりご相談ください。
-                          </>
-                        ) : (
-                          <>
-                            安全面を考慮し、60歳以上の方がいるグループは
-                            <strong>【貸切】ウミガメシュノーケルツアー</strong>
-                            をご予約ください。
-                          </>
-                        )}
+                        安全面を考慮し、60歳以上の方がいるグループは
+                        <strong>{seniorCounterpartName}</strong>
+                        をご予約ください。
                       </span>
                     </p>
                   )}

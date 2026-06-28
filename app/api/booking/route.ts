@@ -9,6 +9,7 @@ import {
   STAFF_UNAVAILABLE_PLAN_IDS,
   TIME_OPTIONAL_PLAN_IDS,
   SENIOR_RESTRICTED_PLAN_IDS,
+  getPrivateCounterpartName,
   FREE_UNDER3_PLAN_IDS,
   COMBO_NIGHT_TIMES,
   DAY_SUP_TIME_NOTE,
@@ -142,9 +143,7 @@ const validateParticipant = (
   if (SENIOR_RESTRICTED_PLAN_IDS.has(plan.id) && age >= 60) {
     return {
       valid: false,
-      error: isComboPlan(plan.id)
-        ? '60歳以上の方がいるグループはセットプランをご予約いただけません。LINEよりご相談ください'
-        : '60歳以上の方がいるグループは【貸切】ウミガメシュノーケルツアーをご予約ください',
+      error: `60歳以上の方がいるグループは${getPrivateCounterpartName(plan.id)}をご予約ください`,
     }
   }
 
