@@ -1,5 +1,7 @@
 import { PLAN_COVER_IMAGE, TOUR_IMAGE_PATHS } from "@/lib/tour-assets"
 import { STAFF_MEMBERS } from "@/lib/staff"
+import { PLAN_DETAILS } from "@/lib/plan-details"
+import { PLAN_PRICE_DATA } from "@/lib/plan-price-display"
 
 export { PLAN_COVER_IMAGE, TOUR_IMAGE_PATHS } from "@/lib/tour-assets"
 
@@ -100,7 +102,9 @@ export interface Plan {
   lineConsultUrl?: string
 }
 
-export const PLANS: Plan[] = [
+// 予約API・英語サイト用のプラン配列の素データ。
+// name と price/childPrice は下の PLANS で単一ソース（PLAN_DETAILS / PLAN_PRICE_DATA）から上書きする。
+const RAW_PLANS: Plan[] = [
   {
     id: "S1",
     name: "ウミガメと泳ぐシュノーケルツアー",
@@ -1101,6 +1105,19 @@ export const FAQS: FAQ[] = [
       "心臓疾患、てんかん、喘息などの持病をお持ちの方は、安全上の理由からご参加をお断りする場合がございます。ご予約前にLINEでお気軽にご相談ください。状態に応じて個別にご対応いたします。飲酒されている方もご参加いただけませんのでご了承ください。",
   },
 ]
+
+// プラン名は PLAN_DETAILS、料金は PLAN_PRICE_DATA を単一ソースとして上書きし、
+// 2マスター間の二重管理（とS3/S4で起きていた名前ドリフト）を解消する。
+// ※ name 検知ベースのGASは影響なし（キーワードは保持）。
+export const PLANS: Plan[] = RAW_PLANS.map((plan) => {
+  const price = PLAN_PRICE_DATA[plan.id]
+  return {
+    ...plan,
+    name: PLAN_DETAILS[plan.id]?.name ?? plan.name,
+    price: price?.price ?? plan.price,
+    childPrice: price?.childPrice ?? plan.childPrice,
+  }
+})
 
 export interface BlogPost {
   id: string
