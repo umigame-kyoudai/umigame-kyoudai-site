@@ -27,7 +27,7 @@ export function ParticipantForm({ participants, minAge, selectedPlan, onUpdate }
   if (participants.length === 0) return null
 
   // ナイトツアーかどうかを判定
-  const isNightTour = selectedPlan === "night-hunter" || selectedPlan === "S3" || selectedPlan === "S5"
+  const isNightTour = selectedPlan === "S3" || selectedPlan === "S5"
   // 60歳以上お断りのグループ版プランと、その案内先（貸切版）は plan-flags を単一ソースに参照
   const seniorCounterpartName = getPrivateCounterpartName(selectedPlan)
 

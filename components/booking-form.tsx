@@ -489,7 +489,7 @@ export function BookingForm() {
     SENIOR_RESTRICTED_PLAN_IDS.has(bookingData.selectedPlan) &&
     bookingData.participants.some((p) => typeof p.age === "number" && p.age >= 60)
   const isNightTourForDetails =
-    bookingData.selectedPlan === "S3" || bookingData.selectedPlan === "S5" || bookingData.selectedPlan === "night-hunter"
+    bookingData.selectedPlan === "S3" || bookingData.selectedPlan === "S5"
   // セットは海亀時間(selectedTime)が必須。夜を含むプラン(C1/C2/C5/C6)は夜時間(nightTime)も必須。
   // SUPは確定時案内のため選択不要。トリプル(C5/C6)は海亀＋夜の2つを要求。
   const comboTimesSelected =
