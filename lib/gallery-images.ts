@@ -106,8 +106,8 @@ const GALLERY_IMAGE_SOURCE: GalleryImage[] = [
     id: "feat-sunset-sup",
     src: "/images/tours/sup/sunset-sup-group-hands-raised-001.webp",
     category: "sunset",
-    title: "サンセットSUP",
-    alt: "夕日をバックに手を上げて喜ぶ宮古島サンセットSUP体験",
+    title: "宮古島サンセットSUP｜夕日と仲間",
+    alt: "夕日をバックに仲間と手を上げて喜ぶ宮古島サンセットSUP体験",
     featured: true,
     order: 30,
     planType: "S4",
@@ -221,15 +221,16 @@ const GALLERY_IMAGE_SOURCE: GalleryImage[] = [
   { id: "family-102", src: "/images/gallery/family/family-102.webp", category: "family", title: "三人シュノーケラー・手振り・別カット", alt: "三人シュノーケラー・手振り・別カット - 宮古島ウミガメシュノーケルツアー", order: 880, planType: "S1" },
   { id: "family-103", src: "/images/gallery/family/family-103.webp", category: "family", title: "浅瀬・グループ・マリン体験", alt: "浅瀬・グループ・マリン体験 - 宮古島ウミガメシュノーケルツアー", featured: true, order: 90, planType: "S1" },
 
-  // --- サンセットSUP（2026-06 実写の宣材写真／S4） ---
-  { id: "sunset-sup-101", src: "/images/tours/sup/sunset-sup-solo-standing-001.webp", category: "sunset", title: "夕日に立ちこぎ", alt: "夕日の光の道を立ちこぎする宮古島サンセットSUP", order: 900, planType: "S4" },
-  { id: "sunset-sup-102", src: "/images/tours/sup/sunset-sup-group-aerial-001.webp", category: "sunset", title: "グループSUP空撮", alt: "夕暮れの海に浮かぶグループを上空から撮影した宮古島サンセットSUP", order: 910, planType: "S4" },
-  { id: "sunset-sup-103", src: "/images/tours/sup/sunset-sup-solo-arms-raised-001.webp", category: "sunset", title: "夕日に両手を上げて", alt: "夕日をバックに両手を上げる宮古島サンセットSUPのシルエット", order: 920, planType: "S4" },
-  { id: "sunset-sup-104", src: "/images/tours/sup/sunset-sup-solo-arm-raised-001.webp", category: "sunset", title: "黄金の夕日とパドル", alt: "黄金色の夕日に手を伸ばす宮古島サンセットSUP", order: 930, planType: "S4" },
-  { id: "sunset-sup-105", src: "/images/tours/sup/sunset-sup-solo-paddling-001.webp", category: "sunset", title: "夕凪をこぐ", alt: "穏やかな夕凪の海をこぐ宮古島サンセットSUPのシルエット", order: 940, planType: "S4" },
-  { id: "sunset-sup-106", src: "/images/tours/sup/sunset-sup-group-hands-raised-002.webp", category: "sunset", title: "みんなで万歳", alt: "夕日をバックに手を繋いで喜ぶ宮古島サンセットSUPのグループ", order: 950, planType: "S4" },
-  { id: "sunset-sup-107", src: "/images/tours/sup/sunset-sup-solo-horizon-001.webp", category: "sunset", title: "水平線に沈む夕日", alt: "水平線に沈む夕日をこぐ宮古島サンセットSUP", order: 960, planType: "S4" },
-  { id: "sunset-sup-108", src: "/images/tours/sup/sunset-sup-family-child-001.webp", category: "family", title: "親子でサンセットSUP", alt: "夕暮れの海で笑顔を見せる親子の宮古島サンセットSUP", order: 970, planType: "S4" },
+  // --- サンセットSUP（2026-06 実写の宣材写真／S4。title/alt は「宮古島サンセットSUP」をSEO軸に作成） ---
+  // ※ No.は配布用コンタクトシート（サップ写真一覧.jpg）の番号と対応
+  { id: "sunset-sup-101", src: "/images/tours/sup/sunset-sup-solo-standing-001.webp", category: "sunset", title: "夕日の道を立ちこぎ｜宮古島サンセットSUP", alt: "夕日が海に映す光の道を立ちこぎする宮古島サンセットSUPのシルエット", order: 900, planType: "S4" }, // No.2
+  { id: "sunset-sup-102", src: "/images/tours/sup/sunset-sup-group-aerial-001.webp", category: "sunset", title: "宮古島サンセットSUPを空撮", alt: "夕暮れの宮古島の海に浮かぶSUPグループをドローンで空撮した宮古島サンセットSUP体験", order: 910, planType: "S4" }, // No.1
+  { id: "sunset-sup-103", src: "/images/tours/sup/sunset-sup-solo-arms-raised-001.webp", category: "sunset", title: "夕日に両手を上げて｜宮古島サンセットSUP", alt: "夕日をバックに両手を広げて喜ぶ宮古島サンセットSUPのシルエット", order: 920, planType: "S4" }, // No.8
+  { id: "sunset-sup-104", src: "/images/tours/sup/sunset-sup-solo-arm-raised-001.webp", category: "sunset", title: "夕日に手を伸ばす｜宮古島サンセットSUP", alt: "黄金の夕日に向かって片手を伸ばす宮古島サンセットSUP体験", order: 930, planType: "S4" }, // No.7
+  { id: "sunset-sup-105", src: "/images/tours/sup/sunset-sup-solo-paddling-001.webp", category: "sunset", title: "夕凪の海をこぐ｜宮古島サンセットSUP", alt: "黄金色の夕日の中、穏やかな夕凪の海をこぐ宮古島サンセットSUPのシルエット", order: 940, planType: "S4" }, // No.6
+  { id: "sunset-sup-106", src: "/images/tours/sup/sunset-sup-group-hands-raised-002.webp", category: "sunset", title: "仲間と宮古島サンセットSUP", alt: "夕日をバックに手を上げて喜ぶ宮古島サンセットSUPのグループ", order: 950, planType: "S4" }, // No.10
+  { id: "sunset-sup-107", src: "/images/tours/sup/sunset-sup-solo-horizon-001.webp", category: "sunset", title: "水平線に沈む夕日｜宮古島サンセットSUP", alt: "水平線に沈む夕日を眺めながらこぐ宮古島サンセットSUP", order: 960, planType: "S4" }, // No.9
+  { id: "sunset-sup-108", src: "/images/tours/sup/sunset-sup-family-child-001.webp", category: "family", title: "親子で楽しむ宮古島サンセットSUP", alt: "夕暮れの海で笑顔を見せる親子｜子ども連れにおすすめの宮古島サンセットSUP", order: 970, planType: "S4" }, // No.4
 ]
 
 /** 全ギャラリー画像（order 昇順でソート済み） */
