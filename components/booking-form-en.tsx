@@ -248,6 +248,26 @@ export function BookingFormEn() {
             <p>Guests: {participants.length}</p>
             <p>Estimated total: ¥{totalPrice.toLocaleString()} (cash, on the day)</p>
           </div>
+          {/* Confirmation is sent as a LINE push message, which only reaches users
+              who have added the official account as a friend. Prompt it as the top priority. */}
+          <div className="bg-amber-50 border-2 border-amber-300 rounded-lg p-4 mb-6 text-left">
+            <p className="text-sm font-bold text-amber-900">⚠️ Please read this</p>
+            <p className="mt-2 text-sm text-amber-900">
+              We send your booking confirmation through our <strong>LINE official account</strong>.{" "}
+              <strong>If you haven&apos;t added us as a friend on LINE, we can&apos;t reach you.</strong>{" "}
+              Please tap the button below to add us as a friend.
+            </p>
+            <p className="mt-1 text-xs text-amber-700">Logging in with LINE alone is not enough to receive messages.</p>
+            <a
+              href="https://lin.ee/jfp4laz"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 inline-flex items-center justify-center gap-2 w-full bg-[#06C755] hover:bg-[#05b34c] text-white text-sm font-bold rounded-lg px-5 py-3 transition-colors"
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314" /></svg>
+              Add us on LINE
+            </a>
+          </div>
           <Link href="/en" className="text-emerald-700 underline font-semibold">
             Back to home
           </Link>
@@ -576,6 +596,11 @@ export function BookingFormEn() {
           </Button>
           <p className="text-xs text-gray-500 text-center">
             This sends a booking request — your booking is confirmed only after our staff replies on LINE.
+          </p>
+          <p className="text-xs font-medium text-amber-700 text-center">
+            ⚠️ We reply on LINE, so please also{" "}
+            <a href="https://lin.ee/jfp4laz" target="_blank" rel="noopener noreferrer" className="underline font-bold">add our LINE official account as a friend</a>{" "}
+            — otherwise we can&apos;t reach you.
           </p>
         </CardContent>
       </Card>
