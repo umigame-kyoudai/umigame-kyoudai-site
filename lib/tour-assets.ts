@@ -51,9 +51,10 @@ export const TOUR_IMAGE_PATHS = {
     "/images/tours/day-sup/day-sup-topdown-aerial-002.webp",
   ],
   // まるごと1日セット（朝:シュノーケル + 昼:ドローンSUP + 夜:ナイトツアー）。
-  // 合成カバーは未作成のため、海・空・夜の実写を並べて1日の流れが伝わるようにする。
+  // 先頭は海・空・夜の3分割合成カバー（scripts/generate-fullday-cover.mjs で生成）。
+  // 続けて各アクティビティの実写を並べ、1日の流れが伝わるようにする。
   comboFullDay: [
-    "/images/tours/combo/combo-day-night.webp",
+    "/images/tours/combo/combo-fullday.webp",
     "/images/tours/snorkel/snorkel-01.webp",
     "/images/tours/day-sup/day-sup-hero.webp",
     "/images/tours/night/night-01.webp",
@@ -73,6 +74,6 @@ export const PLAN_COVER_IMAGE = {
   combo: "/images/tours/combo/combo-hero.webp",
   // 海空セットは合成ヒーロー未作成。ドローンSUPの空撮（海と空が一枚に収まる）をヒーローに流用。
   comboSeaSky: TOUR_IMAGE_PATHS.comboSeaSky[0],
-  // まるごと1日セットは昼夜合成ヒーローを流用（海・空・夜を1日で）。
-  comboFullDay: "/images/tours/combo/combo-hero.webp",
+  // まるごと1日セットは海・空・夜の3分割合成ヒーロー（ラベル付き／ページ側がタイトルを重ねる）。
+  comboFullDay: "/images/tours/combo/combo-fullday-hero.webp",
 } as const
