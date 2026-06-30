@@ -15,10 +15,15 @@ export const TOUR_IMAGE_PATHS = {
     "/images/tours/night/night-05.webp",
     "/images/tours/night/night-06.webp",
   ],
+  // 2026-06 実写の宣材写真に差し替え。カバー（先頭）・カルーセルは横位置のみ
+  // （詳細ヒーロー/カードは object-cover の固定アスペクトで上下が切れるため）。
+  // 縦位置の名作（立ちこぎ・空撮・親子・縦構図）はギャラリー側（lib/gallery-images.ts）へ。
   sup: [
-    "/images/tours/sup/sunset-sup-tandem-paddling-001.jpg",
-    "/images/tours/sup/sunset-sup-two-paddles-raised-002.jpg",
-    "/images/tours/sup/sunset-sup-solo-sun-horizon-002.jpg",
+    "/images/tours/sup/sunset-sup-group-hands-raised-001.webp",
+    "/images/tours/sup/sunset-sup-solo-arms-raised-001.webp",
+    "/images/tours/sup/sunset-sup-solo-paddling-001.webp",
+    "/images/tours/sup/sunset-sup-group-hands-raised-002.webp",
+    "/images/tours/sup/sunset-sup-solo-arm-raised-001.webp",
   ],
   daySup: [
     "/images/tours/day-sup/day-sup-hero.webp",
