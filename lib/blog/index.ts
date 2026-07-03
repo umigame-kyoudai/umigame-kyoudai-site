@@ -65,6 +65,20 @@ export function getBlogPostCta(post: BlogPost): BlogCta {
     }
   }
 
+  // ナイトツアー/ヤシガニ記事（「子連れ」等でシュノーケル分岐に流れないよう先に判定）
+  if (/ナイトツアー|ヤシガニ|夜行性/.test(searchableText)) {
+    return {
+      eyebrow: "この記事を読んだ方へ",
+      title: "0歳から参加できる夜のジャングル探検",
+      description:
+        "巨大なヤシガニや夜行性の生き物を、ガイドと一緒に探しに行くナイトツアー。一律4,000円・3歳以下無料、写真データも無料です。",
+      primaryHref: "/plans/S3",
+      primaryLabel: "ナイトツアーを見る",
+      secondaryHref: "/book?plan=S3",
+      secondaryLabel: "空き確認する",
+    }
+  }
+
   if (/SUP|サップ|サンセット|カップル|ロマンチック/.test(searchableText)) {
     return {
       eyebrow: "この記事を読んだ方へ",
