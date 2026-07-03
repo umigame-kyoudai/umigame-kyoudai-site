@@ -35,7 +35,7 @@ export default function EnglishFaqPage() {
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">Frequently Asked Questions</h1>
           <p className="mt-3 text-gray-600 text-sm sm:text-base max-w-2xl">
             Everything you need to know before joining a tour — swimming ability, kids, cancellation, what to bring and
-            more. Can't find your answer? Message us on LINE anytime.
+            more. Can&apos;t find your answer? Message us on LINE anytime.
           </p>
         </section>
 

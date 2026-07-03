@@ -29,7 +29,7 @@ export default function EnglishBookPage() {
           <div className="text-center mb-10">
             <h1 className="text-3xl md:text-5xl font-bold text-emerald-800 mb-4">Booking Request</h1>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Fill in your details below — the price is calculated automatically. We'll confirm availability and reply
+              Fill in your details below — the price is calculated automatically. We&apos;ll confirm availability and reply
               via LINE. <strong>Your booking is not final until you hear back from us.</strong>
             </p>
           </div>

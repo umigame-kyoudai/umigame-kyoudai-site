@@ -360,7 +360,7 @@ export function BookingFormEn() {
       {/* Participants */}
       <Card className="bg-white/80 rounded-3xl ring-1 ring-emerald-100 shadow-lg">
         <CardHeader>
-          <CardTitle className="text-emerald-800">3. Who's joining?</CardTitle>
+          <CardTitle className="text-emerald-800">3. Who&apos;s joining?</CardTitle>
           <p className="text-sm text-gray-600">
             Age is required for safety. {isNight ? "" : "Shoe size (in cm) is required so we can prepare your fins — height and weight are optional but help us pick the right gear."}
           </p>
@@ -451,7 +451,7 @@ export function BookingFormEn() {
           )}
           {!isNight && participants.length > 0 && (
             <p className="text-xs text-gray-500">
-              Shoe size in cm: US men's 8.5 ≈ 26.5 cm, US women's 7 ≈ 23.5 cm, EU 42 ≈ 26.5 cm.
+              Shoe size in cm: US men&apos;s 8.5 ≈ 26.5 cm, US women&apos;s 7 ≈ 23.5 cm, EU 42 ≈ 26.5 cm.
             </p>
           )}
         </CardContent>
@@ -568,8 +568,8 @@ export function BookingFormEn() {
               </h3>
               <p className="text-sm text-gray-700 leading-relaxed mb-4">
                 We confirm every booking through LINE, a free messaging app. Please log in with LINE to send your
-                request — if you don't have the app yet, download it from the App Store or Google Play first (it takes a
-                minute). Can't use LINE? Email us at{" "}
+                request — if you don&apos;t have the app yet, download it from the App Store or Google Play first (it takes a
+                minute). Can&apos;t use LINE? Email us at{" "}
                 <a href="mailto:info@umigamekyoudaimiyakojima.com" className="text-emerald-700 underline">
                   info@umigamekyoudaimiyakojima.com
                 </a>{" "}

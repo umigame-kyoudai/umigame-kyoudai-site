@@ -5,7 +5,8 @@ export const SITE_NAME = "海亀兄弟"
 export const SITE_DESCRIPTION = "宮古島で家族向け少人数制マリン体験なら海亀兄弟。ウミガメシュノーケル、貸切ツアー、ナイトツアー、サンセットSUP、ドローンSUPなど。安全管理徹底、写真・動画無料、前日キャンセル無料。"
 
 // OGP/SNS共有用画像。LINE等のリンクプレビュー互換のため jpeg を使用。
-export const OG_IMAGE = `${SITE_URL}/images/gemini-generated-image-rq969urq969urq96.jpeg`
+// 実寸1200x630（宣言サイズと一致させるため専用に切り出したもの）。
+export const OG_IMAGE = `${SITE_URL}/images/og-home.jpg`
 
 export function createMetadata({
   title,

@@ -123,7 +123,7 @@ export default function EnglishPlanDetailPage({ params }: { params: { id: string
           {/* Included / Bring */}
           <section className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-white rounded-2xl ring-1 ring-emerald-100 p-6">
-              <h2 className="font-bold text-gray-900 mb-3">What's included</h2>
+              <h2 className="font-bold text-gray-900 mb-3">What&apos;s included</h2>
               <ul className="space-y-2 text-sm text-gray-600">
                 {en.included.map((item) => (
                   <li key={item} className="flex items-start gap-2">

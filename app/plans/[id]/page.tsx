@@ -35,7 +35,7 @@ export default function Page({ params }: { params: { id: string } }) {
       <PlanJsonLd plan={plan} />
       <BreadcrumbJsonLd items={[
         { name: "ホーム", url: "https://www.umigamekyoudaimiyakojima.com" },
-        { name: "プラン", url: "https://www.umigamekyoudaimiyakojima.com/#plans" },
+        { name: "プラン", url: "https://www.umigamekyoudaimiyakojima.com/plans" },
         { name: plan.name, url: `https://www.umigamekyoudaimiyakojima.com/plans/${plan.id}` },
       ]} />
       <Navbar />
