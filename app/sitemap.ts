@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next"
-import { BLOG_POSTS } from "@/lib/data"
+import { getBlogPosts } from "@/lib/blog"
 import { PLAN_DETAILS } from "@/lib/plan-details"
 import { EN_PLAN_BY_ID } from "@/lib/i18n/en"
 
@@ -11,6 +11,7 @@ const SITE_URL = "https://www.umigamekyoudaimiyakojima.com"
 const CONTENT_LAST_UPDATED = new Date("2026-07-02")
 
 export default function sitemap(): MetadataRoute.Sitemap {
+  const BLOG_POSTS = getBlogPosts()
   // /blog 一覧の更新日は最新記事の日付から導出（記事追加で自動更新）。
   const blogDates = BLOG_POSTS
     .filter((post) => post && typeof post === "object" && post.id)

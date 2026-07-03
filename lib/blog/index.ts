@@ -1,4 +1,7 @@
-import { BLOG_CATEGORIES, BLOG_POSTS, type BlogPost } from "@/lib/data"
+import { BLOG_CATEGORIES, type BlogPost } from "@/lib/data"
+import { loadBlogPosts } from "./posts"
+
+const BLOG_POSTS = loadBlogPosts()
 
 export type BlogPostSummary = Omit<BlogPost, "content">
 
