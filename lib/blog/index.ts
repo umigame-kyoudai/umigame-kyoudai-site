@@ -51,6 +51,20 @@ export function getRelatedBlogPostSummaries(post: BlogPost, limit = 3): BlogPost
 export function getBlogPostCta(post: BlogPost): BlogCta {
   const searchableText = [post.title, post.category, ...post.tags].join(" ")
 
+  // ドローンSUP記事はサンセットSUPより先に判定（SUPキーワードも含むため）
+  if (/ドローン|空撮/.test(searchableText)) {
+    return {
+      eyebrow: "この記事を読んだ方へ",
+      title: "ドローン空撮付きの宮古ブルーSUP体験",
+      description:
+        "日中の透明度の高い海でSUPを楽しみながら、ドローン空撮で宮古島らしい絶景カットを残せます。写真・動画データは無料です。",
+      primaryHref: "/plans/S6",
+      primaryLabel: "ドローンSUP体験を見る",
+      secondaryHref: "/book?plan=S6",
+      secondaryLabel: "空き確認する",
+    }
+  }
+
   if (/SUP|サップ|サンセット|カップル|ロマンチック/.test(searchableText)) {
     return {
       eyebrow: "この記事を読んだ方へ",
