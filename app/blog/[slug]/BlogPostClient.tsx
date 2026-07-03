@@ -1,6 +1,7 @@
 "use client"
 
-import { ArrowLeft, Calendar, Clock, User, Tag, Share2, Waves } from "lucide-react"
+import type React from "react"
+import { ArrowLeft, Calendar, Clock, User, Tag, Share2, Waves, List } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
@@ -19,7 +20,21 @@ interface BlogPostPageProps {
   cta: BlogCta
 }
 
+// 本文の「## 」見出しからアンカーIDを作る（目次とh2レンダラーで同じ計算を使う）
+function headingText(children: React.ReactNode): string {
+  return Array.isArray(children) ? children.map(String).join("") : String(children ?? "")
+}
+function headingId(text: string): string {
+  return `h-${text.trim().replace(/\s+/g, "-")}`
+}
+
 export default function BlogPostClient({ post, relatedPosts, cta }: BlogPostPageProps) {
+  // 目次: 本文中の「## 」行を抽出（3つ以上あるときだけ表示）
+  const tocHeadings = post.content
+    .split("\n")
+    .filter((line) => line.startsWith("## "))
+    .map((line) => line.replace(/^## /, "").trim())
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
     return date.toLocaleDateString("ja-JP", {
@@ -92,6 +107,28 @@ export default function BlogPostClient({ post, relatedPosts, cta }: BlogPostPage
                     {post.excerpt}
                   </div>
 
+                  {/* 目次（長文記事のモバイル可読性向上。見出し3つ以上で表示） */}
+                  {tocHeadings.length >= 3 && (
+                    <nav aria-label="目次" className="mb-8 rounded-xl border border-emerald-100 bg-emerald-50/60 p-5 sm:p-6">
+                      <p className="mb-3 flex items-center gap-2 text-sm font-bold tracking-wide text-emerald-800">
+                        <List className="h-4 w-4" aria-hidden="true" />
+                        目次
+                      </p>
+                      <ol className="space-y-2 text-[15px]">
+                        {tocHeadings.map((heading) => (
+                          <li key={heading}>
+                            <a
+                              href={`#${headingId(heading)}`}
+                              className="text-teal-700 underline-offset-2 hover:text-teal-900 hover:underline"
+                            >
+                              {heading}
+                            </a>
+                          </li>
+                        ))}
+                      </ol>
+                    </nav>
+                  )}
+
                   {/* Content */}
                   <div className="prose prose-lg max-w-none">
                     <ReactMarkdown
@@ -100,8 +137,11 @@ export default function BlogPostClient({ post, relatedPosts, cta }: BlogPostPage
                         h1: ({ children }) => (
                           <h2 className="text-3xl font-bold text-gray-900 mb-6 mt-8">{children}</h2>
                         ),
+                        // idは目次のアンカー先。scroll-mtで固定ナビ分のオフセットを確保
                         h2: ({ children }) => (
-                          <h2 className="text-2xl font-bold text-gray-900 mb-4 mt-8">{children}</h2>
+                          <h2 id={headingId(headingText(children))} className="text-2xl font-bold text-gray-900 mb-4 mt-8 scroll-mt-20">
+                            {children}
+                          </h2>
                         ),
                         h3: ({ children }) => <h3 className="text-xl font-bold text-gray-900 mb-3 mt-6">{children}</h3>,
                         p: ({ children }) => (
