@@ -72,6 +72,36 @@ interface BookingData {
   lineDisplayName: string | null
 }
 
+// LINEログイン（liff.login）はページリダイレクトを挟むため、入力途中の内容を
+// sessionStorage に退避してログイン後に復元する。LINEの本人情報はLIFFから
+// 再取得するため下書きには含めない。
+const BOOKING_DRAFT_KEY = "booking-form-draft"
+
+function loadBookingDraft(): Partial<BookingData> | null {
+  if (typeof window === "undefined") return null
+  try {
+    const raw = window.sessionStorage.getItem(BOOKING_DRAFT_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    return parsed && typeof parsed === "object" ? (parsed as Partial<BookingData>) : null
+  } catch {
+    return null
+  }
+}
+
+function saveBookingDraft(data: BookingData): void {
+  try {
+    const { lineUserId: _lineUserId, lineDisplayName: _lineDisplayName, ...draft } = data
+    window.sessionStorage.setItem(BOOKING_DRAFT_KEY, JSON.stringify(draft))
+  } catch {}
+}
+
+function clearBookingDraft(): void {
+  try {
+    window.sessionStorage.removeItem(BOOKING_DRAFT_KEY)
+  } catch {}
+}
+
 function getPlanType(planId: string): "night-hunter" | "sunset-sup" | "day-sup" | "slide-boat" | "other" {
   switch (planId) {
     case "S3":
@@ -142,7 +172,9 @@ export function BookingForm() {
   const searchParams = useSearchParams()
   const hasInitialized = useRef(false)
 
-  const [bookingData, setBookingData] = useState<BookingData>({
+  // 初期値にはLINEログインのリダイレクト前に保存した下書きを復元する
+  // （このフォームはSuspense配下のクライアント描画のため、初期化はブラウザでのみ走る）
+  const [bookingData, setBookingData] = useState<BookingData>(() => ({
     selectedPlan: "",
     selectedDate: "",
     selectedTime: "",
@@ -160,9 +192,10 @@ export function BookingForm() {
     agreedToTerms: false,
     couponCode: "",
     couponDiscount: 0,
+    ...(loadBookingDraft() ?? {}),
     lineUserId: null,
     lineDisplayName: null,
-  })
+  }))
 
   const [totalPrice, setTotalPrice] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -186,6 +219,12 @@ export function BookingForm() {
       }))
     }
   }, [searchParams])
+
+  // 入力内容を随時sessionStorageへ退避（LINEログインのリダイレクトを跨いで復元するため）
+  useEffect(() => {
+    if (isSubmitted) return
+    saveBookingDraft(bookingData)
+  }, [bookingData, isSubmitted])
 
   // LIFFコンテキストからlineUserIdを取得
   const { lineUserId: liffUserId, lineDisplayName: liffDisplayName, isLiffReady, isLiffLoggedIn, isInClient, liffError, loginLiff, retryLiff, closeWindow } = useLiff()
@@ -477,6 +516,7 @@ export function BookingForm() {
         headcount: bookingData.adultCount + bookingData.childCount + bookingData.under3Count,
         total: totalPrice,
       })
+      clearBookingDraft()
       setIsSubmitted(true)
       setIsSubmitting(false)
     } catch (error) {
@@ -679,7 +719,7 @@ export function BookingForm() {
         ) : (
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
             <p className="text-sm text-blue-800 font-medium">予約にはLINE連携が必要です</p>
-            <p className="text-xs text-blue-600 mt-1">LINEでログインすると、予約確定通知をお送りできます。</p>
+            <p className="text-xs text-blue-600 mt-1">LINEでログインすると、予約確定通知をお送りできます。入力した内容は自動保存されるので、先にフォームを入力してからのログインでも大丈夫です。</p>
             <button
               type="button"
               onClick={loginLiff}
@@ -1620,13 +1660,32 @@ export function BookingForm() {
             </div>
           )}
 
+          {/* 未ログインのままフォーム下部まで来た人向けのログイン導線。
+              ページ上部のバナーまで戻らせない（入力後の行き止まり防止） */}
+          {!!process.env.NEXT_PUBLIC_LIFF_ID && isLiffReady && !liffUserId && !liffError && (
+            <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+              <p className="text-sm font-bold text-emerald-900">あと1ステップ：LINEログインで送信できます</p>
+              <p className="mt-1 text-xs text-emerald-700">
+                入力した内容は自動保存されています。ログインから戻ったあと、そのまま送信できます。
+              </p>
+              <button
+                type="button"
+                onClick={loginLiff}
+                className="mt-3 w-full px-5 py-3 bg-[#06C755] hover:bg-[#05b34c] text-white text-sm font-bold rounded-lg transition-colors flex items-center justify-center gap-2"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314" /></svg>
+                LINEでログイン
+              </button>
+            </div>
+          )}
+
           <Button
             type="submit"
             size="lg"
             disabled={!isFormValid || isSubmitting || (!!process.env.NEXT_PUBLIC_LIFF_ID && (!isLiffReady || !liffUserId))}
             className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl py-4 text-lg font-semibold disabled:opacity-50"
           >
-            {!isLiffReady && !!process.env.NEXT_PUBLIC_LIFF_ID ? "LINE連携中..." : (!!process.env.NEXT_PUBLIC_LIFF_ID && !liffUserId) ? "LINEログインが必要です" : isSubmitting ? "送信中..." : "仮予約を送信する"}
+            {!isLiffReady && !!process.env.NEXT_PUBLIC_LIFF_ID ? "LINE連携中..." : (!!process.env.NEXT_PUBLIC_LIFF_ID && !liffUserId) ? "上のLINEログイン後に送信できます" : isSubmitting ? "送信中..." : "仮予約を送信する"}
           </Button>
 
           <p className="text-xs text-gray-500 text-center mt-3">送信後、24時間以内にスタッフよりご連絡いたします。</p>

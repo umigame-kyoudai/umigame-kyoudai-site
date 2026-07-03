@@ -4,7 +4,7 @@
 // 同じ /api/booking に送信する（最終検証・料金計算はサーバー側が行う）。
 // プランのルール（時間帯・年齢制限・足サイズ必須など）はサーバーの検証と一致させること。
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -50,6 +50,37 @@ interface ParticipantEn {
 
 let participantSeq = 0
 
+// LINE login (liff.login) round-trips through a redirect, which would wipe the
+// form. Keep a draft of every field in sessionStorage and restore it on mount.
+const EN_BOOKING_DRAFT_KEY = "booking-form-draft-en"
+
+interface EnBookingDraft {
+  planId?: string
+  date?: string
+  time?: string
+  participants?: ParticipantEn[]
+  staffId?: string
+  customerName?: string
+  customerEmail?: string
+  customerPhone?: string
+  specialRequests?: string
+  couponCode?: string
+  couponDiscount?: number
+  agreed?: boolean
+}
+
+function loadEnBookingDraft(): EnBookingDraft | null {
+  if (typeof window === "undefined") return null
+  try {
+    const raw = window.sessionStorage.getItem(EN_BOOKING_DRAFT_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    return parsed && typeof parsed === "object" ? (parsed as EnBookingDraft) : null
+  } catch {
+    return null
+  }
+}
+
 export function BookingFormEn() {
   const searchParams = useSearchParams()
   const { lineUserId, lineDisplayName, isLiffReady, loginLiff, liffError } = useLiff()
@@ -57,22 +88,61 @@ export function BookingFormEn() {
 
   const bookablePlans = useMemo(() => PLANS.filter((p) => p.status !== "coming_soon" && EN_PLAN_BY_ID[p.id]), [])
 
+  // LINEログインのリダイレクト前に保存した下書き（マウント時に一度だけ読む）。
+  // このフォームはSuspense配下のクライアント描画のため、初期化はブラウザでのみ走る。
+  const [draft] = useState<EnBookingDraft | null>(() => loadEnBookingDraft())
+
   const initialPlan = searchParams.get("plan") || ""
-  const [planId, setPlanId] = useState(bookablePlans.some((p) => p.id === initialPlan) ? initialPlan : "")
-  const [date, setDate] = useState("")
-  const [time, setTime] = useState("")
-  const [participants, setParticipants] = useState<ParticipantEn[]>([])
-  const [staffId, setStaffId] = useState("")
-  const [customerName, setCustomerName] = useState("")
-  const [customerEmail, setCustomerEmail] = useState("")
-  const [customerPhone, setCustomerPhone] = useState("")
-  const [specialRequests, setSpecialRequests] = useState("")
-  const [couponCode, setCouponCode] = useState("")
-  const [couponDiscount, setCouponDiscount] = useState(0)
-  const [agreed, setAgreed] = useState(false)
+  // URLの ?plan= が有効ならユーザーの直近の意図としてそちらを優先し、なければ下書きを復元
+  const [planId, setPlanId] = useState(() => {
+    if (bookablePlans.some((p) => p.id === initialPlan)) return initialPlan
+    if (draft?.planId && bookablePlans.some((p) => p.id === draft.planId)) return draft.planId
+    return ""
+  })
+  const [date, setDate] = useState(draft?.date ?? "")
+  const [time, setTime] = useState(draft?.time ?? "")
+  const [participants, setParticipants] = useState<ParticipantEn[]>(() => {
+    if (!Array.isArray(draft?.participants)) return []
+    // 復元した参加者のID連番と、この後追加される参加者のIDが衝突しないよう進めておく
+    for (const p of draft!.participants!) {
+      const seq = Number(String(p.id).split("-").pop())
+      if (Number.isFinite(seq) && seq > participantSeq) participantSeq = seq
+    }
+    return draft!.participants!
+  })
+  const [staffId, setStaffId] = useState(draft?.staffId ?? "")
+  const [customerName, setCustomerName] = useState(draft?.customerName ?? "")
+  const [customerEmail, setCustomerEmail] = useState(draft?.customerEmail ?? "")
+  const [customerPhone, setCustomerPhone] = useState(draft?.customerPhone ?? "")
+  const [specialRequests, setSpecialRequests] = useState(draft?.specialRequests ?? "")
+  const [couponCode, setCouponCode] = useState(draft?.couponCode ?? "")
+  const [couponDiscount, setCouponDiscount] = useState(draft?.couponDiscount ?? 0)
+  const [agreed, setAgreed] = useState(draft?.agreed ?? false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
+
+  // 入力内容を随時sessionStorageへ退避（LINEログインのリダイレクトを跨いで復元するため）
+  useEffect(() => {
+    if (isSubmitted) return
+    try {
+      const draftToSave: EnBookingDraft = {
+        planId,
+        date,
+        time,
+        participants,
+        staffId,
+        customerName,
+        customerEmail,
+        customerPhone,
+        specialRequests,
+        couponCode,
+        couponDiscount,
+        agreed,
+      }
+      window.sessionStorage.setItem(EN_BOOKING_DRAFT_KEY, JSON.stringify(draftToSave))
+    } catch {}
+  }, [planId, date, time, participants, staffId, customerName, customerEmail, customerPhone, specialRequests, couponCode, couponDiscount, agreed, isSubmitted])
 
   const plan = bookablePlans.find((p) => p.id === planId)
   const en = planId ? EN_PLAN_BY_ID[planId] : undefined
@@ -216,6 +286,9 @@ export function BookingFormEn() {
         const detail = errorData.error ? ` (${errorData.error})` : ""
         throw new Error(`We couldn't send your booking request.${detail} Please try again, or message us on LINE.`)
       }
+      try {
+        window.sessionStorage.removeItem(EN_BOOKING_DRAFT_KEY)
+      } catch {}
       setIsSubmitted(true)
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Something went wrong. Please try again.")
@@ -569,7 +642,8 @@ export function BookingFormEn() {
               <p className="text-sm text-gray-700 leading-relaxed mb-4">
                 We confirm every booking through LINE, a free messaging app. Please log in with LINE to send your
                 request — if you don&apos;t have the app yet, download it from the App Store or Google Play first (it takes a
-                minute). Can&apos;t use LINE? Email us at{" "}
+                minute). Your entries are saved automatically, so everything will still be here after you log in.
+                Can&apos;t use LINE? Email us at{" "}
                 <a href="mailto:info@umigamekyoudaimiyakojima.com" className="text-emerald-700 underline">
                   info@umigamekyoudaimiyakojima.com
                 </a>{" "}
