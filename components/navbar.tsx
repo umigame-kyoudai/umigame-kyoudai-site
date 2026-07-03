@@ -71,8 +71,10 @@ export default function Navbar({ locale = "ja" }: { locale?: "ja" | "en" }) {
             <Image
               src="/images/sea-turtle-brothers-logo.png"
               alt={locale === "en" ? "Sea Turtle Brothers" : "海亀兄弟"}
-              width={1276}
-              height={903}
+              // 表示は高さ36-44px。元画像の実寸(1276x903)を渡すと1920px幅の
+              // 画像が全ページで配信されるため、表示上限に合わせた寸法にする。
+              width={124}
+              height={88}
               priority
               className="h-9 w-auto sm:h-11"
             />

@@ -58,8 +58,8 @@ export function Footer({ locale = "ja" }: { locale?: "ja" | "en" }) {
             <Image
               src="/images/sea-turtle-brothers-logo-white.png"
               alt={t.logoAlt}
-              width={1276}
-              height={903}
+              width={192}
+              height={136}
               className="mb-4 h-auto w-[72px] object-contain sm:w-[84px] md:w-[96px]"
             />
             <p className="text-emerald-100 mb-4 max-w-md">{t.tagline}</p>
