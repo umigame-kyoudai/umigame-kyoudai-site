@@ -6,6 +6,8 @@ export type TrackEventName =
   | "book_cta_click" // 「予約」系CTAクリック（予約意図。location で出所を区別）
   | "line_click" // LINE相談クリック（代替コンバージョン）
   | "line_add_friend_click" // 予約フォームの「友だち追加」クリック（確定通知の到達率対策。location で出所を区別）
+  | "booking_form_view" // 予約フォーム表示（LIFF準備完了時に1回。line_logged_in でゲート前後を区別）
+  | "line_login_click" // 予約フォームのLINEログインボタン押下（location: booking_top / booking_bottom / booking_en）
   | "booking_submitted" // 予約フォーム送信成功（本コンバージョン）
   | "booking_failed" // 予約送信失敗（離脱・不具合分析用）
 

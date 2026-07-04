@@ -4,7 +4,7 @@
 // 同じ /api/booking に送信する（最終検証・料金計算はサーバー側が行う）。
 // プランのルール（時間帯・年齢制限・足サイズ必須など）はサーバーの検証と一致させること。
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -21,6 +21,7 @@ import { PLANS, getStaffFee } from "@/lib/data"
 import { EN_PLAN_BY_ID } from "@/lib/i18n/en"
 import { getEnPrice, EN_PRICE_SUPPORT_NOTE } from "@/lib/i18n/en-prices"
 import { SENIOR_RESTRICTED_PLAN_IDS, PRIVATE_COUNTERPART } from "@/lib/plan-flags"
+import { trackEvent } from "@/lib/analytics"
 
 const NIGHT_PLAN_IDS = new Set(["S3", "S5"])
 const FREE_UNDER3_PLAN_IDS = NIGHT_PLAN_IDS
@@ -121,6 +122,14 @@ export function BookingFormEn() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
+
+  // フォーム表示を1回だけ計測（LIFF準備完了時点のログイン状態付き）
+  const hasTrackedFormView = useRef(false)
+  useEffect(() => {
+    if (hasTrackedFormView.current || !isLiffReady) return
+    hasTrackedFormView.current = true
+    trackEvent("booking_form_view", { locale: "en", line_logged_in: !!lineUserId })
+  }, [isLiffReady, lineUserId])
 
   // 入力内容を随時sessionStorageへ退避（LINEログインのリダイレクトを跨いで復元するため）
   useEffect(() => {
@@ -286,11 +295,17 @@ export function BookingFormEn() {
         const detail = errorData.error ? ` (${errorData.error})` : ""
         throw new Error(`We couldn't send your booking request.${detail} Please try again, or message us on LINE.`)
       }
+      trackEvent("booking_submitted", {
+        locale: "en",
+        plan: planId,
+        headcount: participants.length,
+      })
       try {
         window.sessionStorage.removeItem(EN_BOOKING_DRAFT_KEY)
       } catch {}
       setIsSubmitted(true)
     } catch (error) {
+      trackEvent("booking_failed", { locale: "en", plan: planId })
       toast.error(error instanceof Error ? error.message : "Something went wrong. Please try again.")
     } finally {
       setIsSubmitting(false)
@@ -651,7 +666,10 @@ export function BookingFormEn() {
               </p>
               <Button
                 type="button"
-                onClick={loginLiff}
+                onClick={() => {
+                  trackEvent("line_login_click", { location: "booking_en" })
+                  loginLiff()
+                }}
                 disabled={!isLiffReady}
                 className="w-full bg-green-500 hover:bg-green-600 text-white font-bold rounded-xl"
               >

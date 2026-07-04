@@ -7,6 +7,7 @@ import { Star, Clock, Users, Camera, Shield, Check, ChevronLeft, ChevronRight } 
 import { BLUR_DATA_URLS } from "@/lib/image-placeholders"
 import { PLAN_COVER_IMAGE, TOUR_IMAGE_PATHS } from "@/lib/tour-assets"
 import { ComingSoonBadge } from "@/components/coming-soon"
+import { trackEvent } from "@/lib/analytics"
 import { getPlanPriceDisplay, getPlanCode } from "@/lib/plan-price-display"
 
 interface PlanVariant {
@@ -592,6 +593,7 @@ function TourCard({ tour }: { tour: Tour }) {
             <div className="flex gap-2 mt-auto">
               <Link
                 href={`/book?plan=${variant.id}`}
+                onClick={() => trackEvent("book_cta_click", { location: "plan_card", plan: variant.id })}
                 className="flex-1 text-center bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm py-3 rounded-xl transition-all active:scale-95 shadow-md"
               >
                 予約する
