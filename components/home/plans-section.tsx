@@ -423,7 +423,8 @@ function TourImageCarousel({ tour, isComingSoon }: { tour: Tour; isComingSoon: b
   }, [images.length])
 
   return (
-    <div className="relative aspect-[16/10] overflow-hidden">
+    // モバイルは16/9でやや低く（カード全体＋下部固定バーが1画面に収まる高さ予算のため）。sm以上は従来どおり
+    <div className="relative aspect-[16/9] sm:aspect-[16/10] overflow-hidden">
       <div
         ref={imageScrollRef}
         className="flex h-full overflow-x-auto snap-x snap-mandatory scrollbar-hide"
@@ -511,21 +512,23 @@ function TourCard({ tour }: { tour: Tour }) {
 
   return (
     <div className="flex-shrink-0 w-[85vw] sm:w-[400px] md:w-[440px] snap-center">
-      <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 h-full flex flex-col">
+      {/* h-fullを付けると隣の背が高いカード（プラン名2行＋価格注釈のセット系）に合わせて
+          タグとボタンの間に大きな余白が生まれるため、カードは中身ぴったりの高さにする */}
+      <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 flex flex-col">
         <TourImageCarousel tour={tour} isComingSoon={isComingSoon} />
 
         {/* Content */}
         <div className="p-4 sm:p-5 flex flex-col flex-1">
           <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-0.5">{tour.name}</h3>
-          <p className="text-emerald-600 font-semibold text-xs mb-2">{tour.tagline}</p>
+          <p className="text-emerald-600 font-semibold text-xs mb-1.5 sm:mb-2">{tour.tagline}</p>
 
           {/* Quick info */}
-          <div className="flex gap-2 mb-3">
-            <div className="flex items-center gap-1 bg-gray-50 rounded-lg px-2.5 py-1.5">
+          <div className="flex gap-2 mb-2 sm:mb-3">
+            <div className="flex items-center gap-1 bg-gray-50 rounded-lg px-2.5 py-1 sm:py-1.5">
               <Clock className="w-3.5 h-3.5 text-gray-400" />
               <span className="text-xs font-medium text-gray-700">{tour.duration}</span>
             </div>
-            <div className="flex items-center gap-1 bg-gray-50 rounded-lg px-2.5 py-1.5">
+            <div className="flex items-center gap-1 bg-gray-50 rounded-lg px-2.5 py-1 sm:py-1.5">
               <Users className="w-3.5 h-3.5 text-gray-400" />
               <span className="text-xs font-medium text-gray-700">{tour.age}</span>
             </div>
@@ -533,12 +536,12 @@ function TourCard({ tour }: { tour: Tour }) {
 
           {/* Variant toggle */}
           {hasMultipleVariants && (
-            <div className="grid grid-cols-2 gap-2 mb-4">
+            <div className="grid grid-cols-2 gap-2 mb-3 sm:mb-4">
               {tour.variants.map((v, i) => (
                 <button
                   key={v.id}
                   onClick={() => setSelectedVariant(i)}
-                  className={`p-2.5 rounded-xl border-2 text-center transition-all ${
+                  className={`p-2 sm:p-2.5 rounded-xl border-2 text-center transition-all ${
                     selectedVariant === i
                       ? i === 0
                         ? "border-emerald-500 bg-emerald-50"
@@ -557,13 +560,13 @@ function TourCard({ tour }: { tour: Tour }) {
 
           {/* Price for single variant */}
           {!hasMultipleVariants && (
-            <div className="mb-4 p-3 bg-gray-50 rounded-xl">
+            <div className="mb-3 sm:mb-4 p-2.5 sm:p-3 bg-gray-50 rounded-xl">
               <PlanPricePair planId={variant.id} tone={isComingSoon ? "cyan" : "emerald"} />
             </div>
           )}
 
           {/* Highlights */}
-          <div className="mb-3 grid grid-cols-2 gap-1.5">
+          <div className="mb-2.5 sm:mb-3 grid grid-cols-2 gap-1 sm:gap-1.5">
             {variant.highlights.map((h) => (
               <div key={h} className="flex items-center gap-1.5">
                 <Check className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
@@ -573,7 +576,7 @@ function TourCard({ tour }: { tour: Tour }) {
           </div>
 
           {/* Included tags */}
-          <div className="flex flex-wrap gap-1.5 mb-5">
+          <div className="flex flex-wrap gap-1.5 mb-3 sm:mb-5">
             {variant.included.map((item) => (
               <span key={item} className="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full">
                 {item}
@@ -594,13 +597,13 @@ function TourCard({ tour }: { tour: Tour }) {
               <Link
                 href={`/book?plan=${variant.id}`}
                 onClick={() => trackEvent("book_cta_click", { location: "plan_card", plan: variant.id })}
-                className="flex-1 text-center bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm py-3 rounded-xl transition-all active:scale-95 shadow-md"
+                className="flex-1 text-center bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm py-2.5 sm:py-3 rounded-xl transition-all active:scale-95 shadow-md"
               >
                 予約する
               </Link>
               <Link
                 href={`/plans/${variant.id}`}
-                className="flex-1 text-center border-2 border-emerald-500 text-emerald-600 font-bold text-sm py-3 rounded-xl transition-all active:scale-95"
+                className="flex-1 text-center border-2 border-emerald-500 text-emerald-600 font-bold text-sm py-2.5 sm:py-3 rounded-xl transition-all active:scale-95"
               >
                 詳細を見る
               </Link>
