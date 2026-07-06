@@ -381,6 +381,7 @@ function LocationsSection({ plan }: { plan: PlanDetail }) {
           className="text-gray-500 text-center mb-4 text-sm"
         >
           当日の風向き・海況によりガイドが最適なビーチを選定します。前日にLINEでご案内。
+          <Link href="/access" className="ml-1 text-emerald-600 underline underline-offset-2 font-medium">各ビーチの設備はこちら</Link>
         </motion.p>
         <motion.p
           initial={{ opacity: 0 }}

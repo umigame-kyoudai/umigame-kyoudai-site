@@ -22,6 +22,8 @@ const QUICK_LINKS_JA = [
   { href: "/gallery", label: "ギャラリー" },
   { href: "/blog", label: "ブログ" },
   { href: "/faq", label: "よくある質問" },
+  { href: "/safety", label: "安全への取り組み" },
+  { href: "/access", label: "集合場所・アクセス" },
 ] as const
 
 const LEGAL_LINKS_JA = [

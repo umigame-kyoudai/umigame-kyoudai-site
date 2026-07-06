@@ -30,6 +30,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${SITE_URL}/gallery`, lastModified: CONTENT_LAST_UPDATED, changeFrequency: "monthly", priority: 0.7 },
     { url: `${SITE_URL}/staff`, lastModified: CONTENT_LAST_UPDATED, changeFrequency: "monthly", priority: 0.6 },
     { url: `${SITE_URL}/faq`, lastModified: CONTENT_LAST_UPDATED, changeFrequency: "monthly", priority: 0.6 },
+    // 予約前の不安解消ページ（安全対策・集合場所）。2026-07-06追加
+    { url: `${SITE_URL}/safety`, lastModified: new Date("2026-07-06"), changeFrequency: "monthly", priority: 0.6 },
+    { url: `${SITE_URL}/access`, lastModified: new Date("2026-07-06"), changeFrequency: "monthly", priority: 0.6 },
     { url: `${SITE_URL}/blog`, lastModified: blogIndexUpdated, changeFrequency: "weekly", priority: 0.7 },
     // 法的ページ（信頼性シグナル。検索流入は想定しないため低priority）
     { url: `${SITE_URL}/terms`, lastModified: CONTENT_LAST_UPDATED, changeFrequency: "yearly", priority: 0.3 },

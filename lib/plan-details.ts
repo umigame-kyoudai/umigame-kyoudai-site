@@ -1,4 +1,5 @@
 import { PLAN_COVER_IMAGE, TOUR_IMAGE_PATHS } from "@/lib/tour-assets"
+import { SNORKEL_BEACHES } from "@/lib/beach-info"
 
 export interface PlanDetail {
   id: string
@@ -102,12 +103,7 @@ export const PLAN_DETAILS: Record<string, PlanDetail> = {
       { name: "K.N さん", date: "2024年12月", rating: 5, text: "泳ぎに自信がなかったのですが、ライフジャケットと浮き具のおかげで安心でした。目の前でウミガメが泳ぐ姿は圧巻！器材も写真も無料なのが嬉しいです。" },
       { name: "S.M さん", date: "2025年2月", rating: 5, text: "少人数制なので、スタッフさんが一人一人しっかり見てくれて安心。子連れでも心配なく参加できました。また宮古島に行ったら絶対リピートします！" },
     ],
-    locations: [
-      { name: "新城海岸", encounterRate: 95, parking: "¥2,000", toilet: true, shower: true },
-      { name: "東平安名ビーチ", encounterRate: 80, parking: "無料", toilet: false, shower: false, note: "事前にトイレを済ませてください" },
-      { name: "ワイワイビーチ", encounterRate: 80, parking: "無料", toilet: false, shower: false, note: "事前にトイレを済ませてください" },
-      { name: "シギラビーチ", encounterRate: 80, parking: "¥1,000", toilet: true, shower: false, note: "業者が多くウミガメ写真撮影は保証できない場合あり" },
-    ],
+    locations: SNORKEL_BEACHES,
   },
   S2: {
     id: "S2",
@@ -154,12 +150,7 @@ export const PLAN_DETAILS: Record<string, PlanDetail> = {
       { name: "Y.T さん", date: "2025年3月", rating: 5, text: "カップルで利用しました。他のお客さんがいないので気兼ねなく楽しめて最高！ガイドさんが素敵な写真をたくさん撮ってくれて、一生の思い出になりました。" },
       { name: "H.K さん", date: "2025年1月", rating: 5, text: "3歳と5歳の子連れで参加。貸切だから子供のペースに合わせてもらえて本当に助かりました。ウミガメと一緒の家族写真は宝物です！" },
     ],
-    locations: [
-      { name: "新城海岸", encounterRate: 95, parking: "¥2,000", toilet: true, shower: true },
-      { name: "東平安名ビーチ", encounterRate: 80, parking: "無料", toilet: false, shower: false, note: "事前にトイレを済ませてください" },
-      { name: "ワイワイビーチ", encounterRate: 80, parking: "無料", toilet: false, shower: false, note: "事前にトイレを済ませてください" },
-      { name: "シギラビーチ", encounterRate: 80, parking: "¥1,000", toilet: true, shower: false, note: "業者が多くウミガメ写真撮影は保証できない場合あり" },
-    ],
+    locations: SNORKEL_BEACHES,
   },
   S3: {
     id: "S3",

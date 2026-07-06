@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import Link from "next/link"
 import { Navbar } from "@/components/navbar"
 import { createMetadata } from "@/lib/seo"
 
@@ -28,6 +29,26 @@ export default function FAQPage() {
       <main>
         <FAQHero />
         <FAQSection faqs={FAQS} />
+
+        {/* 予約前の2大不安（安全・集合場所）はまとめページへ誘導 */}
+        <section className="max-w-3xl mx-auto px-4 sm:px-6 pb-14">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Link
+              href="/safety"
+              className="block rounded-2xl bg-white border border-emerald-100 shadow-sm p-5 hover:border-emerald-300 transition-colors"
+            >
+              <h2 className="font-bold text-gray-900 mb-1">安全への取り組み →</h2>
+              <p className="text-sm text-gray-600">ライフジャケット・浅瀬エントリー・中止基準・参加条件をまとめて確認</p>
+            </Link>
+            <Link
+              href="/access"
+              className="block rounded-2xl bg-white border border-cyan-100 shadow-sm p-5 hover:border-cyan-300 transition-colors"
+            >
+              <h2 className="font-bold text-gray-900 mb-1">集合場所・アクセス →</h2>
+              <p className="text-sm text-gray-600">前日案内の理由と、各ビーチの駐車場・トイレ・シャワー設備</p>
+            </Link>
+          </div>
+        </section>
       </main>
 
       <Footer />
