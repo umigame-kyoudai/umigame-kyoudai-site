@@ -6,6 +6,7 @@ import { format } from "date-fns"
 import { ja } from "date-fns/locale"
 import { Button } from "@/components/ui/button"
 import { Clock, Info } from "lucide-react"
+import { DAY_SUP_TIMES } from "@/lib/plan-flags"
 
 type PlanId = "night-hunter" | "sunset-sup" | "day-sup" | "slide-boat" | "other"
 
@@ -59,7 +60,7 @@ function getTimeSlots(plan: PlanId, date: Date): string[] {
     case "sunset-sup":
       return getSunsetSlots(date)
     case "day-sup":
-      return []
+      return DAY_SUP_TIMES
     case "slide-boat":
       return ["09:00", "13:00"]
     default:
@@ -70,9 +71,7 @@ function getTimeSlots(plan: PlanId, date: Date): string[] {
 export default function BookingTimeSlots({ selectedPlan, selectedDate, selectedTime, onPick }: Props) {
   const slots = useMemo(() => getTimeSlots(selectedPlan, selectedDate), [selectedPlan, selectedDate])
 
-  if (selectedPlan === "sunset-sup" || selectedPlan === "day-sup") {
-    const isDaySup = selectedPlan === "day-sup"
-
+  if (selectedPlan === "sunset-sup") {
     return (
       <div className="bg-gradient-to-r from-orange-50 to-pink-50 border border-orange-200 rounded-xl p-6">
         <div className="flex items-start gap-3">
@@ -80,13 +79,9 @@ export default function BookingTimeSlots({ selectedPlan, selectedDate, selectedT
             <Clock className="w-5 h-5 text-orange-600" />
           </div>
           <div className="flex-1">
-            <h3 className="font-semibold text-orange-800 mb-2">
-              {isDaySup ? "宮古島ドローンSUP体験 時間について" : "サンセットSUP 時間について"}
-            </h3>
+            <h3 className="font-semibold text-orange-800 mb-2">サンセットSUP 時間について</h3>
             <p className="text-sm text-orange-700 mb-3">
-              {isDaySup
-                ? "開始時間は、当日の海況・水位・風の状況を考慮して最適な時間をご案内します。"
-                : "サンセットSUPの開始時間は、当日の日没時刻と天候状況を考慮して最適な時間を決定いたします。"}
+              サンセットSUPの開始時間は、当日の日没時刻と天候状況を考慮して最適な時間を決定いたします。
             </p>
             <div className="bg-white/60 rounded-lg p-3 border border-orange-200">
               <div className="flex items-center gap-2 mb-2">
@@ -94,19 +89,8 @@ export default function BookingTimeSlots({ selectedPlan, selectedDate, selectedT
                 <span className="text-sm font-medium text-orange-800">予約確定時にお知らせします</span>
               </div>
               <ul className="text-xs text-orange-600 space-y-1">
-                {isDaySup ? (
-                  <>
-                    <li>• 日中の海が綺麗に見える時間帯で調整</li>
-                    <li>• 潮位・風・安全状況により前後する場合があります</li>
-                    <li>• ドローン撮影は天候・風・安全判断により実施します</li>
-                  </>
-                ) : (
-                  <>
-                    <li>• 通常17:00〜19:00の間で開始</li>
-                    <li>• 日没30〜90分前の最適な時間</li>
-                    <li>{""}</li>
-                  </>
-                )}
+                <li>• 通常17:00〜19:00の間で開始</li>
+                <li>• 日没30〜90分前の最適な時間</li>
               </ul>
             </div>
           </div>
@@ -116,23 +100,30 @@ export default function BookingTimeSlots({ selectedPlan, selectedDate, selectedT
   }
 
   return (
-    <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
-      {slots.map((time) => (
-        <Button
-          key={time}
-          type="button"
-          variant={selectedTime === time ? "default" : "outline"}
-          size="sm"
-          onClick={() => onPick(time)}
-          className={`rounded-xl ${
-            selectedTime === time
-              ? "bg-emerald-600 hover:bg-emerald-700 text-white"
-              : "border-emerald-200 text-emerald-700 hover:bg-emerald-50"
-          }`}
-        >
-          {time}
-        </Button>
-      ))}
+    <div>
+      <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
+        {slots.map((time) => (
+          <Button
+            key={time}
+            type="button"
+            variant={selectedTime === time ? "default" : "outline"}
+            size="sm"
+            onClick={() => onPick(time)}
+            className={`rounded-xl ${
+              selectedTime === time
+                ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                : "border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+            }`}
+          >
+            {time}
+          </Button>
+        ))}
+      </div>
+      {selectedPlan === "day-sup" && (
+        <p className="text-xs text-gray-500 mt-2">
+          ※開始時間は当日の海況・水位により前後する場合があります（確定時間はLINEでご案内します）
+        </p>
+      )}
     </div>
   )
 }

@@ -24,7 +24,8 @@ export const STAFF_UNAVAILABLE_PLAN_IDS = new Set([
   "S3", "S4", "S5", "S6", "S7", "slide-boat", "C1", "C2", "C3", "C4", "C5", "C6",
 ])
 // 開始時刻が固定でない（確定時にLINEで案内する）プラン
-export const TIME_OPTIONAL_PLAN_IDS = new Set(["S4", "S6", "S7"])
+// ※ S6/S7（ドローンSUP単品）は 2026-07 から希望時間を選択制に変更（DAY_SUP_TIMES）
+export const TIME_OPTIONAL_PLAN_IDS = new Set(["S4"])
 // 60歳以上をお断りするプラン（通常/グループ版のみ）。60歳以上は対応する貸切版へ案内する。
 // ※ S4サンセットSUP・slide-boat はペアが無いため対象外。貸切版(S2/S5/S7/C2/C4/C6)は60歳以上OK。
 export const SENIOR_RESTRICTED_PLAN_IDS = new Set(["S1", "S3", "S6", "C1", "C3", "C5"])
@@ -48,7 +49,13 @@ export const FREE_UNDER3_PLAN_IDS = new Set(["S3", "S5"])
 export const COMBO_NIGHT_TIMES = ["19:20", "21:10"]
 // セットの海亀（シュノーケル）開始時刻の候補
 export const COMBO_TURTLE_TIMES = ["09:00", "11:00", "14:00", "16:00"]
-// ドローンSUPは海況・水位で調整するため、時刻は確定時にご案内
+// ドローンSUP単品（S6/S7）の開始時刻の候補（7:00〜16:00の1時間おき）
+// ※海況・水位により前後する場合がある旨をフォーム・プランページで併記する
+export const DAY_SUP_TIMES = [
+  "07:00", "08:00", "09:00", "10:00", "11:00",
+  "12:00", "13:00", "14:00", "15:00", "16:00",
+]
+// セット内のドローンSUPは海亀ツアーと連続開催のため海況・水位で調整（確定時にご案内）
 export const DAY_SUP_TIME_NOTE = "海況・水位により調整（予約確定時にご案内）"
 
 export const isComboPlan = (planId: string): boolean => COMBO_PLAN_IDS.has(planId)

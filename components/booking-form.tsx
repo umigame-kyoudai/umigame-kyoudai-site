@@ -406,10 +406,17 @@ export function BookingForm() {
   ])
 
   const handleInputChange = (field: keyof BookingData, value: any) => {
-    setBookingData((prev) => ({
-      ...prev,
-      [field]: value,
-    }))
+    setBookingData((prev) => {
+      // プランごとに選べる時間枠が違うため、プラン切替時は選択済みの時間を破棄する
+      // （残すと、切替後の枠に無い時刻のままサーバー検証で弾かれてしまう）
+      if (field === "selectedPlan" && value !== prev.selectedPlan) {
+        return { ...prev, selectedPlan: value, selectedTime: "", nightTime: "" }
+      }
+      return {
+        ...prev,
+        [field]: value,
+      }
+    })
   }
 
   const handleCouponApply = async () => {
@@ -553,7 +560,7 @@ export function BookingForm() {
   const isFormValid =
     bookingData.selectedPlan &&
     bookingData.selectedDate &&
-    (getPlanType(bookingData.selectedPlan) === "sunset-sup" || getPlanType(bookingData.selectedPlan) === "day-sup" || bookingData.selectedTime) &&
+    (getPlanType(bookingData.selectedPlan) === "sunset-sup" || bookingData.selectedTime) &&
     comboTimesSelected &&
     (bookingData.adultCount > 0 || bookingData.childCount > 0 || bookingData.under3Count > 0) &&
     bookingData.customerName &&
@@ -604,7 +611,7 @@ export function BookingForm() {
               ) : (
                 <p>
                   日時: {bookingData.selectedDate}{" "}
-                  {getPlanType(bookingData.selectedPlan) === "sunset-sup" || getPlanType(bookingData.selectedPlan) === "day-sup"
+                  {getPlanType(bookingData.selectedPlan) === "sunset-sup"
                     ? "(時間は後日ご連絡)"
                     : bookingData.selectedTime}
                 </p>

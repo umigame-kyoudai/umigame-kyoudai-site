@@ -20,13 +20,12 @@ import { todayStr } from "@/lib/date-utils"
 import { PLANS, getStaffFee } from "@/lib/data"
 import { EN_PLAN_BY_ID } from "@/lib/i18n/en"
 import { getEnPrice, EN_PRICE_SUPPORT_NOTE } from "@/lib/i18n/en-prices"
-import { SENIOR_RESTRICTED_PLAN_IDS, PRIVATE_COUNTERPART } from "@/lib/plan-flags"
+import { SENIOR_RESTRICTED_PLAN_IDS, PRIVATE_COUNTERPART, TIME_OPTIONAL_PLAN_IDS } from "@/lib/plan-flags"
 import { trackEvent } from "@/lib/analytics"
 
 const NIGHT_PLAN_IDS = new Set(["S3", "S5"])
 const FREE_UNDER3_PLAN_IDS = NIGHT_PLAN_IDS
 const STAFF_AVAILABLE_PLAN_IDS = new Set(["S1", "S2"])
-const TIME_OPTIONAL_PLAN_IDS = new Set(["S4", "S6", "S7"])
 
 const STAFF_LIST_EN = [
   { id: "", name: "No preference" },
@@ -328,9 +327,7 @@ export function BookingFormEn() {
             <p>
               Date & time: {date}{" "}
               {timeOptional
-                ? isDaySup
-                  ? "(start time will be adjusted for sea conditions and tide — we'll confirm it with you)"
-                  : "(start time will follow the sunset — we'll confirm it with you)"
+                ? "(start time will follow the sunset — we'll confirm it with you)"
                 : time}
             </p>
             <p>Guests: {participants.length}</p>
@@ -416,30 +413,35 @@ export function BookingFormEn() {
           </div>
           <div>
             <Label className="text-sm font-medium text-gray-700 mb-2 block">
-              Start time {timeOptional ? (isDaySup ? "(confirmed after checking sea conditions)" : "(decided by sunset)") : "*"}
+              Start time {timeOptional ? "(decided by sunset)" : "*"}
             </Label>
             {timeOptional ? (
               <p className="text-sm text-gray-500 leading-relaxed pt-2">
-                {isDaySup
-                  ? "The start time is adjusted based on sea conditions, tide level and wind — we'll confirm the exact time with you after booking."
-                  : "The start time follows the sunset and changes by season — we'll confirm the exact time with you after booking."}
+                The start time follows the sunset and changes by season — we&apos;ll confirm the exact time with you after booking.
               </p>
             ) : (
-              <div className="flex flex-wrap gap-2">
-                {(timeOptions.length > 0 ? timeOptions : []).map((t) => (
-                  <button
-                    type="button"
-                    key={t}
-                    onClick={() => setTime(t)}
-                    className={`px-4 py-2 rounded-full border-2 text-sm font-semibold transition-colors ${
-                      time === t ? "border-emerald-500 bg-emerald-50 text-emerald-800" : "border-gray-200 text-gray-600 hover:border-emerald-300"
-                    }`}
-                  >
-                    {t}
-                  </button>
-                ))}
-                {!plan && <p className="text-sm text-gray-400 pt-2">Choose a tour first</p>}
-              </div>
+              <>
+                <div className="flex flex-wrap gap-2">
+                  {(timeOptions.length > 0 ? timeOptions : []).map((t) => (
+                    <button
+                      type="button"
+                      key={t}
+                      onClick={() => setTime(t)}
+                      className={`px-4 py-2 rounded-full border-2 text-sm font-semibold transition-colors ${
+                        time === t ? "border-emerald-500 bg-emerald-50 text-emerald-800" : "border-gray-200 text-gray-600 hover:border-emerald-300"
+                      }`}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                  {!plan && <p className="text-sm text-gray-400 pt-2">Choose a tour first</p>}
+                </div>
+                {isDaySup && (
+                  <p className="text-xs text-gray-500 mt-2">
+                    Your start time may shift slightly depending on sea conditions and tide — we&apos;ll confirm the final time via LINE.
+                  </p>
+                )}
+              </>
             )}
           </div>
         </CardContent>

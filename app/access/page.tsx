@@ -21,7 +21,8 @@ export const metadata: Metadata = createMetadata({
 const MEETING_RULES = [
   { plan: "ウミガメシュノーケル（通常・貸切）", when: "開始時刻の15分前", where: "前日までにLINEでご案内（下記の候補ビーチから当日の海況で選定）" },
   { plan: "ナイトツアー（通常・貸切）", when: "開始時刻ちょうど（19:20 / 21:10）", where: "インギャーマリンガーデン付近（正確な集合ポイントは当日LINEでご案内）" },
-  { plan: "サンセットSUP・ドローンSUP", when: "開始15分前（開始時間は海況・水位により調整）", where: "予約確定時〜前日にLINEでご案内" },
+  { plan: "サンセットSUP", when: "開始15分前（開始時間は日没に合わせて調整）", where: "予約確定時〜前日にLINEでご案内" },
+  { plan: "ドローンSUP（通常・貸切）", when: "選んだ開始時間（7:00〜16:00）の15分前 ※海況・水位により前後する場合あり", where: "予約確定時〜前日にLINEでご案内" },
 ]
 
 function YesNo({ ok }: { ok: boolean }) {

@@ -149,14 +149,14 @@ export const EN_PLANS: EnPlanContent[] = [
     description: [
       "Enjoy a daytime SUP session on Miyakojima's clear blue water, with both close-up photos from the water and aerial drone shots when conditions allow. This tour is designed for guests who want bright, tropical colors and wide-open island scenery in their photos and videos.",
       "First time on a SUP board? No problem. We use stable boards and your guide explains the basics on land before you go out. You can paddle seated at first and stand up when you feel comfortable.",
-      "Because safety and photo quality depend on sea conditions, tide level and wind, the exact start time may change. We will confirm the best meeting time and location with you via LINE after checking the conditions.",
+      "Choose your preferred start time when you book — hourly slots from 7:00 to 16:00. If sea conditions, tide level or wind call for a small adjustment, we will confirm the final meeting time and location with you via LINE.",
     ],
     highlights: [
       "Drone photo and video shooting included when conditions allow",
       "Daytime Miyako blue water and wide aerial views",
       "Stable boards and beginner-friendly coaching",
       "Free photos and videos from the tour",
-      "Start time adjusted for sea conditions, tide and safety",
+      "Choose your start time — hourly slots from 7:00 to 16:00",
     ],
     included: ["SUP board, paddle and life jacket", "On-land lesson", "Drone shooting when conditions allow", "Photo & video files", "Insurance"],
     whatToBring: ["Swimsuit (worn under your clothes)", "Change of clothes & towel", "Sunscreen", "Drinks", "Sandals"],
@@ -168,7 +168,7 @@ export const EN_PLANS: EnPlanContent[] = [
       "Start time and location may change depending on sea conditions, tide level and wind",
     ],
     ageNote: "Ages 5 to 65",
-    timeNote: "Start time is adjusted based on sea conditions, tide level and wind — we'll confirm the exact meeting time after your booking request.",
+    timeNote: "Choose a start time from hourly slots between 7:00 and 16:00 when you book. Meet 15 minutes before the start — the time may shift slightly with sea conditions and tide, and we'll confirm it via LINE.",
     locationNote: "Location depends on the day's sea, tide and wind conditions (your guide will tell you via LINE)",
   },
   {
@@ -178,7 +178,7 @@ export const EN_PLANS: EnPlanContent[] = [
     description: [
       "Enjoy a fully private daytime SUP session on Miyakojima's clear blue water. With a dedicated guide for your group only, you can paddle at your own pace and ask freely for the shots you want — close-up photos from the water and aerial drone shots when conditions allow.",
       "First time on a SUP board? No problem. We use stable boards and your dedicated guide explains the basics on land before you go out. You can paddle seated at first and stand up when you feel comfortable.",
-      "Because safety and photo quality depend on sea conditions, tide level and wind, the exact start time may change. We will confirm the best meeting time and location with you via LINE after checking the conditions.",
+      "Choose your preferred start time when you book — hourly slots from 7:00 to 16:00. If sea conditions, tide level or wind call for a small adjustment, we will confirm the final meeting time and location with you via LINE.",
     ],
     highlights: [
       "Private tour for your group only, with a dedicated guide",
@@ -198,7 +198,7 @@ export const EN_PLANS: EnPlanContent[] = [
       "For groups of 7 or more, please contact us via LINE",
     ],
     ageNote: "Ages 5 to 65",
-    timeNote: "Start time is adjusted based on sea conditions, tide level and wind — we'll confirm the exact meeting time after your booking request.",
+    timeNote: "Choose a start time from hourly slots between 7:00 and 16:00 when you book. Meet 15 minutes before the start — the time may shift slightly with sea conditions and tide, and we'll confirm it via LINE.",
     locationNote: "Location depends on the day's sea, tide and wind conditions (your guide will tell you via LINE)",
   },
   {

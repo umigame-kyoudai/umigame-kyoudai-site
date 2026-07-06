@@ -307,9 +307,7 @@ const buildGASPayload = (
     selectedDate: bookingData.selectedDate,
     selectedTime: plan.id === 'S4'
       ? SUNSET_SUP_TIME_NOTE
-      : (plan.id === 'S6' || plan.id === 'S7')
-        ? DAY_SUP_TIME_NOTE
-        : bookingData.selectedTime || '',
+      : bookingData.selectedTime || '',
     participants: bookingData.participants,
     adultCount,
     childCount,
