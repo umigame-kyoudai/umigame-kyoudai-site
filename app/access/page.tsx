@@ -20,7 +20,7 @@ export const metadata: Metadata = createMetadata({
 // プラン別の集合ルール。lib/data.ts の各プラン meetingTime / location と一致させること。
 const MEETING_RULES = [
   { plan: "ウミガメシュノーケル（通常・貸切）", when: "開始時刻の15分前", where: "前日までにLINEでご案内（下記の候補ビーチから当日の海況で選定）" },
-  { plan: "ナイトツアー（通常・貸切）", when: "開始時刻ちょうど（19:20 / 21:10）", where: "当日にLINEでご案内" },
+  { plan: "ナイトツアー（通常・貸切）", when: "開始時刻ちょうど（19:20 / 21:10）", where: "インギャーマリンガーデン付近（正確な集合ポイントは当日LINEでご案内）" },
   { plan: "サンセットSUP・ドローンSUP", when: "開始15分前（開始時間は海況・水位により調整）", where: "予約確定時〜前日にLINEでご案内" },
 ]
 

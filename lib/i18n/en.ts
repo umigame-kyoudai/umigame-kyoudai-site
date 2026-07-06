@@ -114,7 +114,7 @@ export const EN_PLANS: EnPlanContent[] = [
     precautions: ["If you have any mobility or health concerns, please consult us in advance"],
     ageNote: "Ages 0 to 75",
     timeNote: "Two departures nightly: 7:20 PM and 9:10 PM (meet at the start time)",
-    locationNote: "Meeting point shared via LINE on the day of your tour",
+    locationNote: "Near Ingya Marine Garden (exact meeting point shared via LINE on the day of your tour)",
     priceNote: "Flat ¥6,000 per person (free for ages 3 and under)",
   },
   {
@@ -221,7 +221,7 @@ export const EN_PLANS: EnPlanContent[] = [
     precautions: ["If you have any mobility or health concerns, please consult us in advance"],
     ageNote: "Ages 0 to 75",
     timeNote: "Two departures nightly: 7:20 PM and 9:10 PM (meet at the start time)",
-    locationNote: "Meeting point shared via LINE on the day of your tour",
+    locationNote: "Near Ingya Marine Garden (exact meeting point shared via LINE on the day of your tour)",
     priceNote: "Flat ¥10,000 per person (free for ages 3 and under)",
   },
   {
