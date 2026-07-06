@@ -269,7 +269,7 @@ export const PLAN_DETAILS: Record<string, PlanDetail> = {
       { title: "開始時間を選べる", description: "ご予約時に7:00〜16:00（1時間おき）からご希望の開始時間を選べます。海況・水位により前後する場合は、事前にLINEでご案内します。", icon: "shield" },
     ],
     flow: [
-      { step: 1, title: "集合・受付", description: "ご予約時に選んだ開始時間に合わせて現地集合。集合場所はガイドよりLINEでご案内します。", time: "選んだ開始時間の15分前" },
+      { step: 1, title: "集合・受付", description: "ご予約時に選んだ開始時間に合わせて現地集合。集合場所は前日にガイドよりLINEでご案内します。", time: "選んだ開始時間の15分前" },
       { step: 2, title: "陸上レクチャー", description: "SUPの乗り方・漕ぎ方・安全面を丁寧に説明します。初めての方も安心です。" },
       { step: 3, title: "海上SUP＆ドローン撮影", description: "宮古ブルーの海へ出発。海上SUPを楽しみながら、状況に応じてドローン空撮を行います。", time: "約2時間" },
       { step: 4, title: "お会計・解散", description: "お会計後、解散。撮影データは準備でき次第お渡しします。" },
@@ -285,7 +285,7 @@ export const PLAN_DETAILS: Record<string, PlanDetail> = {
       "強風・雨・飛行制限・安全判断により、ドローン撮影ができない場合があります",
     ],
     location: "当日の海況・水位により変動",
-    locationNote: "安全に開催でき、写真が綺麗に残りやすい場所を選び、LINEで集合場所をご案内します。",
+    locationNote: "安全に開催でき、写真が綺麗に残りやすい場所を選び、前日にLINEで集合場所をご案内します。",
     meetingTime: "選んだ開始時間の15分前に集合（海況・水位により時間が前後する場合があります）",
     paymentMethod: "現地現金決済（できるだけお釣りが出ないようご協力ください）",
     faqs: [
@@ -319,7 +319,7 @@ export const PLAN_DETAILS: Record<string, PlanDetail> = {
       { title: "初心者でも安心", description: "安定感のあるSUPボードを使用し、専属ガイドが漕ぎ方や乗り方を丁寧にレクチャー。座ったままでも楽しめます。", icon: "lifebuoy" },
     ],
     flow: [
-      { step: 1, title: "集合・受付", description: "ご予約時に選んだ開始時間に合わせて現地集合。集合場所はガイドよりLINEでご案内します。", time: "選んだ開始時間の15分前" },
+      { step: 1, title: "集合・受付", description: "ご予約時に選んだ開始時間に合わせて現地集合。集合場所は前日にガイドよりLINEでご案内します。", time: "選んだ開始時間の15分前" },
       { step: 2, title: "陸上レクチャー", description: "専属ガイドがSUPの乗り方・漕ぎ方・安全面を丁寧に説明します。初めての方も安心です。" },
       { step: 3, title: "海上SUP＆ドローン撮影", description: "宮古ブルーの海へ出発。貸切なので自分たちのペースで海上SUPを楽しみ、状況に応じてドローン空撮を行います。", time: "約2時間" },
       { step: 4, title: "お会計・解散", description: "お会計後、解散。撮影データは準備でき次第お渡しします。" },
@@ -336,7 +336,7 @@ export const PLAN_DETAILS: Record<string, PlanDetail> = {
       "7名以上はLINEよりご相談ください",
     ],
     location: "当日の海況・水位により変動",
-    locationNote: "安全に開催でき、写真が綺麗に残りやすい場所を選び、LINEで集合場所をご案内します。",
+    locationNote: "安全に開催でき、写真が綺麗に残りやすい場所を選び、前日にLINEで集合場所をご案内します。",
     meetingTime: "選んだ開始時間の15分前に集合（海況・水位により時間が前後する場合があります）",
     paymentMethod: "現地現金決済（できるだけお釣りが出ないようご協力ください）",
     faqs: [

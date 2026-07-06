@@ -149,7 +149,7 @@ export const EN_PLANS: EnPlanContent[] = [
     description: [
       "Enjoy a daytime SUP session on Miyakojima's clear blue water, with both close-up photos from the water and aerial drone shots when conditions allow. This tour is designed for guests who want bright, tropical colors and wide-open island scenery in their photos and videos.",
       "First time on a SUP board? No problem. We use stable boards and your guide explains the basics on land before you go out. You can paddle seated at first and stand up when you feel comfortable.",
-      "Choose your preferred start time when you book — hourly slots from 7:00 to 16:00. If sea conditions, tide level or wind call for a small adjustment, we will confirm the final meeting time and location with you via LINE.",
+      "Choose your preferred start time when you book — hourly slots from 7:00 to 16:00. We will send your exact meeting spot via LINE the day before your tour, and if sea conditions, tide level or wind call for a small adjustment to the time, we will confirm that too.",
     ],
     highlights: [
       "Drone photo and video shooting included when conditions allow",
@@ -169,7 +169,7 @@ export const EN_PLANS: EnPlanContent[] = [
     ],
     ageNote: "Ages 5 to 65",
     timeNote: "Choose a start time from hourly slots between 7:00 and 16:00 when you book. Meet 15 minutes before the start — the time may shift slightly with sea conditions and tide, and we'll confirm it via LINE.",
-    locationNote: "Location depends on the day's sea, tide and wind conditions (your guide will tell you via LINE)",
+    locationNote: "Location depends on the day's sea, tide and wind conditions (your guide will tell you via LINE the day before your tour)",
   },
   {
     id: "S7",
@@ -178,7 +178,7 @@ export const EN_PLANS: EnPlanContent[] = [
     description: [
       "Enjoy a fully private daytime SUP session on Miyakojima's clear blue water. With a dedicated guide for your group only, you can paddle at your own pace and ask freely for the shots you want — close-up photos from the water and aerial drone shots when conditions allow.",
       "First time on a SUP board? No problem. We use stable boards and your dedicated guide explains the basics on land before you go out. You can paddle seated at first and stand up when you feel comfortable.",
-      "Choose your preferred start time when you book — hourly slots from 7:00 to 16:00. If sea conditions, tide level or wind call for a small adjustment, we will confirm the final meeting time and location with you via LINE.",
+      "Choose your preferred start time when you book — hourly slots from 7:00 to 16:00. We will send your exact meeting spot via LINE the day before your tour, and if sea conditions, tide level or wind call for a small adjustment to the time, we will confirm that too.",
     ],
     highlights: [
       "Private tour for your group only, with a dedicated guide",
@@ -199,7 +199,7 @@ export const EN_PLANS: EnPlanContent[] = [
     ],
     ageNote: "Ages 5 to 65",
     timeNote: "Choose a start time from hourly slots between 7:00 and 16:00 when you book. Meet 15 minutes before the start — the time may shift slightly with sea conditions and tide, and we'll confirm it via LINE.",
-    locationNote: "Location depends on the day's sea, tide and wind conditions (your guide will tell you via LINE)",
+    locationNote: "Location depends on the day's sea, tide and wind conditions (your guide will tell you via LINE the day before your tour)",
   },
   {
     id: "S5",
