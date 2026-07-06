@@ -697,6 +697,10 @@ export function BookingForm() {
         <p className="mt-3 text-sm text-gray-600">
           送信後すぐに確定ではありません。スタッフが内容を確認し、LINEで集合場所や時間をご案内します。
         </p>
+        <p className="mt-1.5 text-sm text-gray-600">
+          集合場所は当日の海況で選ぶため前日のご案内です。
+          <a href="/access" target="_blank" rel="noopener" className="text-cyan-700 underline underline-offset-2 font-medium">候補ビーチの駐車場・設備はこちら</a>
+        </p>
         <p className="mt-2 text-sm font-medium text-amber-700">
           ⚠️ 確定のご連絡はLINEに届きます。<a href={LINE_ADD_FRIEND_URL} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent("line_add_friend_click", { location: "booking_intro" })} className="underline font-bold">LINE公式アカウントの「友だち追加」</a>もお済ませください（未追加だと連絡が届きません）。
         </p>
