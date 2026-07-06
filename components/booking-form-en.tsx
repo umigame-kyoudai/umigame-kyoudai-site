@@ -22,6 +22,7 @@ import { EN_PLAN_BY_ID } from "@/lib/i18n/en"
 import { getEnPrice, EN_PRICE_SUPPORT_NOTE } from "@/lib/i18n/en-prices"
 import { SENIOR_RESTRICTED_PLAN_IDS, PRIVATE_COUNTERPART, TIME_OPTIONAL_PLAN_IDS } from "@/lib/plan-flags"
 import { trackEvent } from "@/lib/analytics"
+import { getAttribution, getAttributionSourceLabel } from "@/lib/attribution"
 
 const NIGHT_PLAN_IDS = new Set(["S3", "S5"])
 const FREE_UNDER3_PLAN_IDS = NIGHT_PLAN_IDS
@@ -127,7 +128,7 @@ export function BookingFormEn() {
   useEffect(() => {
     if (hasTrackedFormView.current || !isLiffReady) return
     hasTrackedFormView.current = true
-    trackEvent("booking_form_view", { locale: "en", line_logged_in: !!lineUserId })
+    trackEvent("booking_form_view", { locale: "en", line_logged_in: !!lineUserId, source: getAttributionSourceLabel() })
   }, [isLiffReady, lineUserId])
 
   // 入力内容を随時sessionStorageへ退避（LINEログインのリダイレクトを跨いで復元するため）
@@ -287,6 +288,8 @@ export function BookingFormEn() {
           lineDisplayName,
           couponCode,
           couponDiscount,
+          // 流入元（どのリンク経由か）。管理者メール・カレンダーの備考に [流入元] として載る
+          attribution: getAttribution(),
         }),
       })
       if (!response.ok) {
@@ -298,6 +301,7 @@ export function BookingFormEn() {
         locale: "en",
         plan: planId,
         headcount: participants.length,
+        source: getAttributionSourceLabel(),
       })
       try {
         window.sessionStorage.removeItem(EN_BOOKING_DRAFT_KEY)

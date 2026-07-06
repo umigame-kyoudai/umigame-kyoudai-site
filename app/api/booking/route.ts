@@ -48,6 +48,13 @@ interface BookingRequest {
   lineDisplayName?: string | null
   couponCode?: string
   couponDiscount?: number
+  attribution?: {
+    source?: string
+    medium?: string
+    campaign?: string
+    referrer?: string
+    landingPage?: string
+  } | null
 }
 
 // プラン分類は lib/plan-flags.ts を単一ソースとして参照する（予約フォーム等と共通）
@@ -288,6 +295,34 @@ const buildSpecialRequests = (bookingData: BookingRequest, plan: typeof PLANS[nu
   return cleanedRequests ? `${comboBlock}\n───\n${cleanedRequests}` : comboBlock
 }
 
+// 流入元の値はURL経由で誰でも操作できるため、GAS側の備考マーカー判定（[COMBO booking]・
+// 「ドローンSUP」等のプラン振り分け）と衝突しないよう ASCII の安全な文字だけ通す
+const sanitizeAttributionValue = (value: unknown, maxLen: number): string =>
+  typeof value === 'string' ? value.replace(/[^\w\-./ ]/g, '').trim().slice(0, maxLen) : ''
+
+// 備考欄の末尾に付ける [流入元] ブロックを組み立てる。
+// 管理者宛メールとGoogleカレンダーの説明文に載る（お客様向けLINE通知には載らない）。
+const buildAttributionNote = (bookingData: BookingRequest): string => {
+  // フィールド自体が無い（古いキャッシュのフォーム等）場合は何も付けない
+  if (!('attribution' in bookingData)) return ''
+
+  const a = bookingData.attribution
+  const source = sanitizeAttributionValue(a?.source, 80)
+  const medium = sanitizeAttributionValue(a?.medium, 80)
+  const campaign = sanitizeAttributionValue(a?.campaign, 80)
+  const referrer = sanitizeAttributionValue(a?.referrer, 120)
+  const landing = sanitizeAttributionValue(a?.landingPage, 120)
+  const landingNote = landing ? `（着地: ${landing}）` : ''
+
+  if (source) {
+    return `[流入元] ${[source, medium, campaign].filter(Boolean).join(' / ')}${landingNote}`
+  }
+  if (referrer) {
+    return `[流入元] 参照元: ${referrer}${landingNote}`
+  }
+  return '[流入元] 不明（直接アクセス・ブックマーク等）'
+}
+
 // GAS用ペイロードを構築
 const buildGASPayload = (
   bookingData: BookingRequest,
@@ -314,7 +349,9 @@ const buildGASPayload = (
     under3Count,
     totalPrice: serverTotalPrice,
     staffName: getStaffName(bookingData.selectedStaff),
-    specialRequests: buildSpecialRequests(bookingData, plan),
+    specialRequests: [buildSpecialRequests(bookingData, plan), buildAttributionNote(bookingData)]
+      .filter(Boolean)
+      .join('\n───\n'),
     lineUserId: bookingData.lineUserId || '',
     lineDisplayName: bookingData.lineDisplayName || '',
     couponCode: validatedCoupon.code,

@@ -5,6 +5,7 @@ import Link from "next/link"
 import { ParticipantForm } from "./participant-form"
 import { useLiff } from "./liff-provider"
 import { trackEvent } from "@/lib/analytics"
+import { getAttribution, getAttributionSourceLabel } from "@/lib/attribution"
 
 import { useState, useEffect, useCallback, useRef } from "react"
 import { useSearchParams } from "next/navigation"
@@ -235,7 +236,7 @@ export function BookingForm() {
   useEffect(() => {
     if (hasTrackedFormView.current || !isLiffReady) return
     hasTrackedFormView.current = true
-    trackEvent("booking_form_view", { locale: "ja", line_logged_in: !!liffUserId })
+    trackEvent("booking_form_view", { locale: "ja", line_logged_in: !!liffUserId, source: getAttributionSourceLabel() })
   }, [isLiffReady, liffUserId])
 
   useEffect(() => {
@@ -516,6 +517,8 @@ export function BookingForm() {
           totalPrice,
           couponCode: bookingData.couponCode,
           couponDiscount: bookingData.couponDiscount,
+          // 流入元（どのリンク経由か）。管理者メール・カレンダーの備考に [流入元] として載る
+          attribution: getAttribution(),
         }),
       })
 
@@ -532,6 +535,7 @@ export function BookingForm() {
         planName: selectedPlanData?.name ?? "",
         headcount: bookingData.adultCount + bookingData.childCount + bookingData.under3Count,
         total: totalPrice,
+        source: getAttributionSourceLabel(),
       })
       clearBookingDraft()
       setIsSubmitted(true)

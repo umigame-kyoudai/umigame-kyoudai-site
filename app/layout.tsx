@@ -4,6 +4,7 @@ import { Inter } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { Suspense } from "react"
 import { RouteScrollManager } from "@/components/route-scroll-manager"
+import { AttributionTracker } from "@/components/attribution-tracker"
 import { WebSiteJsonLd, OrganizationJsonLd } from "@/components/json-ld"
 import "./globals.css"
 
@@ -97,6 +98,8 @@ export default function RootLayout({
         <Suspense fallback={null}>
           <RouteScrollManager />
         </Suspense>
+        {/* 流入元（UTM/参照元）の記録。/en 配下も含む全ページの着地をカバーする */}
+        <AttributionTracker />
         {children}
         <Analytics />
       </body>
