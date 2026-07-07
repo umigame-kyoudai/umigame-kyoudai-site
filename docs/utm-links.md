@@ -6,15 +6,26 @@
 
 ## 使い方
 
+現在のメイン動線は **Instagram → LINE公式（友だち追加）→ ホームページ** のため、
+最重要はLINE公式の中に貼るリンク。LINEのアプリ内ブラウザは参照元を渡さないので、
+UTMなしだと全て「不明（直接アクセス）」になる。
+
 | 貼る場所 | 使うURL |
 |---|---|
-| Instagram プロフィール | `https://www.umigamekyoudaimiyakojima.com/?utm_source=instagram&utm_medium=profile` |
-| Instagram ストーリー/投稿のリンク | `https://www.umigamekyoudaimiyakojima.com/?utm_source=instagram&utm_medium=story` |
-| LINE公式（リッチメニュー・配信） | `https://www.umigamekyoudaimiyakojima.com/?utm_source=line&utm_medium=official` |
+| **LINE公式：リッチメニュー** | `https://www.umigamekyoudaimiyakojima.com/?utm_source=line&utm_medium=richmenu` |
+| **LINE公式：あいさつメッセージ**（友だち追加直後） | `https://www.umigamekyoudaimiyakojima.com/?utm_source=line&utm_medium=greeting` |
+| **LINE公式：一斉配信** | `https://www.umigamekyoudaimiyakojima.com/?utm_source=line&utm_medium=broadcast` |
+| **LINE公式：1対1チャットで案内するとき** | `https://www.umigamekyoudaimiyakojima.com/?utm_source=line&utm_medium=chat` |
 | Googleビジネスプロフィール（マップ） | `https://www.umigamekyoudaimiyakojima.com/?utm_source=gbp&utm_medium=profile` |
-| チラシ・名刺のQRコード | `https://www.umigamekyoudaimiyakojima.com/?utm_source=flyer&utm_medium=qr` |
 | YouTube 概要欄 | `https://www.umigamekyoudaimiyakojima.com/?utm_source=youtube&utm_medium=description` |
+| Instagram プロフィール（直接サイトに飛ばす場合） | `https://www.umigamekyoudaimiyakojima.com/?utm_source=instagram&utm_medium=profile` |
+| Instagram ストーリー/投稿のリンク | `https://www.umigamekyoudaimiyakojima.com/?utm_source=instagram&utm_medium=story` |
+| チラシ・名刺のQRコード | `https://www.umigamekyoudaimiyakojima.com/?utm_source=flyer&utm_medium=qr` |
 | 提携サイト・紹介ブログ | `https://www.umigamekyoudaimiyakojima.com/?utm_source=partner&utm_medium=referral&utm_campaign=相手の名前をローマ字で` |
+
+※ Instagram→LINEの入口が今のところInstagramだけなので、`line / ...` の予約は実質
+「Instagram経由」と読める。InstagramからLINEへの友だち追加リンク（lin.ee等）はLINE側のURLの
+ためUTMは付けられない（付けるのはLINEの中からホームページへ飛ばすリンクの方）。
 
 - トップページ以外に飛ばしたい場合も同じ要領（例: `https://www.umigamekyoudaimiyakojima.com/plans/S1?utm_source=instagram&utm_medium=story`）
 - 新しい貼り先を増やすときは `utm_source=媒体名&utm_medium=場所`（**ローマ字・英数字のみ**。日本語は記録されません）
