@@ -2,6 +2,7 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
+import { GoogleAnalytics } from "@next/third-parties/google"
 import { Suspense } from "react"
 import { RouteScrollManager } from "@/components/route-scroll-manager"
 import { AttributionTracker } from "@/components/attribution-tracker"
@@ -72,6 +73,12 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  // GA4 は本番ビルドかつ測定IDがあるときだけ読み込む（localhost・開発環境は非計測）。
+  // Vercel では NEXT_PUBLIC_GA_MEASUREMENT_ID を Production 環境のみに設定しているため、
+  // プレビューデプロイも自然に計測対象外になる。
+  const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
+  const enableGa = process.env.NODE_ENV === "production" && !!gaId
+
   return (
     <html lang="ja" className={inter.variable} suppressHydrationWarning>
       <head>
@@ -103,6 +110,12 @@ export default function RootLayout({
         {children}
         <Analytics />
       </body>
+      {/*
+        GA4（page_view は自動計測。SPA遷移は GA4 の拡張計測「履歴の変更」が拾うため
+        手動で page_view は送らない＝二重計測を防ぐ）。カスタムイベントは
+        lib/analytics.ts の trackEvent から window.gtag 経由で送信される。
+      */}
+      {enableGa && <GoogleAnalytics gaId={gaId!} />}
     </html>
   )
 }

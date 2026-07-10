@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { BreadcrumbJsonLd } from "@/components/json-ld"
+import { TrackedTel } from "@/components/tracked-cta"
 import { createMetadata, SITE_URL } from "@/lib/seo"
 
 export const metadata: Metadata = createMetadata({
@@ -19,9 +20,9 @@ const ITEMS: Array<{ label: string; value: React.ReactNode }> = [
     label: "電話番号",
     value: (
       <>
-        <a href="tel:08053442439" className="text-emerald-700 underline">
+        <TrackedTel href="tel:08053442439" location="tokushoho" className="text-emerald-700 underline">
           080-5344-2439
-        </a>
+        </TrackedTel>
         （受付時間 7:00〜18:00・年中無休）
       </>
     ),

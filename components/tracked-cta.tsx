@@ -33,3 +33,21 @@ export function TrackedCta({ event, eventProps, href, className, children, exter
     </Link>
   )
 }
+
+type TrackedTelProps = {
+  /** tel: 形式の電話リンク（例 "tel:08053442439"） */
+  href: string
+  /** イベントの出所（footer, faq, tokushoho など） */
+  location: string
+  className?: string
+  children: ReactNode
+}
+
+// 電話番号タップ計測付きリンク。tel: は新規タブを開かずそのまま発信に遷移する。
+export function TrackedTel({ href, location, className, children }: TrackedTelProps) {
+  return (
+    <a href={href} className={className} onClick={() => trackEvent("phone_click", { location })}>
+      {children}
+    </a>
+  )
+}

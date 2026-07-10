@@ -88,7 +88,10 @@ export function FAQSection({ faqs }: { faqs: FAQ[] }) {
                   variant="outline"
                   size="lg"
                   className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 rounded-xl bg-transparent"
-                  onClick={() => window.open("tel:08053442439")}
+                  onClick={() => {
+                    trackEvent("phone_click", { location: "faq" })
+                    window.open("tel:08053442439")
+                  }}
                 >
                   <Phone className="w-5 h-5 mr-2" />
                   電話で問い合わせ

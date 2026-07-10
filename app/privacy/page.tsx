@@ -3,6 +3,7 @@ import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { BreadcrumbJsonLd } from "@/components/json-ld"
 import { createMetadata, SITE_URL } from "@/lib/seo"
+import { TrackedTel } from "@/components/tracked-cta"
 
 export const metadata: Metadata = createMetadata({
   title: "プライバシーポリシー",
@@ -56,6 +57,13 @@ const SECTIONS: Array<{ title: string; body: React.ReactNode }> = [
           <li>予約情報の管理: Google スプレッドシート（Google LLC）</li>
           <li>お客様へのご連絡: LINE（LINEヤフー株式会社）</li>
           <li>サイト利用状況の解析: Vercel Analytics（個人を特定しない統計情報）</li>
+          <li>
+            サイト利用状況の解析: Google アナリティクス（Google LLC）。Cookieを利用してアクセス状況を収集しますが、個人を特定する情報は含まれません。詳細は
+            <a href="https://policies.google.com/technologies/partner-sites?hl=ja" target="_blank" rel="noopener noreferrer" className="text-emerald-700 underline">
+              Googleのポリシーと規約
+            </a>
+            をご確認ください。
+          </li>
         </ul>
       </>
     ),
@@ -82,7 +90,7 @@ const SECTIONS: Array<{ title: string; body: React.ReactNode }> = [
       <p>
         海亀兄弟（〒906-0014 沖縄県宮古島市平良松原107-1）
         <br />
-        電話: <a href="tel:08053442439" className="text-emerald-700 underline">080-5344-2439</a>（7:00〜18:00・年中無休）
+        電話: <TrackedTel href="tel:08053442439" location="privacy" className="text-emerald-700 underline">080-5344-2439</TrackedTel>（7:00〜18:00・年中無休）
         <br />
         メール: <a href="mailto:info@umigamekyoudaimiyakojima.com" className="text-emerald-700 underline break-all">info@umigamekyoudaimiyakojima.com</a>
       </p>

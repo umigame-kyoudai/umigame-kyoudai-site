@@ -6,7 +6,7 @@ import { Footer } from "@/components/footer"
 import { MobileCTA } from "@/components/mobile-cta"
 import { BreadcrumbJsonLd } from "@/components/json-ld"
 import { createMetadata, SITE_URL } from "@/lib/seo"
-import { TrackedCta } from "@/components/tracked-cta"
+import { TrackedCta, TrackedTel } from "@/components/tracked-cta"
 import { PLANS, formatPriceWithTilde } from "@/lib/data"
 import { getEnPrice } from "@/lib/i18n/en-prices"
 import { EN_HOME, EN_PLAN_BY_ID, EN_FAQS } from "@/lib/i18n/en"
@@ -229,13 +229,14 @@ export default function EnglishHomePage() {
                 <Mail className="w-5 h-5" />
                 Email us
               </a>
-              <a
+              <TrackedTel
                 href="tel:08053442439"
+                location="en_home"
                 className="inline-flex items-center justify-center gap-2 bg-white ring-1 ring-emerald-200 hover:bg-emerald-50 text-emerald-700 font-bold px-6 py-3 rounded-full transition-colors"
               >
                 <Phone className="w-5 h-5" />
                 +81-80-5344-2439
-              </a>
+              </TrackedTel>
             </div>
           </div>
         </section>
