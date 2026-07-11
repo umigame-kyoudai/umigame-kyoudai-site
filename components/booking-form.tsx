@@ -223,7 +223,7 @@ export function BookingForm() {
   }, [bookingData, isSubmitted])
 
   // プロフィールは表示専用。予約APIにはサーバー検証用のID tokenだけを送る。
-  const { lineUserId: liffUserId, lineDisplayName: liffDisplayName, lineIdToken, isLiffReady, isLiffLoggedIn, isInClient, liffError, loginLiff, retryLiff, closeWindow } = useLiff()
+  const { lineUserId: liffUserId, lineDisplayName: liffDisplayName, lineIdToken, isLiffReady, isLiffLoggedIn, isInClient, liffError, loginLiff, retryLiff, closeWindow, getFreshLineIdToken, invalidateLineSession } = useLiff()
   const hasFreshLineSession = isLiffLoggedIn && !!liffUserId && !!lineIdToken
 
   // フォーム表示を1回だけ計測（LIFF準備完了時点のログイン状態付き）。
@@ -462,6 +462,14 @@ export function BookingForm() {
       toast.error("このプランは近日公開のため、まだ予約できません")
       return
     }
+
+    // LINEのIDトークンは発行から約1時間で失効し自動更新されないため、送信直前に有効性を確認する。
+    // 期限切れならセッションが破棄され、フォームは自動的にLINEログイン導線へ戻る（入力内容は保存済み）。
+    const freshLineIdToken = getFreshLineIdToken()
+    if (!!process.env.NEXT_PUBLIC_LIFF_ID && !freshLineIdToken) {
+      toast.error("LINEログインの有効期限が切れました。お手数ですが、もう一度LINEログインしてから送信してください（入力内容は保存されています）。")
+      return
+    }
     setIsSubmitting(true)
 
     // 氏名が未入力の参加者は内部的に「参加者1」「参加者2」…として扱う
@@ -497,7 +505,7 @@ export function BookingForm() {
           // 昼夜セットは備考に [COMBO booking] ブロックを付与（...bookingData の specialRequests を上書き）
           specialRequests: finalSpecialRequests,
           // 本人情報は送らず、サーバーがLINE公式APIで検証するID tokenだけを渡す。
-          lineIdToken,
+          lineIdToken: freshLineIdToken,
           planName: selectedPlanData?.name,
           staffName: STAFF_LIST.find((s) => s.id === bookingData.selectedStaff)?.name,
           adultPrice,
@@ -517,6 +525,10 @@ export function BookingForm() {
         data?: { totalPrice?: unknown }
       } | null = await response.json().catch(() => null)
       if (!response.ok || responseData?.success !== true) {
+        if (response.status === 401) {
+          // サーバーがLINE認証を拒否 → 古いセッションを破棄してログイン導線へ戻す
+          invalidateLineSession()
+        }
         const publicErrorMessage =
           response.status < 500 && responseData?.error
             ? responseData.error

@@ -14,6 +14,8 @@ interface LiffContextType {
   loginLiff: () => void
   retryLiff: () => void
   closeWindow: () => void
+  getFreshLineIdToken: () => string | null
+  invalidateLineSession: () => void
 }
 
 const LiffContext = createContext<LiffContextType>({
@@ -27,6 +29,8 @@ const LiffContext = createContext<LiffContextType>({
   loginLiff: () => {},
   retryLiff: () => {},
   closeWindow: () => {},
+  getFreshLineIdToken: () => null,
+  invalidateLineSession: () => {},
 })
 
 export const useLiff = () => useContext(LiffContext)
@@ -45,6 +49,28 @@ function clearLegacyLiffStorage(): void {
 
 // LIFFモジュールをキャッシュ
 let liffInstance: Liff | null = null
+
+// LINEのIDトークンは発行から約1時間で失効するが、LIFFはセッションが残っていても
+// IDトークンを自動更新しない。そのまま送信するとサーバー検証(/oauth2/v2.1/verify)で
+// 必ず拒否されるため、残り時間がこの秒数を切ったら期限切れとして扱い再ログインへ誘導する。
+const ID_TOKEN_MIN_REMAINING_SECONDS = 60
+
+// ログイン済みLIFFセッションから「検証に通る見込みのある」IDトークンだけを取り出す。
+// 期限切れ・取得不能なら null。
+const readValidIdToken = (liff: Liff): string | null => {
+  try {
+    if (!liff.isLoggedIn()) return null
+    const idToken = liff.getIDToken()
+    const exp = liff.getDecodedIDToken()?.exp
+    const nowInSeconds = Math.floor(Date.now() / 1000)
+    if (!idToken || typeof exp !== "number" || exp <= nowInSeconds + ID_TOKEN_MIN_REMAINING_SECONDS) {
+      return null
+    }
+    return idToken
+  } catch {
+    return null
+  }
+}
 
 export function LiffProvider({ children }: { children: ReactNode }) {
   const [lineUserId, setLineUserId] = useState<string | null>(null)
@@ -95,22 +121,26 @@ export function LiffProvider({ children }: { children: ReactNode }) {
 
       // 既にログイン済みならプロフィールを取得
       if (liff.isLoggedIn()) {
-        setIsLiffLoggedIn(true)
-        try {
-          const profile = await liff.getProfile()
-          const idToken = liff.getIDToken()
-          if (!idToken) {
-            throw new Error("LINE認証トークンを取得できませんでした。")
-          }
-          setLineUserId(profile.userId)
-          setLineDisplayName(profile.displayName)
-          setLineIdToken(idToken)
-        } catch (profileError) {
-          // プロフィール取得失敗（トークン期限切れ等）
-          // ログアウトしてリセット（次回ユーザーが手動でログインできるように）
+        const idToken = readValidIdToken(liff)
+        if (!idToken) {
+          // IDトークン期限切れ（LIFFは自動更新しない）。エラーではなく未ログイン扱いに戻し、
+          // 通常のLINEログインボタンから再ログインしてもらう。
           try { liff.logout() } catch {}
           clearLiffIdentity()
-          setLiffError("LINE情報の取得に失敗しました。再度ログインしてください。")
+        } else {
+          setIsLiffLoggedIn(true)
+          try {
+            const profile = await liff.getProfile()
+            setLineUserId(profile.userId)
+            setLineDisplayName(profile.displayName)
+            setLineIdToken(idToken)
+          } catch (profileError) {
+            // プロフィール取得失敗（アクセストークン失効等）
+            // ログアウトしてリセット（次回ユーザーが手動でログインできるように）
+            try { liff.logout() } catch {}
+            clearLiffIdentity()
+            setLiffError("LINE情報の取得に失敗しました。再度ログインしてください。")
+          }
         }
       } else {
         clearLiffIdentity()
@@ -157,8 +187,26 @@ export function LiffProvider({ children }: { children: ReactNode }) {
     try { liffInstance?.closeWindow?.() } catch {}
   }
 
+  // サーバーがLINE認証を拒否(401)したとき等に呼び、「連携済み」の見た目をやめてログイン導線へ戻す
+  const invalidateLineSession = useCallback(() => {
+    try { liffInstance?.logout() } catch {}
+    clearLiffIdentity()
+  }, [clearLiffIdentity])
+
+  // 予約送信の直前に呼ぶ。ページ表示後に時間が経つとIDトークンが失効している場合があるため、
+  // その時点で有効なトークンだけを返す。期限切れならセッションを破棄して null（UIはログイン導線に戻る）。
+  const getFreshLineIdToken = useCallback((): string | null => {
+    if (!liffInstance) return null
+    const idToken = readValidIdToken(liffInstance)
+    if (!idToken) {
+      invalidateLineSession()
+      return null
+    }
+    return idToken
+  }, [invalidateLineSession])
+
   return (
-    <LiffContext.Provider value={{ lineUserId, lineDisplayName, lineIdToken, isLiffReady, isLiffLoggedIn, isInClient, liffError, loginLiff, retryLiff, closeWindow }}>
+    <LiffContext.Provider value={{ lineUserId, lineDisplayName, lineIdToken, isLiffReady, isLiffLoggedIn, isInClient, liffError, loginLiff, retryLiff, closeWindow, getFreshLineIdToken, invalidateLineSession }}>
       {children}
     </LiffContext.Provider>
   )

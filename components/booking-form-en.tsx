@@ -84,7 +84,7 @@ function loadEnBookingDraft(): EnBookingDraft | null {
 
 export function BookingFormEn() {
   const searchParams = useSearchParams()
-  const { lineIdToken, isLiffReady, isLiffLoggedIn, loginLiff, liffError } = useLiff()
+  const { lineIdToken, isLiffReady, isLiffLoggedIn, loginLiff, liffError, getFreshLineIdToken, invalidateLineSession } = useLiff()
   const liffRequired = !!process.env.NEXT_PUBLIC_LIFF_ID
   const hasFreshLineSession = isLiffLoggedIn && !!lineIdToken
 
@@ -262,6 +262,15 @@ export function BookingFormEn() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!plan || !en) return
+
+    // LINE ID tokens expire ~1 hour after login and LIFF never refreshes them,
+    // so validate right before sending. On expiry the session is cleared and the
+    // form falls back to the LINE login prompt (entries are auto-saved).
+    const freshLineIdToken = getFreshLineIdToken()
+    if (liffRequired && !freshLineIdToken) {
+      toast.error("Your LINE login has expired. Please log in with LINE again and resend — your entries are saved.")
+      return
+    }
     setIsSubmitting(true)
     try {
       const response = await fetch("/api/booking", {
@@ -285,7 +294,7 @@ export function BookingFormEn() {
           specialRequests: specialRequests.trim()
             ? `[EN booking] ${specialRequests.trim()}`
             : "[EN booking] Booked via English site",
-          lineIdToken,
+          lineIdToken: freshLineIdToken,
           couponCode,
           couponDiscount,
           // 流入元（どのリンク経由か）。管理者メール・カレンダーの備考に [流入元] として載る
@@ -297,6 +306,12 @@ export function BookingFormEn() {
         data?: { totalPrice?: unknown }
       } | null = await response.json().catch(() => null)
       if (!response.ok || responseData?.success !== true) {
+        if (response.status === 401) {
+          // The server rejected the LINE credentials → drop the stale session
+          // so the form shows the LINE login prompt again.
+          invalidateLineSession()
+          throw new Error("Your LINE login has expired. Please log in with LINE again and resend — your entries are saved.")
+        }
         throw new Error(
           "We couldn't send your booking request. Please try again in a little while, or message us on LINE."
         )
