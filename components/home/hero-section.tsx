@@ -27,7 +27,7 @@ export function HeroSection() {
           fill
           priority
           fetchPriority="high"
-          quality={80}
+          quality={68}
           placeholder="blur"
           blurDataURL={BLUR_DATA_URLS.turtle}
           className="object-cover object-[54%_48%] sm:object-center"

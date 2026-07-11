@@ -81,12 +81,12 @@ export default function Navbar({ locale = "ja" }: { locale?: "ja" | "en" }) {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-5 lg:space-x-8">
+          <div className="hidden xl:flex items-center gap-4 2xl:gap-7">
             {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className="text-gray-700 hover:text-emerald-600 transition-colors font-medium"
+                className="whitespace-nowrap text-sm 2xl:text-base text-gray-700 hover:text-emerald-600 transition-colors font-medium"
               >
                 {item.label}
               </Link>
@@ -94,7 +94,7 @@ export default function Navbar({ locale = "ja" }: { locale?: "ja" | "en" }) {
           </div>
 
           {/* Desktop CTA Buttons */}
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="hidden xl:flex items-center gap-3">
             <Link
               href={t.switchHref}
               className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-emerald-600 transition-colors"
@@ -111,13 +111,13 @@ export default function Navbar({ locale = "ja" }: { locale?: "ja" | "en" }) {
               <MessageSquare className="w-4 h-4 mr-2" />
               {t.line}
             </Button>
-            <Button asChild className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl px-6">
+            <Button asChild className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl px-4 2xl:px-6">
               <Link href={t.bookHref} onClick={handleBookClick}>{t.book}</Link>
             </Button>
           </div>
 
           {/* Mobile Menu Button */}
-          <div className="md:hidden flex-shrink-0 ml-2 flex items-center gap-1">
+          <div className="xl:hidden flex-shrink-0 ml-2 flex items-center gap-1">
             <Link
               href={t.switchHref}
               className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-gray-500 hover:text-emerald-600 transition-colors"
@@ -139,7 +139,7 @@ export default function Navbar({ locale = "ja" }: { locale?: "ja" | "en" }) {
 
         {/* Mobile Navigation Menu */}
         {isOpen && (
-          <div className="md:hidden">
+          <div className="xl:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 bg-white/95 backdrop-blur-xl rounded-lg mt-2 border border-emerald-100">
               {navItems.map((item) => (
                 <Link

@@ -24,6 +24,7 @@ import { ComingSoonBadge } from "@/components/coming-soon"
 import { ADULT_PRICE, BOOKING_PLANS, CHILD_PRICE } from "@/lib/booking-plans"
 import { getStaffFee } from "@/lib/data"
 import { getPlanPriceDisplay, getPlanCode } from "@/lib/plan-price-display"
+import { getPlanMaxParticipants } from "@/lib/booking-rules"
 import {
   COMBO_TURTLE_TIMES,
   COMBO_NIGHT_TIMES,
@@ -35,6 +36,7 @@ import {
   planHasSup,
   planHasNight,
   getComboContentText,
+  isParticipantAgeValid,
 } from "@/lib/plan-flags"
 
 // 予約確定の連絡はLINE公式アカウントからのプッシュ通知で届く。
@@ -172,31 +174,37 @@ export function BookingForm() {
 
   // 初期値にはLINEログインのリダイレクト前に保存した下書きを復元する
   // （このフォームはSuspense配下のクライアント描画のため、初期化はブラウザでのみ走る）
-  const [bookingData, setBookingData] = useState<BookingData>(() => ({
-    selectedPlan: "",
-    selectedDate: "",
-    selectedTime: "",
-    nightTime: "",
-    adultCount: 0,
-    childCount: 0,
-    under3Count: 0,
-    participants: [],
-    selectedStaff: "",
-    selectedDuration: "5h",
-    customerName: "",
-    customerEmail: "",
-    customerPhone: "",
-    specialRequests: "",
-    agreedToTerms: false,
-    couponCode: "",
-    couponDiscount: 0,
-    ...(loadBookingDraft() ?? {}),
-  }))
+  const [bookingData, setBookingData] = useState<BookingData>(() => {
+    const restoredDraft = loadBookingDraft() ?? {}
+    return {
+      selectedPlan: "",
+      selectedDate: "",
+      selectedTime: "",
+      nightTime: "",
+      adultCount: 0,
+      childCount: 0,
+      under3Count: 0,
+      participants: [],
+      selectedStaff: "",
+      selectedDuration: "5h",
+      customerName: "",
+      customerEmail: "",
+      customerPhone: "",
+      specialRequests: "",
+      agreedToTerms: false,
+      couponCode: "",
+      ...restoredDraft,
+      // 人数・プランと紐づく割引額は保存値を信用せず、必ず再検証する。
+      couponDiscount: 0,
+    }
+  })
 
   const [totalPrice, setTotalPrice] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [confirmedPricing, setConfirmedPricing] = useState<{ totalPrice: number; couponDiscount: number } | null>(null)
+  const appliedCouponRef = useRef<{ code: string; signature: string } | null>(null)
 
   // 送信完了画面が出たら見出しへフォーカスを移す（読み上げ・キーボード利用者に完了を確実に伝える）
   const successHeadingRef = useRef<HTMLHeadingElement>(null)
@@ -243,6 +251,10 @@ export function BookingForm() {
 
   const selectedPlanData = BOOKING_PLANS.find((plan) => plan.id === bookingData.selectedPlan)
   const selectedPlanIsComingSoon = selectedPlanData?.status === "coming_soon"
+  const maxParticipants = getPlanMaxParticipants(bookingData.selectedPlan)
+  const totalParticipantCount = bookingData.adultCount + bookingData.childCount + bookingData.under3Count
+  const isOverParticipantLimit = maxParticipants !== undefined && totalParticipantCount > maxParticipants
+  const isParticipantLimitReached = maxParticipants !== undefined && totalParticipantCount >= maxParticipants
 
   const getCurrentPrices = () => {
     if (!selectedPlanData) {
@@ -354,7 +366,7 @@ export function BookingForm() {
         participants: newParticipants,
       }))
     }
-  }, [bookingData.adultCount, bookingData.childCount, bookingData.under3Count, createParticipants])
+  }, [bookingData.adultCount, bookingData.childCount, bookingData.under3Count, bookingData.participants, createParticipants])
 
   const isNightHunterPlan = bookingData.selectedPlan === "S3" || bookingData.selectedPlan === "S4" || bookingData.selectedPlan === "S5" || bookingData.selectedPlan === "S6" || bookingData.selectedPlan === "S7" || bookingData.selectedPlan === "slide-boat"
   const isUnder3FreePlan = bookingData.selectedPlan === "S3" || bookingData.selectedPlan === "S5"
@@ -407,7 +419,7 @@ export function BookingForm() {
       // プランごとに選べる時間枠が違うため、プラン切替時は選択済みの時間を破棄する
       // （残すと、切替後の枠に無い時刻のままサーバー検証で弾かれてしまう）
       if (field === "selectedPlan" && value !== prev.selectedPlan) {
-        return { ...prev, selectedPlan: value, selectedTime: "", nightTime: "" }
+        return { ...prev, selectedPlan: value, selectedTime: "", nightTime: "", couponDiscount: 0 }
       }
       return {
         ...prev,
@@ -433,17 +445,79 @@ export function BookingForm() {
       })
       const result = await response.json().catch(() => ({ valid: false, discount: 0 }))
       if (response.ok && result.valid) {
+        const normalizedCode = bookingData.couponCode.trim()
+        appliedCouponRef.current = {
+          code: normalizedCode,
+          signature: `${bookingData.selectedPlan}|${bookingData.adultCount}|${bookingData.childCount}`,
+        }
         setBookingData((prev) => ({ ...prev, couponDiscount: result.discount }))
       } else {
+        appliedCouponRef.current = null
         setBookingData((prev) => ({ ...prev, couponDiscount: 0 }))
         toast.error(result.error || "クーポンコードが正しくありません")
       }
     } catch {
+      appliedCouponRef.current = null
       setBookingData((prev) => ({ ...prev, couponDiscount: 0 }))
       toast.error("クーポンの確認に失敗しました。通信環境をご確認ください。")
     } finally {
       setIsApplyingCoupon(false)
     }
+  }
+
+  // 適用後に人数やプランが変わったら、同じコードをサーバーで再計算する。
+  useEffect(() => {
+    const appliedCoupon = appliedCouponRef.current
+    if (!appliedCoupon) return
+
+    const signature = `${bookingData.selectedPlan}|${bookingData.adultCount}|${bookingData.childCount}`
+    if (signature === appliedCoupon.signature) return
+
+    let cancelled = false
+    const timer = window.setTimeout(async () => {
+      setIsApplyingCoupon(true)
+      try {
+        const response = await fetch("/api/coupon", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            couponCode: appliedCoupon.code,
+            adultCount: bookingData.adultCount,
+            childCount: bookingData.childCount,
+            planId: bookingData.selectedPlan,
+          }),
+        })
+        const result = await response.json().catch(() => ({ valid: false, discount: 0 }))
+        if (cancelled) return
+
+        if (response.ok && result.valid) {
+          appliedCouponRef.current = { ...appliedCoupon, signature }
+          setBookingData((prev) => ({ ...prev, couponDiscount: result.discount }))
+        } else {
+          appliedCouponRef.current = null
+          setBookingData((prev) => ({ ...prev, couponDiscount: 0 }))
+          toast.error(result.error || "条件変更後はこのクーポンを利用できません")
+        }
+      } catch {
+        if (!cancelled) {
+          appliedCouponRef.current = null
+          setBookingData((prev) => ({ ...prev, couponDiscount: 0 }))
+          toast.error("クーポンの再計算に失敗しました。もう一度適用してください")
+        }
+      } finally {
+        if (!cancelled) setIsApplyingCoupon(false)
+      }
+    }, 200)
+
+    return () => {
+      cancelled = true
+      window.clearTimeout(timer)
+    }
+  }, [bookingData.adultCount, bookingData.childCount, bookingData.selectedPlan])
+
+  const handleCouponCodeChange = (value: string) => {
+    appliedCouponRef.current = null
+    setBookingData((prev) => ({ ...prev, couponCode: value, couponDiscount: 0 }))
   }
 
   const handleParticipantChange = (participantId: string, field: keyof ParticipantDetails, value: any) => {
@@ -456,9 +530,15 @@ export function BookingForm() {
   }
 
   const handleCountChange = (field: "adultCount" | "childCount" | "under3Count", increment: boolean) => {
+    if (increment && isParticipantLimitReached) {
+      toast.error(`Web予約は最大${maxParticipants}名までです。11名以上はLINEでご相談ください`)
+      return
+    }
     setBookingData((prev) => ({
       ...prev,
       [field]: Math.max(0, prev[field] + (increment ? 1 : -1)),
+      // 次のeffectで新しい人数に合わせてサーバー再計算するまで古い額を表示しない。
+      couponDiscount: appliedCouponRef.current ? 0 : prev.couponDiscount,
     }))
   }
 
@@ -528,7 +608,7 @@ export function BookingForm() {
       const responseData: {
         success?: boolean
         error?: string
-        data?: { totalPrice?: unknown }
+        data?: { totalPrice?: unknown; couponDiscount?: unknown }
       } | null = await response.json().catch(() => null)
       if (!response.ok || responseData?.success !== true) {
         if (response.status === 401) {
@@ -550,6 +630,13 @@ export function BookingForm() {
         responseData.data.totalPrice >= 0
           ? responseData.data.totalPrice
           : totalPrice
+      const confirmedCouponDiscount =
+        typeof responseData.data?.couponDiscount === "number" &&
+        Number.isFinite(responseData.data.couponDiscount) &&
+        responseData.data.couponDiscount >= 0
+          ? responseData.data.couponDiscount
+          : bookingData.couponDiscount
+      setConfirmedPricing({ totalPrice: confirmedTotalPrice, couponDiscount: confirmedCouponDiscount })
       trackEvent("booking_submitted", {
         locale: "ja",
         plan: bookingData.selectedPlan,
@@ -587,16 +674,15 @@ export function BookingForm() {
     bookingData.selectedDate &&
     (getPlanType(bookingData.selectedPlan) === "sunset-sup" || bookingData.selectedTime) &&
     comboTimesSelected &&
-    (bookingData.adultCount > 0 || bookingData.childCount > 0 || bookingData.under3Count > 0) &&
+    bookingData.adultCount > 0 &&
+    !isOverParticipantLimit &&
     bookingData.customerName &&
     bookingData.customerPhone &&
     bookingData.agreedToTerms &&
     !selectedPlanIsComingSoon &&
     !hasSeniorOnRegularSnorkel &&
     bookingData.participants.every((p) => {
-      // 年齢は全プランで必須（氏名・身長・体重は任意）。3歳以下は0歳も有効
-      const minValidAge = p.category === "under3" ? 0 : 1
-      if (typeof p.age !== "number" || p.age < minValidAge) {
+      if (!isParticipantAgeValid(bookingData.selectedPlan, p.category, p.age)) {
         return false
       }
 
@@ -623,10 +709,14 @@ export function BookingForm() {
   }
   if (bookingData.adultCount + bookingData.childCount + bookingData.under3Count === 0) {
     missingItems.push("参加人数の選択")
+  } else if (bookingData.adultCount === 0) {
+    missingItems.push("大人（13歳以上）を1名以上含める")
+  }
+  if (isOverParticipantLimit && maxParticipants !== undefined) {
+    missingItems.push(`参加人数を${maxParticipants}名以下にする（11名以上はLINE相談）`)
   }
   bookingData.participants.forEach((p, index) => {
-    const minValidAge = p.category === "under3" ? 0 : 1
-    if (typeof p.age !== "number" || p.age < minValidAge) missingItems.push(`参加者${index + 1}の年齢`)
+    if (!isParticipantAgeValid(bookingData.selectedPlan, p.category, p.age)) missingItems.push(`参加者${index + 1}の年齢・年齢区分`)
     if (!isNightTourForDetails && !(typeof p.footSize === "number" && p.footSize > 0)) {
       missingItems.push(`参加者${index + 1}の足のサイズ`)
     }
@@ -682,7 +772,10 @@ export function BookingForm() {
               {(selectedPlanData?.vipSurcharge ?? 0) > 0 && (
                 <p className="text-orange-600">貸切追加料金: ¥{selectedPlanData!.vipSurcharge!.toLocaleString()}</p>
               )}
-              <p className="font-semibold text-emerald-800">合計金額: ¥{totalPrice.toLocaleString()}</p>
+              {((confirmedPricing?.couponDiscount ?? bookingData.couponDiscount) > 0) && (
+                <p className="text-emerald-700">クーポン割引: -¥{(confirmedPricing?.couponDiscount ?? bookingData.couponDiscount).toLocaleString()}</p>
+              )}
+              <p className="font-semibold text-emerald-800">合計金額: ¥{(confirmedPricing?.totalPrice ?? totalPrice).toLocaleString()}</p>
               <p className="text-emerald-700">お支払い方法: 現地現金決済（ツアー当日・現金）</p>
             </div>
           </div>
@@ -1361,13 +1454,11 @@ export function BookingForm() {
             </div>
           )}
 
-          {bookingData.selectedPlan === "S2" && (
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
-              <p className="text-sm text-blue-800">
-                <strong>【貸切】ウミガメシュノーケルツアーについて：</strong><br />
-                • 料金：¥9,000 / 1名<br />
-                • 最大6名まで承ります<br />
-                • 7名以上の場合はLINEよりご相談ください
+          {maxParticipants !== undefined && (
+            <div className={`rounded-xl border p-4 ${isOverParticipantLimit ? "border-red-200 bg-red-50" : "border-blue-200 bg-blue-50"}`}>
+              <p className={`text-sm ${isOverParticipantLimit ? "text-red-800" : "text-blue-800"}`}>
+                Web予約は最大{maxParticipants}名までです。現在{totalParticipantCount}名。
+                11名以上はLINEでご相談ください。
               </p>
             </div>
           )}
@@ -1396,6 +1487,7 @@ export function BookingForm() {
                   variant="outline"
                   size="sm"
                   onClick={() => handleCountChange("adultCount", true)}
+                  disabled={isParticipantLimitReached}
                   className="rounded-full w-10 h-10 border-emerald-200 text-emerald-700 hover:bg-emerald-50"
                 >
                   +
@@ -1426,6 +1518,7 @@ export function BookingForm() {
                   variant="outline"
                   size="sm"
                   onClick={() => handleCountChange("childCount", true)}
+                  disabled={isParticipantLimitReached}
                   className="rounded-full w-10 h-10 border-emerald-200 text-emerald-700 hover:bg-emerald-50"
                 >
                   +
@@ -1459,6 +1552,7 @@ export function BookingForm() {
                     variant="outline"
                     size="sm"
                     onClick={() => handleCountChange("under3Count", true)}
+                    disabled={isParticipantLimitReached}
                     className="rounded-full w-10 h-10 border-emerald-200 text-emerald-700 hover:bg-emerald-50"
                   >
                     +
@@ -1543,7 +1637,7 @@ export function BookingForm() {
                     <div className="flex gap-2">
                       <Input
                         value={bookingData.couponCode}
-                        onChange={(e) => handleInputChange("couponCode", e.target.value)}
+                        onChange={(e) => handleCouponCodeChange(e.target.value)}
                         className="rounded-xl border-emerald-200 focus:border-emerald-500"
                       />
                       <Button
@@ -1696,7 +1790,7 @@ export function BookingForm() {
             <Checkbox
               id="terms"
               checked={bookingData.agreedToTerms}
-              onCheckedChange={(checked) => handleInputChange("agreedToTerms", checked)}
+              onCheckedChange={(checked) => handleInputChange("agreedToTerms", checked === true)}
               className="mt-1"
             />
             <Label htmlFor="terms" className="text-sm text-gray-600 leading-relaxed">

@@ -1,5 +1,6 @@
 import { PLAN_DETAILS } from "@/lib/plan-details"
 import { PLAN_PRICE_DATA } from "@/lib/plan-price-display"
+import { getPlanMaxParticipants } from "@/lib/booking-rules"
 
 export const STAFF_FEE = 1000
 export const ADULT_PRICE = PLAN_PRICE_DATA.S1.price
@@ -13,6 +14,7 @@ export interface BookingPlanSummary {
   price: number
   childPrice?: number
   vipSurcharge?: number
+  maxParticipants?: number
   durationHours: number
   rating: number
   features: string[]
@@ -33,6 +35,9 @@ export const BOOKING_PLANS = Object.values(PLAN_DETAILS).reduce<BookingPlanSumma
     price: price.price,
     ...(price.childPrice ? { childPrice: price.childPrice } : {}),
     vipSurcharge: 0,
+    ...(getPlanMaxParticipants(plan.id) !== undefined
+      ? { maxParticipants: getPlanMaxParticipants(plan.id) }
+      : {}),
     durationHours,
     rating: plan.rating,
     features: plan.highlights.map((highlight) => highlight.title),

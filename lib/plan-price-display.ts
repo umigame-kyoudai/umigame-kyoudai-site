@@ -62,7 +62,7 @@ export function getPlanPriceDisplay(planId: string): PlanPriceDisplay | null {
   } else if (UNDER3_FREE_PLAN_IDS.has(planId)) {
     caption = "3歳以下無料"
   } else if (planId === "S2") {
-    caption = "1名あたり・最大6名まで"
+    caption = "1名あたり・最大10名まで"
   } else if (planId === "S6") {
     caption = "ドローン撮影付き"
   } else if (planId === "S7") {

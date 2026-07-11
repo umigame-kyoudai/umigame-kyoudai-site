@@ -71,7 +71,7 @@ const tours: Tour[] = [
         id: "S2",
         label: "貸切プラン",
         price: "¥9,000/人",
-        priceNote: "1人あたり（最大6名）",
+        priceNote: "1人あたり（最大10名）",
         highlights: ["完全貸切・専属ガイド", "ウェットスーツ無料", "度付きメガネ無料", "こだわりの撮影"],
         included: ["全器材一式", "ウェットスーツ", "度付きメガネ", "写真・動画データ", "保険"],
       },
@@ -396,13 +396,6 @@ function TourImageCarousel({ tour, isComingSoon }: { tour: Tour; isComingSoon: b
   const images = tour.images?.length ? tour.images : [tour.image]
   const hasMultipleImages = images.length > 1
 
-  const updateActiveImage = () => {
-    const el = imageScrollRef.current
-    if (!el) return
-    const nextIndex = Math.round(el.scrollLeft / Math.max(el.clientWidth, 1))
-    setActiveImage(Math.min(Math.max(nextIndex, 0), images.length - 1))
-  }
-
   const scrollImageTo = (index: number) => {
     const el = imageScrollRef.current
     if (!el) return
@@ -417,6 +410,12 @@ function TourImageCarousel({ tour, isComingSoon }: { tour: Tour; isComingSoon: b
   useEffect(() => {
     const el = imageScrollRef.current
     if (!el) return
+
+    const updateActiveImage = () => {
+      const nextIndex = Math.round(el.scrollLeft / Math.max(el.clientWidth, 1))
+      setActiveImage(Math.min(Math.max(nextIndex, 0), images.length - 1))
+    }
+
     el.addEventListener("scroll", updateActiveImage, { passive: true })
     updateActiveImage()
     return () => el.removeEventListener("scroll", updateActiveImage)
@@ -667,7 +666,52 @@ export function PlansSection() {
         </div>
 
         <div className="px-5 sm:px-6 lg:px-8 mb-8">
-          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+          {/* 360〜767pxは4列表に押し込まず、1プランずつ読めるカードにする。 */}
+          <div className="space-y-3 md:hidden">
+            {quickCompare.map((item) => {
+              const priceDisplay = getPlanPriceDisplay(item.id)
+
+              return (
+                <Link
+                  key={item.name}
+                  href={item.status === "coming_soon" ? `/plans/${item.id}#coming-soon` : `/plans/${item.id}`}
+                  className="block rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-colors active:bg-emerald-50"
+                >
+                  <div className="mb-3 flex items-start justify-between gap-3">
+                    <div>
+                      <span className="mr-2 inline-block rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-gray-600">
+                        {getPlanCode(item.id)}
+                      </span>
+                      <h3 className="mt-1 text-base font-bold text-gray-900">{item.name}</h3>
+                    </div>
+                    {item.status === "coming_soon" && <ComingSoonBadge className="shrink-0 px-2 py-1 text-[10px]" />}
+                  </div>
+
+                  <div className="mb-3 flex flex-wrap gap-2">
+                    {priceDisplay?.rows.map((row) => (
+                      <span key={row.label} className="rounded-full bg-emerald-50 px-3 py-1 text-sm font-bold text-emerald-800">
+                        {row.label}{row.price}
+                      </span>
+                    ))}
+                    {priceDisplay?.caption && <span className="w-full text-xs text-gray-500">{priceDisplay.caption}</span>}
+                  </div>
+
+                  <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                    <div>
+                      <dt className="text-xs font-semibold text-gray-500">対象・所要</dt>
+                      <dd className="mt-0.5 text-gray-800">{item.age}<span className="block">{item.time}</span></dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs font-semibold text-gray-500">おすすめ</dt>
+                      <dd className="mt-0.5 text-gray-800">{item.bestFor}</dd>
+                    </div>
+                  </dl>
+                </Link>
+              )
+            })}
+          </div>
+
+          <div className="hidden overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm md:block">
             <div className="grid grid-cols-4 bg-emerald-900 text-white text-[11px] sm:text-sm font-bold">
               <div className="p-3 sm:p-4">ツアー</div>
               <div className="p-3 sm:p-4">料金</div>

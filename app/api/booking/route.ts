@@ -4,6 +4,7 @@ import { validateEmail, validatePhoneNumber, validateRequired } from '@/lib/util
 import { PLANS, getStaffFee } from '@/lib/data'
 import { calculateCouponDiscount } from '@/lib/constants/coupons'
 import { getEnPrice } from '@/lib/i18n/en-prices'
+import { validateBookingRules } from '@/lib/booking-rules'
 import {
   LineVerificationError,
   verifyLineIdToken,
@@ -23,6 +24,7 @@ import {
   planHasSup,
   planHasNight,
   getComboContentText,
+  isParticipantAgeValid,
 } from '@/lib/plan-flags'
 
 interface BookingParticipant {
@@ -52,6 +54,7 @@ interface BookingRequest {
   lineIdToken?: string | null
   couponCode?: string
   couponDiscount?: number
+  agreedToTerms?: boolean
   attribution?: {
     source?: string
     medium?: string
@@ -139,22 +142,8 @@ const validateParticipant = (
     return { valid: false, error: `${label}の年齢が必須です` }
   }
 
-  if (category === 'adult' && (age < 13 || age > 100)) {
-    return { valid: false, error: `${label}の年齢と大人区分が一致していません` }
-  }
-
-  const childMinAge = isNightTourPlan(plan.id) ? 4 : 5
-  if (category === 'child' && (age < childMinAge || age > 12)) {
-    return { valid: false, error: `${label}の年齢と子ども区分が一致していません` }
-  }
-
-  if (category === 'under3') {
-    if (!FREE_UNDER3_PLAN_IDS.has(plan.id)) {
-      return { valid: false, error: '3歳以下のお子様が参加できるのはナイトツアーのみです' }
-    }
-    if (age < 0 || age > 3) {
-      return { valid: false, error: `${label}の年齢と3歳以下区分が一致していません` }
-    }
+  if (!isParticipantAgeValid(plan.id, category, age)) {
+    return { valid: false, error: `${label}の年齢と参加者区分が一致していません` }
   }
 
   if (SENIOR_RESTRICTED_PLAN_IDS.has(plan.id) && age >= 60) {
@@ -231,9 +220,19 @@ const validateBookingRequest = (data: BookingRequest): { valid: boolean; error?:
     return { valid: false, error: '参加者情報が必要です' }
   }
 
-  const { adultCount } = countParticipantsByCategory(participants)
-  if (adultCount === 0) {
+  const bookingRuleIssue = validateBookingRules({
+    planId: plan.id,
+    participants,
+    agreedToTerms: data.agreedToTerms,
+  })
+  if (bookingRuleIssue?.code === 'ADULT_REQUIRED') {
     return { valid: false, error: '参加者には大人を1名以上含めてください' }
+  }
+  if (bookingRuleIssue?.code === 'MAX_PARTICIPANTS') {
+    return { valid: false, error: `Web予約は最大${bookingRuleIssue.maxParticipants}名までです。11名以上はLINEでご相談ください` }
+  }
+  if (bookingRuleIssue?.code === 'TERMS_REQUIRED') {
+    return { valid: false, error: '利用規約とキャンセルポリシーへの同意が必要です' }
   }
 
   for (const [index, participant] of participants.entries()) {

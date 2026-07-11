@@ -13,6 +13,17 @@ import { EN_PLAN_BY_ID, EN_PLANS } from "@/lib/i18n/en"
 import { getEnPrice, EN_PRICE_SUPPORT_NOTE } from "@/lib/i18n/en-prices"
 import { Clock, Users, MapPin, CalendarCheck, Check, AlertTriangle, Backpack, Camera } from "lucide-react"
 
+const EN_PLAN_META_TITLES: Record<string, string> = {
+  S1: "Sea Turtle Snorkeling | Sea Turtle Brothers",
+  S2: "Private Sea Turtle Snorkeling | Sea Turtle Brothers",
+  S3: "Jungle Night Tour | Sea Turtle Brothers",
+  S4: "Sunset SUP Tour | Sea Turtle Brothers",
+  S5: "Private Jungle Night Tour | Sea Turtle Brothers",
+  S6: "Drone SUP in Miyakojima | Sea Turtle Brothers",
+  S7: "Private Drone SUP in Miyakojima | Sea Turtle Brothers",
+  "slide-boat": "Slider Boat Snorkeling | Sea Turtle Brothers",
+}
+
 export function generateStaticParams() {
   return EN_PLANS.map((plan) => ({ id: plan.id }))
 }
@@ -21,7 +32,7 @@ export function generateMetadata({ params }: { params: { id: string } }): Metada
   const en = EN_PLAN_BY_ID[params.id]
   if (!en) return {}
   return createMetadata({
-    title: `${en.name} | Sea Turtle Brothers Miyakojima`,
+    title: EN_PLAN_META_TITLES[params.id] ?? `${en.name} | Sea Turtle Brothers`,
     description: en.tagline,
     path: `/en/plans/${params.id}`,
     locale: "en",

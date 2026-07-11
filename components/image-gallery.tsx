@@ -75,7 +75,7 @@ function Lightbox({ images, index, onClose, onPrev, onNext, onSelect }: {
       role="dialog"
       aria-modal="true"
       aria-label={`写真の拡大表示: ${img.title}`}
-      className="fixed inset-0 z-50 bg-black/95 flex flex-col"
+      className="fixed inset-0 z-[100] bg-black/95 flex flex-col"
       onClick={onClose}
     >
       {/* Header */}

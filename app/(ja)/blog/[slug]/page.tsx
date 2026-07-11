@@ -4,6 +4,9 @@ import { BlogPostingJsonLd, BreadcrumbJsonLd } from "@/components/json-ld"
 import { getBlogPost, getBlogPostCta, getBlogPostSummaries, getRelatedBlogPostSummaries } from "@/lib/blog"
 import { createMetadata, SITE_URL } from "@/lib/seo"
 
+// Markdownに存在するslugだけを公開し、未知slugは確実にHTTP 404にする。
+export const dynamicParams = false
+
 export async function generateStaticParams() {
   return getBlogPostSummaries().map((post) => ({
     slug: post.id,

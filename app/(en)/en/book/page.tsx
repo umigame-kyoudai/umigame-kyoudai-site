@@ -4,6 +4,7 @@ import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { MobileCTA } from "@/components/mobile-cta"
 import { BookingFormEn } from "@/components/booking-form-en"
+import { BookingFormSkeleton } from "@/components/booking-form-skeleton"
 import { LiffProvider } from "@/components/liff-provider"
 import { createMetadata } from "@/lib/seo"
 import { Toaster } from "sonner"
@@ -12,7 +13,7 @@ export const metadata: Metadata = {
   ...createMetadata({
     title: "Book a Tour | Sea Turtle Brothers Miyakojima",
     description:
-      "Send a booking request for sea turtle snorkeling, night tours, sunset SUP or drone SUP in Miyakojima. Free cancellation until the day before. Confirmed via LINE.",
+      "Send a tour booking request in Miyakojima. Check prices automatically, cancel free until the day before, and receive availability confirmation via LINE.",
     path: "/en/book",
     locale: "en",
     altLocalePath: "/book",
@@ -36,7 +37,7 @@ export default function EnglishBookPage() {
 
           {/* BookingFormEn は useSearchParams を使うため個別の Suspense で包む */}
           <LiffProvider>
-            <Suspense fallback={<div className="text-center text-gray-500 py-12">Loading…</div>}>
+            <Suspense fallback={<BookingFormSkeleton locale="en" />}>
               <BookingFormEn />
             </Suspense>
             <Toaster position="top-center" richColors />

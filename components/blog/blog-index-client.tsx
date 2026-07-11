@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
-import { Calendar, Clock, Tag } from "lucide-react"
+import { useMemo, useState } from "react"
+import { Calendar, ChevronLeft, ChevronRight, Clock, Tag } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { Navbar } from "@/components/navbar"
@@ -9,8 +9,7 @@ import { MobileCTA } from "@/components/mobile-cta"
 import { Footer } from "@/components/footer"
 import { BLUR_DATA_URLS } from "@/lib/image-placeholders"
 import type { BlogPostSummary } from "@/lib/blog"
-
-const INITIAL_VISIBLE_POSTS = 12
+import { BLOG_PAGE_SIZE } from "@/lib/blog/constants"
 
 function formatDate(dateString: string) {
   const date = new Date(dateString)
@@ -20,27 +19,32 @@ function formatDate(dateString: string) {
 export function BlogIndexClient({
   posts,
   categories,
+  currentPage,
 }: {
   posts: BlogPostSummary[]
   categories: string[]
+  currentPage: number
 }) {
   const [selectedCategory, setSelectedCategory] = useState<string>("全て")
-  const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_POSTS)
   const categoryOptions = ["全て", ...categories]
+  const totalPages = Math.max(1, Math.ceil(posts.length / BLOG_PAGE_SIZE))
+  const pageStart = (currentPage - 1) * BLOG_PAGE_SIZE
 
   const filteredPosts = useMemo(() => {
     if (selectedCategory === "全て") return posts
     return posts.filter((post) => post.category === selectedCategory)
   }, [posts, selectedCategory])
 
-  const featured = filteredPosts[0]
-  const visiblePosts = filteredPosts.slice(0, visibleCount)
+  // 通常一覧はURLごとに12件ずつSSR。カテゴリ選択時は該当記事を全件表示する。
+  // カテゴリ内の最大記事数も現在は12件のため、追加の「もっと見る」操作は不要。
+  const visiblePosts =
+    selectedCategory === "全て"
+      ? filteredPosts.slice(pageStart, pageStart + BLOG_PAGE_SIZE)
+      : filteredPosts
+  const featured = visiblePosts[0]
   const rest = visiblePosts.slice(1)
-  const hasMore = visibleCount < filteredPosts.length
-
-  useEffect(() => {
-    setVisibleCount(INITIAL_VISIBLE_POSTS)
-  }, [selectedCategory])
+  const firstVisibleNumber = visiblePosts.length > 0 ? pageStart + 1 : 0
+  const lastVisibleNumber = pageStart + visiblePosts.length
 
   return (
     <div className="min-h-screen bg-white">
@@ -91,7 +95,11 @@ export function BlogIndexClient({
           </div>
         </div>
 
-        <p className="text-xs text-gray-400 mb-6">{filteredPosts.length}件の記事</p>
+        <p className="text-xs text-gray-400 mb-6">
+          {selectedCategory === "全て"
+            ? `全${posts.length}件中 ${firstVisibleNumber}〜${lastVisibleNumber}件`
+            : `${filteredPosts.length}件の記事`}
+        </p>
 
         {filteredPosts.length === 0 ? (
           <div className="text-center py-20">
@@ -185,15 +193,54 @@ export function BlogIndexClient({
               ))}
             </div>
 
-            {hasMore && (
-              <div className="mt-10 flex justify-center">
-                <button
-                  onClick={() => setVisibleCount((count) => count + INITIAL_VISIBLE_POSTS)}
-                  className="rounded-full bg-emerald-600 px-6 py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-emerald-700"
-                >
-                  さらに記事を表示
-                </button>
-              </div>
+            {selectedCategory === "全て" && totalPages > 1 && (
+              <nav className="mt-10 flex flex-wrap items-center justify-center gap-2" aria-label="ブログのページネーション">
+                {currentPage > 1 && (
+                  <Link
+                    href={currentPage === 2 ? "/blog" : `/blog/page/${currentPage - 1}`}
+                    rel="prev"
+                    className="inline-flex min-h-11 items-center gap-1 rounded-full border border-emerald-200 bg-white px-4 py-2 text-sm font-bold text-emerald-700 transition-colors hover:bg-emerald-50"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    前へ
+                  </Link>
+                )}
+
+                {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => {
+                  const href = page === 1 ? "/blog" : `/blog/page/${page}`
+                  const isCurrent = page === currentPage
+
+                  return isCurrent ? (
+                    <span
+                      key={page}
+                      aria-current="page"
+                      className="inline-flex h-11 min-w-11 items-center justify-center rounded-full bg-emerald-600 px-3 text-sm font-bold text-white"
+                    >
+                      {page}
+                    </span>
+                  ) : (
+                    <Link
+                      key={page}
+                      href={href}
+                      aria-label={`ブログ ${page}ページ目`}
+                      className="inline-flex h-11 min-w-11 items-center justify-center rounded-full border border-emerald-200 bg-white px-3 text-sm font-bold text-emerald-700 transition-colors hover:bg-emerald-50"
+                    >
+                      {page}
+                    </Link>
+                  )
+                })}
+
+                {currentPage < totalPages && (
+                  <Link
+                    href={`/blog/page/${currentPage + 1}`}
+                    rel="next"
+                    className="inline-flex min-h-11 items-center gap-1 rounded-full border border-emerald-200 bg-white px-4 py-2 text-sm font-bold text-emerald-700 transition-colors hover:bg-emerald-50"
+                  >
+                    次へ
+                    <ChevronRight className="h-4 w-4" />
+                  </Link>
+                )}
+              </nav>
             )}
           </>
         )}

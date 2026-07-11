@@ -69,6 +69,25 @@ export const planHasNight = (planId: string): boolean =>
 // ナイトツアー単品（3歳以下区分・子どもの最低年齢判定に使用）
 export const isNightTourPlan = (planId: string): boolean => planId === "S3" || planId === "S5"
 
+export function getParticipantAgeRange(
+  planId: string,
+  category: string,
+): { min: number; max: number } | null {
+  if (category === "adult") return { min: 13, max: 100 }
+  if (category === "child") return { min: isNightTourPlan(planId) ? 4 : 5, max: 12 }
+  if (category === "under3" && FREE_UNDER3_PLAN_IDS.has(planId)) return { min: 0, max: 3 }
+  return null
+}
+
+export function isParticipantAgeValid(
+  planId: string,
+  category: string,
+  age: unknown,
+): age is number {
+  const range = getParticipantAgeRange(planId, category)
+  return !!range && typeof age === "number" && Number.isFinite(age) && age >= range.min && age <= range.max
+}
+
 // 複合プランの「内容」行（含まれる単品ツアーの併記）。備考の [COMBO booking] に入る。
 export const COMBO_CONTENT_TEXT: Record<string, string> = {
   C1: "内容：S1 ウミガメシュノーケル + S3 ヤシガニ探検",

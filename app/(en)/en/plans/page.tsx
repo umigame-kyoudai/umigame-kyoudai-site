@@ -14,7 +14,7 @@ import { Clock, Users, ChevronRight } from "lucide-react"
 export const metadata: Metadata = createMetadata({
   title: "Tours & Prices | Sea Turtle Brothers Miyakojima",
   description:
-    "All Sea Turtle Brothers tours in Miyakojima: sea turtle snorkeling from ¥8,500, private tours, jungle night tours, sunset SUP and drone SUP. Free photos & videos, free cancellation until the day before.",
+    "Compare Sea Turtle Brothers tours in Miyakojima: snorkeling, private trips, night tours and SUP. Free photos and videos; free cancellation until the day before.",
   path: "/en/plans",
   locale: "en",
   altLocalePath: "/plans",

@@ -92,7 +92,7 @@ export const EN_PLANS: EnPlanContent[] = [
     ],
     ageNote: "Ages 5 to 65",
     locationNote: "Aragusuku Beach or Shigira Beach (chosen by wind direction on the day; meet 15 minutes before your start time)",
-    priceNote: "¥11,000 per person, up to 6 guests. For 7 or more, contact us on LINE.",
+    priceNote: "¥11,000 per person, up to 10 guests. For 11 or more, contact us on LINE.",
   },
   {
     id: "S3",
@@ -195,7 +195,7 @@ export const EN_PLANS: EnPlanContent[] = [
       "Guests who have been drinking alcohol cannot participate",
       "Drone shooting may not be possible due to wind, rain, flight restrictions or safety decisions",
       "Start time and location may change depending on sea conditions, tide level and wind",
-      "For groups of 7 or more, please contact us via LINE",
+      "For groups of 11 or more, please contact us via LINE",
     ],
     ageNote: "Ages 5 to 65",
     timeNote: "Choose a start time from hourly slots between 7:00 and 16:00 when you book. Meet 15 minutes before the start — the time may shift slightly with sea conditions and tide, and we'll confirm it via LINE.",

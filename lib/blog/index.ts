@@ -1,5 +1,8 @@
 import { BLOG_CATEGORIES, type BlogPost } from "@/lib/data"
 import { loadBlogPosts } from "./posts"
+import { BLOG_PAGE_SIZE } from "./constants"
+
+export { BLOG_PAGE_SIZE } from "./constants"
 
 const BLOG_POSTS = loadBlogPosts()
 
@@ -38,6 +41,10 @@ export function getBlogPosts(): BlogPost[] {
 
 export function getBlogPostSummaries(): BlogPostSummary[] {
   return getBlogPosts().map(toSummary)
+}
+
+export function getBlogPageCount(): number {
+  return Math.max(1, Math.ceil(getBlogPostSummaries().length / BLOG_PAGE_SIZE))
 }
 
 export function getBlogPost(slug: string): BlogPost | undefined {

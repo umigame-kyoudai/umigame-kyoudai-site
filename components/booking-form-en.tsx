@@ -20,9 +20,10 @@ import { todayStr } from "@/lib/date-utils"
 import { PLANS, getStaffFee } from "@/lib/data"
 import { EN_PLAN_BY_ID } from "@/lib/i18n/en"
 import { getEnPrice, EN_PRICE_SUPPORT_NOTE } from "@/lib/i18n/en-prices"
-import { SENIOR_RESTRICTED_PLAN_IDS, PRIVATE_COUNTERPART, TIME_OPTIONAL_PLAN_IDS } from "@/lib/plan-flags"
+import { SENIOR_RESTRICTED_PLAN_IDS, PRIVATE_COUNTERPART, TIME_OPTIONAL_PLAN_IDS, isParticipantAgeValid } from "@/lib/plan-flags"
 import { trackEvent } from "@/lib/analytics"
 import { getAttribution, getAttributionSourceLabel } from "@/lib/attribution"
+import { getPlanMaxParticipants } from "@/lib/booking-rules"
 
 const NIGHT_PLAN_IDS = new Set(["S3", "S5"])
 const FREE_UNDER3_PLAN_IDS = NIGHT_PLAN_IDS
@@ -118,11 +119,14 @@ export function BookingFormEn() {
   const [customerPhone, setCustomerPhone] = useState(draft?.customerPhone ?? "")
   const [specialRequests, setSpecialRequests] = useState(draft?.specialRequests ?? "")
   const [couponCode, setCouponCode] = useState(draft?.couponCode ?? "")
-  const [couponDiscount, setCouponDiscount] = useState(draft?.couponDiscount ?? 0)
+  // 割引額は人数・プランと紐づくため、保存値を復元せずサーバーで再検証する。
+  const [couponDiscount, setCouponDiscount] = useState(0)
   const [agreed, setAgreed] = useState(draft?.agreed ?? false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [confirmedPricing, setConfirmedPricing] = useState<{ totalPrice: number; couponDiscount: number } | null>(null)
+  const appliedCouponRef = useRef<{ code: string; signature: string } | null>(null)
 
   // Move focus to the confirmation heading so screen-reader and keyboard
   // users reliably notice the form was sent.
@@ -168,6 +172,9 @@ export function BookingFormEn() {
   const isDaySup = planId === "S6" || planId === "S7"
   const staffAvailable = STAFF_AVAILABLE_PLAN_IDS.has(planId)
   const timeOptions = plan ? plan.timeTags.filter((t) => /^\d{2}:\d{2}$/.test(t)) : []
+  const maxParticipants = getPlanMaxParticipants(planId)
+  const isOverParticipantLimit = maxParticipants !== undefined && participants.length > maxParticipants
+  const isParticipantLimitReached = maxParticipants !== undefined && participants.length >= maxParticipants
 
   const childMinAge = isNight ? 4 : 5
 
@@ -191,6 +198,10 @@ export function BookingFormEn() {
   }, [plan, counts, staffId, staffAvailable, couponDiscount])
 
   const addParticipant = (category: Category) => {
+    if (isParticipantLimitReached) {
+      toast.error(`Online booking is limited to ${maxParticipants} guests. Please contact us on LINE for 11 or more.`)
+      return
+    }
     participantSeq += 1
     setParticipants((prev) => [
       ...prev,
@@ -206,6 +217,7 @@ export function BookingFormEn() {
   const handlePlanChange = (id: string) => {
     setPlanId(id)
     setTime("")
+    setCouponDiscount(0)
     if (!STAFF_AVAILABLE_PLAN_IDS.has(id)) setStaffId("")
     if (!NIGHT_PLAN_IDS.has(id)) {
       setParticipants((prev) => prev.filter((p) => p.category !== "under3"))
@@ -218,22 +230,86 @@ export function BookingFormEn() {
       const response = await fetch("/api/coupon", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ couponCode, adultCount: counts.adult, childCount: counts.child }),
+        body: JSON.stringify({ couponCode, adultCount: counts.adult, childCount: counts.child, planId }),
       })
       const result = await response.json().catch(() => ({ valid: false, discount: 0 }))
       if (response.ok && result.valid) {
+        const normalizedCode = couponCode.trim()
+        appliedCouponRef.current = {
+          code: normalizedCode,
+          signature: `${planId}|${counts.adult}|${counts.child}`,
+        }
         setCouponDiscount(result.discount)
         toast.success("Coupon applied!")
       } else {
+        appliedCouponRef.current = null
         setCouponDiscount(0)
         toast.error("That coupon code is not valid.")
       }
     } catch {
+      appliedCouponRef.current = null
       setCouponDiscount(0)
       toast.error("Could not verify the coupon. Please check your connection.")
     } finally {
       setIsApplyingCoupon(false)
     }
+  }
+
+  // 適用後の人数・プラン変更は、同じコードをサーバーで再計算する。
+  useEffect(() => {
+    const appliedCoupon = appliedCouponRef.current
+    if (!appliedCoupon) return
+
+    const signature = `${planId}|${counts.adult}|${counts.child}`
+    if (signature === appliedCoupon.signature) return
+
+    setCouponDiscount(0)
+    let cancelled = false
+    const timer = window.setTimeout(async () => {
+      setIsApplyingCoupon(true)
+      try {
+        const response = await fetch("/api/coupon", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            couponCode: appliedCoupon.code,
+            adultCount: counts.adult,
+            childCount: counts.child,
+            planId,
+          }),
+        })
+        const result = await response.json().catch(() => ({ valid: false, discount: 0 }))
+        if (cancelled) return
+
+        if (response.ok && result.valid) {
+          appliedCouponRef.current = { ...appliedCoupon, signature }
+          setCouponDiscount(result.discount)
+        } else {
+          appliedCouponRef.current = null
+          setCouponDiscount(0)
+          toast.error(result.error || "This coupon is not available after changing the booking details.")
+        }
+      } catch {
+        if (!cancelled) {
+          appliedCouponRef.current = null
+          setCouponDiscount(0)
+          toast.error("Could not recalculate the coupon. Please apply it again.")
+        }
+      } finally {
+        if (!cancelled) setIsApplyingCoupon(false)
+      }
+    }, 200)
+
+    return () => {
+      cancelled = true
+      window.clearTimeout(timer)
+    }
+  }, [counts.adult, counts.child, planId])
+
+  const handleCouponCodeChange = (value: string) => {
+    appliedCouponRef.current = null
+    setCouponCode(value)
+    setCouponDiscount(0)
   }
 
   // グループ版プランは60歳以上お断り → 対応する貸切版へ案内（判定は lib/plan-flags が単一ソース）
@@ -245,9 +321,7 @@ export function BookingFormEn() {
     : ""
 
   const participantsValid = participants.every((p) => {
-    const minAge = p.category === "under3" ? 0 : p.category === "child" ? childMinAge : 13
-    const maxAge = p.category === "under3" ? 3 : p.category === "child" ? 12 : 100
-    if (typeof p.age !== "number" || p.age < minAge || p.age > maxAge) return false
+    if (!isParticipantAgeValid(planId, p.category, p.age)) return false
     if (!isNight && !(typeof p.footSize === "number" && p.footSize > 0)) return false
     return true
   })
@@ -258,6 +332,7 @@ export function BookingFormEn() {
     (timeOptional || !!time) &&
     counts.adult > 0 &&
     participants.length > 0 &&
+    !isOverParticipantLimit &&
     participantsValid &&
     !seniorRestricted &&
     customerName.trim().length > 0 &&
@@ -274,10 +349,11 @@ export function BookingFormEn() {
   if (!timeOptional && !time) missingItems.push("Pick a start time")
   if (participants.length === 0) missingItems.push("Add at least one guest")
   else if (counts.adult === 0) missingItems.push("Include at least one adult (13+)")
+  if (isOverParticipantLimit && maxParticipants !== undefined) {
+    missingItems.push(`Reduce the group to ${maxParticipants} guests (contact us on LINE for 11+)`)
+  }
   participants.forEach((p, index) => {
-    const minAge = p.category === "under3" ? 0 : p.category === "child" ? childMinAge : 13
-    const maxAge = p.category === "under3" ? 3 : p.category === "child" ? 12 : 100
-    if (typeof p.age !== "number" || p.age < minAge || p.age > maxAge) missingItems.push(`Age for guest ${index + 1}`)
+    if (!isParticipantAgeValid(planId, p.category, p.age)) missingItems.push(`Age/category for guest ${index + 1}`)
     if (!isNight && !(typeof p.footSize === "number" && p.footSize > 0)) missingItems.push(`Shoe size for guest ${index + 1}`)
   })
   if (customerName.trim().length === 0) missingItems.push("Your full name")
@@ -323,13 +399,14 @@ export function BookingFormEn() {
           lineIdToken: freshLineIdToken,
           couponCode,
           couponDiscount,
+          agreedToTerms: agreed,
           // 流入元（どのリンク経由か）。管理者メール・カレンダーの備考に [流入元] として載る
           attribution: getAttribution(),
         }),
       })
       const responseData: {
         success?: boolean
-        data?: { totalPrice?: unknown }
+        data?: { totalPrice?: unknown; couponDiscount?: unknown }
       } | null = await response.json().catch(() => null)
       if (!response.ok || responseData?.success !== true) {
         if (response.status === 401) {
@@ -348,6 +425,13 @@ export function BookingFormEn() {
         responseData.data.totalPrice >= 0
           ? responseData.data.totalPrice
           : totalPrice
+      const confirmedCouponDiscount =
+        typeof responseData.data?.couponDiscount === "number" &&
+        Number.isFinite(responseData.data.couponDiscount) &&
+        responseData.data.couponDiscount >= 0
+          ? responseData.data.couponDiscount
+          : couponDiscount
+      setConfirmedPricing({ totalPrice: confirmedTotalPrice, couponDiscount: confirmedCouponDiscount })
       trackEvent("booking_submitted", {
         locale: "en",
         plan: planId,
@@ -388,7 +472,10 @@ export function BookingFormEn() {
                 : time}
             </p>
             <p>Guests: {participants.length}</p>
-            <p>Estimated total: ¥{totalPrice.toLocaleString()} (cash, on the day)</p>
+            {((confirmedPricing?.couponDiscount ?? couponDiscount) > 0) && (
+              <p>Coupon discount: -¥{(confirmedPricing?.couponDiscount ?? couponDiscount).toLocaleString()}</p>
+            )}
+            <p>Estimated total: ¥{(confirmedPricing?.totalPrice ?? totalPrice).toLocaleString()} (cash, on the day)</p>
           </div>
           {/* Confirmation is sent as a LINE push message, which only reaches users
               who have added the official account as a friend. Prompt it as the top priority. */}
@@ -514,18 +601,24 @@ export function BookingFormEn() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap gap-2">
-            <Button type="button" variant="outline" size="sm" onClick={() => addParticipant("adult")} className="rounded-full border-emerald-300 text-emerald-700">
+            <Button type="button" variant="outline" size="sm" disabled={isParticipantLimitReached} onClick={() => addParticipant("adult")} className="rounded-full border-emerald-300 text-emerald-700">
               <Plus className="w-4 h-4 mr-1" /> Adult (13+)
             </Button>
-            <Button type="button" variant="outline" size="sm" onClick={() => addParticipant("child")} className="rounded-full border-emerald-300 text-emerald-700">
+            <Button type="button" variant="outline" size="sm" disabled={isParticipantLimitReached} onClick={() => addParticipant("child")} className="rounded-full border-emerald-300 text-emerald-700">
               <Plus className="w-4 h-4 mr-1" /> Child ({childMinAge}–12)
             </Button>
             {isNight && (
-              <Button type="button" variant="outline" size="sm" onClick={() => addParticipant("under3")} className="rounded-full border-emerald-300 text-emerald-700">
+              <Button type="button" variant="outline" size="sm" disabled={isParticipantLimitReached} onClick={() => addParticipant("under3")} className="rounded-full border-emerald-300 text-emerald-700">
                 <Plus className="w-4 h-4 mr-1" /> Age 0–3 (free)
               </Button>
             )}
           </div>
+
+          {maxParticipants !== undefined && (
+            <p className={`rounded-xl border p-3 text-sm ${isOverParticipantLimit ? "border-red-200 bg-red-50 text-red-700" : "border-blue-200 bg-blue-50 text-blue-700"}`}>
+              Online booking is limited to {maxParticipants} guests. Current group: {participants.length}. Contact us on LINE for 11 or more.
+            </p>
+          )}
 
           {participants.map((p, index) => (
             <div key={p.id} className="bg-gray-50 rounded-2xl p-4">
@@ -656,7 +749,7 @@ export function BookingFormEn() {
           <div className="sm:col-span-2">
             <Label className="text-sm font-medium text-gray-700 mb-2 block">Coupon code (optional)</Label>
             <div className="flex gap-2">
-              <Input value={couponCode} onChange={(e) => setCouponCode(e.target.value)} className="rounded-xl border-emerald-200" />
+              <Input value={couponCode} onChange={(e) => handleCouponCodeChange(e.target.value)} className="rounded-xl border-emerald-200" />
               <Button type="button" onClick={handleCouponApply} disabled={isApplyingCoupon} className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl px-4">
                 {isApplyingCoupon ? "Checking..." : "Apply"}
               </Button>

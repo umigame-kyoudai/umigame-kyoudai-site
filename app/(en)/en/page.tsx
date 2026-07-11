@@ -39,7 +39,7 @@ export default function EnglishHomePage() {
             alt="Two sea turtles swimming together in the clear waters of Miyakojima"
             fill
             priority
-            quality={85}
+            quality={72}
             className="object-cover object-center"
             sizes="100vw"
           />
