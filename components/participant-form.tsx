@@ -34,7 +34,7 @@ export function ParticipantForm({ participants, minAge, selectedPlan, onUpdate }
   return (
     <Card className="glass-card bg-white/70 backdrop-blur-xl rounded-3xl ring-1 ring-emerald-100 shadow-lg">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-emerald-800">
+        <CardTitle as="h2" className="flex items-center gap-2 text-emerald-800">
           <User className="w-5 h-5" />
           参加者詳細情報
         </CardTitle>
@@ -51,9 +51,9 @@ export function ParticipantForm({ participants, minAge, selectedPlan, onUpdate }
 
           return (
             <div key={participant.id} className="bg-gray-50 rounded-2xl p-6">
-              <h4 className="font-semibold text-emerald-800 mb-4">
+              <h3 className="font-semibold text-emerald-800 mb-4">
                 参加者 {index + 1} ({categoryLabel})
-              </h4>
+              </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                 <div>
                   <Label htmlFor={`participant-${participant.id}-name`} className="text-sm font-medium text-gray-700 mb-2 block">氏名 (任意)</Label>

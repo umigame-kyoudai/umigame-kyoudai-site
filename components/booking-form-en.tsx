@@ -124,6 +124,13 @@ export function BookingFormEn() {
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
 
+  // Move focus to the confirmation heading so screen-reader and keyboard
+  // users reliably notice the form was sent.
+  const successHeadingRef = useRef<HTMLHeadingElement>(null)
+  useEffect(() => {
+    if (isSubmitted) successHeadingRef.current?.focus()
+  }, [isSubmitted])
+
   // フォーム表示を1回だけ計測（LIFF準備完了時点のログイン状態付き）
   const hasTrackedFormView = useRef(false)
   useEffect(() => {
@@ -366,7 +373,7 @@ export function BookingFormEn() {
       <Card className="bg-white/95 rounded-3xl ring-1 ring-emerald-100 shadow-2xl max-w-2xl mx-auto">
         <CardContent className="p-8 text-center">
           <CheckCircle className="w-16 h-16 text-emerald-600 mx-auto mb-6" />
-          <h2 className="text-2xl font-bold text-emerald-800 mb-4">Booking request sent!</h2>
+          <h2 ref={successHeadingRef} tabIndex={-1} className="text-2xl font-bold text-emerald-800 mb-4 outline-none">Booking request sent!</h2>
           <p className="text-gray-600 mb-6">
             Thank you! Our staff will check availability and reply to you on LINE.
             <br />
@@ -416,7 +423,7 @@ export function BookingFormEn() {
       {/* Plan */}
       <Card className="bg-white/80 rounded-3xl ring-1 ring-emerald-100 shadow-lg">
         <CardHeader>
-          <CardTitle className="text-emerald-800">1. Choose your tour</CardTitle>
+          <CardTitle as="h2" className="text-emerald-800">1. Choose your tour</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {bookablePlans.map((p) => {
@@ -444,7 +451,7 @@ export function BookingFormEn() {
       {/* Date & time */}
       <Card className="bg-white/80 rounded-3xl ring-1 ring-emerald-100 shadow-lg">
         <CardHeader>
-          <CardTitle className="text-emerald-800">2. Date & start time</CardTitle>
+          <CardTitle as="h2" className="text-emerald-800">2. Date & start time</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
@@ -500,7 +507,7 @@ export function BookingFormEn() {
       {/* Participants */}
       <Card className="bg-white/80 rounded-3xl ring-1 ring-emerald-100 shadow-lg">
         <CardHeader>
-          <CardTitle className="text-emerald-800">3. Who&apos;s joining?</CardTitle>
+          <CardTitle as="h2" className="text-emerald-800">3. Who&apos;s joining?</CardTitle>
           <p className="text-sm text-gray-600">
             Age is required for safety. {isNight ? "" : "Shoe size (in cm) is required so we can prepare your fins — height and weight are optional but help us pick the right gear."}
           </p>
@@ -523,9 +530,9 @@ export function BookingFormEn() {
           {participants.map((p, index) => (
             <div key={p.id} className="bg-gray-50 rounded-2xl p-4">
               <div className="flex items-center justify-between mb-3">
-                <h4 className="font-semibold text-emerald-800 text-sm">
+                <h3 className="font-semibold text-emerald-800 text-sm">
                   Guest {index + 1} ({p.category === "adult" ? "Adult" : p.category === "child" ? "Child" : "Age 0–3"})
-                </h4>
+                </h3>
                 <button type="button" onClick={() => removeParticipant(p.id)} aria-label={`Remove guest ${index + 1}`} className="text-gray-400 hover:text-red-500">
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -603,7 +610,7 @@ export function BookingFormEn() {
       {staffAvailable && (
         <Card className="bg-white/80 rounded-3xl ring-1 ring-emerald-100 shadow-lg">
           <CardHeader>
-            <CardTitle className="text-emerald-800">4. Request a guide (optional)</CardTitle>
+            <CardTitle as="h2" className="text-emerald-800">4. Request a guide (optional)</CardTitle>
             <p className="text-sm text-gray-600">No preference is perfectly fine — every guide will give you a great tour.</p>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-2">
@@ -627,7 +634,7 @@ export function BookingFormEn() {
       {/* Contact */}
       <Card className="bg-white/80 rounded-3xl ring-1 ring-emerald-100 shadow-lg">
         <CardHeader>
-          <CardTitle className="text-emerald-800">{staffAvailable ? "5" : "4"}. Your contact details</CardTitle>
+          <CardTitle as="h2" className="text-emerald-800">{staffAvailable ? "5" : "4"}. Your contact details</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>

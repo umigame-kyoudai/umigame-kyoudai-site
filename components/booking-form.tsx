@@ -198,6 +198,12 @@ export function BookingForm() {
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
 
+  // 送信完了画面が出たら見出しへフォーカスを移す（読み上げ・キーボード利用者に完了を確実に伝える）
+  const successHeadingRef = useRef<HTMLHeadingElement>(null)
+  useEffect(() => {
+    if (isSubmitted) successHeadingRef.current?.focus()
+  }, [isSubmitted])
+
   useEffect(() => {
     if (hasInitialized.current) return
 
@@ -632,12 +638,12 @@ export function BookingForm() {
 
   if (isSubmitted) {
     return (
-      <div className="fixed inset-0 z-[100] overflow-y-auto bg-black/50 backdrop-blur-sm">
+      <div role="dialog" aria-modal="true" aria-labelledby="booking-success-title" className="fixed inset-0 z-[100] overflow-y-auto bg-black/50 backdrop-blur-sm">
       <div className="flex min-h-full items-center justify-center p-4">
       <Card className="glass-card bg-white/95 backdrop-blur-xl rounded-3xl ring-1 ring-emerald-100 shadow-2xl max-w-2xl w-full mx-auto my-4 animate-in fade-in zoom-in duration-300">
         <CardContent className="p-6 sm:p-8 text-center">
           <CheckCircle className="w-16 h-16 text-emerald-600 mx-auto mb-6" />
-          <h2 className="text-2xl font-bold text-emerald-800 mb-4">送信完了しました！</h2>
+          <h2 ref={successHeadingRef} tabIndex={-1} id="booking-success-title" className="text-2xl font-bold text-emerald-800 mb-4 outline-none">送信完了しました！</h2>
           <p className="text-gray-600 mb-6">
             ご予約ありがとうございます。
             <br />
@@ -805,7 +811,7 @@ export function BookingForm() {
       {/* Plan Selection */}
       <Card className="glass-card bg-white/70 backdrop-blur-xl rounded-3xl ring-1 ring-emerald-100 shadow-lg">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-emerald-800">
+          <CardTitle as="h2" className="flex items-center gap-2 text-emerald-800">
             <Star className="w-5 h-5" />
             プラン選択
           </CardTitle>
@@ -1187,7 +1193,7 @@ export function BookingForm() {
 
           {selectedPlanData && (
             <div className="mt-4 p-4 bg-emerald-50 rounded-2xl border border-emerald-200">
-              <h4 className="font-semibold text-emerald-800 mb-2 text-sm">プラン詳細</h4>
+              <h3 className="font-semibold text-emerald-800 mb-2 text-sm">プラン詳細</h3>
               <p className="text-sm text-gray-700 mb-3 leading-relaxed">{selectedPlanData.description}</p>
 
               <div className="grid grid-cols-2 gap-2 text-xs">
@@ -1224,7 +1230,7 @@ export function BookingForm() {
       {/* Date and Time Selection */}
       <Card className="glass-card bg-white/70 backdrop-blur-xl rounded-3xl ring-1 ring-emerald-100 shadow-lg">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-emerald-800">
+          <CardTitle as="h2" className="flex items-center gap-2 text-emerald-800">
             <Calendar className="w-5 h-5" />
             日時選択
           </CardTitle>
@@ -1340,7 +1346,7 @@ export function BookingForm() {
       {/* Participant Count */}
       <Card className="glass-card bg-white/70 backdrop-blur-xl rounded-3xl ring-1 ring-emerald-100 shadow-lg">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-emerald-800">
+          <CardTitle as="h2" className="flex items-center gap-2 text-emerald-800">
             <Users className="w-5 h-5" />
             参加人数
           </CardTitle>
@@ -1582,7 +1588,7 @@ export function BookingForm() {
       {/* Customer Information */}
       <Card className="glass-card bg-white/70 backdrop-blur-xl rounded-3xl ring-1 ring-emerald-100 shadow-lg">
         <CardHeader>
-          <CardTitle className="text-emerald-800">お客様情報</CardTitle>
+          <CardTitle as="h2" className="text-emerald-800">お客様情報</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
@@ -1636,7 +1642,7 @@ export function BookingForm() {
       {staffSelectable && (
       <Card className="glass-card bg-white/70 backdrop-blur-xl rounded-3xl ring-1 ring-emerald-100 shadow-lg">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-emerald-800">
+          <CardTitle as="h2" className="flex items-center gap-2 text-emerald-800">
             <UserCheck className="w-5 h-5" />
             スタッフ指名（オプション）
           </CardTitle>

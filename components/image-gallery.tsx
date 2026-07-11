@@ -30,12 +30,36 @@ function Lightbox({ images, index, onClose, onPrev, onNext, onSelect }: {
   onSelect: (index: number) => void
 }) {
   const img = images[index]
+  const containerRef = useRef<HTMLDivElement>(null)
+  const closeButtonRef = useRef<HTMLButtonElement>(null)
+
+  // ダイアログを開いたら中へフォーカスを移し、閉じたら元の位置（開いたサムネイル等）へ返す
+  useEffect(() => {
+    const previouslyFocused = document.activeElement as HTMLElement | null
+    closeButtonRef.current?.focus()
+    return () => previouslyFocused?.focus?.()
+  }, [])
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose()
       if (e.key === "ArrowLeft") onPrev()
       if (e.key === "ArrowRight") onNext()
+      // Tabフォーカスをダイアログ内に閉じ込める（背後のページへ抜けさせない）
+      if (e.key === "Tab" && containerRef.current) {
+        const focusables = containerRef.current.querySelectorAll<HTMLElement>("button, [href]")
+        if (focusables.length === 0) return
+        const first = focusables[0]
+        const last = focusables[focusables.length - 1]
+        const active = document.activeElement
+        if (e.shiftKey && (active === first || !containerRef.current.contains(active))) {
+          e.preventDefault()
+          last.focus()
+        } else if (!e.shiftKey && (active === last || !containerRef.current.contains(active))) {
+          e.preventDefault()
+          first.focus()
+        }
+      }
     }
     window.addEventListener("keydown", handler)
     document.body.style.overflow = "hidden"
@@ -47,6 +71,10 @@ function Lightbox({ images, index, onClose, onPrev, onNext, onSelect }: {
 
   return (
     <div
+      ref={containerRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label={`写真の拡大表示: ${img.title}`}
       className="fixed inset-0 z-50 bg-black/95 flex flex-col"
       onClick={onClose}
     >
@@ -57,6 +85,7 @@ function Lightbox({ images, index, onClose, onPrev, onNext, onSelect }: {
           <p className="text-white text-sm font-semibold">{img.title}</p>
         </div>
         <button
+          ref={closeButtonRef}
           type="button"
           aria-label="ギャラリーを閉じる"
           onClick={onClose}

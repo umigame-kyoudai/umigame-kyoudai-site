@@ -28,9 +28,14 @@ function CardHeader({ className, ...props }: React.ComponentProps<'div'>) {
   )
 }
 
-function CardTitle({ className, ...props }: React.ComponentProps<'div'>) {
+// as: 読み上げ・文書構造上、実際の見出し（h2等）として出力したいとき用。見た目は変わらない
+function CardTitle({
+  className,
+  as: Comp = 'div',
+  ...props
+}: React.ComponentProps<'div'> & { as?: 'div' | 'h2' | 'h3' | 'h4' }) {
   return (
-    <div
+    <Comp
       data-slot="card-title"
       className={cn('leading-none font-semibold', className)}
       {...props}
