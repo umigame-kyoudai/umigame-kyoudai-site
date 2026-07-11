@@ -139,8 +139,8 @@ export const EN_PLANS: EnPlanContent[] = [
       "Guests who have been drinking alcohol cannot participate",
     ],
     ageNote: "Ages 5 to 65",
-    timeNote: "Start time follows the sunset and changes by season — we'll confirm the exact meeting time before your tour. Meet 15 minutes before the start.",
-    locationNote: "Location depends on the day's sea and weather conditions (your guide will tell you in advance)",
+    timeNote: "Start time follows the sunset and changes by season — we'll confirm the exact meeting time via LINE the day before your tour. Meet 15 minutes before the start.",
+    locationNote: "Location depends on the day's sea and weather conditions (your guide will tell you via LINE the day before your tour)",
   },
   {
     id: "S6",

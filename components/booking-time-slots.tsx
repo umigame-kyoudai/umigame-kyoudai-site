@@ -81,12 +81,12 @@ export default function BookingTimeSlots({ selectedPlan, selectedDate, selectedT
           <div className="flex-1">
             <h3 className="font-semibold text-orange-800 mb-2">サンセットSUP 時間について</h3>
             <p className="text-sm text-orange-700 mb-3">
-              サンセットSUPの開始時間は、当日の日没時刻と天候状況を考慮して最適な時間を決定いたします。
+              サンセットSUPの開始時間は、当日の日没時刻と天候状況を考慮して最適な時間を決定し、集合場所とあわせて前日にLINEでご案内いたします。
             </p>
             <div className="bg-white/60 rounded-lg p-3 border border-orange-200">
               <div className="flex items-center gap-2 mb-2">
                 <Info className="w-4 h-4 text-orange-600" />
-                <span className="text-sm font-medium text-orange-800">予約確定時にお知らせします</span>
+                <span className="text-sm font-medium text-orange-800">開始時間・集合場所は前日にLINEでお知らせします</span>
               </div>
               <ul className="text-xs text-orange-600 space-y-1">
                 <li>• 通常17:00〜19:00の間で開始</li>

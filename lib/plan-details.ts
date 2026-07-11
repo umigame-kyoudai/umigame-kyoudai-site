@@ -222,7 +222,7 @@ export const PLAN_DETAILS: Record<string, PlanDetail> = {
       { title: "究極の癒し体験", description: "波の音を聞きながら、SUPボードの上で寝転んだり座ったり。日常を忘れる究極のリラックスタイムをお約束。", icon: "heart" },
     ],
     flow: [
-      { step: 1, title: "集合・受付", description: "催行海岸にて現地集合。その日の日の入り時間に合わせてご案内します。", time: "日没に合わせて変動" },
+      { step: 1, title: "集合・受付", description: "催行海岸にて現地集合。開始時間と集合場所は、その日の日の入り時間に合わせて前日にLINEでご案内します。", time: "日没に合わせて変動" },
       { step: 2, title: "陸上レクチャー", description: "SUPの漕ぎ方や乗り方を陸上でしっかり丁寧にレクチャー。初めての方も安心です。" },
       { step: 3, title: "海上SUP＆夕日鑑賞", description: "海へ出発！夕日を浴びながらのんびり海上散歩。絶景をバックにたくさん写真撮影。", time: "約2時間" },
       { step: 4, title: "お会計・解散", description: "マジックアワーの余韻に浸りながらお会計。撮影データは当日中にお渡し。" },
@@ -232,7 +232,7 @@ export const PLAN_DETAILS: Record<string, PlanDetail> = {
     precautions: ["妊娠中の方は参加不可", "持病をお持ちの方は参加不可", "飲酒されている方は参加不可", "お体に不自由がある場合は必ず事前にご相談ください"],
     location: "当日の海況・天候により変動",
     locationNote: "ガイドより前日にLINEで集合場所をご案内します。",
-    meetingTime: "開始15分前（日没に合わせて変動）",
+    meetingTime: "開始15分前（開始時間・集合場所は前日にLINEでご案内）",
     paymentMethod: "現地現金決済（できるだけお釣りが出ないようご協力ください）",
     faqs: [
       { q: "SUP初めてでも立てますか？", a: "はい！安定感抜群の大きめボードを使用し、波の穏やかなポイントで実施します。最初は座ったまま漕ぎ始め、慣れたら自分のペースで立ち上がりましょう。座ったままでも十分楽しめます。" },

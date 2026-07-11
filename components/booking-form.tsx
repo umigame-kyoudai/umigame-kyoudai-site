@@ -619,7 +619,7 @@ export function BookingForm() {
                 <p>
                   日時: {bookingData.selectedDate}{" "}
                   {getPlanType(bookingData.selectedPlan) === "sunset-sup"
-                    ? "(時間は後日ご連絡)"
+                    ? "(開始時間・集合場所は前日にLINEでご連絡)"
                     : bookingData.selectedTime}
                 </p>
               )}

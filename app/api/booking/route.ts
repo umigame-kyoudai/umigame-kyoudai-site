@@ -62,7 +62,7 @@ interface BookingRequest {
 }
 
 // プラン分類は lib/plan-flags.ts を単一ソースとして参照する（予約フォーム等と共通）
-const SUNSET_SUP_TIME_NOTE = 'サンセット時刻（予約確定時にご案内）'
+const SUNSET_SUP_TIME_NOTE = 'サンセット時刻（前日にLINEでご案内）'
 const BOOKING_SERVICE_UNAVAILABLE_MESSAGE =
   '予約を送信できませんでした。時間をおいてもう一度お試しいただくか、LINEでお問い合わせください。'
 const LINE_AUTHENTICATION_FAILED_MESSAGE =

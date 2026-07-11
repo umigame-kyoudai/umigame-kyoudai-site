@@ -343,7 +343,7 @@ export function BookingFormEn() {
             <p>
               Date & time: {date}{" "}
               {timeOptional
-                ? "(start time will follow the sunset — we'll confirm it with you)"
+                ? "(start time & meeting spot will be confirmed via LINE the day before)"
                 : time}
             </p>
             <p>Guests: {participants.length}</p>
@@ -433,7 +433,7 @@ export function BookingFormEn() {
             </Label>
             {timeOptional ? (
               <p className="text-sm text-gray-500 leading-relaxed pt-2">
-                The start time follows the sunset and changes by season — we&apos;ll confirm the exact time with you after booking.
+                The start time follows the sunset and changes by season — we&apos;ll confirm the exact time and meeting spot via LINE the day before your tour.
               </p>
             ) : (
               <>
