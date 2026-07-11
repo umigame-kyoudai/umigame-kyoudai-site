@@ -6,6 +6,11 @@ export interface GASResponse {
   timestamp?: string;
 }
 
+const GAS_REQUEST_FAILED_MESSAGE = '予約システムへの送信に失敗しました';
+
+const isJSONObject = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
 // 予約ペイロードの型定義
 export interface BookingPayload {
   bookingNumber: string;
@@ -63,22 +68,29 @@ export const sendToGAS = async (payload: BookingPayload): Promise<GASResponse> =
 
     clearTimeout(timeoutId);
 
-    // レスポンスボディを確認
-    const responseText = await response.text();
+    if (!response.ok) {
+      console.error('[v0] GAS returned an HTTP error:', response.status);
+      throw new Error(GAS_REQUEST_FAILED_MESSAGE);
+    }
 
+    const responseText = (await response.text()).trim();
+    if (!responseText) {
+      console.error('[v0] GAS returned an empty response');
+      throw new Error(GAS_REQUEST_FAILED_MESSAGE);
+    }
+
+    let gasResult: unknown;
     try {
-      const gasResult = JSON.parse(responseText);
-      if (gasResult.success === false) {
-        console.error('[v0] GAS returned error:', gasResult.error);
-        throw new Error(gasResult.error || 'GAS処理エラー');
-      }
-    } catch (parseErr) {
-      // JSONでない場合（GASのリダイレクト先HTMLなど）はログのみ
-      if (parseErr instanceof SyntaxError) {
-        console.warn('[v0] GAS response is not JSON (may be redirect page):', responseText.slice(0, 200));
-      } else {
-        throw parseErr;
-      }
+      gasResult = JSON.parse(responseText);
+    } catch {
+      console.error('[v0] GAS returned invalid JSON');
+      throw new Error(GAS_REQUEST_FAILED_MESSAGE);
+    }
+
+    // GAS側がJSONで success: true を明示した場合だけ、保存成功と判断する。
+    if (!isJSONObject(gasResult) || gasResult.success !== true) {
+      console.error('[v0] GAS did not confirm a successful booking');
+      throw new Error(GAS_REQUEST_FAILED_MESSAGE);
     }
 
     return {
@@ -92,11 +104,15 @@ export const sendToGAS = async (payload: BookingPayload): Promise<GASResponse> =
 
     if (error instanceof Error && error.name === 'AbortError') {
       console.warn('[v0] GAS送信タイムアウト（10秒）');
-      throw new Error('GASへの送信がタイムアウトしました');
+      throw new Error(GAS_REQUEST_FAILED_MESSAGE);
+    }
+
+    if (error instanceof Error && error.message === GAS_REQUEST_FAILED_MESSAGE) {
+      throw error;
     }
 
     console.error('[v0] GAS送信エラー:', error);
-    throw new Error(error instanceof Error ? error.message : 'GAS連携に失敗しました');
+    throw new Error(GAS_REQUEST_FAILED_MESSAGE);
   }
 };
 

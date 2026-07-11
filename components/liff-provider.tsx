@@ -1,10 +1,12 @@
 "use client"
 
-import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react"
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react"
+import type { Liff } from "@line/liff"
 
 interface LiffContextType {
   lineUserId: string | null
   lineDisplayName: string | null
+  lineIdToken: string | null
   isLiffReady: boolean
   isLiffLoggedIn: boolean
   isInClient: boolean
@@ -17,6 +19,7 @@ interface LiffContextType {
 const LiffContext = createContext<LiffContextType>({
   lineUserId: null,
   lineDisplayName: null,
+  lineIdToken: null,
   isLiffReady: false,
   isLiffLoggedIn: false,
   isInClient: false,
@@ -31,38 +34,41 @@ export const useLiff = () => useContext(LiffContext)
 const STORAGE_KEY_USER_ID = "line_user_id"
 const STORAGE_KEY_DISPLAY_NAME = "line_display_name"
 
-function safeGetItem(key: string): string | null {
+function clearLegacyLiffStorage(): void {
   try {
-    return localStorage.getItem(key)
+    localStorage.removeItem(STORAGE_KEY_USER_ID)
+    localStorage.removeItem(STORAGE_KEY_DISPLAY_NAME)
   } catch {
-    return null
-  }
-}
-
-function safeSetItem(key: string, value: string): void {
-  try {
-    localStorage.setItem(key, value)
-  } catch {
-    // プライベートブラウジング等でストレージ制限がある場合は無視
+    // プライベートブラウジング等でストレージ制限がある場合は無視する。
   }
 }
 
 // LIFFモジュールをキャッシュ
-let liffInstance: any = null
+let liffInstance: Liff | null = null
 
 export function LiffProvider({ children }: { children: ReactNode }) {
   const [lineUserId, setLineUserId] = useState<string | null>(null)
   const [lineDisplayName, setLineDisplayName] = useState<string | null>(null)
+  const [lineIdToken, setLineIdToken] = useState<string | null>(null)
   const [isLiffReady, setIsLiffReady] = useState(false)
   const [isLiffLoggedIn, setIsLiffLoggedIn] = useState(false)
   const [isInClient, setIsInClient] = useState(false)
   const [liffError, setLiffError] = useState<string | null>(null)
   const initialized = useRef(false)
 
-  const initLiff = async () => {
+  const clearLiffIdentity = useCallback(() => {
+    setLineUserId(null)
+    setLineDisplayName(null)
+    setLineIdToken(null)
+    setIsLiffLoggedIn(false)
+    clearLegacyLiffStorage()
+  }, [])
+
+  const initLiff = useCallback(async () => {
     const liffId = process.env.NEXT_PUBLIC_LIFF_ID
 
     try {
+      clearLiffIdentity()
       if (!liffId) {
         setIsLiffReady(true)
         return
@@ -92,43 +98,45 @@ export function LiffProvider({ children }: { children: ReactNode }) {
         setIsLiffLoggedIn(true)
         try {
           const profile = await liff.getProfile()
+          const idToken = liff.getIDToken()
+          if (!idToken) {
+            throw new Error("LINE認証トークンを取得できませんでした。")
+          }
           setLineUserId(profile.userId)
           setLineDisplayName(profile.displayName)
-          safeSetItem(STORAGE_KEY_USER_ID, profile.userId)
-          safeSetItem(STORAGE_KEY_DISPLAY_NAME, profile.displayName)
+          setLineIdToken(idToken)
         } catch (profileError) {
           // プロフィール取得失敗（トークン期限切れ等）
           // ログアウトしてリセット（次回ユーザーが手動でログインできるように）
           try { liff.logout() } catch {}
-          setIsLiffLoggedIn(false)
+          clearLiffIdentity()
           setLiffError("LINE情報の取得に失敗しました。再度ログインしてください。")
         }
+      } else {
+        clearLiffIdentity()
       }
-      // 未ログインの場合は何もしない（ユーザーがボタンを押すのを待つ）
 
       setIsLiffReady(true)
     } catch (error) {
+      clearLiffIdentity()
       const msg = error instanceof Error ? error.message : String(error)
-      const detail = error instanceof Error && (error as any).code ? ` (code: ${(error as any).code})` : ""
+      const detail =
+        error instanceof Error && "code" in error && typeof error.code === "string"
+          ? ` (code: ${error.code})`
+          : ""
       setLiffError(`${msg}${detail}`)
       setIsLiffReady(true)
     }
-  }
+  }, [clearLiffIdentity])
 
   useEffect(() => {
     if (initialized.current) return
     initialized.current = true
 
-    // localStorageから復元
-    const savedUserId = safeGetItem(STORAGE_KEY_USER_ID)
-    const savedDisplayName = safeGetItem(STORAGE_KEY_DISPLAY_NAME)
-    if (savedUserId) {
-      setLineUserId(savedUserId)
-      setLineDisplayName(savedDisplayName)
-    }
-
+    // 旧実装で永続化していた本人情報は復元せず、起動時に削除する。
+    clearLegacyLiffStorage()
     initLiff()
-  }, [])
+  }, [initLiff])
 
   // ユーザーが手動でLINEログインを開始する
   const loginLiff = () => {
@@ -137,6 +145,7 @@ export function LiffProvider({ children }: { children: ReactNode }) {
   }
 
   const retryLiff = () => {
+    clearLiffIdentity()
     setLiffError(null)
     setIsLiffReady(false)
     initialized.current = false
@@ -149,7 +158,7 @@ export function LiffProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <LiffContext.Provider value={{ lineUserId, lineDisplayName, isLiffReady, isLiffLoggedIn, isInClient, liffError, loginLiff, retryLiff, closeWindow }}>
+    <LiffContext.Provider value={{ lineUserId, lineDisplayName, lineIdToken, isLiffReady, isLiffLoggedIn, isInClient, liffError, loginLiff, retryLiff, closeWindow }}>
       {children}
     </LiffContext.Provider>
   )

@@ -84,8 +84,9 @@ function loadEnBookingDraft(): EnBookingDraft | null {
 
 export function BookingFormEn() {
   const searchParams = useSearchParams()
-  const { lineUserId, lineDisplayName, isLiffReady, loginLiff, liffError } = useLiff()
+  const { lineIdToken, isLiffReady, isLiffLoggedIn, loginLiff, liffError } = useLiff()
   const liffRequired = !!process.env.NEXT_PUBLIC_LIFF_ID
+  const hasFreshLineSession = isLiffLoggedIn && !!lineIdToken
 
   const bookablePlans = useMemo(() => PLANS.filter((p) => p.status !== "coming_soon" && EN_PLAN_BY_ID[p.id]), [])
 
@@ -128,8 +129,8 @@ export function BookingFormEn() {
   useEffect(() => {
     if (hasTrackedFormView.current || !isLiffReady) return
     hasTrackedFormView.current = true
-    trackEvent("booking_form_view", { locale: "en", line_logged_in: !!lineUserId, source: getAttributionSourceLabel() })
-  }, [isLiffReady, lineUserId])
+    trackEvent("booking_form_view", { locale: "en", line_logged_in: hasFreshLineSession, source: getAttributionSourceLabel() })
+  }, [isLiffReady, hasFreshLineSession])
 
   // 入力内容を随時sessionStorageへ退避（LINEログインのリダイレクトを跨いで復元するため）
   useEffect(() => {
@@ -256,7 +257,7 @@ export function BookingFormEn() {
     customerPhone.trim().length >= 10 &&
     agreed
 
-  const needsLineLogin = liffRequired && !lineUserId
+  const needsLineLogin = liffRequired && !hasFreshLineSession
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -284,18 +285,18 @@ export function BookingFormEn() {
           specialRequests: specialRequests.trim()
             ? `[EN booking] ${specialRequests.trim()}`
             : "[EN booking] Booked via English site",
-          lineUserId,
-          lineDisplayName,
+          lineIdToken,
           couponCode,
           couponDiscount,
           // 流入元（どのリンク経由か）。管理者メール・カレンダーの備考に [流入元] として載る
           attribution: getAttribution(),
         }),
       })
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        const detail = errorData.error ? ` (${errorData.error})` : ""
-        throw new Error(`We couldn't send your booking request.${detail} Please try again, or message us on LINE.`)
+      const responseData: { success?: boolean } | null = await response.json().catch(() => null)
+      if (!response.ok || responseData?.success !== true) {
+        throw new Error(
+          "We couldn't send your booking request. Please try again in a little while, or message us on LINE."
+        )
       }
       trackEvent("booking_submitted", {
         locale: "en",

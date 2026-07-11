@@ -43,6 +43,7 @@ npm run dev     # http://localhost:3000
 | `LINE_CHANNEL_ACCESS_TOKEN` | LINE 公式アカウントからの通知送信 |
 | `LINE_NOTIFY_SECRET` | `/api/line/notify` 認証用シークレット |
 | `NEXT_PUBLIC_LIFF_ID` | LINE ログイン（LIFF）連携 |
+| `LINE_LOGIN_CHANNEL_ID` | 予約APIでLIFF ID tokenを検証するLINE Login Channel ID（サーバー専用） |
 
 ## デプロイ
 

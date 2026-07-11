@@ -5,6 +5,11 @@ import { PLANS, getStaffFee } from '@/lib/data'
 import { calculateCouponDiscount } from '@/lib/constants/coupons'
 import { getEnPrice } from '@/lib/i18n/en-prices'
 import {
+  LineVerificationError,
+  verifyLineIdToken,
+  type VerifiedLineProfile,
+} from '@/lib/services/line-login-service'
+import {
   COMBO_PLAN_IDS,
   STAFF_UNAVAILABLE_PLAN_IDS,
   TIME_OPTIONAL_PLAN_IDS,
@@ -44,8 +49,7 @@ interface BookingRequest {
   totalPrice?: number
   staffName?: string
   specialRequests?: string
-  lineUserId?: string | null
-  lineDisplayName?: string | null
+  lineIdToken?: string | null
   couponCode?: string
   couponDiscount?: number
   attribution?: {
@@ -59,6 +63,12 @@ interface BookingRequest {
 
 // プラン分類は lib/plan-flags.ts を単一ソースとして参照する（予約フォーム等と共通）
 const SUNSET_SUP_TIME_NOTE = 'サンセット時刻（予約確定時にご案内）'
+const BOOKING_SERVICE_UNAVAILABLE_MESSAGE =
+  '予約を送信できませんでした。時間をおいてもう一度お試しいただくか、LINEでお問い合わせください。'
+const LINE_AUTHENTICATION_FAILED_MESSAGE =
+  'LINE認証を確認できませんでした。LINEで再度ログインしてからお試しください。'
+const LINE_AUTHENTICATION_UNAVAILABLE_MESSAGE =
+  'LINE認証を一時的に確認できません。時間をおいてもう一度お試しください。'
 const VALID_STAFF_IDS = new Set(['staff1', 'staff2', 'staff3', 'staff4', 'staff5'])
 const STAFF_NAMES: Record<string, string> = {
   staff1: 'やまちゃん',
@@ -329,7 +339,8 @@ const buildGASPayload = (
   plan: typeof PLANS[number],
   bookingNumber: string,
   validatedCoupon: { discount: number; code: string },
-  serverTotalPrice: number
+  serverTotalPrice: number,
+  lineProfile: VerifiedLineProfile
 ) => {
   const { adultCount, childCount, under3Count } = countParticipantsByCategory(bookingData.participants)
 
@@ -352,8 +363,8 @@ const buildGASPayload = (
     specialRequests: [buildSpecialRequests(bookingData, plan), buildAttributionNote(bookingData)]
       .filter(Boolean)
       .join('\n───\n'),
-    lineUserId: bookingData.lineUserId || '',
-    lineDisplayName: bookingData.lineDisplayName || '',
+    lineUserId: lineProfile.userId,
+    lineDisplayName: lineProfile.displayName,
     couponCode: validatedCoupon.code,
     couponDiscount: validatedCoupon.discount,
   }
@@ -395,6 +406,27 @@ export async function POST(request: Request) {
       )
     }
 
+    let lineProfile: VerifiedLineProfile
+    try {
+      lineProfile = await verifyLineIdToken(bookingData.lineIdToken)
+    } catch (lineError) {
+      const errorCode =
+        lineError instanceof LineVerificationError ? lineError.code : 'UPSTREAM_ERROR'
+      console.error('[v0] Booking LINE verification failed:', errorCode)
+
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            errorCode === 'INVALID_TOKEN'
+              ? LINE_AUTHENTICATION_FAILED_MESSAGE
+              : LINE_AUTHENTICATION_UNAVAILABLE_MESSAGE,
+          timestamp: new Date().toISOString(),
+        },
+        { status: errorCode === 'INVALID_TOKEN' ? 401 : 503 }
+      )
+    }
+
     const bookingNumber = generateBookingNumber()
 
     // クーポンをサーバー側で再計算（コードから直接金額を算出）
@@ -410,7 +442,14 @@ export async function POST(request: Request) {
       bookingData.locale === 'en'
     )
 
-    const gasPayload = buildGASPayload(bookingData, plan, bookingNumber, validatedCoupon, serverTotalPrice)
+    const gasPayload = buildGASPayload(
+      bookingData,
+      plan,
+      bookingNumber,
+      validatedCoupon,
+      serverTotalPrice,
+      lineProfile
+    )
 
     try {
       const result = await sendToGAS(gasPayload)
@@ -428,8 +467,16 @@ export async function POST(request: Request) {
         )
       )
     } catch (gasError) {
+      console.error(
+        '[v0] Booking could not be saved to GAS:',
+        gasError instanceof Error ? gasError.message : 'Unknown GAS error'
+      )
       return NextResponse.json(
-        createAPIError(gasError, 'GAS連携に失敗しました'),
+        {
+          success: false,
+          error: BOOKING_SERVICE_UNAVAILABLE_MESSAGE,
+          timestamp: new Date().toISOString(),
+        },
         { status: 502 }
       )
     }

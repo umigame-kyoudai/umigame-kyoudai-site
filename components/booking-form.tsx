@@ -69,13 +69,11 @@ interface BookingData {
   agreedToTerms: boolean
   couponCode: string
   couponDiscount: number
-  lineUserId: string | null
-  lineDisplayName: string | null
 }
 
 // LINEログイン（liff.login）はページリダイレクトを挟むため、入力途中の内容を
-// sessionStorage に退避してログイン後に復元する。LINEの本人情報はLIFFから
-// 再取得するため下書きには含めない。
+// sessionStorage に退避してログイン後に復元する。LINEの本人情報とID tokenは
+// LIFFから毎回取得し、この下書きには含めない。
 const BOOKING_DRAFT_KEY = "booking-form-draft"
 
 function loadBookingDraft(): Partial<BookingData> | null {
@@ -92,8 +90,7 @@ function loadBookingDraft(): Partial<BookingData> | null {
 
 function saveBookingDraft(data: BookingData): void {
   try {
-    const { lineUserId: _lineUserId, lineDisplayName: _lineDisplayName, ...draft } = data
-    window.sessionStorage.setItem(BOOKING_DRAFT_KEY, JSON.stringify(draft))
+    window.sessionStorage.setItem(BOOKING_DRAFT_KEY, JSON.stringify(data))
   } catch {}
 }
 
@@ -194,8 +191,6 @@ export function BookingForm() {
     couponCode: "",
     couponDiscount: 0,
     ...(loadBookingDraft() ?? {}),
-    lineUserId: null,
-    lineDisplayName: null,
   }))
 
   const [totalPrice, setTotalPrice] = useState(0)
@@ -227,8 +222,9 @@ export function BookingForm() {
     saveBookingDraft(bookingData)
   }, [bookingData, isSubmitted])
 
-  // LIFFコンテキストからlineUserIdを取得
-  const { lineUserId: liffUserId, lineDisplayName: liffDisplayName, isLiffReady, isLiffLoggedIn, isInClient, liffError, loginLiff, retryLiff, closeWindow } = useLiff()
+  // プロフィールは表示専用。予約APIにはサーバー検証用のID tokenだけを送る。
+  const { lineUserId: liffUserId, lineDisplayName: liffDisplayName, lineIdToken, isLiffReady, isLiffLoggedIn, isInClient, liffError, loginLiff, retryLiff, closeWindow } = useLiff()
+  const hasFreshLineSession = isLiffLoggedIn && !!liffUserId && !!lineIdToken
 
   // フォーム表示を1回だけ計測（LIFF準備完了時点のログイン状態付き）。
   // book_cta_click → booking_form_view → line_login_click → booking_submitted のファネルを見る。
@@ -236,14 +232,8 @@ export function BookingForm() {
   useEffect(() => {
     if (hasTrackedFormView.current || !isLiffReady) return
     hasTrackedFormView.current = true
-    trackEvent("booking_form_view", { locale: "ja", line_logged_in: !!liffUserId, source: getAttributionSourceLabel() })
-  }, [isLiffReady, liffUserId])
-
-  useEffect(() => {
-    if (liffUserId) {
-      setBookingData((prev) => ({ ...prev, lineUserId: liffUserId, lineDisplayName: liffDisplayName }))
-    }
-  }, [liffUserId, liffDisplayName])
+    trackEvent("booking_form_view", { locale: "ja", line_logged_in: hasFreshLineSession, source: getAttributionSourceLabel() })
+  }, [isLiffReady, hasFreshLineSession])
 
   const selectedPlanData = BOOKING_PLANS.find((plan) => plan.id === bookingData.selectedPlan)
   const selectedPlanIsComingSoon = selectedPlanData?.status === "coming_soon"
@@ -506,9 +496,8 @@ export function BookingForm() {
           participants: participantsForSubmit,
           // 昼夜セットは備考に [COMBO booking] ブロックを付与（...bookingData の specialRequests を上書き）
           specialRequests: finalSpecialRequests,
-          // LIFFから最新のuserIdを直接取得（レースコンディション対策）
-          lineUserId: liffUserId || bookingData.lineUserId,
-          lineDisplayName: liffDisplayName || bookingData.lineDisplayName,
+          // 本人情報は送らず、サーバーがLINE公式APIで検証するID tokenだけを渡す。
+          lineIdToken,
           planName: selectedPlanData?.name,
           staffName: STAFF_LIST.find((s) => s.id === bookingData.selectedStaff)?.name,
           adultPrice,
@@ -522,13 +511,16 @@ export function BookingForm() {
         }),
       })
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        const errorMessage = errorData.error || `エラーが発生しました（ステータス: ${response.status}）`
-          throw new Error(errorMessage)
+      const responseData: { success?: boolean; error?: string } | null = await response.json().catch(() => null)
+      if (!response.ok || responseData?.success !== true) {
+        const publicErrorMessage =
+          response.status < 500 && responseData?.error
+            ? responseData.error
+            : "予約を送信できませんでした。時間をおいてもう一度お試しいただくか、LINEでお問い合わせください。"
+        throw new Error(publicErrorMessage)
       }
 
-      // fetch が成功したら即座に完了と判断（response.json は無視）
+      // APIがJSONで success: true を返した場合だけ完了画面へ進む。
       trackEvent("booking_submitted", {
         locale: "ja",
         plan: bookingData.selectedPlan,
@@ -719,7 +711,7 @@ export function BookingForm() {
 
       {/* LINE連携ステータス */}
       {!!process.env.NEXT_PUBLIC_LIFF_ID && isLiffReady && (
-        liffUserId ? (
+        hasFreshLineSession ? (
           <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-center gap-3">
             <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center flex-shrink-0">
               <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
@@ -1690,7 +1682,7 @@ export function BookingForm() {
 
           {/* 未ログインのままフォーム下部まで来た人向けのログイン導線。
               ページ上部のバナーまで戻らせない（入力後の行き止まり防止） */}
-          {!!process.env.NEXT_PUBLIC_LIFF_ID && isLiffReady && !liffUserId && !liffError && (
+          {!!process.env.NEXT_PUBLIC_LIFF_ID && isLiffReady && !hasFreshLineSession && !liffError && (
             <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
               <p className="text-sm font-bold text-emerald-900">あと1ステップ：LINEログインで送信できます</p>
               <p className="mt-1 text-xs text-emerald-700">
@@ -1713,10 +1705,10 @@ export function BookingForm() {
           <Button
             type="submit"
             size="lg"
-            disabled={!isFormValid || isSubmitting || (!!process.env.NEXT_PUBLIC_LIFF_ID && (!isLiffReady || !liffUserId))}
+            disabled={!isFormValid || isSubmitting || (!!process.env.NEXT_PUBLIC_LIFF_ID && (!isLiffReady || !hasFreshLineSession))}
             className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl py-4 text-lg font-semibold disabled:opacity-50"
           >
-            {!isLiffReady && !!process.env.NEXT_PUBLIC_LIFF_ID ? "LINE連携中..." : (!!process.env.NEXT_PUBLIC_LIFF_ID && !liffUserId) ? "上のLINEログイン後に送信できます" : isSubmitting ? "送信中..." : "仮予約を送信する"}
+            {!isLiffReady && !!process.env.NEXT_PUBLIC_LIFF_ID ? "LINE連携中..." : (!!process.env.NEXT_PUBLIC_LIFF_ID && !hasFreshLineSession) ? "上のLINEログイン後に送信できます" : isSubmitting ? "送信中..." : "仮予約を送信する"}
           </Button>
 
           <p className="text-xs text-gray-500 text-center mt-3">送信後、24時間以内にスタッフよりご連絡いたします。</p>
