@@ -292,16 +292,27 @@ export function BookingFormEn() {
           attribution: getAttribution(),
         }),
       })
-      const responseData: { success?: boolean } | null = await response.json().catch(() => null)
+      const responseData: {
+        success?: boolean
+        data?: { totalPrice?: unknown }
+      } | null = await response.json().catch(() => null)
       if (!response.ok || responseData?.success !== true) {
         throw new Error(
           "We couldn't send your booking request. Please try again in a little while, or message us on LINE."
         )
       }
+      const confirmedTotalPrice =
+        typeof responseData.data?.totalPrice === "number" &&
+        Number.isFinite(responseData.data.totalPrice) &&
+        responseData.data.totalPrice >= 0
+          ? responseData.data.totalPrice
+          : totalPrice
       trackEvent("booking_submitted", {
         locale: "en",
         plan: planId,
+        planName: plan.name,
         headcount: participants.length,
+        total: confirmedTotalPrice,
         source: getAttributionSourceLabel(),
       })
       try {

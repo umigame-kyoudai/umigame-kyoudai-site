@@ -511,7 +511,11 @@ export function BookingForm() {
         }),
       })
 
-      const responseData: { success?: boolean; error?: string } | null = await response.json().catch(() => null)
+      const responseData: {
+        success?: boolean
+        error?: string
+        data?: { totalPrice?: unknown }
+      } | null = await response.json().catch(() => null)
       if (!response.ok || responseData?.success !== true) {
         const publicErrorMessage =
           response.status < 500 && responseData?.error
@@ -521,12 +525,19 @@ export function BookingForm() {
       }
 
       // APIがJSONで success: true を返した場合だけ完了画面へ進む。
+      // GA4のvalueには、改ざん可能なクライアント値よりAPIの再計算結果を優先する。
+      const confirmedTotalPrice =
+        typeof responseData.data?.totalPrice === "number" &&
+        Number.isFinite(responseData.data.totalPrice) &&
+        responseData.data.totalPrice >= 0
+          ? responseData.data.totalPrice
+          : totalPrice
       trackEvent("booking_submitted", {
         locale: "ja",
         plan: bookingData.selectedPlan,
         planName: selectedPlanData?.name ?? "",
         headcount: bookingData.adultCount + bookingData.childCount + bookingData.under3Count,
-        total: totalPrice,
+        total: confirmedTotalPrice,
         source: getAttributionSourceLabel(),
       })
       clearBookingDraft()

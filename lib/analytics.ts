@@ -14,13 +14,54 @@ export type TrackEventName =
 
 type TrackEventProps = Record<string, string | number | boolean | null>
 
+type GAEventParams = Record<string, string | number | boolean | null>
+
+export interface GAEvent {
+  name: string
+  params: GAEventParams
+}
+
 // GA4 にも転送するイベントと、GA4 側でのイベント名の対応表。
 // Vercel 側の既存イベント名は集計の連続性のため変えず、GA4 側は
-// line_click / phone_click / reservation_click の3つに統一する。
+// 予約リクエスト成功は、予約確定前なので purchase ではなくGA4推奨の
+// generate_lead として送る。
 const GA_EVENT_NAME: Partial<Record<TrackEventName, string>> = {
   line_click: "line_click",
   phone_click: "phone_click",
   book_cta_click: "reservation_click",
+  booking_submitted: "generate_lead",
+}
+
+const copyIfPresent = (
+  target: GAEventParams,
+  key: string,
+  value: TrackEventProps[string] | undefined
+): void => {
+  if (value !== undefined) target[key] = value
+}
+
+// GA4へ送る値をイベント単位で明示し、氏名・電話・メール・LINE IDなどが
+// 呼び出し元の変更で誤って混入しないようにする。
+export function buildGAEvent(name: TrackEventName, props?: TrackEventProps): GAEvent | null {
+  const gaName = GA_EVENT_NAME[name]
+  if (!gaName) return null
+
+  if (name !== "booking_submitted") {
+    return { name: gaName, params: props ?? {} }
+  }
+
+  const params: GAEventParams = { currency: "JPY" }
+  const value = props?.total
+  if (typeof value === "number" && Number.isFinite(value) && value >= 0) {
+    params.value = value
+  }
+  copyIfPresent(params, "lead_source", props?.source)
+  copyIfPresent(params, "plan_id", props?.plan)
+  copyIfPresent(params, "plan_name", props?.planName)
+  copyIfPresent(params, "locale", props?.locale)
+  copyIfPresent(params, "headcount", props?.headcount)
+
+  return { name: gaName, params }
 }
 
 declare global {
@@ -39,9 +80,9 @@ export function trackEvent(name: TrackEventName, props?: TrackEventProps): void 
     // 計測は best-effort。失敗しても何もしない。
   }
   try {
-    const gaName = GA_EVENT_NAME[name]
-    if (gaName && typeof window !== "undefined" && typeof window.gtag === "function") {
-      window.gtag("event", gaName, props ?? {})
+    const gaEvent = buildGAEvent(name, props)
+    if (gaEvent && typeof window !== "undefined" && typeof window.gtag === "function") {
+      window.gtag("event", gaEvent.name, gaEvent.params)
     }
   } catch {
     // 同上
