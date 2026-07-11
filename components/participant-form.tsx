@@ -56,8 +56,9 @@ export function ParticipantForm({ participants, minAge, selectedPlan, onUpdate }
               </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                 <div>
-                  <Label className="text-sm font-medium text-gray-700 mb-2 block">氏名 (任意)</Label>
+                  <Label htmlFor={`participant-${participant.id}-name`} className="text-sm font-medium text-gray-700 mb-2 block">氏名 (任意)</Label>
                   <Input
+                    id={`participant-${participant.id}-name`}
                     value={participant.name}
                     onChange={(e) => onUpdate(participant.id, "name", e.target.value)}
                     placeholder="山田 太郎"
@@ -65,8 +66,9 @@ export function ParticipantForm({ participants, minAge, selectedPlan, onUpdate }
                   />
                 </div>
                 <div>
-                  <Label className="text-sm font-medium text-gray-700 mb-2 block">年齢 *</Label>
+                  <Label htmlFor={`participant-${participant.id}-age`} className="text-sm font-medium text-gray-700 mb-2 block">年齢 *</Label>
                   <Input
+                    id={`participant-${participant.id}-age`}
                     type="number"
                     value={participant.age}
                     onChange={(e) => {
@@ -91,10 +93,11 @@ export function ParticipantForm({ participants, minAge, selectedPlan, onUpdate }
                   )}
                 </div>
                 <div>
-                  <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                  <Label htmlFor={`participant-${participant.id}-height`} className="text-sm font-medium text-gray-700 mb-2 block">
                     身長 (cm) (任意)
                   </Label>
                   <Input
+                    id={`participant-${participant.id}-height`}
                     type="number"
                     value={participant.height}
                     onChange={(e) => {
@@ -107,10 +110,11 @@ export function ParticipantForm({ participants, minAge, selectedPlan, onUpdate }
                   />
                 </div>
                 <div>
-                  <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                  <Label htmlFor={`participant-${participant.id}-weight`} className="text-sm font-medium text-gray-700 mb-2 block">
                     体重 (kg) (任意)
                   </Label>
                   <Input
+                    id={`participant-${participant.id}-weight`}
                     type="number"
                     value={participant.weight}
                     onChange={(e) => {
@@ -123,10 +127,11 @@ export function ParticipantForm({ participants, minAge, selectedPlan, onUpdate }
                   />
                 </div>
                 <div>
-                  <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                  <Label htmlFor={`participant-${participant.id}-foot`} className="text-sm font-medium text-gray-700 mb-2 block">
                     足のサイズ (cm) {isNightTour ? "(任意)" : "*"}
                   </Label>
                   <Input
+                    id={`participant-${participant.id}-foot`}
                     type="number"
                     step="0.5"
                     value={participant.footSize}

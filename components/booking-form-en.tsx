@@ -259,6 +259,25 @@ export function BookingFormEn() {
 
   const needsLineLogin = liffRequired && !hasFreshLineSession
 
+  // Spell out why the submit button is disabled (a human-readable mirror of
+  // isFormValid). The 60+ restriction has its own red notice, so it's not listed.
+  const missingItems: string[] = []
+  if (!plan) missingItems.push("Choose a tour")
+  if (!date) missingItems.push("Pick a date")
+  if (!timeOptional && !time) missingItems.push("Pick a start time")
+  if (participants.length === 0) missingItems.push("Add at least one guest")
+  else if (counts.adult === 0) missingItems.push("Include at least one adult (13+)")
+  participants.forEach((p, index) => {
+    const minAge = p.category === "under3" ? 0 : p.category === "child" ? childMinAge : 13
+    const maxAge = p.category === "under3" ? 3 : p.category === "child" ? 12 : 100
+    if (typeof p.age !== "number" || p.age < minAge || p.age > maxAge) missingItems.push(`Age for guest ${index + 1}`)
+    if (!isNight && !(typeof p.footSize === "number" && p.footSize > 0)) missingItems.push(`Shoe size for guest ${index + 1}`)
+  })
+  if (customerName.trim().length === 0) missingItems.push("Your full name")
+  if (customerPhone.trim().length < 10) missingItems.push("Phone number (at least 10 digits, with country code)")
+  if (!agreed) missingItems.push("Agree to the cancellation policy")
+  if (needsLineLogin) missingItems.push("Log in with LINE")
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!plan || !en) return
@@ -513,12 +532,13 @@ export function BookingFormEn() {
               </div>
               <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
                 <div>
-                  <Label className="text-xs text-gray-600 mb-1 block">Name (optional)</Label>
-                  <Input value={p.name} onChange={(e) => updateParticipant(p.id, "name", e.target.value)} className="rounded-xl border-emerald-200" />
+                  <Label htmlFor={`en-p-${p.id}-name`} className="text-xs text-gray-600 mb-1 block">Name (optional)</Label>
+                  <Input id={`en-p-${p.id}-name`} value={p.name} onChange={(e) => updateParticipant(p.id, "name", e.target.value)} className="rounded-xl border-emerald-200" />
                 </div>
                 <div>
-                  <Label className="text-xs text-gray-600 mb-1 block">Age *</Label>
+                  <Label htmlFor={`en-p-${p.id}-age`} className="text-xs text-gray-600 mb-1 block">Age *</Label>
                   <Input
+                    id={`en-p-${p.id}-age`}
                     type="number"
                     required
                     min={p.category === "under3" ? 0 : p.category === "child" ? childMinAge : 13}
@@ -531,16 +551,17 @@ export function BookingFormEn() {
                 {!isNight && (
                   <>
                     <div>
-                      <Label className="text-xs text-gray-600 mb-1 block">Height cm (optional)</Label>
-                      <Input type="number" min={50} max={220} value={p.height} onChange={(e) => updateParticipant(p.id, "height", e.target.value === "" ? "" : Number.parseInt(e.target.value))} className="rounded-xl border-emerald-200" />
+                      <Label htmlFor={`en-p-${p.id}-height`} className="text-xs text-gray-600 mb-1 block">Height cm (optional)</Label>
+                      <Input id={`en-p-${p.id}-height`} type="number" min={50} max={220} value={p.height} onChange={(e) => updateParticipant(p.id, "height", e.target.value === "" ? "" : Number.parseInt(e.target.value))} className="rounded-xl border-emerald-200" />
                     </div>
                     <div>
-                      <Label className="text-xs text-gray-600 mb-1 block">Weight kg (optional)</Label>
-                      <Input type="number" min={5} max={150} value={p.weight} onChange={(e) => updateParticipant(p.id, "weight", e.target.value === "" ? "" : Number.parseInt(e.target.value))} className="rounded-xl border-emerald-200" />
+                      <Label htmlFor={`en-p-${p.id}-weight`} className="text-xs text-gray-600 mb-1 block">Weight kg (optional)</Label>
+                      <Input id={`en-p-${p.id}-weight`} type="number" min={5} max={150} value={p.weight} onChange={(e) => updateParticipant(p.id, "weight", e.target.value === "" ? "" : Number.parseInt(e.target.value))} className="rounded-xl border-emerald-200" />
                     </div>
                     <div>
-                      <Label className="text-xs text-gray-600 mb-1 block">Shoe size cm *</Label>
+                      <Label htmlFor={`en-p-${p.id}-foot`} className="text-xs text-gray-600 mb-1 block">Shoe size cm *</Label>
                       <Input
+                        id={`en-p-${p.id}-foot`}
                         type="number"
                         required
                         step="0.5"
@@ -611,15 +632,15 @@ export function BookingFormEn() {
         <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <Label htmlFor="en-name" className="text-sm font-medium text-gray-700 mb-2 block">Full name *</Label>
-            <Input id="en-name" required value={customerName} onChange={(e) => setCustomerName(e.target.value)} className="rounded-xl border-emerald-200" />
+            <Input id="en-name" required autoComplete="name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} className="rounded-xl border-emerald-200" />
           </div>
           <div>
             <Label htmlFor="en-phone" className="text-sm font-medium text-gray-700 mb-2 block">Phone (with country code) *</Label>
-            <Input id="en-phone" type="tel" required placeholder="+1 555 123 4567" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} className="rounded-xl border-emerald-200" />
+            <Input id="en-phone" type="tel" required autoComplete="tel" placeholder="+1 555 123 4567" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} className="rounded-xl border-emerald-200" />
           </div>
           <div className="sm:col-span-2">
             <Label htmlFor="en-email" className="text-sm font-medium text-gray-700 mb-2 block">Email (recommended)</Label>
-            <Input id="en-email" type="email" value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} className="rounded-xl border-emerald-200" />
+            <Input id="en-email" type="email" autoComplete="email" value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} className="rounded-xl border-emerald-200" />
           </div>
           <div className="sm:col-span-2">
             <Label htmlFor="en-requests" className="text-sm font-medium text-gray-700 mb-2 block">Questions or requests (optional)</Label>
@@ -709,6 +730,20 @@ export function BookingFormEn() {
                 {isLiffReady ? "Log in with LINE" : "Connecting to LINE..."}
               </Button>
               {liffError && <p className="text-xs text-red-600 mt-2">LINE connection error: {liffError}</p>}
+            </div>
+          )}
+
+          {/* Show exactly what's still needed, right above the submit button */}
+          {missingItems.length > 0 && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4" role="status">
+              <p className="text-sm font-bold text-amber-900">
+                Almost there — {missingItems.length} {missingItems.length === 1 ? "item" : "items"} left:
+              </p>
+              <ul className="mt-1.5 list-inside list-disc space-y-0.5 text-sm text-amber-800">
+                {missingItems.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
             </div>
           )}
 
