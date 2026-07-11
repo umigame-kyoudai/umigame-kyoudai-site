@@ -17,7 +17,7 @@ export function StaffSection() {
     <section className="py-12 sm:py-16 md:py-28 bg-white relative overflow-hidden">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <p className="text-emerald-600 font-semibold text-sm tracking-widest uppercase mb-3">Our Team</p>
+          <p className="text-emerald-700 font-semibold text-sm tracking-widest uppercase mb-3">Our Team</p>
           <h2 className="text-3xl md:text-5xl font-bold text-gray-900 mb-4">
             頼れる<span className="text-emerald-600">スタッフ</span>
           </h2>
@@ -45,7 +45,7 @@ export function StaffSection() {
               </div>
               <div>
                 <h3 className="text-lg font-bold text-gray-900 mb-1">{staff.name}</h3>
-                <p className="text-emerald-600 text-sm font-medium mb-2">{staff.role}</p>
+                <p className="text-emerald-700 text-sm font-medium mb-2">{staff.role}</p>
                 <p className="text-gray-500 text-xs leading-relaxed">{staff.description}</p>
               </div>
             </div>
@@ -55,7 +55,7 @@ export function StaffSection() {
         <div className="text-center mt-12">
           <Link
             href="/staff"
-            className="inline-flex items-center text-emerald-600 hover:text-emerald-700 font-semibold transition-colors"
+            className="inline-flex items-center text-emerald-700 hover:text-emerald-800 font-semibold transition-colors"
           >
             スタッフ紹介をもっと見る →
           </Link>

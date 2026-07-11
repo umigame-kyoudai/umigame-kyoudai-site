@@ -39,7 +39,7 @@ export function FeaturesSection() {
 
       <div className="max-w-6xl mx-auto px-5 sm:px-6 lg:px-8 relative">
         <div className="text-center mb-8 sm:mb-16">
-          <p className="text-emerald-600 font-semibold text-xs sm:text-sm tracking-widest uppercase mb-2">Why Choose Us</p>
+          <p className="text-emerald-700 font-semibold text-xs sm:text-sm tracking-widest uppercase mb-2">Why Choose Us</p>
           <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold text-gray-900 mb-3">
             海亀兄弟が<span className="text-emerald-600">選ばれる理由</span>
           </h2>

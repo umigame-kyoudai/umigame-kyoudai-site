@@ -56,7 +56,7 @@ export function FAQSection() {
     <section className="py-12 sm:py-16 md:py-28 bg-white">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <p className="text-emerald-600 font-semibold text-sm tracking-widest uppercase mb-3">FAQ</p>
+          <p className="text-emerald-700 font-semibold text-sm tracking-widest uppercase mb-3">FAQ</p>
           <h2 className="text-3xl md:text-5xl font-bold text-gray-900">
             よくある<span className="text-emerald-600">質問</span>
           </h2>
@@ -71,7 +71,7 @@ export function FAQSection() {
         <div className="text-center mt-8">
           <Link
             href="/faq"
-            className="inline-flex items-center text-emerald-600 hover:text-emerald-700 font-semibold transition-colors"
+            className="inline-flex items-center text-emerald-700 hover:text-emerald-800 font-semibold transition-colors"
           >
             すべてのFAQを見る →
           </Link>

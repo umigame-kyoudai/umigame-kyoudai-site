@@ -34,7 +34,7 @@ export function MobileCTA({ locale = "ja" }: { locale?: "ja" | "en" }) {
             <Button
               asChild
               size="lg"
-              className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold"
+              className="flex-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl font-semibold"
             >
               <Link href={t.bookHref} onClick={() => trackEvent("book_cta_click", { location: "mobile_cta" })}>
                 <Calendar className="w-4 h-4 mr-2" />

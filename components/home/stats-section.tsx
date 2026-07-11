@@ -21,7 +21,7 @@ export function StatsSection() {
     <section className="py-12 sm:py-16 md:py-24 bg-gradient-to-b from-white to-emerald-50/50 relative overflow-hidden">
       <div className="max-w-6xl mx-auto px-5 sm:px-6 lg:px-8">
         <div className="text-center mb-10 sm:mb-16">
-          <p className="text-emerald-600 font-semibold text-xs sm:text-sm tracking-widest uppercase mb-2">Trust & Results</p>
+          <p className="text-emerald-700 font-semibold text-xs sm:text-sm tracking-widest uppercase mb-2">Trust & Results</p>
           <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold text-gray-900">
             数字が証明する<span className="text-emerald-600">信頼</span>
           </h2>

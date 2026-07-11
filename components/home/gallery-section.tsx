@@ -11,7 +11,7 @@ export function GallerySection() {
     <section className="py-20 md:py-28 bg-white relative overflow-hidden">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <p className="text-emerald-600 font-semibold text-sm tracking-widest uppercase mb-3">Gallery</p>
+          <p className="text-emerald-700 font-semibold text-sm tracking-widest uppercase mb-3">Gallery</p>
           <h2 className="text-3xl md:text-5xl font-bold text-gray-900 mb-4">
             こんな<span className="text-emerald-600">写真</span>が撮れます
           </h2>

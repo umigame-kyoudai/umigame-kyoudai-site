@@ -62,7 +62,7 @@ function ReviewCard({ review }: { review: typeof testimonials[0] }) {
       <div className="flex items-center justify-between pt-3 sm:pt-4 border-t border-gray-50">
         <div>
           <p className="font-semibold text-gray-900 text-sm">{review.name}</p>
-          <p className="text-gray-400 text-xs">{review.date}</p>
+          <p className="text-gray-500 text-xs">{review.date}</p>
         </div>
         <span className="text-xs bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full font-medium">
           {review.plan}
@@ -77,7 +77,7 @@ export function TestimonialsSection() {
     <section className="py-12 sm:py-16 md:py-28 bg-emerald-50/50 relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <p className="text-emerald-600 font-semibold text-sm tracking-widest uppercase mb-3">Testimonials</p>
+          <p className="text-emerald-700 font-semibold text-sm tracking-widest uppercase mb-3">Testimonials</p>
           <h2 className="text-3xl md:text-5xl font-bold text-gray-900 mb-4">
             お客様の<span className="text-emerald-600">声</span>
           </h2>

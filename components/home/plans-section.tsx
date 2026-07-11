@@ -96,7 +96,7 @@ const tours: Tour[] = [
     rating: 5.0,
     reviews: 2643,
     badge: "家族人気No.1",
-    badgeColor: "bg-emerald-500 text-white",
+    badgeColor: "bg-emerald-700 text-white",
     variants: [
       {
         id: "S3",
@@ -132,7 +132,7 @@ const tours: Tour[] = [
     rating: 5.0,
     reviews: 2891,
     badge: "1日1組限定",
-    badgeColor: "bg-orange-500 text-white",
+    badgeColor: "bg-orange-700 text-white",
     variants: [
       {
         id: "S4",
@@ -160,7 +160,7 @@ const tours: Tour[] = [
     rating: 5.0,
     reviews: 0,
     badge: "ドローン撮影付き",
-    badgeColor: "bg-cyan-600 text-white",
+    badgeColor: "bg-cyan-700 text-white",
     variants: [
       {
         id: "S6",
@@ -198,7 +198,7 @@ const tours: Tour[] = [
     rating: 5.0,
     reviews: 0,
     badge: "セットでお得",
-    badgeColor: "bg-emerald-600 text-white",
+    badgeColor: "bg-emerald-700 text-white",
     variants: [
       {
         id: "C1",
@@ -236,7 +236,7 @@ const tours: Tour[] = [
     rating: 5.0,
     reviews: 0,
     badge: "セットでお得",
-    badgeColor: "bg-cyan-600 text-white",
+    badgeColor: "bg-cyan-700 text-white",
     variants: [
       {
         id: "C3",
@@ -274,7 +274,7 @@ const tours: Tour[] = [
     rating: 5.0,
     reviews: 0,
     badge: "3つでお得",
-    badgeColor: "bg-emerald-600 text-white",
+    badgeColor: "bg-emerald-700 text-white",
     variants: [
       {
         id: "C5",
@@ -349,7 +349,7 @@ function PlanPricePair({ planId, tone = "emerald", dense = false }: { planId: st
   return (
     <div className={dense ? "mt-1" : ""}>
       <div className="mb-1 flex justify-center">
-        <span className="inline-block rounded bg-gray-100 px-1.5 py-0.5 text-[9px] font-bold tracking-wider text-gray-500">{getPlanCode(planId)}</span>
+        <span className="inline-block rounded bg-gray-100 px-1.5 py-0.5 text-[9px] font-bold tracking-wider text-gray-600">{getPlanCode(planId)}</span>
       </div>
       <div className="grid grid-cols-2 gap-1.5">
         {priceDisplay.rows.map((row) => (
@@ -482,15 +482,21 @@ function TourImageCarousel({ tour, isComingSoon }: { tour: Tour; isComingSoon: b
             <ChevronRight className="h-5 w-5" />
           </button>
 
-          <div className="absolute bottom-3 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-black/25 px-2 py-1 backdrop-blur-sm">
+          {/* ドットの見た目は小さいまま、ボタン自体は24px四方以上を確保する（WCAG 2.2 target size） */}
+          <div className="absolute bottom-3 left-1/2 z-20 flex -translate-x-1/2 items-center rounded-full bg-black/25 px-1 backdrop-blur-sm">
             {images.map((_, index) => (
               <button
                 key={index}
                 type="button"
                 aria-label={`${index + 1}枚目の写真を表示`}
                 onClick={() => scrollImageTo(index)}
-                className={`h-1.5 rounded-full transition-all ${index === activeImage ? "w-4 bg-white" : "w-1.5 bg-white/55"}`}
-              />
+                className="flex h-6 w-6 items-center justify-center"
+              >
+                <span
+                  aria-hidden
+                  className={`h-1.5 rounded-full transition-all ${index === activeImage ? "w-4 bg-white" : "w-1.5 bg-white/55"}`}
+                />
+              </button>
             ))}
           </div>
 
@@ -520,7 +526,7 @@ function TourCard({ tour }: { tour: Tour }) {
         {/* Content */}
         <div className="p-4 sm:p-5 flex flex-col flex-1">
           <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-0.5">{tour.name}</h3>
-          <p className="text-emerald-600 font-semibold text-xs mb-1.5 sm:mb-2">{tour.tagline}</p>
+          <p className="text-emerald-700 font-semibold text-xs mb-1.5 sm:mb-2">{tour.tagline}</p>
 
           {/* Quick info */}
           <div className="flex gap-2 mb-2 sm:mb-3">
@@ -597,13 +603,13 @@ function TourCard({ tour }: { tour: Tour }) {
               <Link
                 href={`/book?plan=${variant.id}`}
                 onClick={() => trackEvent("book_cta_click", { location: "plan_card", plan: variant.id })}
-                className="flex-1 text-center bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm py-2.5 sm:py-3 rounded-xl transition-all active:scale-95 shadow-md"
+                className="flex-1 text-center bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-sm py-2.5 sm:py-3 rounded-xl transition-all active:scale-95 shadow-md"
               >
                 予約する
               </Link>
               <Link
                 href={`/plans/${variant.id}`}
-                className="flex-1 text-center border-2 border-emerald-500 text-emerald-600 font-bold text-sm py-2.5 sm:py-3 rounded-xl transition-all active:scale-95"
+                className="flex-1 text-center border-2 border-emerald-500 text-emerald-700 font-bold text-sm py-2.5 sm:py-3 rounded-xl transition-all active:scale-95"
               >
                 詳細を見る
               </Link>
@@ -651,7 +657,7 @@ export function PlansSection() {
     <section id="plans" className="py-12 sm:py-16 md:py-24 bg-gray-50 relative overflow-hidden scroll-mt-16">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-8 sm:mb-12 px-5 sm:px-6 lg:px-8">
-          <p className="text-emerald-600 font-semibold text-xs sm:text-sm tracking-widest uppercase mb-2">Tour Plans</p>
+          <p className="text-emerald-700 font-semibold text-xs sm:text-sm tracking-widest uppercase mb-2">Tour Plans</p>
           <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold text-gray-900 mb-3">
             料金・対象年齢で<span className="text-emerald-600">すぐ比較</span>
           </h2>
@@ -674,7 +680,7 @@ export function PlansSection() {
               return (
                 <div key={item.name} className="grid grid-cols-4 border-t border-gray-100 text-[11px] sm:text-sm">
                   <div className="p-3 sm:p-4 font-bold text-gray-900">
-                    <span className="mr-1 inline-block rounded bg-gray-100 px-1 py-0.5 align-middle text-[9px] font-bold tracking-wider text-gray-500">{getPlanCode(item.id)}</span>
+                    <span className="mr-1 inline-block rounded bg-gray-100 px-1 py-0.5 align-middle text-[9px] font-bold tracking-wider text-gray-600">{getPlanCode(item.id)}</span>
                     <span className="align-middle">{item.name}</span>
                     {item.status === "coming_soon" && <ComingSoonBadge className="mt-1 px-2 py-0.5 text-[10px]" />}
                   </div>
@@ -688,7 +694,7 @@ export function PlansSection() {
                   </div>
                   <div className="p-3 sm:p-4 text-gray-700">
                     {item.age}
-                    <span className="block text-gray-400">{item.time}</span>
+                    <span className="block text-gray-600">{item.time}</span>
                   </div>
                   <div className="p-3 sm:p-4 text-gray-700">{item.bestFor}</div>
                 </div>
@@ -736,8 +742,8 @@ export function PlansSection() {
           )}
         </div>
 
-        {/* Dots */}
-        <div className="flex justify-center gap-2 mt-5">
+        {/* Dots — 見た目は小さいまま、ボタン自体は24px四方以上を確保する（WCAG 2.2 target size） */}
+        <div className="flex justify-center mt-4">
           {tours.map((_, i) => (
             <button
               type="button"
@@ -750,10 +756,15 @@ export function PlansSection() {
                 const cardWidth = el.firstElementChild?.clientWidth || 300
                 el.scrollTo({ left: i * (cardWidth + 12), behavior: "smooth" })
               }}
-              className={`h-2 rounded-full transition-all duration-300 ${
-                i === activeIndex ? "w-6 bg-emerald-500" : "w-2 bg-gray-300"
-              }`}
-            />
+              className="flex h-7 w-7 items-center justify-center"
+            >
+              <span
+                aria-hidden
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  i === activeIndex ? "w-6 bg-emerald-600" : "w-2 bg-gray-300"
+                }`}
+              />
+            </button>
           ))}
         </div>
 
