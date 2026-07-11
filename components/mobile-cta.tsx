@@ -4,14 +4,25 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { MessageSquare, Calendar } from "lucide-react"
-import { EN_UI } from "@/lib/i18n/en"
 import { trackEvent } from "@/lib/analytics"
+import type { Locale } from "@/lib/i18n/locales"
+import type { IntlUiCopy } from "@/lib/i18n/types"
 
 const JA = { line: "LINE相談", book: "空き確認・予約", bookHref: "/book" } as const
 
-export function MobileCTA({ locale = "ja" }: { locale?: "ja" | "en" }) {
+// cta prop を渡し忘れた英語ページ向けのフォールバック（通常はテンプレートが辞書から渡す）。
+// クライアントコンポーネントなので辞書全体は import しない（バンドル肥大防止）。
+const EN_FALLBACK = { line: "Ask on LINE", book: "Book Now", bookHref: "/en/book" } as const
+
+export function MobileCTA({
+  locale = "ja",
+  cta,
+}: {
+  locale?: Locale
+  cta?: IntlUiCopy["mobileCta"]
+}) {
   const pathname = usePathname()
-  const t = locale === "en" ? EN_UI.mobileCta : JA
+  const t = cta ?? (locale === "ja" ? JA : EN_FALLBACK)
   const isBookingPage = pathname === t.bookHref
 
   return (

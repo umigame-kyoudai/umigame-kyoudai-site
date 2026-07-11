@@ -4,6 +4,7 @@ import { validateEmail, validatePhoneNumber, validateRequired } from '@/lib/util
 import { PLANS, getStaffFee } from '@/lib/data'
 import { calculateCouponDiscount } from '@/lib/constants/coupons'
 import { getEnPrice } from '@/lib/i18n/en-prices'
+import { isIntlLocale } from '@/lib/i18n/locales'
 import { validateBookingRules } from '@/lib/booking-rules'
 import {
   LineVerificationError,
@@ -265,11 +266,12 @@ const calculateServerSidePrice = (
   participants: BookingParticipant[],
   selectedStaff: string | undefined,
   couponDiscount: number,
-  isEnglish: boolean
+  isIntl: boolean
 ): number => {
   const { adultCount, childCount, under3Count } = countParticipantsByCategory(participants)
-  // 英語サイト経由（locale==='en'）は英語価格（日本語＋¥2,000）で請求。フォームと同じ getEnPrice を使う。
-  const { price: adultPrice, childPrice } = isEnglish
+  // 国際版サイト経由（locale が en/ko/zh-tw）は国際版価格（日本語＋¥2,000）で請求。
+  // 3言語とも同じ価格表（EN_PRICE_DATA）で、フォームと同じ getEnPrice を使う。
+  const { price: adultPrice, childPrice } = isIntl
     ? getEnPrice(plan)
     : { price: plan.price, childPrice: plan.childPrice ?? plan.price }
   const under3Price = FREE_UNDER3_PLAN_IDS.has(plan.id) ? 0 : childPrice
@@ -438,7 +440,7 @@ export async function POST(request: Request) {
       bookingData.participants,
       bookingData.selectedStaff,
       validatedCoupon.discount,
-      bookingData.locale === 'en'
+      isIntlLocale(bookingData.locale)
     )
 
     const gasPayload = buildGASPayload(

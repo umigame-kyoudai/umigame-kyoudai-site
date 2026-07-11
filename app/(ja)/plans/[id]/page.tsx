@@ -21,7 +21,7 @@ export function generateMetadata({ params }: { params: { id: string } }): Metada
     description: plan.heroDescription,
     path: `/plans/${params.id}`,
     locale: "ja",
-    altLocalePath: EN_PLAN_BY_ID[params.id] ? `/en/plans/${params.id}` : undefined,
+    intlBasePath: EN_PLAN_BY_ID[params.id] ? `/plans/${params.id}` : undefined,
     image: plan.image,
   })
 }

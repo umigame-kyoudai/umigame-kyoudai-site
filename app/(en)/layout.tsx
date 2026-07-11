@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     description: EN_HOME.metaDescription,
     path: "/en",
     locale: "en",
-    altLocalePath: "/",
+    intlBasePath: "/",
   }),
   robots: {
     index: true,

@@ -1,5 +1,14 @@
-export function BookingFormSkeleton({ locale = "ja" }: { locale?: "ja" | "en" }) {
-  const loadingLabel = locale === "en" ? "Loading booking form" : "予約フォームを読み込んでいます"
+import type { Locale } from "@/lib/i18n/locales"
+
+const LOADING_LABELS: Record<Locale, string> = {
+  ja: "予約フォームを読み込んでいます",
+  en: "Loading booking form",
+  ko: "예약 양식을 불러오는 중입니다",
+  "zh-tw": "正在載入預約表單",
+}
+
+export function BookingFormSkeleton({ locale = "ja" }: { locale?: Locale }) {
+  const loadingLabel = LOADING_LABELS[locale]
   const cardHeights = ["h-44", "h-80", "h-56", "h-64"]
 
   return (

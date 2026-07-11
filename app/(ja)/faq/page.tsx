@@ -8,7 +8,7 @@ export const metadata: Metadata = createMetadata({
   description: "海亀兄弟のツアーに関するよくある質問。泳ぎが苦手でも参加できる？何歳から？持ち物は？雨の日は？など、お客様の疑問にお答えします。",
   path: "/faq",
   locale: "ja",
-  altLocalePath: "/en/faq",
+  intlBasePath: "/faq",
   image: "/faq-ocean-hero.jpg",
 })
 import { MobileCTA } from "@/components/mobile-cta"

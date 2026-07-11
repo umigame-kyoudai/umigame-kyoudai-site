@@ -1,6 +1,9 @@
 // 英語版サイト（/en配下）のコンテンツ定義。
 // 価格・時間帯などの数値は lib/data.ts の PLANS が単一の真実 — ここには文章のみを持つ。
 
+import type { IntlCommonCopy, IntlDict, IntlFormCopy, IntlUiCopy } from "./types"
+import { EN_PRICE_SUPPORT_NOTE } from "./en-prices"
+
 export interface EnSection {
   heading: string
   paragraphs: string[]
@@ -28,6 +31,7 @@ export interface EnPlanContent {
   timeNote?: string
   locationNote?: string
   priceNote?: string
+  priceNoteShort?: string
   options?: Array<{ name: string; price: number; note?: string }>
 }
 
@@ -421,3 +425,265 @@ export const EN_UI = {
     bookHref: "/en/book",
   },
 } as const
+
+// ---------------------------------------------------------------------------
+// Shared page-template copy (headings, buttons, breadcrumbs, metadata)
+// ---------------------------------------------------------------------------
+
+export const EN_COMMON: IntlCommonCopy = {
+  breadcrumbHome: "Home",
+  breadcrumbTours: "Tours",
+  breadcrumbFaq: "FAQ",
+  breadcrumbGuide: "Sea Turtle Guide",
+  breadcrumbTerms: "Terms of Service",
+  breadcrumbPrivacy: "Privacy Policy",
+  checkAvailability: "Check Availability & Book",
+  seeAllTours: "See All Tours",
+  readGuideLink: "Read our sea turtle snorkeling guide",
+  seeAllQuestions: "See all questions",
+  messageOnLine: "Message us on LINE",
+  emailUs: "Email us",
+  comingSoon: "Coming Soon",
+  comingSoonDetail: "Coming Soon — booking not open yet",
+  perAdult: "/ adult",
+  perChild: "/ child",
+  heroImageAlt: "Two sea turtles swimming together in the clear waters of Miyakojima",
+  guideHeroImageAlt: "A sea turtle swimming in the clear blue water of Miyakojima",
+  legalEyebrow: "Legal",
+  faqEyebrow: "FAQ",
+  tourPlansEyebrow: "Tour Plans",
+  guideEyebrow: "Sea Turtle Guide",
+  plansMetaTitle: "Tours & Prices | Sea Turtle Brothers Miyakojima",
+  plansMetaDescription:
+    "Compare Sea Turtle Brothers tours in Miyakojima: snorkeling, private trips, night tours and SUP. Free photos and videos; free cancellation until the day before.",
+  plansTitle: "Tours & Prices in Miyakojima",
+  plansIntro:
+    "Sea turtle snorkeling, private charters, jungle night tours, sunset SUP and drone SUP. Every tour includes free photos and videos, with free cancellation until the day before.",
+  faqMetaTitle: "FAQ | Sea Turtle Brothers Miyakojima",
+  faqMetaDescription:
+    "Answers to common questions about Sea Turtle Brothers tours in Miyakojima: swimming ability, kids, what to bring, cancellation, weather, payment and more.",
+  faqTitle: "Frequently Asked Questions",
+  faqIntro:
+    "Everything you need to know before joining a tour — swimming ability, kids, cancellation, what to bring and more. Can't find your answer? Message us on LINE anytime.",
+  faqStillQuestions: "Still have questions? We reply carefully during business hours (7:00 AM – 6:00 PM).",
+  askOnLine: "Ask on LINE",
+  orEmail: "or email",
+  readyToBook: "Ready to book? Check availability here",
+  durationAbout: (hours) => `About ${hours} ${hours === 1 ? "hour" : "hours"}`,
+  durationShort: (hours) => `About ${hours}h`,
+  priceAdultLabel: "Price (adult)",
+  childPricePrefix: "Child ",
+  durationLabel: "Duration",
+  agesLabel: "Ages",
+  startTimesLabel: "Start times",
+  dependsOnSunset: "Depends on sunset",
+  highlightsHeading: "Highlights",
+  includedHeading: "What's included",
+  optionalRentalsHeading: "Optional rentals",
+  bringHeading: "What to bring",
+  notesHeading: "Important notes",
+  paymentNote: {
+    before: "Payment is in cash, on site, on the day of your tour. Free cancellation until the day before — see our ",
+    linkText: "cancellation policy",
+    after: ".",
+  },
+  comingSoonCta: {
+    before: "This plan is coming soon. Follow us on ",
+    linkText: "LINE",
+    after: " to hear when booking opens.",
+  },
+  bookThisTour: "Book this tour",
+  detailsLabel: "Details",
+  guideCtaHeading: "Ready to meet the turtles?",
+  guideCtaText: "Small-group tours from ¥8,500 with free photos & videos. Free cancellation until the day before.",
+  bookMetaTitle: "Book a Tour | Sea Turtle Brothers Miyakojima",
+  bookMetaDescription:
+    "Send a tour booking request in Miyakojima. Check prices automatically, cancel free until the day before, and receive availability confirmation via LINE.",
+  bookTitle: "Booking Request",
+  bookIntro:
+    "Fill in your details below — the price is calculated automatically. We'll confirm availability and reply via LINE. ",
+  bookIntroStrong: "Your booking is not final until you hear back from us.",
+  planMetaTitles: {
+    S1: "Sea Turtle Snorkeling | Sea Turtle Brothers",
+    S2: "Private Sea Turtle Snorkeling | Sea Turtle Brothers",
+    S3: "Jungle Night Tour | Sea Turtle Brothers",
+    S4: "Sunset SUP Tour | Sea Turtle Brothers",
+    S5: "Private Jungle Night Tour | Sea Turtle Brothers",
+    S6: "Drone SUP in Miyakojima | Sea Turtle Brothers",
+    S7: "Private Drone SUP in Miyakojima | Sea Turtle Brothers",
+    "slide-boat": "Slider Boat Snorkeling | Sea Turtle Brothers",
+  },
+}
+
+// ---------------------------------------------------------------------------
+// Booking form copy
+// ---------------------------------------------------------------------------
+
+export const EN_FORM: IntlFormCopy = {
+  staffNoPreference: "No preference",
+  staffNames: { staff1: "Yama-chan", staff2: "Hikaru", staff5: "Sotaro", staff3: "Soichiro", staff4: "Nagi" },
+  limitToast: (max) => `Online booking is limited to ${max} guests. Please contact us on LINE for 11 or more.`,
+  groupLimitInfo: (max, current) =>
+    `Online booking is limited to ${max} guests. Current group: ${current}. Contact us on LINE for 11 or more.`,
+  sectionChooseTour: "Choose your tour",
+  sectionDateTime: "Date & start time",
+  sectionParticipants: "Who's joining?",
+  sectionStaff: "Request a guide (optional)",
+  sectionContact: "Your contact details",
+  dateLabel: "Date (Japan time) *",
+  startTimeLabel: "Start time",
+  startTimeSunset: "(decided by sunset)",
+  sunsetNote:
+    "The start time follows the sunset and changes by season — we'll confirm the exact time and meeting spot via LINE the day before your tour.",
+  daySupNote:
+    "Your start time may shift slightly depending on sea conditions and tide — we'll confirm the final time via LINE.",
+  chooseTourFirst: "Choose a tour first",
+  participantsIntroBase: "Age is required for safety.",
+  participantsIntroShoe:
+    "Shoe size (in cm) is required so we can prepare your fins — height and weight are optional but help us pick the right gear.",
+  addAdult: "Adult (13+)",
+  addChild: (minAge) => `Child (${minAge}–12)`,
+  addUnder3: "Age 0–3 (free)",
+  guestCategoryLabel: { adult: "Adult", child: "Child", under3: "Age 0–3" },
+  guestHeading: (index, categoryLabel) => `Guest ${index} (${categoryLabel})`,
+  removeGuestAria: (index) => `Remove guest ${index}`,
+  defaultGuestName: (index) => `Guest ${index}`,
+  nameLabel: "Name (optional)",
+  ageLabel: "Age *",
+  heightLabel: "Height cm (optional)",
+  weightLabel: "Weight kg (optional)",
+  shoeLabel: "Shoe size cm *",
+  shoePlaceholder: "e.g. 26.5",
+  shoeConversionNote: "Shoe size in cm: US men's 8.5 ≈ 26.5 cm, US women's 7 ≈ 23.5 cm, EU 42 ≈ 26.5 cm.",
+  needAdultError: "At least one adult (13+) must join.",
+  seniorNotice: { before: "For safety, groups including guests aged 60+ should book the ", after: " instead." },
+  seniorFallbackPlanName: "the private plan",
+  staffIntro: "No preference is perfectly fine — every guide will give you a great tour.",
+  fullNameLabel: "Full name *",
+  phoneLabel: "Phone (with country code) *",
+  phonePlaceholder: "+1 555 123 4567",
+  emailLabel: "Email (recommended)",
+  requestsLabel: "Questions or requests (optional)",
+  couponLabel: "Coupon code (optional)",
+  couponApply: "Apply",
+  couponChecking: "Checking...",
+  couponAppliedToast: "Coupon applied!",
+  couponAppliedLine: (amount) => `Coupon applied: −¥${amount}`,
+  couponInvalid: "That coupon code is not valid.",
+  couponNetworkError: "Could not verify the coupon. Please check your connection.",
+  couponChangedInvalid: "This coupon is not available after changing the booking details.",
+  couponRecalcError: "Could not recalculate the coupon. Please apply it again.",
+  partySummary: (counts) => {
+    const parts = [`${counts.adult} adult${counts.adult !== 1 ? "s" : ""}`]
+    if (counts.child > 0) parts.push(`${counts.child} child${counts.child !== 1 ? "ren" : ""}`)
+    if (counts.under3 > 0) parts.push(`${counts.under3} under 3 (free)`)
+    return parts.join(", ")
+  },
+  guideFeeLine: (fee) => `Guide request: +¥${fee}`,
+  estimatedTotalLabel: "Estimated total:",
+  cashOnDay: "cash on the day",
+  agreeText: {
+    before: "I agree to the ",
+    termsLabel: "Terms of Service & Cancellation Policy",
+    between: " and the ",
+    privacyLabel: "Privacy Policy",
+    after: ".",
+  },
+  cancellationSmallPrint:
+    "Free cancellation until the day before. Same-day cancellations and no-shows are charged 100% of the tour fee. Full refund if we cancel due to weather.",
+  lineLoginHeading: "One last step: log in with LINE",
+  lineLoginBody: {
+    before:
+      "We confirm every booking through LINE, a free messaging app. Please log in with LINE to send your request — if you don't have the app yet, download it from the App Store or Google Play first (it takes a minute). Your entries are saved automatically, so everything will still be here after you log in. Can't use LINE? Email us at ",
+    after: " instead.",
+  },
+  lineLoginButton: "Log in with LINE",
+  lineConnecting: "Connecting to LINE...",
+  lineErrorPrefix: "LINE connection error: ",
+  missingHeading: (count) => `Almost there — ${count} ${count === 1 ? "item" : "items"} left:`,
+  missingChooseTour: "Choose a tour",
+  missingDate: "Pick a date",
+  missingTime: "Pick a start time",
+  missingAddGuest: "Add at least one guest",
+  missingAdult: "Include at least one adult (13+)",
+  missingReduceGroup: (max) => `Reduce the group to ${max} guests (contact us on LINE for 11+)`,
+  missingAgeFor: (index) => `Age/category for guest ${index}`,
+  missingShoeFor: (index) => `Shoe size for guest ${index}`,
+  missingFullName: "Your full name",
+  missingPhone: "Phone number (at least 10 digits, with country code)",
+  missingAgree: "Agree to the cancellation policy",
+  missingLineLogin: "Log in with LINE",
+  lineExpiredError: "Your LINE login has expired. Please log in with LINE again and resend — your entries are saved.",
+  submitFailedError:
+    "We couldn't send your booking request. Please try again in a little while, or message us on LINE.",
+  genericError: "Something went wrong. Please try again.",
+  submitSending: "Sending...",
+  submitLabel: "Send booking request",
+  requestNote: "This sends a booking request — your booking is confirmed only after our staff replies on LINE.",
+  addFriendWarning: {
+    before: "⚠️ We reply on LINE, so please also ",
+    linkText: "add our LINE official account as a friend",
+    after: " — otherwise we can't reach you.",
+  },
+  successTitle: "Booking request sent!",
+  successBody: {
+    text: "Thank you! Our staff will check availability and reply to you on LINE.",
+    strong: "Your booking is not confirmed until you receive our reply.",
+  },
+  successTourLabel: "Tour: ",
+  successDateLabel: "Date & time: ",
+  successSunsetNote: "(start time & meeting spot will be confirmed via LINE the day before)",
+  successGuestsLabel: "Guests: ",
+  successCouponLabel: "Coupon discount: ",
+  successTotalPrefix: "Estimated total: ",
+  successTotalSuffix: " (cash, on the day)",
+  addFriendBox: {
+    title: "⚠️ Please read this",
+    bodyPre: "We send your booking confirmation through our ",
+    bodyStrong1: "LINE official account",
+    bodyMid: ". ",
+    bodyStrong2: "If you haven't added us as a friend on LINE, we can't reach you.",
+    bodyPost: " Please tap the button below to add us as a friend.",
+    note: "Logging in with LINE alone is not enough to receive messages.",
+    button: "Add us on LINE",
+  },
+  backHome: "Back to home",
+  bookedViaSite: "Booked via English site",
+}
+
+// ---------------------------------------------------------------------------
+// Assembled dictionary
+// ---------------------------------------------------------------------------
+
+const EN_UI_INTL: IntlUiCopy = {
+  footer: EN_UI.footer,
+  mobileCta: EN_UI.mobileCta,
+  nav: {
+    items: [
+      { href: "/en", label: "Home" },
+      { href: "/en/plans", label: "Tours" },
+      { href: "/en/miyakojima-sea-turtle", label: "Sea Turtle Guide" },
+      { href: "/en/faq", label: "FAQ" },
+    ],
+    line: "Ask on LINE",
+    book: "Book Now",
+    menuAria: "Menu",
+    homeHref: "/en",
+    bookHref: "/en/book",
+  },
+  bookingFormLoading: "Loading booking form",
+}
+
+export const EN_DICT: IntlDict = {
+  plans: EN_PLANS,
+  planById: EN_PLAN_BY_ID,
+  faqs: EN_FAQS,
+  guide: EN_GUIDE,
+  home: EN_HOME,
+  terms: EN_TERMS,
+  privacy: EN_PRIVACY,
+  ui: EN_UI_INTL,
+  common: EN_COMMON,
+  form: EN_FORM,
+  priceSupportNote: EN_PRICE_SUPPORT_NOTE,
+}

@@ -1,7 +1,8 @@
 import Link from "next/link"
 import Image from "next/image"
 import { Phone, MessageSquare, MapPin, Clock } from "lucide-react"
-import { EN_UI } from "@/lib/i18n/en"
+import { getDict } from "@/lib/i18n/dict"
+import type { Locale } from "@/lib/i18n/locales"
 import { TrackedCta, TrackedTel } from "@/components/tracked-cta"
 
 const CONTACT_INFO = {
@@ -45,11 +46,13 @@ const JA = {
   copyright: "海亀兄弟. All rights reserved.",
 } as const
 
-export function Footer({ locale = "ja" }: { locale?: "ja" | "en" }) {
-  const en = locale === "en"
-  const t = en ? EN_UI.footer : JA
-  const quickLinks = en ? EN_UI.footer.quickLinks : QUICK_LINKS_JA
-  const legalLinks = en ? EN_UI.footer.legalLinks : LEGAL_LINKS_JA
+export function Footer({ locale = "ja" }: { locale?: Locale }) {
+  // 日本語以外は各ロケールの辞書から。住所・電話の英語表記は非日本語ロケール共通
+  const dictFooter = locale !== "ja" ? getDict(locale).ui.footer : null
+  const intl = dictFooter !== null
+  const t = dictFooter ?? JA
+  const quickLinks = dictFooter ? dictFooter.quickLinks : QUICK_LINKS_JA
+  const legalLinks = dictFooter ? dictFooter.legalLinks : LEGAL_LINKS_JA
 
   return (
     <footer className="bg-emerald-900 text-white py-12">
@@ -69,7 +72,7 @@ export function Footer({ locale = "ja" }: { locale?: "ja" | "en" }) {
               <div className="flex items-center">
                 <Phone className="w-4 h-4 mr-2 flex-shrink-0" />
                 <TrackedTel href={`tel:${CONTACT_INFO.phone}`} location="footer" className="hover:text-white transition-colors">
-                  {en ? CONTACT_INFO.phoneDisplayEn : CONTACT_INFO.phoneDisplay}
+                  {intl ? CONTACT_INFO.phoneDisplayEn : CONTACT_INFO.phoneDisplay}
                 </TrackedTel>
               </div>
               <div className="flex items-center">
@@ -80,7 +83,7 @@ export function Footer({ locale = "ja" }: { locale?: "ja" | "en" }) {
               </div>
               <div className="flex items-center">
                 <MapPin className="w-4 h-4 mr-2 flex-shrink-0" />
-                <span>{en ? CONTACT_INFO.addressEn : CONTACT_INFO.address}</span>
+                <span>{intl ? CONTACT_INFO.addressEn : CONTACT_INFO.address}</span>
               </div>
             </div>
           </div>

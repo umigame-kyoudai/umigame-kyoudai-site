@@ -1,7 +1,9 @@
 import type { Metadata } from "next"
+import { type Locale, LOCALE_LANG_TAGS, LOCALE_OG_TAGS, INTL_LOCALES, localePath } from "@/lib/i18n/locales"
 
 export const SITE_URL = "https://www.umigamekyoudaimiyakojima.com"
 export const SITE_NAME = "海亀兄弟"
+export const SITE_NAME_INTL = "Sea Turtle Brothers"
 export const SITE_DESCRIPTION = "宮古島で家族向け少人数制マリン体験なら海亀兄弟。ウミガメシュノーケル、貸切ツアー、ナイトツアー、サンセットSUP、ドローンSUPなど。安全管理徹底、写真・動画無料、前日キャンセル無料。"
 
 // OGP/SNS共有用画像。LINE等のリンクプレビュー互換のため jpeg を使用。
@@ -15,7 +17,7 @@ export function createMetadata({
   image,
   type = "website",
   locale = "ja",
-  altLocalePath,
+  intlBasePath,
 }: {
   title: string
   description: string
@@ -23,9 +25,12 @@ export function createMetadata({
   image?: string
   type?: "website" | "article"
   /** このページ自身の言語 */
-  locale?: "ja" | "en"
-  /** もう一方の言語の対応ページパス（あれば hreflang を相互リンク） */
-  altLocalePath?: string
+  locale?: Locale
+  /**
+   * 全言語版が存在するページの日本語パス（例 "/faq"、ホームは "/"）。
+   * 渡すと ja/en/ko/zh-Hant + x-default の hreflang を相互リンクする。
+   */
+  intlBasePath?: string
 }): Metadata {
   const url = `${SITE_URL}${path}`
   const ogImage = image
@@ -36,18 +41,14 @@ export function createMetadata({
 
   // hreflang: 日本語を x-default とする（主要市場が日本のため）
   const languages =
-    altLocalePath !== undefined
-      ? locale === "ja"
-        ? {
-            ja: url,
-            en: `${SITE_URL}${altLocalePath}`,
-            "x-default": url,
-          }
-        : {
-            ja: `${SITE_URL}${altLocalePath}`,
-            en: url,
-            "x-default": `${SITE_URL}${altLocalePath}`,
-          }
+    intlBasePath !== undefined
+      ? {
+          [LOCALE_LANG_TAGS.ja]: `${SITE_URL}${intlBasePath}`,
+          ...Object.fromEntries(
+            INTL_LOCALES.map((l) => [LOCALE_LANG_TAGS[l], `${SITE_URL}${localePath(l, intlBasePath)}`])
+          ),
+          "x-default": `${SITE_URL}${intlBasePath}`,
+        }
       : undefined
 
   return {
@@ -61,8 +62,8 @@ export function createMetadata({
       title,
       description,
       url,
-      siteName: locale === "en" ? "Sea Turtle Brothers" : SITE_NAME,
-      locale: locale === "en" ? "en_US" : "ja_JP",
+      siteName: locale === "ja" ? SITE_NAME : SITE_NAME_INTL,
+      locale: LOCALE_OG_TAGS[locale],
       type,
       images: [
         {

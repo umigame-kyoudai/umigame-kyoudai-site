@@ -18,7 +18,8 @@ export function SiteRootLayout({
   lang,
 }: {
   children: ReactNode
-  lang: "ja" | "en"
+  /** <html lang> に入れる言語タグ（ja / en / ko / zh-Hant） */
+  lang: "ja" | "en" | "ko" | "zh-Hant"
 }) {
   // GA4 は本番ビルドかつ測定IDがあるときだけ読み込む。
   const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID

@@ -19,7 +19,7 @@ export const metadata: Metadata = {
       "宮古島でウミガメ（海亀）に会えるビーチや遭遇率が高い時期、初心者・子どもでも泳げるか、個人で行く際の注意点まで解説。安全に宮古島のウミガメツアー・シュノーケルを楽しむなら少人数制の海亀兄弟へ。",
     path: PAGE_PATH,
     locale: "ja",
-    altLocalePath: "/en/miyakojima-sea-turtle",
+    intlBasePath: "/miyakojima-sea-turtle",
   }),
   title: { absolute: PAGE_TITLE },
 }

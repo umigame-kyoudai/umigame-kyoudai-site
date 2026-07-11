@@ -15,6 +15,8 @@ export const metadata: Metadata = {
     languages: {
       ja: "/",
       en: "/en",
+      ko: "/ko",
+      "zh-Hant": "/zh-tw",
       "x-default": "/",
     },
   },
