@@ -7,7 +7,7 @@ import { MobileCTA } from "@/components/mobile-cta"
 import { BreadcrumbJsonLd } from "@/components/json-ld"
 import { TrackedCta } from "@/components/tracked-cta"
 import { createMetadata, SITE_URL } from "@/lib/seo"
-import { SNORKEL_BEACHES } from "@/lib/beach-info"
+import { SNORKEL_BEACHES, SUNSET_SUP_SPOTS, SUNSET_SUP_MEETING_TIMES } from "@/lib/beach-info"
 
 export const metadata: Metadata = createMetadata({
   title: "集合場所・アクセス｜前日案内の理由と各ビーチの設備",
@@ -21,7 +21,7 @@ export const metadata: Metadata = createMetadata({
 const MEETING_RULES = [
   { plan: "ウミガメシュノーケル（通常・貸切）", when: "開始時刻の15分前", where: "前日までにLINEでご案内（下記の候補ビーチから当日の海況で選定）" },
   { plan: "ナイトツアー（通常・貸切）", when: "開始時刻ちょうど（19:20 / 21:10）", where: "インギャーマリンガーデン付近（正確な集合ポイントは当日LINEでご案内）" },
-  { plan: "サンセットSUP", when: "開始15分前（開始時間は日没に合わせて前日にご案内）", where: "前日にLINEでご案内" },
+  { plan: "サンセットSUP", when: "日没の約90分前（8月は17:45頃・12月は16:30頃。月別の目安は下記参照、前日にLINEで確定）", where: "下記の候補地5か所から当日の風向き・海況で選定（前日にLINEで確定）" },
   { plan: "ドローンSUP（通常・貸切）", when: "選んだ開始時間（7:00〜16:00）の15分前 ※海況・水位により前後する場合あり", where: "前日にLINEでご案内" },
 ]
 
@@ -102,6 +102,44 @@ export default function AccessPage() {
             <Link href="/blog/miyakojima-snorkeling-outfit-packing" className="text-cyan-700 underline underline-offset-2 font-medium">服装・持ち物ガイド</Link>
             へ。
           </p>
+        </section>
+
+        {/* サンセットSUPの候補地・集合時間の目安 */}
+        <section className="mb-8">
+          <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-1">候補地と集合時間の目安（サンセットSUP）</h2>
+          <p className="text-sm text-gray-500 mb-4">
+            以下の5か所から、当日いちばん条件の良い場所を選んで開催します。確定した場所は前日にLINEで地図付きでご案内します。
+          </p>
+          <ul className="grid gap-2 sm:grid-cols-2 mb-5">
+            {SUNSET_SUP_SPOTS.map((spot) => (
+              <li key={spot.name}>
+                <a
+                  href={spot.mapUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 rounded-xl bg-white border border-gray-200 shadow-sm px-4 py-3 hover:border-orange-300 transition-colors"
+                >
+                  <MapPin className="w-4 h-4 text-orange-500 flex-shrink-0" aria-hidden="true" />
+                  <span className="font-medium text-gray-900 text-sm">{spot.name}</span>
+                  <span className="ml-auto text-xs text-cyan-700 underline underline-offset-2">地図</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+          <div className="rounded-2xl bg-white border border-orange-100 shadow-sm p-4 sm:p-5">
+            <p className="font-bold text-gray-900 text-sm mb-1">集合時間の目安（日没の約90分前）</p>
+            <p className="text-xs text-gray-500 mb-3">
+              ツアーは約2時間で、日没の約30分後・マジックアワーの余韻とともに解散します。正確な時間は前日にLINEで確定します。
+            </p>
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
+              {SUNSET_SUP_MEETING_TIMES.map(({ month, time }) => (
+                <div key={month} className="rounded-lg bg-orange-50 px-2 py-1.5 text-center">
+                  <span className="text-xs text-gray-500">{month}月</span>{" "}
+                  <span className="text-sm font-bold text-orange-800">{time}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </section>
 
         {/* プラン別の集合時間 */}

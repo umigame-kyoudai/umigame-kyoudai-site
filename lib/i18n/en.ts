@@ -143,8 +143,8 @@ export const EN_PLANS: EnPlanContent[] = [
       "Guests who have been drinking alcohol cannot participate",
     ],
     ageNote: "Ages 5 to 65",
-    timeNote: "Start time follows the sunset and changes by season — we'll confirm the exact meeting time via LINE the day before your tour. Meet 15 minutes before the start.",
-    locationNote: "Location depends on the day's sea and weather conditions (your guide will tell you via LINE the day before your tour)",
+    timeNote: "Meet about 90 minutes before sunset — around 5:45–6:00 PM in summer (June–August) and 4:30–5:00 PM in winter (November–February). The tour lasts about 2 hours and ends roughly 30 minutes after sunset. We'll confirm the exact meeting time via LINE the day before your tour.",
+    locationNote: "Held at one of five spots — Turiba Seaside Park, Pasha Beach, the north end of Yonaha Beach, Ingya Marine Garden, or Nishihama Beach — chosen for the day's wind and sea conditions. Your guide will confirm the exact meeting spot with a map via LINE the day before your tour.",
   },
   {
     id: "S6",
@@ -534,7 +534,7 @@ export const EN_FORM: IntlFormCopy = {
   startTimeLabel: "Start time",
   startTimeSunset: "(decided by sunset)",
   sunsetNote:
-    "The start time follows the sunset and changes by season — we'll confirm the exact time and meeting spot via LINE the day before your tour.",
+    "The start time follows the sunset and changes by season — you'll meet about 90 minutes before sunset (around 5:45 PM in August). We'll confirm the exact time and meeting spot via LINE the day before your tour.",
   daySupNote:
     "Your start time may shift slightly depending on sea conditions and tide — we'll confirm the final time via LINE.",
   chooseTourFirst: "Choose a tour first",

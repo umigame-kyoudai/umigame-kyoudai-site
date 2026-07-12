@@ -755,7 +755,7 @@ export function BookingForm() {
                 <p>
                   日時: {bookingData.selectedDate}{" "}
                   {getPlanType(bookingData.selectedPlan) === "sunset-sup"
-                    ? "(開始時間・集合場所は前日にLINEでご連絡)"
+                    ? "(集合は日没の約90分前・正確な時間と場所は前日にLINEでご連絡)"
                     : bookingData.selectedTime}
                 </p>
               )}

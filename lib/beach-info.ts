@@ -17,3 +17,31 @@ export const SNORKEL_BEACHES: BeachInfo[] = [
   { name: "ワイワイビーチ", encounterRate: 80, parking: "無料", toilet: false, shower: false, note: "事前にトイレを済ませてください" },
   { name: "シギラビーチ", encounterRate: 80, parking: "¥1,000", toilet: true, shower: false, note: "業者が多くウミガメ写真撮影は保証できない場合あり" },
 ]
+
+// サンセットSUP（S4）の催行候補地（2026-07-12 オーナー提供）。
+// 当日の風向き・海況でこの中から選定し、前日にLINEで確定する運用。
+// /access ページとプラン詳細の記載はこのリストと一致させること。
+export const SUNSET_SUP_SPOTS: Array<{ name: string; mapUrl: string }> = [
+  { name: "トゥリバー海浜公園", mapUrl: "https://maps.app.goo.gl/WJgNZk1uy7DUAbxg8" },
+  { name: "パシャビーチ", mapUrl: "https://maps.app.goo.gl/ZhsBrm6gjGCuF7sRA" },
+  { name: "与那覇ビーチ北", mapUrl: "https://maps.app.goo.gl/qf9vHu4H15zoRC5D7" },
+  { name: "インギャーマリンガーデン", mapUrl: "https://maps.app.goo.gl/UfoswiPzLbB2mwRp7" },
+  { name: "西浜ビーチ", mapUrl: "https://maps.app.goo.gl/BxMdRiVyRUkPwf6CA" },
+]
+
+// サンセットSUPの月別集合時間の目安（日没の約90分前をキリのよい時刻に丸めたもの）。
+// 正確な時刻は前日にLINEで確定する。ツアーは約2時間＝日没の約30分後に解散。
+export const SUNSET_SUP_MEETING_TIMES: Array<{ month: number; time: string }> = [
+  { month: 1, time: "16:45" },
+  { month: 2, time: "17:00" },
+  { month: 3, time: "17:15" },
+  { month: 4, time: "17:30" },
+  { month: 5, time: "17:45" },
+  { month: 6, time: "18:00" },
+  { month: 7, time: "18:00" },
+  { month: 8, time: "17:45" },
+  { month: 9, time: "17:15" },
+  { month: 10, time: "16:45" },
+  { month: 11, time: "16:30" },
+  { month: 12, time: "16:30" },
+]
