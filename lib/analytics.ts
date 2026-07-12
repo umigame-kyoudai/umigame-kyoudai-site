@@ -21,47 +21,55 @@ export interface GAEvent {
   params: GAEventParams
 }
 
-// GA4 にも転送するイベントと、GA4 側でのイベント名の対応表。
+// GA4 側でのイベント名の対応表。全イベントを GA4 にも転送し、
+// reservation_click → booking_form_view → line_login_click → generate_lead
+// の予約ファネルを GA4 の探索レポートで組めるようにする。
 // Vercel 側の既存イベント名は集計の連続性のため変えず、GA4 側は
 // 予約リクエスト成功は、予約確定前なので purchase ではなくGA4推奨の
 // generate_lead として送る。
-const GA_EVENT_NAME: Partial<Record<TrackEventName, string>> = {
-  line_click: "line_click",
-  phone_click: "phone_click",
+const GA_EVENT_NAME: Record<TrackEventName, string> = {
   book_cta_click: "reservation_click",
+  line_click: "line_click",
+  line_add_friend_click: "line_add_friend_click",
+  phone_click: "phone_click",
+  booking_form_view: "booking_form_view",
+  line_login_click: "line_login_click",
   booking_submitted: "generate_lead",
+  booking_failed: "booking_failed",
 }
 
-const copyIfPresent = (
-  target: GAEventParams,
-  key: string,
-  value: TrackEventProps[string] | undefined
-): void => {
-  if (value !== undefined) target[key] = value
+// GA4 へ渡すパラメータの許可リスト（Vercel側キー → GA4側キー）。
+// 氏名・電話・メール・LINE ID などの個人情報が呼び出し元の変更で誤って
+// 混入しないよう、ここに載せたキーだけを転送する。GA4 の標準レポートで
+// 集計するにはカスタム定義の登録が必要（docs/ga4-setup.md 参照）。
+const GA_PARAM_KEY: Record<string, string> = {
+  location: "location",
+  plan: "plan_id",
+  planName: "plan_name",
+  locale: "locale",
+  line_logged_in: "line_logged_in",
+  source: "lead_source",
+  headcount: "headcount",
 }
 
-// GA4へ送る値をイベント単位で明示し、氏名・電話・メール・LINE IDなどが
-// 呼び出し元の変更で誤って混入しないようにする。
-export function buildGAEvent(name: TrackEventName, props?: TrackEventProps): GAEvent | null {
-  const gaName = GA_EVENT_NAME[name]
-  if (!gaName) return null
-
-  if (name !== "booking_submitted") {
-    return { name: gaName, params: props ?? {} }
+export function buildGAEvent(name: TrackEventName, props?: TrackEventProps): GAEvent {
+  const params: GAEventParams = {}
+  for (const [key, gaKey] of Object.entries(GA_PARAM_KEY)) {
+    const value = props?.[key]
+    if (value !== undefined) params[gaKey] = value
   }
 
-  const params: GAEventParams = { currency: "JPY" }
-  const value = props?.total
-  if (typeof value === "number" && Number.isFinite(value) && value >= 0) {
-    params.value = value
+  // 予約成功はリード価値（予約金額）付き。value/currency は GA4 の
+  // 組み込み指標なのでカスタム定義の登録なしで集計できる。
+  if (name === "booking_submitted") {
+    params.currency = "JPY"
+    const value = props?.total
+    if (typeof value === "number" && Number.isFinite(value) && value >= 0) {
+      params.value = value
+    }
   }
-  copyIfPresent(params, "lead_source", props?.source)
-  copyIfPresent(params, "plan_id", props?.plan)
-  copyIfPresent(params, "plan_name", props?.planName)
-  copyIfPresent(params, "locale", props?.locale)
-  copyIfPresent(params, "headcount", props?.headcount)
 
-  return { name: gaName, params }
+  return { name: GA_EVENT_NAME[name], params }
 }
 
 declare global {
@@ -80,8 +88,8 @@ export function trackEvent(name: TrackEventName, props?: TrackEventProps): void 
     // 計測は best-effort。失敗しても何もしない。
   }
   try {
-    const gaEvent = buildGAEvent(name, props)
-    if (gaEvent && typeof window !== "undefined" && typeof window.gtag === "function") {
+    if (typeof window !== "undefined" && typeof window.gtag === "function") {
+      const gaEvent = buildGAEvent(name, props)
       window.gtag("event", gaEvent.name, gaEvent.params)
     }
   } catch {

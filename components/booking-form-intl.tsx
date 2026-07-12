@@ -452,7 +452,7 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
       } catch {}
       setIsSubmitted(true)
     } catch (error) {
-      trackEvent("booking_failed", { locale, plan: planId })
+      trackEvent("booking_failed", { locale, plan: planId, source: getAttributionSourceLabel() })
       toast.error(error instanceof Error ? error.message : copy.genericError)
     } finally {
       setIsSubmitting(false)

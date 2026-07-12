@@ -649,7 +649,7 @@ export function BookingForm() {
       setIsSubmitted(true)
       setIsSubmitting(false)
     } catch (error) {
-      trackEvent("booking_failed", { locale: "ja", plan: bookingData.selectedPlan })
+      trackEvent("booking_failed", { locale: "ja", plan: bookingData.selectedPlan, source: getAttributionSourceLabel() })
       const errorMessage = error instanceof Error ? error.message : "予約の送信中にエラーが発生しました。もう一度お試しください。"
       toast.error(errorMessage)
       setIsSubmitting(false)
