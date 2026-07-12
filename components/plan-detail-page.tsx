@@ -14,6 +14,7 @@ import { trackEvent } from "@/lib/analytics"
 import type { PlanDetail } from "@/lib/plan-details"
 import { PLAN_DETAILS } from "@/lib/plan-details"
 import { ComingSoonBadge, ComingSoonBanner } from "@/components/coming-soon"
+import { SunsetMonthlyGuide } from "@/components/sunset-monthly-guide"
 import { getPlanPriceDisplay, getPlanCode } from "@/lib/plan-price-display"
 import { SENIOR_RESTRICTED_PLAN_IDS, getPrivateCounterpartName } from "@/lib/plan-flags"
 
@@ -547,6 +548,7 @@ function InfoSection({ plan }: { plan: PlanDetail }) {
               <p className="text-xs text-gray-500">
                 <span className="font-semibold text-gray-700">集合時間:</span> {plan.meetingTime}
               </p>
+              {plan.id === "S4" && <SunsetMonthlyGuide locale="ja" />}
             </div>
           </motion.div>
 

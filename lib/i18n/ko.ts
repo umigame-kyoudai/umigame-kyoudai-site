@@ -508,6 +508,7 @@ const KO_FORM: IntlFormCopy = {
   startTimeLabel: "시작 시간",
   startTimeSunset: "(일몰에 따라 결정)",
   sunsetNote: "시작 시간은 일몰에 맞춰 계절마다 달라집니다 — 집합은 일몰 약 90분 전(8월은 17:45경)입니다. 정확한 시간과 집합 장소는 투어 전날 LINE으로 확정해 드립니다.",
+  sunsetDateGuide: (month, meet, end) => `${month}월 기준: 집합 ${meet}경, 해산 ${end}경.`,
   daySupNote: "바다 상황과 조수에 따라 시작 시간이 조금 달라질 수 있습니다 — 최종 시간은 LINE으로 확정해 드립니다.",
   chooseTourFirst: "먼저 투어를 선택해 주세요",
   participantsIntroBase: "안전을 위해 나이 입력이 필요합니다.",

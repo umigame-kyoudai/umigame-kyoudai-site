@@ -10,6 +10,7 @@ import { MobileCTA } from "@/components/mobile-cta"
 import { BreadcrumbJsonLd } from "@/components/json-ld"
 import { createMetadata, SITE_URL } from "@/lib/seo"
 import { TrackedCta } from "@/components/tracked-cta"
+import { SunsetMonthlyGuide } from "@/components/sunset-monthly-guide"
 import { PLANS } from "@/lib/data"
 import { getEnPrice } from "@/lib/i18n/en-prices"
 import { getDict } from "@/lib/i18n/dict"
@@ -182,6 +183,7 @@ export function IntlPlanDetailPage({ locale, id }: { locale: IntlLocale; id: str
                   {t.timeNote}
                 </p>
               )}
+              {plan.id === "S4" && <SunsetMonthlyGuide locale={locale} />}
             </section>
           )}
 

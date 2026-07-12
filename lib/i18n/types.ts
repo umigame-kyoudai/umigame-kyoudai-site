@@ -164,6 +164,8 @@ export interface IntlFormCopy {
   startTimeLabel: string
   startTimeSunset: string
   sunsetNote: string
+  /** 日付選択後に表示する、その月の集合・解散目安（サンセットSUP） */
+  sunsetDateGuide: (month: number, meet: string, end: string) => string
   daySupNote: string
   chooseTourFirst: string
   participantsIntroBase: string

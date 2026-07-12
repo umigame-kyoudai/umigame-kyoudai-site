@@ -7,6 +7,7 @@ import { ja } from "date-fns/locale"
 import { Button } from "@/components/ui/button"
 import { Clock, Info } from "lucide-react"
 import { DAY_SUP_TIMES } from "@/lib/plan-flags"
+import { getSunsetSupGuide } from "@/lib/beach-info"
 
 type PlanId = "night-hunter" | "sunset-sup" | "day-sup" | "slide-boat" | "other"
 
@@ -72,6 +73,16 @@ export default function BookingTimeSlots({ selectedPlan, selectedDate, selectedT
   const slots = useMemo(() => getTimeSlots(selectedPlan, selectedDate), [selectedPlan, selectedDate])
 
   if (selectedPlan === "sunset-sup") {
+    // 日付が選択されていれば、その日の日没（SunCalc）とその月の集合・解散目安を表示する
+    const hasValidDate = selectedDate instanceof Date && !Number.isNaN(selectedDate.getTime())
+    const dateGuide = hasValidDate
+      ? {
+          label: format(selectedDate, "M月d日", { locale: ja }),
+          sunset: toJSTString(SunCalc.getTimes(selectedDate, MIYAKOJIMA.lat, MIYAKOJIMA.lon).sunset),
+          ...getSunsetSupGuide(selectedDate.getMonth() + 1),
+        }
+      : null
+
     return (
       <div className="bg-gradient-to-r from-orange-50 to-pink-50 border border-orange-200 rounded-xl p-6">
         <div className="flex items-start gap-3">
@@ -88,10 +99,20 @@ export default function BookingTimeSlots({ selectedPlan, selectedDate, selectedT
                 <Info className="w-4 h-4 text-orange-600" />
                 <span className="text-sm font-medium text-orange-800">集合時間・集合場所は前日にLINEでお知らせします</span>
               </div>
-              <ul className="text-xs text-orange-600 space-y-1">
-                <li>• 集合の目安：夏（6〜8月）17:45〜18:00頃／冬（11〜2月）16:30〜17:00頃</li>
-                <li>• ツアーは約2時間、日没の約30分後に解散（マジックアワーまで満喫）</li>
-              </ul>
+              {dateGuide ? (
+                <ul className="text-xs text-orange-600 space-y-1">
+                  <li>• {dateGuide.label}の日没：{dateGuide.sunset}頃</li>
+                  <li>
+                    • 集合目安：<span className="font-bold text-orange-800">{dateGuide.meet}頃</span>／解散目安：
+                    <span className="font-bold text-orange-800">{dateGuide.end}頃</span>（約2時間・マジックアワーまで満喫）
+                  </li>
+                </ul>
+              ) : (
+                <ul className="text-xs text-orange-600 space-y-1">
+                  <li>• 集合の目安：夏（6〜8月）17:45〜18:00頃／冬（11〜2月）16:30〜17:00頃</li>
+                  <li>• ツアーは約2時間、日没の約30分後に解散（マジックアワーまで満喫）</li>
+                </ul>
+              )}
             </div>
           </div>
         </div>

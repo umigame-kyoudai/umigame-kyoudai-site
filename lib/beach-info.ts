@@ -31,6 +31,14 @@ export const SUNSET_SUP_SPOTS: Array<{ name: string; mapUrl: string }> = [
 
 // サンセットSUPの月別集合時間の目安（日没の約90分前をキリのよい時刻に丸めたもの）。
 // 正確な時刻は前日にLINEで確定する。ツアーは約2時間＝日没の約30分後に解散。
+// 指定月の集合・解散の目安（解散＝集合の約2時間後＝日没の約30分後）
+export function getSunsetSupGuide(month: number): { meet: string; end: string } {
+  const entry = SUNSET_SUP_MEETING_TIMES.find((t) => t.month === month) ?? SUNSET_SUP_MEETING_TIMES[0]
+  const [h, m] = entry.time.split(":").map(Number)
+  const end = `${String(h + 2).padStart(2, "0")}:${String(m).padStart(2, "0")}`
+  return { meet: entry.time, end }
+}
+
 export const SUNSET_SUP_MEETING_TIMES: Array<{ month: number; time: string }> = [
   { month: 1, time: "16:45" },
   { month: 2, time: "17:00" },

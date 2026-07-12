@@ -508,6 +508,7 @@ const ZH_FORM: IntlFormCopy = {
   startTimeLabel: "開始時間",
   startTimeSunset: "（依日落時間而定）",
   sunsetNote: "開始時間依日落而定，隨季節變動——集合為日落前約90分鐘（8月約17:45）。確切時間與集合地點將於行程前一天透過LINE確認。",
+  sunsetDateGuide: (month, meet, end) => `${month}月參考：集合約${meet}、解散約${end}。`,
   daySupNote: "開始時間可能因海況與潮位略有調整——最終時間將透過LINE確認。",
   chooseTourFirst: "請先選擇行程",
   participantsIntroBase: "基於安全考量，年齡為必填。",

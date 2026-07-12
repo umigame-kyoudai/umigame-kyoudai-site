@@ -26,6 +26,7 @@ import type { IntlDict } from "@/lib/i18n/types"
 import { type IntlLocale, LOCALE_BOOKING_TAGS, localePath } from "@/lib/i18n/locales"
 import { getEnPrice } from "@/lib/i18n/en-prices"
 import { SENIOR_RESTRICTED_PLAN_IDS, PRIVATE_COUNTERPART, TIME_OPTIONAL_PLAN_IDS, isParticipantAgeValid } from "@/lib/plan-flags"
+import { getSunsetSupGuide } from "@/lib/beach-info"
 import { trackEvent } from "@/lib/analytics"
 import { getAttribution, getAttributionSourceLabel } from "@/lib/attribution"
 import { getPlanMaxParticipants } from "@/lib/booking-rules"
@@ -568,6 +569,18 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
             {timeOptional ? (
               <p className="text-sm text-gray-500 leading-relaxed pt-2">
                 {copy.sunsetNote}
+                {(() => {
+                  // 日付選択後は、その月の集合・解散目安を追記（単一ソース: lib/beach-info.ts）
+                  const month = Number(date.split("-")[1])
+                  if (!month || month < 1 || month > 12) return null
+                  const guide = getSunsetSupGuide(month)
+                  return (
+                    <>
+                      <br />
+                      <span className="font-semibold text-gray-700">{copy.sunsetDateGuide(month, guide.meet, guide.end)}</span>
+                    </>
+                  )
+                })()}
               </p>
             ) : (
               <>

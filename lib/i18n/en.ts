@@ -535,6 +535,10 @@ export const EN_FORM: IntlFormCopy = {
   startTimeSunset: "(decided by sunset)",
   sunsetNote:
     "The start time follows the sunset and changes by season — you'll meet about 90 minutes before sunset (around 5:45 PM in August). We'll confirm the exact time and meeting spot via LINE the day before your tour.",
+  sunsetDateGuide: (month, meet, end) => {
+    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+    return `Guide for ${months[month - 1]}: meet around ${meet}, finish around ${end}.`
+  },
   daySupNote:
     "Your start time may shift slightly depending on sea conditions and tide — we'll confirm the final time via LINE.",
   chooseTourFirst: "Choose a tour first",
