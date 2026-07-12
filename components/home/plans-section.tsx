@@ -321,19 +321,20 @@ const tours: Tour[] = [
   },
 ]
 
+// 名称は語尾に「ツアー」「セットプラン」等を必ず付け、何の商品か一目で分かるようにする（2026-07-12 オーナー要望）
 const quickCompare = [
-  { id: "S1", name: "ウミガメ", age: "5〜65歳", time: "約2時間", bestFor: "初めて・家族・友人" },
-  { id: "S3", name: "ナイト", age: "0〜75歳", time: "約1.5時間", bestFor: "小さな子連れ・三世代" },
-  { id: "S4", name: "サンセットSUP", age: "5〜65歳", time: "約2時間", bestFor: "カップル・夕日撮影" },
-  { id: "S6", name: "ドローンSUP", age: "5〜65歳", time: "約2時間", bestFor: "日中の海・空撮写真" },
-  { id: "S7", name: "貸切ドローンSUP", age: "5〜65歳", time: "約2時間", bestFor: "1組貸切で空撮SUP" },
-  { id: "C1", name: "昼夜セット", age: "5〜65歳", time: "昼2h＋夜1.5h", bestFor: "海と夜を1日で満喫" },
-  { id: "C2", name: "貸切昼夜", age: "5〜65歳", time: "昼2h＋夜1.5h", bestFor: "家族・貸切で満喫" },
-  { id: "C3", name: "海空セット", age: "5〜65歳", time: "約3h", bestFor: "海も空も同じ浜で満喫" },
-  { id: "C4", name: "貸切海空セット", age: "5〜65歳", time: "約3h", bestFor: "海も空も1組貸切で満喫" },
-  { id: "C5", name: "まるごと1日", age: "5〜65歳", time: "朝〜夜", bestFor: "海・空・夜を1日で満喫" },
-  { id: "C6", name: "貸切まるごと1日", age: "5〜65歳", time: "朝〜夜", bestFor: "1日まるごと完全貸切" },
-  { id: "slide-boat", name: "スライダーボート", age: "5〜65歳予定", time: "約3時間", bestFor: "家族・グループ・アクティブ", status: "coming_soon" },
+  { id: "S1", name: "海亀ツアー", age: "5〜65歳", time: "約2時間", bestFor: "初めて・家族・友人" },
+  { id: "S3", name: "ナイトツアー", age: "0〜75歳", time: "約1.5時間", bestFor: "小さな子連れ・三世代" },
+  { id: "S4", name: "サンセットSUPツアー", age: "5〜65歳", time: "約2時間", bestFor: "カップル・夕日撮影" },
+  { id: "S6", name: "ドローンSUPツアー", age: "5〜65歳", time: "約2時間", bestFor: "日中の海・空撮写真" },
+  { id: "S7", name: "貸切ドローンSUPツアー", age: "5〜65歳", time: "約2時間", bestFor: "1組貸切で空撮SUP" },
+  { id: "C1", name: "昼夜セットプラン", age: "5〜65歳", time: "昼2h＋夜1.5h", bestFor: "海と夜を1日で満喫" },
+  { id: "C2", name: "貸切昼夜セットプラン", age: "5〜65歳", time: "昼2h＋夜1.5h", bestFor: "家族・貸切で満喫" },
+  { id: "C3", name: "海空セットプラン", age: "5〜65歳", time: "約3h", bestFor: "海も空も同じ浜で満喫" },
+  { id: "C4", name: "貸切海空セットプラン", age: "5〜65歳", time: "約3h", bestFor: "海も空も1組貸切で満喫" },
+  { id: "C5", name: "まるごと1日セットプラン", age: "5〜65歳", time: "朝〜夜", bestFor: "海・空・夜を1日で満喫" },
+  { id: "C6", name: "貸切まるごと1日セットプラン", age: "5〜65歳", time: "朝〜夜", bestFor: "1日まるごと完全貸切" },
+  { id: "slide-boat", name: "スライダーボートツアー", age: "5〜65歳予定", time: "約3時間", bestFor: "家族・グループ・アクティブ", status: "coming_soon" },
 ]
 
 function priceToneClass(tone: "emerald" | "purple" | "cyan") {
