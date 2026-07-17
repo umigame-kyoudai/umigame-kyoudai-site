@@ -6,9 +6,15 @@ const { MessagingApiClient } = messagingApi
 interface NotifyRequest {
   lineUserId: string
   customMessage: string
+  retryKey?: string
 }
 
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
 export async function POST(request: Request) {
+  let retryKey: string | undefined
+
   try {
     const notifySecret = process.env.LINE_NOTIFY_SECRET
     if (!notifySecret) {
@@ -33,6 +39,20 @@ export async function POST(request: Request) {
       )
     }
 
+    if (typeof body.retryKey !== 'undefined') {
+      if (
+        typeof body.retryKey !== 'string' ||
+        !UUID_PATTERN.test(body.retryKey)
+      ) {
+        return NextResponse.json(
+          { success: false, error: 'retryKey の形式が不正です' },
+          { status: 400 }
+        )
+      }
+
+      retryKey = body.retryKey
+    }
+
     const channelAccessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN
     if (!channelAccessToken) {
       console.error('[LINE Notify] LINE_CHANNEL_ACCESS_TOKEN が未設定')
@@ -44,13 +64,36 @@ export async function POST(request: Request) {
 
     const client = new MessagingApiClient({ channelAccessToken })
 
-    await client.pushMessage({
-      to: body.lineUserId,
-      messages: [{ type: 'text', text: body.customMessage }],
-    })
+    await client.pushMessage(
+      {
+        to: body.lineUserId,
+        messages: [{ type: 'text', text: body.customMessage }],
+      },
+      retryKey
+    )
 
     return NextResponse.json({ success: true, message: '通知を送信しました' })
   } catch (error) {
+    const status =
+      typeof error === 'object' && error !== null
+        ? Number(
+            'status' in error
+              ? error.status
+              : 'statusCode' in error
+                ? error.statusCode
+                : 0
+          )
+        : 0
+
+    // LINE側が同じリトライキーを受理済みの場合は、再送せず成功として扱う。
+    if (retryKey && status === 409) {
+      return NextResponse.json({
+        success: true,
+        duplicate: true,
+        message: '同じ通知はすでにLINEで受理されています',
+      })
+    }
+
     const msg = error instanceof Error ? error.message : String(error)
     console.error('[LINE Notify] Error:', msg)
     return NextResponse.json(
