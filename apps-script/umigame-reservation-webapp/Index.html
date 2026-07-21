@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <base target="_top">
+    <meta charset="utf-8">
+    <meta name="theme-color" content="#073b4c">
+    <?!= include('Styles'); ?>
+  </head>
+  <body>
+    <div class="app-shell" id="appShell">
+      <aside class="sidebar" aria-label="メインメニュー">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">🐢</div>
+          <div>
+            <div class="brand-name">海亀兄弟</div>
+            <div class="brand-sub">Reservation Desk</div>
+          </div>
+        </div>
+
+        <nav class="side-nav">
+          <button class="nav-item is-active" data-view="reservations">
+            <span aria-hidden="true">▦</span>
+            <span>予約管理</span>
+          </button>
+          <button class="nav-item" data-view="today">
+            <span aria-hidden="true">◷</span>
+            <span>今日・明日</span>
+          </button>
+          <button class="nav-item" data-view="attention">
+            <span aria-hidden="true">!</span>
+            <span>要確認</span>
+          </button>
+        </nav>
+
+        <div class="sidebar-note">
+          <div class="safe-dot"></div>
+          <div>
+            <strong>安全送信</strong>
+            <span>LINEは全文確認後のみ送信</span>
+          </div>
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">UMIGAME KYODAI / ADMIN</p>
+            <h1 id="pageTitle">予約管理</h1>
+          </div>
+          <div class="topbar-actions">
+            <div class="sync-state" id="syncState">
+              <span class="sync-dot"></span>
+              <span id="syncText">読み込み中</span>
+            </div>
+            <button class="icon-button" id="refreshButton" aria-label="最新情報に更新" title="最新情報に更新">
+              ↻
+            </button>
+          </div>
+        </header>
+
+        <section class="content-wrap" aria-live="polite">
+          <div class="summary-grid" id="summaryGrid"></div>
+
+          <section class="attention-banner" id="attentionBanner" hidden>
+            <div class="attention-icon" aria-hidden="true">!</div>
+            <div>
+              <strong id="attentionTitle">確認が必要な予約があります</strong>
+              <p id="attentionText"></p>
+            </div>
+            <button class="text-button" id="showAttentionButton">確認する</button>
+          </section>
+
+          <section class="panel reservation-panel">
+            <div class="panel-header">
+              <div>
+                <p class="panel-kicker">RESERVATIONS</p>
+                <h2 id="listTitle">予約一覧</h2>
+              </div>
+              <div class="result-count"><span id="resultCount">0</span>件</div>
+            </div>
+
+            <div class="filters">
+              <label class="search-field">
+                <span aria-hidden="true">⌕</span>
+                <input id="searchInput" type="search" autocomplete="off" placeholder="名前・予約番号・電話・プランで検索">
+              </label>
+
+              <div class="filter-row">
+                <label>
+                  <span>期間</span>
+                  <select id="periodFilter">
+                    <option value="future">本日以降</option>
+                    <option value="today">今日</option>
+                    <option value="tomorrow">明日</option>
+                    <option value="7days">7日以内</option>
+                    <option value="all">すべて</option>
+                    <option value="past">過去</option>
+                  </select>
+                </label>
+
+                <label>
+                  <span>状態</span>
+                  <select id="statusFilter">
+                    <option value="all">すべて</option>
+                    <option value="未対応">未対応</option>
+                    <option value="確定">確定</option>
+                    <option value="満席">満席</option>
+                    <option value="混在">混在</option>
+                  </select>
+                </label>
+
+                <label>
+                  <span>開催場所</span>
+                  <select id="locationFilter">
+                    <option value="all">すべて</option>
+                  </select>
+                </label>
+
+                <button class="filter-reset" id="resetFilters">条件をリセット</button>
+              </div>
+            </div>
+
+            <div class="table-wrap">
+              <table class="reservation-table">
+                <thead>
+                  <tr>
+                    <th>参加日時</th>
+                    <th>お客様</th>
+                    <th>プラン</th>
+                    <th>状態</th>
+                    <th>開催場所</th>
+                    <th>担当</th>
+                    <th class="number-cell">売上</th>
+                    <th><span class="sr-only">詳細</span></th>
+                  </tr>
+                </thead>
+                <tbody id="reservationTableBody"></tbody>
+              </table>
+              <div class="mobile-list" id="mobileList"></div>
+              <div class="empty-state" id="emptyState" hidden>
+                <div class="empty-icon" aria-hidden="true">〜</div>
+                <strong>条件に合う予約がありません</strong>
+                <p>検索条件を変えて確認してください。</p>
+              </div>
+            </div>
+          </section>
+        </section>
+      </main>
+
+      <nav class="mobile-nav" aria-label="モバイルメニュー">
+        <button class="mobile-nav-item is-active" data-view="reservations">
+          <span>▦</span><small>予約</small>
+        </button>
+        <button class="mobile-nav-item" data-view="today">
+          <span>◷</span><small>今日・明日</small>
+        </button>
+        <button class="mobile-nav-item" data-view="attention">
+          <span>!</span><small>要確認</small>
+        </button>
+      </nav>
+    </div>
+
+    <div class="loading-screen" id="loadingScreen">
+      <div class="loading-card">
+        <div class="loading-turtle">🐢</div>
+        <strong>予約情報を読み込んでいます</strong>
+        <span>少しだけお待ちください</span>
+        <div class="loading-line"><i></i></div>
+      </div>
+    </div>
+
+    <div class="drawer-backdrop" id="drawerBackdrop" hidden></div>
+    <aside class="detail-drawer" id="detailDrawer" aria-hidden="true" aria-label="予約詳細">
+      <div class="drawer-header">
+        <div>
+          <p class="panel-kicker">RESERVATION DETAIL</p>
+          <h2 id="drawerCustomerName">予約詳細</h2>
+        </div>
+        <button class="drawer-close" id="drawerClose" aria-label="詳細を閉じる">×</button>
+      </div>
+      <div class="drawer-body" id="drawerBody"></div>
+    </aside>
+
+    <div class="modal-backdrop" id="lineModal" hidden>
+      <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="lineModalTitle">
+        <div class="modal-header">
+          <div>
+            <p class="panel-kicker">LINE FINAL CHECK</p>
+            <h2 id="lineModalTitle">LINE送信内容の確認</h2>
+          </div>
+          <button class="drawer-close" id="lineModalClose" aria-label="送信確認を閉じる">×</button>
+        </div>
+        <div class="send-warning">
+          <span aria-hidden="true">!</span>
+          <p><strong>まだ送信されていません。</strong><br>宛先と全文を確認してから送信してください。</p>
+        </div>
+        <div class="message-meta" id="lineMessageMeta"></div>
+        <pre class="line-preview" id="linePreviewText"></pre>
+        <div class="modal-actions">
+          <button class="secondary-button" id="lineCancelButton">送信しない</button>
+          <button class="primary-button danger-safe" id="lineConfirmButton">
+            内容を確認してLINE送信
+          </button>
+        </div>
+      </section>
+    </div>
+
+    <div class="toast-stack" id="toastStack" aria-live="assertive"></div>
+
+    <?!= include('App'); ?>
+  </body>
+</html>

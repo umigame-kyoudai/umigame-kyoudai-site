@@ -29,3 +29,6 @@ public/.DS_Store
 
 # macOS
 .DS_Store
+
+# Google Apps Script (clasp local connection)
+.clasp.json

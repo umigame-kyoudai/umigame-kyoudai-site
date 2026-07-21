@@ -50,6 +50,14 @@ npm run dev     # http://localhost:3000
 `main` ブランチへ push すると **Vercel が本番へ自動デプロイ**します。
 プレビューは PR / 非 main ブランチの push で自動生成されます。
 
+### Google Apps Script
+
+海亀兄弟の予約管理GASは[`apps-script/umigame-reservation-admin/`](apps-script/umigame-reservation-admin/)で管理します。GASを確認・変更するときは、最初に同フォルダの`README.md`と`CHANGELOG.md`を確認してください。
+
+予約管理Webアプリのソースは[`apps-script/umigame-reservation-webapp/`](apps-script/umigame-reservation-webapp/)で管理します。既存の予約受付GASとは別の管理画面専用プロジェクトとしてデプロイします。
+
+`docs/gas-line-notify.js`は旧参考ファイルで、本番への貼り付けには使用しません。
+
 ## ディレクトリ構成
 
 ```
@@ -65,6 +73,7 @@ app/            ルーティング（App Router）
 components/      UI コンポーネント（home/ にトップ各セクション）
 lib/             データ・ロジック（プラン・ブログ・料金・予約・SEO 等）
   data.ts         プラン / ブログ / スタッフのマスターデータ
+apps-script/     Google Apps Scriptの管理ソース・変更履歴
 public/          画像など静的アセット
 middleware.ts    旧 URL の 308 リダイレクト（リンク評価の集約）
 ```

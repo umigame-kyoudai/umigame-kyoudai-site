@@ -6,6 +6,7 @@ import { calculateCouponDiscount } from '@/lib/constants/coupons'
 import { getEnPrice } from '@/lib/i18n/en-prices'
 import { isIntlLocale } from '@/lib/i18n/locales'
 import { validateBookingRules } from '@/lib/booking-rules'
+import { calculateRentalTotal, planOffersRentals } from '@/lib/rental-options'
 import {
   LineVerificationError,
   verifyLineIdToken,
@@ -35,6 +36,8 @@ interface BookingParticipant {
   weight?: number | ''
   footSize?: number | ''
   category: string
+  wetsuitRental?: boolean
+  prescriptionMaskRental?: boolean
 }
 
 interface BookingRequest {
@@ -133,6 +136,25 @@ const validateParticipant = (
 
   if (!['adult', 'child', 'under3'].includes(category)) {
     return { valid: false, error: `${label}の区分が不正です` }
+  }
+
+  if (
+    (participant.wetsuitRental !== undefined && typeof participant.wetsuitRental !== 'boolean') ||
+    (participant.prescriptionMaskRental !== undefined &&
+      typeof participant.prescriptionMaskRental !== 'boolean')
+  ) {
+    return { valid: false, error: `${label}のレンタル選択が不正です` }
+  }
+
+  if (
+    !planOffersRentals(plan.id) &&
+    (participant.wetsuitRental === true || participant.prescriptionMaskRental === true)
+  ) {
+    return { valid: false, error: 'ナイトツアーではレンタルオプションを選択できません' }
+  }
+
+  if (category !== 'adult' && participant.prescriptionMaskRental === true) {
+    return { valid: false, error: `${label}の度付きマスクは選択できません。子供用のご用意はありません` }
   }
 
   if (!participant.name || !participant.name.trim()) {
@@ -279,8 +301,9 @@ const calculateServerSidePrice = (
   const baseTotal = adultCount * adultPrice + childCount * childPrice + under3Count * under3Price
   const vipSurcharge = plan.vipSurcharge ?? 0
   const staffFee = selectedStaff && !STAFF_UNAVAILABLE_PLAN_IDS.has(plan.id) ? getStaffFee(selectedStaff) : 0
+  const rentalTotal = calculateRentalTotal(plan.id, participants)
 
-  return Math.max(0, baseTotal + vipSurcharge + staffFee - couponDiscount)
+  return Math.max(0, baseTotal + vipSurcharge + staffFee + rentalTotal - couponDiscount)
 }
 
 const buildSpecialRequests = (bookingData: BookingRequest, plan: typeof PLANS[number]): string => {

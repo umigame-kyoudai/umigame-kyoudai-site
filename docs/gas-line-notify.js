@@ -1,4 +1,14 @@
 /**
+ * 【重要：旧参考ファイル／本番へ貼り付け禁止】
+ *
+ * このファイルは現在の本番GASより古く、セット予約の行分割・
+ * ドローンSUP・二重送信ガード等が本番と一致していません。
+ * 今後のGAS管理は apps-script/umigame-reservation-admin/ を使用します。
+ *
+ * 現行スナップショットは
+ * apps-script/umigame-reservation-admin/Code.gs に保存済みです。
+ * このファイルは過去の監査資料からの参照維持のためだけに残します。
+ *
  * GAS（Google Apps Script）完全版
  *
  * カラム構成

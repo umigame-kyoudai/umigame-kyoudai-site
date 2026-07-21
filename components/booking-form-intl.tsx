@@ -30,6 +30,12 @@ import { getSunsetSupGuide } from "@/lib/beach-info"
 import { trackEvent } from "@/lib/analytics"
 import { getAttribution, getAttributionSourceLabel } from "@/lib/attribution"
 import { getPlanMaxParticipants } from "@/lib/booking-rules"
+import {
+  calculateRentalTotal,
+  getRentalCounts,
+  getRentalUnitPrice,
+  planOffersRentals,
+} from "@/lib/rental-options"
 
 const NIGHT_PLAN_IDS = new Set(["S3", "S5"])
 const FREE_UNDER3_PLAN_IDS = NIGHT_PLAN_IDS
@@ -47,6 +53,8 @@ interface ParticipantIntl {
   height: number | ""
   weight: number | ""
   footSize: number | ""
+  wetsuitRental: boolean
+  prescriptionMaskRental: boolean
 }
 
 let participantSeq = 0
@@ -116,7 +124,12 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
       const seq = Number(String(p.id).split("-").pop())
       if (Number.isFinite(seq) && seq > participantSeq) participantSeq = seq
     }
-    return draft!.participants!
+    return draft!.participants!.map((participant) => ({
+      ...participant,
+      wetsuitRental: participant.wetsuitRental === true,
+      prescriptionMaskRental:
+        participant.category === "adult" && participant.prescriptionMaskRental === true,
+    }))
   })
   const [staffId, setStaffId] = useState(draft?.staffId ?? "")
   const [customerName, setCustomerName] = useState(draft?.customerName ?? "")
@@ -191,6 +204,9 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
     }),
     [participants]
   )
+  const rentalCounts = useMemo(() => getRentalCounts(participants), [participants])
+  const rentalUnitPrice = getRentalUnitPrice(planId)
+  const rentalTotal = calculateRentalTotal(planId, participants)
 
   const totalPrice = useMemo(() => {
     if (!plan) return 0
@@ -199,8 +215,8 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
     const under3Price = FREE_UNDER3_PLAN_IDS.has(plan.id) ? 0 : childPrice
     const base = counts.adult * adultPrice + counts.child * childPrice + counts.under3 * under3Price
     const staffFee = staffAvailable ? getStaffFee(staffId) : 0
-    return Math.max(0, base + (plan.vipSurcharge ?? 0) + staffFee - couponDiscount)
-  }, [plan, counts, staffId, staffAvailable, couponDiscount])
+    return Math.max(0, base + (plan.vipSurcharge ?? 0) + staffFee + rentalTotal - couponDiscount)
+  }, [plan, counts, staffId, staffAvailable, rentalTotal, couponDiscount])
 
   const addParticipant = (category: Category) => {
     if (isParticipantLimitReached) {
@@ -210,7 +226,17 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
     participantSeq += 1
     setParticipants((prev) => [
       ...prev,
-      { id: `${locale}-${category}-${participantSeq}`, category, name: "", age: "", height: "", weight: "", footSize: "" },
+      {
+        id: `${locale}-${category}-${participantSeq}`,
+        category,
+        name: "",
+        age: "",
+        height: "",
+        weight: "",
+        footSize: "",
+        wetsuitRental: false,
+        prescriptionMaskRental: false,
+      },
     ])
   }
 
@@ -226,6 +252,14 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
     if (!STAFF_AVAILABLE_PLAN_IDS.has(id)) setStaffId("")
     if (!NIGHT_PLAN_IDS.has(id)) {
       setParticipants((prev) => prev.filter((p) => p.category !== "under3"))
+    } else {
+      setParticipants((prev) =>
+        prev.map((participant) => ({
+          ...participant,
+          wetsuitRental: false,
+          prescriptionMaskRental: false,
+        })),
+      )
     }
   }
 
@@ -400,6 +434,11 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
           participants: participants.map((p, i) => ({
             ...p,
             name: p.name.trim() === "" ? copy.defaultGuestName(i + 1) : p.name.trim(),
+            wetsuitRental: planOffersRentals(plan.id) && p.wetsuitRental === true,
+            prescriptionMaskRental:
+              planOffersRentals(plan.id) &&
+              p.category === "adult" &&
+              p.prescriptionMaskRental === true,
           })),
           totalPrice,
           specialRequests: specialRequests.trim()
@@ -695,6 +734,63 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
                   </>
                 )}
               </div>
+
+              {planOffersRentals(planId) && (
+                <div className="mt-4 rounded-xl border border-cyan-200 bg-cyan-50/70 p-3">
+                  <p className="mb-3 text-sm font-semibold text-cyan-900">{copy.rentalHeading}</p>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <div className="flex items-start gap-3">
+                      <Checkbox
+                        id={`intl-p-${p.id}-wetsuit`}
+                        checked={p.wetsuitRental === true}
+                        onCheckedChange={(checked) =>
+                          updateParticipant(p.id, "wetsuitRental", checked === true)
+                        }
+                        className="mt-0.5"
+                      />
+                      <Label
+                        htmlFor={`intl-p-${p.id}-wetsuit`}
+                        className="cursor-pointer text-sm leading-relaxed text-gray-700"
+                      >
+                        {copy.wetsuitRentalLabel}{" "}
+                        <span className="font-semibold text-cyan-700">
+                          ({rentalUnitPrice === 0
+                            ? copy.rentalIncludedLabel
+                            : copy.rentalPriceLabel(rentalUnitPrice.toLocaleString())})
+                        </span>
+                      </Label>
+                    </div>
+
+                    {p.category === "adult" ? (
+                      <div className="flex items-start gap-3">
+                        <Checkbox
+                          id={`intl-p-${p.id}-prescription-mask`}
+                          checked={p.prescriptionMaskRental === true}
+                          onCheckedChange={(checked) =>
+                            updateParticipant(p.id, "prescriptionMaskRental", checked === true)
+                          }
+                          className="mt-0.5"
+                        />
+                        <Label
+                          htmlFor={`intl-p-${p.id}-prescription-mask`}
+                          className="cursor-pointer text-sm leading-relaxed text-gray-700"
+                        >
+                          {copy.prescriptionMaskRentalLabel}{" "}
+                          <span className="font-semibold text-cyan-700">
+                            ({rentalUnitPrice === 0
+                              ? copy.rentalIncludedLabel
+                              : copy.rentalPriceLabel(rentalUnitPrice.toLocaleString())})
+                          </span>
+                        </Label>
+                      </div>
+                    ) : (
+                      <p className="text-xs leading-relaxed text-amber-700">
+                        {copy.prescriptionMaskAdultsOnly}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           ))}
 
@@ -788,6 +884,14 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
               <p className="font-bold text-emerald-800">{t?.name}</p>
               <p>{copy.partySummary(counts)}</p>
               {staffId && staffAvailable && <p>{copy.guideFeeLine(getStaffFee(staffId).toLocaleString())}</p>}
+              {(rentalCounts.wetsuit > 0 || rentalCounts.prescriptionMask > 0) && (
+                <p>
+                  {copy.rentalSummary(rentalCounts.wetsuit, rentalCounts.prescriptionMask)}
+                  {rentalUnitPrice === 0
+                    ? ` (${copy.rentalIncludedLabel})`
+                    : `: +¥${rentalTotal.toLocaleString()}`}
+                </p>
+              )}
               {couponDiscount > 0 && <p>{copy.successCouponLabel}-¥{couponDiscount.toLocaleString()}</p>}
               <p className="font-black text-lg text-emerald-800">
                 {copy.estimatedTotalLabel} ¥{totalPrice.toLocaleString()}

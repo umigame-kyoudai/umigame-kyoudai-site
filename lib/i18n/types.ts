@@ -184,6 +184,13 @@ export interface IntlFormCopy {
   shoeLabel: string
   shoePlaceholder: string
   shoeConversionNote: string
+  rentalHeading: string
+  wetsuitRentalLabel: string
+  prescriptionMaskRentalLabel: string
+  rentalIncludedLabel: string
+  rentalPriceLabel: (price: string) => string
+  prescriptionMaskAdultsOnly: string
+  rentalSummary: (wetsuitCount: number, maskCount: number) => string
   needAdultError: string
   seniorNotice: { before: string; after: string }
   seniorFallbackPlanName: string

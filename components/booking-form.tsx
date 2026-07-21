@@ -26,6 +26,12 @@ import { getStaffFee } from "@/lib/data"
 import { getPlanPriceDisplay, getPlanCode } from "@/lib/plan-price-display"
 import { getPlanMaxParticipants } from "@/lib/booking-rules"
 import {
+  calculateRentalTotal,
+  getRentalCounts,
+  getRentalUnitPrice,
+  planOffersRentals,
+} from "@/lib/rental-options"
+import {
   COMBO_TURTLE_TIMES,
   COMBO_NIGHT_TIMES,
   DAY_SUP_TIME_NOTE,
@@ -51,6 +57,8 @@ interface ParticipantDetails {
   weight: number | ""
   footSize: number | ""
   category: "adult" | "child" | "under3"
+  wetsuitRental: boolean
+  prescriptionMaskRental: boolean
 }
 
 interface BookingData {
@@ -308,6 +316,8 @@ export function BookingForm() {
             weight: "",
             footSize: "",
             category: "adult",
+            wetsuitRental: false,
+            prescriptionMaskRental: false,
           },
         )
       }
@@ -324,6 +334,8 @@ export function BookingForm() {
             weight: "",
             footSize: "",
             category: "child",
+            wetsuitRental: false,
+            prescriptionMaskRental: false,
           },
         )
       }
@@ -340,6 +352,8 @@ export function BookingForm() {
             weight: "",
             footSize: "",
             category: "under3",
+            wetsuitRental: false,
+            prescriptionMaskRental: false,
           },
         )
       }
@@ -373,6 +387,9 @@ export function BookingForm() {
   // 昼夜セットはスタッフ指名不可。夜系プランも従来どおり指名不可。
   const isComboPlan = isComboPlanId(bookingData.selectedPlan)
   const staffSelectable = !isNightHunterPlan && !isComboPlan
+  const rentalCounts = getRentalCounts(bookingData.participants)
+  const rentalUnitPrice = getRentalUnitPrice(bookingData.selectedPlan)
+  const rentalTotal = calculateRentalTotal(bookingData.selectedPlan, bookingData.participants)
 
   useEffect(() => {
     if (!staffSelectable && bookingData.selectedStaff) {
@@ -398,7 +415,12 @@ export function BookingForm() {
 
     const staffFee = staffSelectable ? getStaffFee(bookingData.selectedStaff) : 0
 
-    setTotalPrice(Math.max(0, baseTotal + under3Total + vipSurcharge + staffFee - bookingData.couponDiscount))
+    setTotalPrice(
+      Math.max(
+        0,
+        baseTotal + under3Total + vipSurcharge + staffFee + rentalTotal - bookingData.couponDiscount,
+      ),
+    )
   }, [
     bookingData.adultCount,
     bookingData.childCount,
@@ -412,6 +434,7 @@ export function BookingForm() {
     isNightHunterPlan,
     isUnder3FreePlan,
     staffSelectable,
+    rentalTotal,
   ])
 
   const handleInputChange = (field: keyof BookingData, value: any) => {
@@ -419,7 +442,22 @@ export function BookingForm() {
       // プランごとに選べる時間枠が違うため、プラン切替時は選択済みの時間を破棄する
       // （残すと、切替後の枠に無い時刻のままサーバー検証で弾かれてしまう）
       if (field === "selectedPlan" && value !== prev.selectedPlan) {
-        return { ...prev, selectedPlan: value, selectedTime: "", nightTime: "", couponDiscount: 0 }
+        const rentalsAvailable = planOffersRentals(String(value))
+        return {
+          ...prev,
+          selectedPlan: value,
+          selectedTime: "",
+          nightTime: "",
+          couponDiscount: 0,
+          participants: prev.participants.map((participant) => ({
+            ...participant,
+            wetsuitRental: rentalsAvailable && participant.wetsuitRental === true,
+            prescriptionMaskRental:
+              rentalsAvailable &&
+              participant.category === "adult" &&
+              participant.prescriptionMaskRental === true,
+          })),
+        }
       }
       return {
         ...prev,
@@ -562,6 +600,12 @@ export function BookingForm() {
     const participantsForSubmit = bookingData.participants.map((p, index) => ({
       ...p,
       name: p.name.trim() === "" ? `参加者${index + 1}` : p.name.trim(),
+      wetsuitRental:
+        planOffersRentals(bookingData.selectedPlan) && p.wetsuitRental === true,
+      prescriptionMaskRental:
+        planOffersRentals(bookingData.selectedPlan) &&
+        p.category === "adult" &&
+        p.prescriptionMaskRental === true,
     }))
 
     // セットは1件の予約として受付し、詳細を備考欄の [COMBO booking] ブロックに残す。
@@ -771,6 +815,22 @@ export function BookingForm() {
               )}
               {(selectedPlanData?.vipSurcharge ?? 0) > 0 && (
                 <p className="text-orange-600">貸切追加料金: ¥{selectedPlanData!.vipSurcharge!.toLocaleString()}</p>
+              )}
+              {rentalCounts.wetsuit > 0 && (
+                <p className="text-cyan-700">
+                  ウェットスーツ: {rentalCounts.wetsuit}名
+                  {rentalUnitPrice === 0
+                    ? "（プラン料金に含む）"
+                    : ` (+¥${(rentalCounts.wetsuit * rentalUnitPrice).toLocaleString()})`}
+                </p>
+              )}
+              {rentalCounts.prescriptionMask > 0 && (
+                <p className="text-cyan-700">
+                  度付きマスク: {rentalCounts.prescriptionMask}名
+                  {rentalUnitPrice === 0
+                    ? "（プラン料金に含む）"
+                    : ` (+¥${(rentalCounts.prescriptionMask * rentalUnitPrice).toLocaleString()})`}
+                </p>
               )}
               {((confirmedPricing?.couponDiscount ?? bookingData.couponDiscount) > 0) && (
                 <p className="text-emerald-700">クーポン割引: -¥{(confirmedPricing?.couponDiscount ?? bookingData.couponDiscount).toLocaleString()}</p>
@@ -1605,6 +1665,26 @@ export function BookingForm() {
                     <span>￥{selectedPlanData!.vipSurcharge!.toLocaleString()}</span>
                   </div>
                 )}
+                {rentalCounts.wetsuit > 0 && (
+                  <div className="flex justify-between text-cyan-700">
+                    <span>ウェットスーツ {rentalCounts.wetsuit}名</span>
+                    <span>
+                      {rentalUnitPrice === 0
+                        ? "料金に含む"
+                        : `￥${(rentalCounts.wetsuit * rentalUnitPrice).toLocaleString()}`}
+                    </span>
+                  </div>
+                )}
+                {rentalCounts.prescriptionMask > 0 && (
+                  <div className="flex justify-between text-cyan-700">
+                    <span>度付きマスク {rentalCounts.prescriptionMask}名</span>
+                    <span>
+                      {rentalUnitPrice === 0
+                        ? "料金に含む"
+                        : `￥${(rentalCounts.prescriptionMask * rentalUnitPrice).toLocaleString()}`}
+                    </span>
+                  </div>
+                )}
               </>
               {bookingData.selectedStaff && (
                 <div className="flex justify-between text-emerald-600">
@@ -1662,7 +1742,7 @@ export function BookingForm() {
               <>
                 {ageRestrictionMessage}
                 <br />
-                ※器材レンタル・保険料込み
+                ※基本器材レンタル・保険料込み
                 {(selectedPlanData?.vipSurcharge ?? 0) > 0 && (
                   <>
                     <br />

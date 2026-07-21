@@ -2,9 +2,11 @@
 
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { User, AlertTriangle } from "lucide-react"
 import { SENIOR_RESTRICTED_PLAN_IDS, getPrivateCounterpartName } from "@/lib/plan-flags"
+import { getRentalUnitPrice, planOffersRentals } from "@/lib/rental-options"
 
 interface ParticipantDetails {
   id: string
@@ -14,6 +16,8 @@ interface ParticipantDetails {
   weight: number | ""
   footSize: number | ""
   category: "adult" | "child" | "under3"
+  wetsuitRental: boolean
+  prescriptionMaskRental: boolean
 }
 
 interface ParticipantFormProps {
@@ -28,6 +32,11 @@ export function ParticipantForm({ participants, minAge, selectedPlan, onUpdate }
 
   // ナイトツアーかどうかを判定
   const isNightTour = selectedPlan === "S3" || selectedPlan === "S5"
+  const showRentals = planOffersRentals(selectedPlan)
+  const rentalUnitPrice = getRentalUnitPrice(selectedPlan)
+  const rentalPriceLabel = rentalUnitPrice === 0
+    ? "プラン料金に含む"
+    : `+\u00a5${rentalUnitPrice.toLocaleString()}`
   // 60歳以上お断りのグループ版プランと、その案内先（貸切版）は plan-flags を単一ソースに参照
   const seniorCounterpartName = getPrivateCounterpartName(selectedPlan)
 
@@ -146,6 +155,55 @@ export function ParticipantForm({ participants, minAge, selectedPlan, onUpdate }
                   />
                 </div>
               </div>
+
+              {showRentals && (
+                <div className="mt-5 rounded-xl border border-cyan-200 bg-cyan-50/70 p-4">
+                  <p className="mb-3 text-sm font-semibold text-cyan-900">レンタル希望</p>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <div className="flex items-start gap-3">
+                      <Checkbox
+                        id={`participant-${participant.id}-wetsuit`}
+                        checked={participant.wetsuitRental === true}
+                        onCheckedChange={(checked) =>
+                          onUpdate(participant.id, "wetsuitRental", checked === true)
+                        }
+                        className="mt-0.5"
+                      />
+                      <Label
+                        htmlFor={`participant-${participant.id}-wetsuit`}
+                        className="cursor-pointer text-sm leading-relaxed text-gray-700"
+                      >
+                        ウェットスーツレンタル
+                        <span className="ml-1 font-semibold text-cyan-700">（{rentalPriceLabel}）</span>
+                      </Label>
+                    </div>
+
+                    {participant.category === "adult" ? (
+                      <div className="flex items-start gap-3">
+                        <Checkbox
+                          id={`participant-${participant.id}-prescription-mask`}
+                          checked={participant.prescriptionMaskRental === true}
+                          onCheckedChange={(checked) =>
+                            onUpdate(participant.id, "prescriptionMaskRental", checked === true)
+                          }
+                          className="mt-0.5"
+                        />
+                        <Label
+                          htmlFor={`participant-${participant.id}-prescription-mask`}
+                          className="cursor-pointer text-sm leading-relaxed text-gray-700"
+                        >
+                          度付きマスクレンタル
+                          <span className="ml-1 font-semibold text-cyan-700">（{rentalPriceLabel}）</span>
+                        </Label>
+                      </div>
+                    ) : (
+                      <p className="text-xs leading-relaxed text-amber-700">
+                        ※度付きマスクは大人用のみで、子供用はありません。
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )
         })}

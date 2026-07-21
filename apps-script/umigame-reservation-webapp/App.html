@@ -1,0 +1,1120 @@
+<script>
+  (function() {
+    'use strict';
+
+    var state = {
+      data: null,
+      view: 'reservations',
+      selectedKey: '',
+      history: [],
+      pendingLine: null,
+      loading: false
+    };
+
+    var els = {};
+
+    document.addEventListener('DOMContentLoaded', init);
+
+    function init() {
+      cacheElements();
+      bindEvents();
+      loadData(true);
+    }
+
+    function cacheElements() {
+      [
+        'loadingScreen', 'syncState', 'syncText', 'refreshButton',
+        'pageTitle', 'summaryGrid', 'attentionBanner', 'attentionTitle',
+        'attentionText', 'showAttentionButton', 'listTitle', 'resultCount',
+        'searchInput', 'periodFilter', 'statusFilter', 'locationFilter',
+        'resetFilters', 'reservationTableBody', 'mobileList', 'emptyState',
+        'drawerBackdrop', 'detailDrawer', 'drawerCustomerName', 'drawerClose',
+        'drawerBody', 'lineModal', 'lineModalTitle', 'lineModalClose',
+        'lineCancelButton', 'lineConfirmButton', 'lineMessageMeta',
+        'linePreviewText', 'toastStack'
+      ].forEach(function(id) {
+        els[id] = document.getElementById(id);
+      });
+    }
+
+    function bindEvents() {
+      els.refreshButton.addEventListener('click', function() {
+        loadData(false);
+      });
+
+      [els.searchInput, els.periodFilter, els.statusFilter, els.locationFilter]
+        .forEach(function(element) {
+          element.addEventListener(element.tagName === 'INPUT' ? 'input' : 'change', function() {
+            if (state.view !== 'reservations') setView('reservations', false);
+            renderReservations();
+          });
+        });
+
+      els.resetFilters.addEventListener('click', resetFilters);
+      els.showAttentionButton.addEventListener('click', function() {
+        setView('attention');
+      });
+
+      document.querySelectorAll('[data-view]').forEach(function(button) {
+        button.addEventListener('click', function() {
+          setView(button.getAttribute('data-view'));
+        });
+      });
+
+      els.reservationTableBody.addEventListener('click', handleReservationClick);
+      els.mobileList.addEventListener('click', handleReservationClick);
+      els.drawerClose.addEventListener('click', closeDrawer);
+      els.drawerBackdrop.addEventListener('click', closeDrawer);
+      els.drawerBody.addEventListener('click', handleDrawerClick);
+      els.drawerBody.addEventListener('input', handleDrawerInput);
+
+      els.lineModalClose.addEventListener('click', cancelLinePreview);
+      els.lineCancelButton.addEventListener('click', cancelLinePreview);
+      els.lineConfirmButton.addEventListener('click', confirmLineSend);
+
+      document.addEventListener('keydown', function(event) {
+        if (event.key !== 'Escape') return;
+        if (!els.lineModal.hidden) cancelLinePreview();
+        else if (els.detailDrawer.classList.contains('is-open')) closeDrawer();
+      });
+    }
+
+    function gas(functionName, argument) {
+      return new Promise(function(resolve, reject) {
+        var runner = google.script.run
+          .withSuccessHandler(resolve)
+          .withFailureHandler(function(error) {
+            reject(new Error(error && error.message ? error.message : String(error)));
+          });
+
+        if (typeof argument === 'undefined') runner[functionName]();
+        else runner[functionName](argument);
+      });
+    }
+
+    async function loadData(showFullLoader) {
+      if (state.loading) return;
+      state.loading = true;
+      setSync('loading', '最新情報を確認中');
+      els.refreshButton.disabled = true;
+
+      if (showFullLoader) els.loadingScreen.hidden = false;
+
+      try {
+        var previousSelected = state.selectedKey;
+        state.data = await gas('adminGetAppData');
+        populateFilterOptions();
+        renderAll();
+
+        if (previousSelected && findBooking(previousSelected)) {
+          state.selectedKey = previousSelected;
+          renderDrawer();
+        }
+
+        setSync('ready', '更新 ' + formatClock(state.data.generatedAt));
+      } catch (error) {
+        setSync('error', '読み込みエラー');
+        showToast(error.message, 'error', 6500);
+      } finally {
+        state.loading = false;
+        els.refreshButton.disabled = false;
+        els.loadingScreen.hidden = true;
+      }
+    }
+
+    function populateFilterOptions() {
+      var currentLocation = els.locationFilter.value || 'all';
+      var options = ['<option value="all">すべて</option>', '<option value="未設定">未設定</option>'];
+
+      state.data.options.locations.forEach(function(location) {
+        options.push('<option value="' + attr(location) + '">' + escapeHtml(location) + '</option>');
+      });
+
+      els.locationFilter.innerHTML = options.join('');
+      if ([].slice.call(els.locationFilter.options).some(function(option) {
+        return option.value === currentLocation;
+      })) {
+        els.locationFilter.value = currentLocation;
+      }
+    }
+
+    function renderAll() {
+      if (!state.data) return;
+      state.data.dashboard = buildDashboard(state.data.reservations);
+      renderSummary();
+      renderAttention();
+      renderReservations();
+      updateNavigation();
+    }
+
+    function renderSummary() {
+      var dashboard = state.data.dashboard;
+      var cards = [
+        {
+          label: '今日の予約',
+          value: dashboard.today,
+          note: '明日 ' + dashboard.tomorrow + '件',
+          icon: '◷',
+          color: '#0f8b8d',
+          soft: '#d9f0ed'
+        },
+        {
+          label: '本日以降の未対応',
+          value: dashboard.futurePending,
+          note: '確認・返信が必要',
+          icon: '!',
+          color: '#a46a08',
+          soft: '#fff1c9'
+        },
+        {
+          label: '開催場所 案内待ち',
+          value: dashboard.locationMissing,
+          note: '明日昼 ' + dashboard.dayLocationDue + '件 / 本日夜 ' + dashboard.nightLocationDue + '件',
+          icon: '⌖',
+          color: '#cf5a55',
+          soft: '#fbe8e6'
+        },
+        {
+          label: '確定売上',
+          value: formatMoney(dashboard.confirmedSales),
+          note: 'クーポン ' + formatMoney(dashboard.confirmedCoupons),
+          icon: '¥',
+          color: '#2f8f72',
+          soft: '#e3f4ed'
+        }
+      ];
+
+      els.summaryGrid.innerHTML = cards.map(function(card) {
+        var compactValueClass = String(card.value).length >= 9 ? ' is-compact' : '';
+
+        return '<article class="summary-card" style="--card-color:' + card.color + ';--card-soft:' + card.soft + '">' +
+          '<div class="summary-label">' + escapeHtml(card.label) + '</div>' +
+          '<div class="summary-value' + compactValueClass + '">' + escapeHtml(String(card.value)) + '</div>' +
+          '<div class="summary-note">' + escapeHtml(card.note) + '</div>' +
+          '<div class="summary-icon" aria-hidden="true">' + escapeHtml(card.icon) + '</div>' +
+          '</article>';
+      }).join('');
+    }
+
+    function renderAttention() {
+      var dashboard = state.data.dashboard;
+      var total = dashboard.futurePending + dashboard.locationMissing;
+
+      els.attentionBanner.hidden = total === 0;
+      if (!total) return;
+
+      els.attentionTitle.textContent = total + '件の予約に確認事項があります';
+      els.attentionText.textContent =
+        '未対応 ' + dashboard.futurePending + '件 / 明日昼の場所案内 ' +
+        dashboard.dayLocationDue + '件 / 本日夜の場所案内 ' +
+        dashboard.nightLocationDue + '件';
+    }
+
+    function renderReservations() {
+      if (!state.data) return;
+
+      var bookings = getFilteredBookings();
+      els.resultCount.textContent = bookings.length;
+      els.emptyState.hidden = bookings.length !== 0;
+
+      var titles = {
+        reservations: ['予約管理', '予約一覧'],
+        today: ['今日・明日の予約', '今日・明日の予約'],
+        attention: ['要確認', '確認が必要な予約']
+      };
+
+      els.pageTitle.textContent = titles[state.view][0];
+      els.listTitle.textContent = titles[state.view][1];
+
+      els.reservationTableBody.innerHTML = bookings.map(function(booking) {
+        return '<tr>' +
+          '<td><span class="date-main">' + escapeHtml(bookingDateDisplay(booking)) + '</span>' +
+            '<span class="date-sub">' + escapeHtml(bookingTimeDisplay(booking)) + '</span></td>' +
+          '<td><span class="customer-name">' + escapeHtml(booking.name || '名前未登録') + '</span>' +
+            '<span class="customer-sub">' + escapeHtml(booking.bookingNumber || '予約番号なし') + '</span></td>' +
+          '<td><span class="plan-name">' + escapeHtml(booking.displayPlan || 'プラン未登録') + '</span>' +
+            (booking.componentCount > 1 ? '<span class="plan-sub">' + booking.componentCount + 'つの予定をまとめて表示</span>' : '') + '</td>' +
+          '<td>' + statusChip(booking.bookingStatus) + '</td>' +
+          '<td><span class="location-text">' + escapeHtml(booking.location) + '</span></td>' +
+          '<td><span class="staff-text">' + escapeHtml(booking.staff) + '</span></td>' +
+          '<td class="number-cell">' + escapeHtml(formatMoney(booking.totalPrice)) + '</td>' +
+          '<td><button class="row-open" data-open-booking="' + attr(booking.key) + '" aria-label="' + attr(booking.name + '様の詳細を開く') + '">›</button></td>' +
+          '</tr>';
+      }).join('');
+
+      els.mobileList.innerHTML = bookings.map(function(booking) {
+        return '<article class="mobile-booking" data-open-booking="' + attr(booking.key) + '" tabindex="0" role="button" aria-label="' + attr(booking.name + '様の詳細を開く') + '">' +
+          '<div class="mobile-booking-head"><div>' +
+            '<div class="mobile-booking-date">' + escapeHtml(bookingDateDisplay(booking)) + '</div>' +
+            '<div class="mobile-booking-time">' + escapeHtml(bookingTimeDisplay(booking)) + '</div>' +
+          '</div>' + statusChip(booking.bookingStatus) + '</div>' +
+          '<div class="mobile-booking-name">' + escapeHtml(booking.name || '名前未登録') + '</div>' +
+          '<div class="mobile-booking-plan">' + escapeHtml(booking.displayPlan || 'プラン未登録') + '</div>' +
+          '<div class="mobile-booking-foot">' +
+            '<span class="mobile-booking-meta">' + escapeHtml(booking.location) + '・' + escapeHtml(booking.staff) + '</span>' +
+            '<strong>' + escapeHtml(formatMoney(booking.totalPrice)) + '</strong>' +
+          '</div></article>';
+      }).join('');
+    }
+
+    function getFilteredBookings() {
+      var bookings = state.data.reservations.slice();
+      var today = localDateString(new Date());
+      var tomorrow = addDays(today, 1);
+      var sevenDays = addDays(today, 7);
+
+      if (state.view === 'today') {
+        return bookings.filter(function(booking) {
+          return bookingHasDate(booking, today) || bookingHasDate(booking, tomorrow);
+        });
+      }
+
+      if (state.view === 'attention') {
+        return bookings.filter(function(booking) {
+          var needsConfirmation = bookingHasDateOnOrAfter(booking, today) && (
+            booking.bookingStatus === '未対応' ||
+            booking.bookingStatus === '混在'
+          );
+
+          return needsConfirmation || !!booking.locationGuidanceDue;
+        });
+      }
+
+      var search = normalizeSearch(els.searchInput.value);
+      var period = els.periodFilter.value;
+      var status = els.statusFilter.value;
+      var location = els.locationFilter.value;
+
+      return bookings.filter(function(booking) {
+        if (search) {
+          var haystack = normalizeSearch([
+            booking.name,
+            booking.bookingNumber,
+            booking.phone,
+            booking.lineName,
+            booking.displayPlan,
+            booking.headcount,
+            booking.components.map(function(component) { return component.plan; }).join(' ')
+          ].join(' '));
+          if (haystack.indexOf(search) === -1) return false;
+        }
+
+        if (period === 'future' && !bookingHasDateOnOrAfter(booking, today)) return false;
+        if (period === 'today' && !bookingHasDate(booking, today)) return false;
+        if (period === 'tomorrow' && !bookingHasDate(booking, tomorrow)) return false;
+        if (period === '7days' && !bookingHasDateInRange(booking, today, sevenDays)) return false;
+        if (period === 'past' && bookingHasDateOnOrAfter(booking, today)) return false;
+        if (status !== 'all' && booking.bookingStatus !== status) return false;
+        if (location !== 'all' && booking.location !== location) return false;
+
+        return true;
+      });
+    }
+
+    function setView(view, renderNow) {
+      state.view = view;
+      updateNavigation();
+      if (renderNow !== false) renderReservations();
+    }
+
+    function updateNavigation() {
+      document.querySelectorAll('[data-view]').forEach(function(button) {
+        button.classList.toggle('is-active', button.getAttribute('data-view') === state.view);
+      });
+    }
+
+    function resetFilters() {
+      els.searchInput.value = '';
+      els.periodFilter.value = 'future';
+      els.statusFilter.value = 'all';
+      els.locationFilter.value = 'all';
+      setView('reservations');
+    }
+
+    function handleReservationClick(event) {
+      var target = event.target.closest('[data-open-booking]');
+      if (!target) return;
+      openDrawer(target.getAttribute('data-open-booking'));
+    }
+
+    async function openDrawer(key) {
+      var booking = findBooking(key);
+      if (!booking) return;
+
+      state.selectedKey = key;
+      state.history = [];
+      renderDrawer();
+
+      els.drawerBackdrop.hidden = false;
+      els.detailDrawer.setAttribute('aria-hidden', 'false');
+      requestAnimationFrame(function() {
+        els.detailDrawer.classList.add('is-open');
+      });
+      document.body.style.overflow = 'hidden';
+
+      try {
+        state.history = await gas('adminGetHistory', {
+          bookingNumber: booking.bookingNumber
+        });
+        renderDrawerHistory();
+      } catch (error) {
+        showToast('送信履歴を取得できませんでした：' + error.message, 'error');
+      }
+    }
+
+    function closeDrawer() {
+      els.detailDrawer.classList.remove('is-open');
+      els.detailDrawer.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+      setTimeout(function() {
+        els.drawerBackdrop.hidden = true;
+      }, 220);
+    }
+
+    function renderDrawer() {
+      var booking = findBooking(state.selectedKey);
+      if (!booking) return;
+
+      els.drawerCustomerName.textContent = (booking.name || '名前未登録') + ' 様';
+
+      var componentHtml = booking.components.map(function(component) {
+        return '<article class="component-card" data-component-row="' + component.rowNumber + '">' +
+          '<div class="component-head"><div>' +
+            '<div class="component-plan">' + escapeHtml(component.plan || 'プラン未登録') + '</div>' +
+            '<div class="component-time">' + escapeHtml(component.date + ' ' + (component.time || '時間未設定')) + '</div>' +
+          '</div><div class="component-price">' + escapeHtml(formatMoney(component.totalPrice)) + '</div></div>' +
+          '<div class="component-fields">' +
+            '<label class="mini-field"><span>開催場所</span><select data-field="location">' + locationOptions(component.location) + '</select></label>' +
+            '<label class="mini-field"><span>担当スタッフ（任意）</span><input class="field-input" data-field="staff" maxlength="60" value="' + attr(component.staff || '') + '" placeholder="必要な場合のみ"></label>' +
+            '<button class="save-component" data-save-component="' + component.rowNumber + '">この予定を保存</button>' +
+          '</div>' +
+          '</article>';
+      }).join('');
+
+      els.drawerBody.innerHTML =
+        '<section class="detail-hero">' +
+          '<div class="detail-hero-top"><div>' +
+            '<div class="detail-number">' + escapeHtml(booking.bookingNumber || '予約番号なし') + '</div>' +
+            '<p class="detail-plan">' + escapeHtml(booking.displayPlan || 'プラン未登録') + '</p>' +
+          '</div>' + statusChip(booking.bookingStatus) + '</div>' +
+          '<div class="detail-datetime"><strong>' + escapeHtml(bookingDateDisplay(booking)) + '</strong><span>' + escapeHtml(bookingTimeDisplay(booking)) + '</span></div>' +
+        '</section>' +
+
+        scheduleEditorHtml(booking) +
+
+        '<section class="quick-status">' +
+          '<h3 class="section-title">最初に予約ステータス</h3>' +
+          '<div class="status-actions">' +
+            statusChoice('', '未対応', booking.bookingStatus) +
+            statusChoice('確定', '確定', booking.bookingStatus) +
+            statusChoice('満席', '満席', booking.bookingStatus) +
+          '</div>' +
+        '</section>' +
+
+        '<div class="detail-grid">' +
+          infoCard('電話番号', booking.phone || '未登録') +
+          infoCard('LINE名', booking.lineName || '未登録') +
+          infoCard('人数', booking.headcount || '未登録') +
+          infoCard('合計金額', formatMoney(booking.totalPrice) + (booking.couponDiscount ? ' / 割引 ' + formatMoney(booking.couponDiscount) : '')) +
+        '</div>' +
+
+        '<section class="detail-section">' +
+          '<h3 class="section-title">開催場所の案内・担当（前日／当日）</h3>' + componentHtml +
+        '</section>' +
+
+        '<section class="detail-section">' +
+          '<h3 class="section-title">参加者詳細</h3>' +
+          '<div class="participants-box">' + escapeHtml(booking.participants || '参加者詳細なし') + '</div>' +
+        '</section>' +
+
+        '<section class="detail-section">' +
+          '<h3 class="section-title">自由LINEメッセージ</h3>' +
+          '<textarea class="message-compose" id="customLineMessage" placeholder="お客様へ送るメッセージを入力してください" ' + (booking.hasLine ? '' : 'disabled') + '></textarea>' +
+          '<button class="primary-button message-action" id="previewCustomLine" ' + (booking.hasLine ? '' : 'disabled') + '>全文を確認して送信へ</button>' +
+          '<div class="line-state">' +
+            (booking.hasLine ? 'LINE連携済み。ボタンを押しても、次の確認画面までは送信されません。' : 'LINE User IDが未登録のため、この画面からは送信できません。') +
+            (booking.lastLineResult ? '<br><strong>最新：</strong>' + escapeHtml(booking.lastLineResult) : '') +
+          '</div>' +
+        '</section>' +
+
+        '<section class="detail-section">' +
+          '<h3 class="section-title">LINE送信履歴</h3>' +
+          '<div class="history-list" id="drawerHistory">' + historyHtml() + '</div>' +
+        '</section>' +
+
+        '<section class="detail-section danger-zone">' +
+          '<h3 class="section-title">重複予約の削除</h3>' +
+          '<p>間違えて2回入った予約にだけ使用してください。セット予約は関連する全予定をまとめて削除します。削除前のデータは「削除済み予約」シートへ退避し、LINEは送りません。</p>' +
+          '<button class="delete-booking-button" data-delete-booking>この予約を削除する</button>' +
+        '</section>';
+    }
+
+    function scheduleEditorHtml(booking) {
+      if (booking.bookingStatus !== '未対応') {
+        return '<section class="schedule-editor is-locked">' +
+          '<div class="schedule-editor-title">予約日時の変更</div>' +
+          '<p>確定前の予約だけ変更できます。確定後はお客様へ個別にご案内ください。</p>' +
+        '</section>';
+      }
+
+      var autoSup = isAutoSupSchedule(booking);
+      var scheduleFields = booking.components.map(function(component) {
+        var isTurtle = component.plan.indexOf('海亀') !== -1 ||
+          component.plan.indexOf('ウミガメ') !== -1;
+        var isSup = component.plan.indexOf('ドローンSUP') !== -1;
+        var autoSupField = autoSup && isSup;
+        var role = isTurtle ? 'turtle' : (isSup ? 'sup' : 'other');
+
+        return '<article class="schedule-component-edit" data-schedule-component-row="' + component.rowNumber + '">' +
+          '<div class="schedule-component-name">' + escapeHtml(component.plan || '予定') +
+            (autoSupField ? '<small>海亀と同じ日・90分後に自動設定</small>' : '') + '</div>' +
+          '<div class="schedule-component-fields">' +
+            '<label class="schedule-date-field"><span>参加日</span>' +
+              '<input type="date" class="field-input" data-schedule-date-row="' + component.rowNumber + '" ' +
+                'data-schedule-role="' + role + '" min="' + attr(localDateString(new Date())) + '" ' +
+                'value="' + attr(component.date || '') + '" ' + (autoSupField ? 'disabled' : '') + '></label>' +
+            '<label class="schedule-time-field"><span>開始時間</span>' +
+              '<input type="time" class="field-input" data-schedule-time-row="' + component.rowNumber + '" ' +
+                'data-schedule-role="' + role + '" value="' + attr(timeInputValue(component.time)) + '" ' +
+                (autoSupField ? 'disabled' : '') + '></label>' +
+          '</div>' +
+        '</article>';
+      }).join('');
+
+      return '<details class="schedule-editor">' +
+        '<summary>' +
+          '<span><strong>予約日時を変更する</strong><small>代替日時で確定する場合</small></span>' +
+          '<span aria-hidden="true">›</span>' +
+        '</summary>' +
+        '<div class="schedule-editor-body">' +
+          '<p class="schedule-help">予定ごとに日付と時間を変更できます。予約一覧とGoogleカレンダーを同時に変更し、この保存だけでLINEは送信されません。</p>' +
+          '<div class="schedule-component-grid">' + scheduleFields + '</div>' +
+          '<button class="primary-button schedule-save" data-save-schedule>日時とカレンダーを更新</button>' +
+        '</div>' +
+      '</details>';
+    }
+
+    function renderDrawerHistory() {
+      var container = document.getElementById('drawerHistory');
+      if (container) container.innerHTML = historyHtml();
+    }
+
+    function historyHtml() {
+      if (!state.history.length) {
+        return '<div class="history-empty">送信履歴はありません</div>';
+      }
+
+      return state.history.map(function(item) {
+        return '<article class="history-item">' +
+          '<div class="history-head"><span class="history-type">' + escapeHtml(item.type || 'LINE送信') + '・' + escapeHtml(item.result || '') + '</span>' +
+          '<span class="history-date">' + escapeHtml(item.sentAt || '') + '</span></div>' +
+          '<p class="history-message">' + escapeHtml(item.message || '') + '</p>' +
+          '</article>';
+      }).join('');
+    }
+
+    function handleDrawerClick(event) {
+      var deleteButton = event.target.closest('[data-delete-booking]');
+      if (deleteButton) {
+        deleteBooking(deleteButton);
+        return;
+      }
+
+      var scheduleButton = event.target.closest('[data-save-schedule]');
+      if (scheduleButton) {
+        saveSchedule(scheduleButton);
+        return;
+      }
+
+      var statusButton = event.target.closest('[data-status-value]');
+      if (statusButton) {
+        updateStatus(statusButton);
+        return;
+      }
+
+      var saveButton = event.target.closest('[data-save-component]');
+      if (saveButton) {
+        saveComponent(saveButton);
+        return;
+      }
+
+      if (event.target.id === 'previewCustomLine') {
+        previewCustomLine(event.target);
+      }
+    }
+
+    async function deleteBooking(button) {
+      var booking = findBooking(state.selectedKey);
+      if (!booking) return;
+
+      var firstConfirmed = window.confirm(
+        '「' + (booking.name || '名前未登録') + ' 様」の予約を削除しますか？\n\n' +
+        '予約一覧の' + booking.componentCount + '行と、同じ予約番号のGoogleカレンダー予定が対象です。\n' +
+        'お客様へLINEは送信されません。'
+      );
+
+      if (!firstConfirmed) return;
+
+      var enteredNumber = window.prompt(
+        '誤削除防止のため、予約番号を入力してください。\n\n' +
+        '予約番号：' + booking.bookingNumber,
+        ''
+      );
+
+      if (enteredNumber === null) return;
+
+      if (String(enteredNumber).trim() !== String(booking.bookingNumber)) {
+        showToast('予約番号が一致しないため削除しませんでした。', 'error', 6000);
+        return;
+      }
+
+      if (!window.confirm(
+        '最終確認です。\n\n予約番号「' + booking.bookingNumber + '」を削除します。よろしいですか？'
+      )) {
+        return;
+      }
+
+      setButtonBusy(button, true, '削除中');
+
+      try {
+        var result = await gas('adminDeleteBooking', {
+          bookingKey: booking.key,
+          expectedVersion: booking.version,
+          confirmBookingNumber: enteredNumber.trim()
+        });
+
+        state.data.reservations = state.data.reservations.filter(function(item) {
+          return item.key !== booking.key;
+        });
+        state.selectedKey = '';
+        state.history = [];
+
+        closeDrawer();
+        renderAll();
+
+        showToast(
+          '予約を削除しました。予約一覧' + result.deletedRowCount +
+          '行・カレンダー' + result.deletedCalendarCount +
+          '件を処理し、「削除済み予約」へ退避しました。',
+          'success',
+          7000
+        );
+
+        if (result.warning) showToast(result.warning, 'error', 9000);
+
+      } catch (error) {
+        showToast(error.message, 'error', 8500);
+      } finally {
+        setButtonBusy(button, false);
+      }
+    }
+
+    function handleDrawerInput(event) {
+      var input = event.target.closest('[data-schedule-role="turtle"]');
+      if (!input) return;
+
+      var booking = findBooking(state.selectedKey);
+      if (!booking || !isAutoSupSchedule(booking)) return;
+
+      var supDateInput = els.drawerBody.querySelector('[data-schedule-date-row][data-schedule-role="sup"]');
+      var supTimeInput = els.drawerBody.querySelector('[data-schedule-time-row][data-schedule-role="sup"]');
+      var turtleDateInput = els.drawerBody.querySelector('[data-schedule-date-row][data-schedule-role="turtle"]');
+      var turtleTimeInput = els.drawerBody.querySelector('[data-schedule-time-row][data-schedule-role="turtle"]');
+
+      if (supDateInput && turtleDateInput) supDateInput.value = turtleDateInput.value;
+      if (supTimeInput && turtleTimeInput) {
+        supTimeInput.value = addMinutesToTime(turtleTimeInput.value, 90);
+      }
+    }
+
+    async function saveSchedule(button) {
+      var booking = findBooking(state.selectedKey);
+      if (!booking) return;
+
+      var componentEditors = [].slice.call(
+        els.drawerBody.querySelectorAll('[data-schedule-component-row]')
+      );
+      var components = componentEditors.map(function(editor) {
+        var dateInput = editor.querySelector('[data-schedule-date-row]');
+        var timeInput = editor.querySelector('[data-schedule-time-row]');
+
+        return {
+          rowNumber: Number(editor.getAttribute('data-schedule-component-row')),
+          date: dateInput ? dateInput.value : '',
+          time: timeInput ? timeInput.value : ''
+        };
+      });
+
+      if (components.some(function(component) { return !component.date || !component.time; })) {
+        showToast('すべての予定の日付・開始時間を入力してください。', 'error');
+        return;
+      }
+
+      setButtonBusy(button, true, '更新中');
+
+      try {
+        var result = await gas('adminUpdateSchedule', {
+          bookingKey: booking.key,
+          expectedVersion: booking.version,
+          components: components
+        });
+
+        replaceBooking(result.booking);
+        renderAll();
+        renderDrawer();
+        showToast('予約日時とGoogleカレンダーを更新しました。', 'success', 5500);
+
+        if (result.warning) showToast(result.warning, 'error', 7000);
+
+      } catch (error) {
+        showToast(error.message, 'error', 7500);
+      } finally {
+        setButtonBusy(button, false);
+      }
+    }
+
+    async function updateStatus(button) {
+      var booking = findBooking(state.selectedKey);
+      if (!booking) return;
+
+      var status = button.getAttribute('data-status-value');
+      var displayStatus = status || '未対応';
+
+      if (booking.bookingStatus === displayStatus) {
+        showToast('すでに「' + displayStatus + '」です。');
+        return;
+      }
+
+      setButtonBusy(button, true, '更新中');
+
+      try {
+        var result = await gas('adminUpdateBooking', {
+          bookingKey: booking.key,
+          expectedVersion: booking.version,
+          scope: 'all',
+          updates: { status: status }
+        });
+
+        replaceBooking(result.booking);
+        renderAll();
+        renderDrawer();
+        showToast('予約ステータスを「' + displayStatus + '」に更新しました。', 'success');
+
+        if (result.warning) showToast(result.warning, 'error', 6000);
+        if (result.pendingLine) openLinePreview(result.pendingLine, result.booking);
+
+      } catch (error) {
+        showToast(error.message, 'error', 6500);
+      } finally {
+        setButtonBusy(button, false);
+      }
+    }
+
+    async function saveComponent(button) {
+      var booking = findBooking(state.selectedKey);
+      if (!booking) return;
+
+      var rowNumber = Number(button.getAttribute('data-save-component'));
+      var component = booking.components.filter(function(row) {
+        return row.rowNumber === rowNumber;
+      })[0];
+      var card = button.closest('[data-component-row]');
+      var location = card.querySelector('[data-field="location"]').value;
+      var staff = card.querySelector('[data-field="staff"]').value.trim();
+      var updates = {};
+
+      if (location !== component.location) updates.location = location;
+      if (staff !== component.staff) updates.staff = staff;
+
+      if (!Object.keys(updates).length) {
+        showToast('変更はありません。');
+        return;
+      }
+
+      setButtonBusy(button, true, '保存中');
+
+      try {
+        var result = await gas('adminUpdateBooking', {
+          bookingKey: booking.key,
+          expectedVersion: booking.version,
+          rowNumber: rowNumber,
+          scope: 'row',
+          updates: updates
+        });
+
+        replaceBooking(result.booking);
+        renderAll();
+        renderDrawer();
+        showToast('予定の内容を保存しました。', 'success');
+
+        if (result.warning) showToast(result.warning, 'error', 6000);
+        if (result.pendingLine) openLinePreview(result.pendingLine, result.booking);
+
+      } catch (error) {
+        showToast(error.message, 'error', 6500);
+      } finally {
+        setButtonBusy(button, false);
+      }
+    }
+
+    async function previewCustomLine(button) {
+      var booking = findBooking(state.selectedKey);
+      var textarea = document.getElementById('customLineMessage');
+      var message = textarea ? textarea.value.trim() : '';
+
+      if (!message) {
+        showToast('LINEメッセージを入力してください。', 'error');
+        return;
+      }
+
+      setButtonBusy(button, true, '準備中');
+
+      try {
+        var pending = await gas('adminPrepareCustomLine', {
+          bookingKey: booking.key,
+          expectedVersion: booking.version,
+          message: message
+        });
+        openLinePreview(pending, booking);
+      } catch (error) {
+        showToast(error.message, 'error', 6500);
+      } finally {
+        setButtonBusy(button, false);
+      }
+    }
+
+    function openLinePreview(pending, booking) {
+      state.pendingLine = pending;
+      els.lineModalTitle.textContent = pending.summary;
+      els.lineMessageMeta.textContent =
+        (booking.name || '名前未登録') + ' 様 / ' +
+        (booking.bookingNumber || '予約番号なし') + ' / 有効期限 ' +
+        pending.expiresInMinutes + '分';
+      els.linePreviewText.textContent = pending.message;
+      els.lineModal.hidden = false;
+      els.lineConfirmButton.disabled = false;
+      els.lineConfirmButton.textContent = '内容を確認してLINE送信';
+    }
+
+    async function cancelLinePreview() {
+      if (els.lineModal.hidden) return;
+
+      var pending = state.pendingLine;
+      state.pendingLine = null;
+      els.lineModal.hidden = true;
+
+      if (pending && pending.token) {
+        try {
+          await gas('adminCancelLine', { token: pending.token });
+        } catch (error) {
+          // 画面を閉じる操作を優先します。
+        }
+      }
+    }
+
+    async function confirmLineSend() {
+      if (!state.pendingLine) return;
+
+      var pending = state.pendingLine;
+      setButtonBusy(els.lineConfirmButton, true, '送信中');
+      els.lineCancelButton.disabled = true;
+
+      try {
+        var result = await gas('adminConfirmLine', { token: pending.token });
+
+        if (!result.success) {
+          throw new Error(result.error || 'LINEを送信できませんでした。');
+        }
+
+        state.pendingLine = null;
+        els.lineModal.hidden = true;
+        showToast(
+          result.warning
+            ? 'LINEは送信されました。'
+            : 'LINEを送信しました。送信履歴にも記録されています。',
+          'success',
+          5500
+        );
+
+        if (result.warning) {
+          showToast(result.warning, 'error', 8000);
+        }
+
+        await loadData(false);
+
+        var booking = findBooking(state.selectedKey);
+        if (booking) {
+          state.history = await gas('adminGetHistory', {
+            bookingNumber: booking.bookingNumber
+          });
+          renderDrawer();
+        }
+
+      } catch (error) {
+        showToast(error.message, 'error', 7000);
+      } finally {
+        els.lineCancelButton.disabled = false;
+        setButtonBusy(els.lineConfirmButton, false);
+      }
+    }
+
+    function replaceBooking(booking) {
+      var replaced = false;
+      state.data.reservations = state.data.reservations.map(function(existing) {
+        if (existing.key !== booking.key) return existing;
+        replaced = true;
+        return booking;
+      });
+      if (!replaced) state.data.reservations.push(booking);
+      state.data.dashboard = buildDashboard(state.data.reservations);
+    }
+
+    function findBooking(key) {
+      if (!state.data) return null;
+      for (var i = 0; i < state.data.reservations.length; i++) {
+        if (state.data.reservations[i].key === key) return state.data.reservations[i];
+      }
+      return null;
+    }
+
+    function buildDashboard(bookings) {
+      var today = localDateString(new Date());
+      var tomorrow = addDays(today, 1);
+      var future = bookings.filter(function(booking) {
+        return bookingHasDateOnOrAfter(booking, today);
+      });
+      var confirmed = bookings.filter(function(booking) { return booking.bookingStatus === '確定'; });
+
+      return {
+        totalBookings: bookings.length,
+        today: bookings.filter(function(booking) {
+          return bookingHasDate(booking, today);
+        }).length,
+        tomorrow: bookings.filter(function(booking) {
+          return bookingHasDate(booking, tomorrow);
+        }).length,
+        futurePending: future.filter(function(booking) {
+          return booking.bookingStatus === '未対応' || booking.bookingStatus === '混在';
+        }).length,
+        futureConfirmed: future.filter(function(booking) { return booking.bookingStatus === '確定'; }).length,
+        futureFull: future.filter(function(booking) { return booking.bookingStatus === '満席'; }).length,
+        locationMissing: bookings.filter(function(booking) {
+          return booking.locationGuidanceDue;
+        }).length,
+        dayLocationDue: bookings.filter(function(booking) {
+          return booking.dayLocationDue;
+        }).length,
+        nightLocationDue: bookings.filter(function(booking) {
+          return booking.nightLocationDue;
+        }).length,
+        confirmedSales: confirmed.reduce(function(sum, booking) { return sum + Number(booking.totalPrice || 0); }, 0),
+        confirmedCoupons: confirmed.reduce(function(sum, booking) { return sum + Number(booking.couponDiscount || 0); }, 0)
+      };
+    }
+
+    function bookingDates(booking) {
+      var seen = {};
+
+      return (booking && booking.components || []).map(function(component) {
+        return String(component.date || '');
+      }).filter(function(date) {
+        if (!date || seen[date]) return false;
+        seen[date] = true;
+        return true;
+      });
+    }
+
+    function bookingHasDate(booking, date) {
+      return bookingDates(booking).indexOf(String(date || '')) !== -1;
+    }
+
+    function bookingHasDateOnOrAfter(booking, date) {
+      return bookingDates(booking).some(function(componentDate) {
+        return componentDate >= date;
+      });
+    }
+
+    function bookingHasDateInRange(booking, startDate, endDate) {
+      return bookingDates(booking).some(function(componentDate) {
+        return componentDate >= startDate && componentDate <= endDate;
+      });
+    }
+
+    function bookingDateDisplay(booking) {
+      var dates = bookingDates(booking);
+
+      if (!dates.length) return '日付未設定';
+
+      return dates.map(formatDateLabel).join(' / ');
+    }
+
+    function bookingTimeDisplay(booking) {
+      var components = booking && booking.components || [];
+      var dates = bookingDates(booking);
+
+      if (dates.length > 1) {
+        return components.map(function(component) {
+          var parts = String(component.date || '').split('-');
+          var shortDate = parts.length === 3
+            ? Number(parts[1]) + '/' + Number(parts[2])
+            : String(component.date || '');
+
+          return shortDate + ' ' + (component.time || '時間未設定');
+        }).join(' / ');
+      }
+
+      var times = [];
+      var seen = {};
+
+      components.forEach(function(component) {
+        var time = String(component.time || '');
+        if (!time || seen[time]) return;
+        seen[time] = true;
+        times.push(time);
+      });
+
+      return times.length ? times.join(' / ') : '時間未設定';
+    }
+
+    function locationOptions(current) {
+      var options = ['<option value="">未設定</option>'];
+      state.data.options.locations.forEach(function(location) {
+        options.push('<option value="' + attr(location) + '"' + (location === current ? ' selected' : '') + '>' + escapeHtml(location) + '</option>');
+      });
+      return options.join('');
+    }
+
+    function statusChoice(value, label, current) {
+      var isCurrent = current === label;
+      return '<button class="status-choice' + (isCurrent ? ' is-current' : '') + '" data-status-value="' + attr(value) + '">' + escapeHtml(label) + '</button>';
+    }
+
+    function infoCard(label, value) {
+      return '<div class="info-card"><div class="info-label">' + escapeHtml(label) + '</div><div class="info-value">' + escapeHtml(value) + '</div></div>';
+    }
+
+    function statusChip(status) {
+      var className = 'status-pending';
+      if (status === '確定') className = 'status-confirmed';
+      else if (status === '満席') className = 'status-full';
+      else if (status === '混在') className = 'status-mixed';
+      return '<span class="status-chip ' + className + '">' + escapeHtml(status || '未対応') + '</span>';
+    }
+
+    function setButtonBusy(button, busy, busyText) {
+      if (!button) return;
+      if (busy) {
+        button.dataset.originalText = button.textContent;
+        button.disabled = true;
+        button.textContent = busyText || '処理中';
+      } else {
+        button.disabled = false;
+        if (button.dataset.originalText) {
+          button.textContent = button.dataset.originalText;
+          delete button.dataset.originalText;
+        }
+      }
+    }
+
+    function setSync(type, text) {
+      els.syncState.classList.remove('is-loading', 'is-error');
+      if (type === 'loading') els.syncState.classList.add('is-loading');
+      if (type === 'error') els.syncState.classList.add('is-error');
+      els.syncText.textContent = text;
+    }
+
+    function showToast(message, type, duration) {
+      var toast = document.createElement('div');
+      toast.className = 'toast' + (type ? ' is-' + type : '');
+      toast.textContent = message;
+      els.toastStack.appendChild(toast);
+      setTimeout(function() {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(8px)';
+        setTimeout(function() { toast.remove(); }, 220);
+      }, duration || 4200);
+    }
+
+    function formatMoney(value) {
+      return '¥' + Number(value || 0).toLocaleString('ja-JP');
+    }
+
+    function formatDateLabel(dateText) {
+      var parts = String(dateText || '').split('-');
+      if (parts.length !== 3) return dateText || '日付未設定';
+      var date = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+      var weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+      return Number(parts[1]) + '/' + Number(parts[2]) + '（' + weekdays[date.getDay()] + '）';
+    }
+
+    function formatClock(isoText) {
+      var date = new Date(isoText);
+      if (isNaN(date.getTime())) return '完了';
+      return ('0' + date.getHours()).slice(-2) + ':' + ('0' + date.getMinutes()).slice(-2);
+    }
+
+    function isAutoSupSchedule(booking) {
+      var plan = String(booking && booking.displayPlan || '');
+
+      return plan.indexOf('海空セット') !== -1 ||
+        plan.indexOf('まるごと1日セット') !== -1;
+    }
+
+    function timeInputValue(value) {
+      var match = String(value || '').match(/(\d{1,2})\s*(?::|：|時)\s*(\d{1,2})/);
+
+      if (!match) return '';
+
+      var hour = Number(match[1]);
+      var minute = Number(match[2]);
+
+      if (hour > 23 || minute > 59) return '';
+
+      return ('0' + hour).slice(-2) + ':' + ('0' + minute).slice(-2);
+    }
+
+    function addMinutesToTime(value, minutes) {
+      var time = timeInputValue(value);
+      if (!time) return '';
+
+      var parts = time.split(':');
+      var date = new Date(2000, 0, 1, Number(parts[0]), Number(parts[1]));
+      date.setMinutes(date.getMinutes() + Number(minutes || 0));
+
+      return ('0' + date.getHours()).slice(-2) + ':' +
+        ('0' + date.getMinutes()).slice(-2);
+    }
+
+    function localDateString(date) {
+      return date.getFullYear() + '-' +
+        ('0' + (date.getMonth() + 1)).slice(-2) + '-' +
+        ('0' + date.getDate()).slice(-2);
+    }
+
+    function addDays(dateText, days) {
+      var parts = dateText.split('-');
+      var date = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+      date.setDate(date.getDate() + Number(days || 0));
+      return localDateString(date);
+    }
+
+    function normalizeSearch(value) {
+      return String(value || '')
+        .toLowerCase()
+        .replace(/[\s　\-ー]/g, '');
+    }
+
+    function escapeHtml(value) {
+      return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function attr(value) {
+      return escapeHtml(value).replace(/`/g, '&#096;');
+    }
+  })();
+</script>
