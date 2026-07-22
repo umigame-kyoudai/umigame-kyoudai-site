@@ -4,7 +4,8 @@ import type React from "react"
 import Link from "next/link"
 import { ParticipantForm } from "./participant-form"
 import { useLiff } from "./liff-provider"
-import { trackEvent } from "@/lib/analytics"
+import { categorizeBookingFailure, trackEvent } from "@/lib/analytics"
+import { sendDetailedEvent } from "@/lib/detailed-analytics"
 import { getAttribution, getAttributionSourceLabel } from "@/lib/attribution"
 
 import { useState, useEffect, useCallback, useRef } from "react"
@@ -213,6 +214,8 @@ export function BookingForm() {
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [confirmedPricing, setConfirmedPricing] = useState<{ totalPrice: number; couponDiscount: number } | null>(null)
   const appliedCouponRef = useRef<{ code: string; signature: string } | null>(null)
+  const submissionInFlightRef = useRef(false)
+  const bookingStartedTrackedRef = useRef(false)
 
   // 送信完了画面が出たら見出しへフォーカスを移す（読み上げ・キーボード利用者に完了を確実に伝える）
   const successHeadingRef = useRef<HTMLHeadingElement>(null)
@@ -580,8 +583,27 @@ export function BookingForm() {
     }))
   }
 
+  const trackBookingStarted = () => {
+    if (bookingStartedTrackedRef.current) return
+
+    bookingStartedTrackedRef.current = true
+    sendDetailedEvent("booking_started", {
+      locale: "ja",
+      plan: bookingData.selectedPlan,
+      planName: selectedPlanData?.name ?? "",
+      headcount: bookingData.adultCount + bookingData.childCount + bookingData.under3Count,
+      adultCount: bookingData.adultCount,
+      childCount: bookingData.childCount,
+      under3Count: bookingData.under3Count,
+      total: totalPrice,
+      currency: "JPY",
+      source: getAttributionSourceLabel(),
+    })
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (submissionInFlightRef.current) return
     if (selectedPlanIsComingSoon) {
       toast.error("このプランは近日公開のため、まだ予約できません")
       return
@@ -594,7 +616,9 @@ export function BookingForm() {
       toast.error("LINEログインの有効期限が切れました。お手数ですが、もう一度LINEログインしてから送信してください（入力内容は保存されています）。")
       return
     }
+    submissionInFlightRef.current = true
     setIsSubmitting(true)
+    let failureCategory = categorizeBookingFailure()
 
     // 氏名が未入力の参加者は内部的に「参加者1」「参加者2」…として扱う
     const participantsForSubmit = bookingData.participants.map((p, index) => ({
@@ -648,6 +672,7 @@ export function BookingForm() {
           attribution: getAttribution(),
         }),
       })
+      failureCategory = categorizeBookingFailure(response.status)
 
       const responseData: {
         success?: boolean
@@ -681,21 +706,40 @@ export function BookingForm() {
           ? responseData.data.couponDiscount
           : bookingData.couponDiscount
       setConfirmedPricing({ totalPrice: confirmedTotalPrice, couponDiscount: confirmedCouponDiscount })
-      trackEvent("booking_submitted", {
+      sendDetailedEvent("booking_submitted", {
         locale: "ja",
         plan: bookingData.selectedPlan,
         planName: selectedPlanData?.name ?? "",
         headcount: bookingData.adultCount + bookingData.childCount + bookingData.under3Count,
+        adultCount: bookingData.adultCount,
+        childCount: bookingData.childCount,
+        under3Count: bookingData.under3Count,
         total: confirmedTotalPrice,
+        currency: "JPY",
         source: getAttributionSourceLabel(),
+        outcome: "success",
       })
       clearBookingDraft()
       setIsSubmitted(true)
-      setIsSubmitting(false)
     } catch (error) {
-      trackEvent("booking_failed", { locale: "ja", plan: bookingData.selectedPlan, source: getAttributionSourceLabel() })
+      sendDetailedEvent("booking_failed", {
+        locale: "ja",
+        plan: bookingData.selectedPlan,
+        planName: selectedPlanData?.name ?? "",
+        headcount: bookingData.adultCount + bookingData.childCount + bookingData.under3Count,
+        adultCount: bookingData.adultCount,
+        childCount: bookingData.childCount,
+        under3Count: bookingData.under3Count,
+        total: totalPrice,
+        currency: "JPY",
+        source: getAttributionSourceLabel(),
+        outcome: "failed",
+        errorCategory: failureCategory,
+      })
       const errorMessage = error instanceof Error ? error.message : "予約の送信中にエラーが発生しました。もう一度お試しください。"
       toast.error(errorMessage)
+    } finally {
+      submissionInFlightRef.current = false
       setIsSubmitting(false)
     }
   }
@@ -891,7 +935,7 @@ export function BookingForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8">
+    <form onSubmit={handleSubmit} onInputCapture={trackBookingStarted} className="space-y-8">
       <div className="rounded-2xl border border-emerald-100 bg-white/80 p-4 sm:p-5 shadow-sm">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>

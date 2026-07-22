@@ -23,10 +23,7 @@ export type AnalyticsValue = string | number | boolean | null
 export type AnalyticsEventProperties = Record<string, AnalyticsValue>
 
 export interface DetailedAnalyticsEvent {
-  occurred_at: string
   event_name: AnalyticsEventName
-  visitor_id: string
-  session_id: string
   page_path: string
   locale: string
   device_type: string
@@ -69,4 +66,3 @@ export const ANALYTICS_PROPERTY_KEYS = [
   "engagedSeconds",
   "maxScrollPercent",
 ] as const
-

@@ -5,46 +5,8 @@ import type {
   AnalyticsEventProperties,
   DetailedAnalyticsEvent,
 } from "@/lib/analytics-schema"
+import { trackEvent } from "@/lib/analytics"
 import { getAttribution } from "@/lib/attribution"
-
-const VISITOR_KEY = "umigame_analytics_visitor_v1"
-const VISITOR_EXPIRY_KEY = "umigame_analytics_visitor_expiry_v1"
-const SESSION_KEY = "umigame_analytics_session_v1"
-const VISITOR_LIFETIME_MS = 90 * 24 * 60 * 60 * 1000
-
-function createAnonymousId(prefix: string): string {
-  const random = typeof crypto !== "undefined" && "randomUUID" in crypto
-    ? crypto.randomUUID()
-    : Math.random().toString(36).slice(2) + Date.now().toString(36)
-  return prefix + "_" + random
-}
-
-function getVisitorId(): string {
-  try {
-    const now = Date.now()
-    const stored = localStorage.getItem(VISITOR_KEY)
-    const expiresAt = Number(localStorage.getItem(VISITOR_EXPIRY_KEY) || 0)
-    if (stored && expiresAt > now) return stored
-    const next = createAnonymousId("v")
-    localStorage.setItem(VISITOR_KEY, next)
-    localStorage.setItem(VISITOR_EXPIRY_KEY, String(now + VISITOR_LIFETIME_MS))
-    return next
-  } catch {
-    return createAnonymousId("v")
-  }
-}
-
-function getSessionId(): string {
-  try {
-    const stored = sessionStorage.getItem(SESSION_KEY)
-    if (stored) return stored
-    const next = createAnonymousId("s")
-    sessionStorage.setItem(SESSION_KEY, next)
-    return next
-  } catch {
-    return createAnonymousId("s")
-  }
-}
 
 function getBrowser(): string {
   const ua = navigator.userAgent
@@ -95,22 +57,19 @@ export function buildDetailedEvent(
   const pathname = window.location.pathname || "/"
 
   return {
-    occurred_at: new Date().toISOString(),
     event_name: name,
-    visitor_id: getVisitorId(),
-    session_id: getSessionId(),
     page_path: pathname,
     locale: getLocaleFromPath(pathname),
     device_type: getDeviceType(),
     viewport_width: window.innerWidth,
     viewport_height: window.innerHeight,
-    referrer_host: attribution.referrer || "",
-    landing_page: attribution.landingPage || pathname,
-    utm_source: attribution.source || "",
-    utm_medium: attribution.medium || "",
-    utm_campaign: attribution.campaign || "",
-    utm_content: attribution.content || "",
-    utm_term: attribution.term || "",
+    referrer_host: attribution?.referrer || "",
+    landing_page: attribution?.landingPage || pathname,
+    utm_source: attribution?.source || "",
+    utm_medium: attribution?.medium || "",
+    utm_campaign: attribution?.campaign || "",
+    utm_content: "",
+    utm_term: "",
     browser: getBrowser(),
     os: getOS(),
     screen_width: window.screen?.width || 0,
@@ -127,16 +86,32 @@ export function sendDetailedEvent(
   const event = buildDetailedEvent(name, properties)
   if (!event) return
 
-  try {
-    void fetch("/api/analytics/events", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(event),
-      keepalive: true,
-      credentials: "same-origin",
-    })
-  } catch {
-    // Analytics must never interrupt a booking or navigation.
-  }
-}
+  trackEvent(name, {
+    ...event.properties,
+    page_path: event.page_path,
+    locale: event.locale,
+    device_type: event.device_type,
+    viewport_width: event.viewport_width,
+    viewport_height: event.viewport_height,
+    referrer_host: event.referrer_host,
+    landing_page: event.landing_page,
+    utm_source: event.utm_source,
+    utm_medium: event.utm_medium,
+    utm_campaign: event.utm_campaign,
+    utm_content: event.utm_content,
+    utm_term: event.utm_term,
+    browser: event.browser,
+    os: event.os,
+    screen_width: event.screen_width,
+    screen_height: event.screen_height,
+    connection_type: event.connection_type,
+  })
 
+  void fetch("/api/analytics/events", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(event),
+    credentials: "same-origin",
+    keepalive: true,
+  }).catch(() => undefined)
+}

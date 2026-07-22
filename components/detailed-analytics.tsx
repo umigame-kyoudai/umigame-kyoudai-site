@@ -24,7 +24,7 @@ export function DetailedAnalytics() {
   const pathname = usePathname()
   const startedAt = useRef(Date.now())
   const maxScroll = useRef(0)
-  const bookingStarted = useRef(false)
+  const lastPageViewPath = useRef<string | null>(null)
 
   useReportWebVitals((metric) => {
     sendDetailedEvent("web_vital", {
@@ -37,22 +37,15 @@ export function DetailedAnalytics() {
   useEffect(() => {
     startedAt.current = Date.now()
     maxScroll.current = 0
-    bookingStarted.current = false
-    sendDetailedEvent("page_view")
+    if (lastPageViewPath.current !== pathname) {
+      lastPageViewPath.current = pathname
+      sendDetailedEvent("page_view")
+    }
 
     const updateScroll = () => {
       const available = document.documentElement.scrollHeight - window.innerHeight
       const percent = available <= 0 ? 100 : Math.round((window.scrollY / available) * 100)
       maxScroll.current = Math.max(maxScroll.current, Math.min(100, percent))
-    }
-
-    const onInteraction = (event: Event) => {
-      const target = event.target as HTMLElement | null
-      if (!target) return
-      if (!bookingStarted.current && target.closest("form")) {
-        bookingStarted.current = true
-        sendDetailedEvent("booking_started")
-      }
     }
 
     const onClick = (event: MouseEvent) => {
@@ -83,7 +76,10 @@ export function DetailedAnalytics() {
       })
     }
 
+    let engagementSent = false
     const sendEngagement = () => {
+      if (engagementSent) return
+      engagementSent = true
       const seconds = Math.max(0, Math.round((Date.now() - startedAt.current) / 1000))
       if (seconds >= 2) {
         sendDetailedEvent("page_engagement", {
@@ -96,17 +92,14 @@ export function DetailedAnalytics() {
       }
     }
 
+    updateScroll()
     window.addEventListener("scroll", updateScroll, { passive: true })
-    document.addEventListener("input", onInteraction, true)
-    document.addEventListener("change", onInteraction, true)
     document.addEventListener("click", onClick, true)
     window.addEventListener("pagehide", sendEngagement, { once: true })
 
     return () => {
       sendEngagement()
       window.removeEventListener("scroll", updateScroll)
-      document.removeEventListener("input", onInteraction, true)
-      document.removeEventListener("change", onInteraction, true)
       document.removeEventListener("click", onClick, true)
       window.removeEventListener("pagehide", sendEngagement)
     }
@@ -114,4 +107,3 @@ export function DetailedAnalytics() {
 
   return null
 }
-

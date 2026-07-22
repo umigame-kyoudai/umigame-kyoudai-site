@@ -4,6 +4,7 @@ import { Inter } from "next/font/google"
 import { GoogleAnalytics } from "@next/third-parties/google"
 import { Analytics } from "@vercel/analytics/next"
 import { AttributionTracker } from "@/components/attribution-tracker"
+import { DetailedAnalytics } from "@/components/detailed-analytics"
 import { LiffLoginRelay } from "@/components/liff-login-relay"
 import { OrganizationJsonLd, WebSiteJsonLd } from "@/components/json-ld"
 import { RouteScrollManager } from "@/components/route-scroll-manager"
@@ -48,6 +49,7 @@ export function SiteRootLayout({
           <RouteScrollManager />
         </Suspense>
         <AttributionTracker />
+        <DetailedAnalytics />
         <LiffLoginRelay />
         {children}
         <Analytics />

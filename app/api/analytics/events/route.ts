@@ -59,10 +59,8 @@ export async function POST(request: Request) {
   }
 
   const event = {
-    occurred_at: text(raw.occurred_at, 40) || new Date().toISOString(),
+    occurred_at: new Date().toISOString(),
     event_name: eventName as AnalyticsEventName,
-    visitor_id: text(raw.visitor_id, 80),
-    session_id: text(raw.session_id, 80),
     page_path: safePath(raw.page_path),
     locale: text(raw.locale, 10),
     device_type: text(raw.device_type, 20),
@@ -102,4 +100,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ accepted: false, reason: "delivery_failed" }, { status: 502 })
   }
 }
-

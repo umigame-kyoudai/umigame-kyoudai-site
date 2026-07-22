@@ -27,7 +27,8 @@ import { type IntlLocale, LOCALE_BOOKING_TAGS, localePath } from "@/lib/i18n/loc
 import { getEnPrice } from "@/lib/i18n/en-prices"
 import { SENIOR_RESTRICTED_PLAN_IDS, PRIVATE_COUNTERPART, TIME_OPTIONAL_PLAN_IDS, isParticipantAgeValid } from "@/lib/plan-flags"
 import { getSunsetSupGuide } from "@/lib/beach-info"
-import { trackEvent } from "@/lib/analytics"
+import { categorizeBookingFailure, trackEvent } from "@/lib/analytics"
+import { sendDetailedEvent } from "@/lib/detailed-analytics"
 import { getAttribution, getAttributionSourceLabel } from "@/lib/attribution"
 import { getPlanMaxParticipants } from "@/lib/booking-rules"
 import {
@@ -145,6 +146,8 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [confirmedPricing, setConfirmedPricing] = useState<{ totalPrice: number; couponDiscount: number } | null>(null)
   const appliedCouponRef = useRef<{ code: string; signature: string } | null>(null)
+  const submissionInFlightRef = useRef(false)
+  const bookingStartedTrackedRef = useRef(false)
 
   // Move focus to the confirmation heading so screen-reader and keyboard
   // users reliably notice the form was sent.
@@ -404,8 +407,27 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
 
   const bookingTag = LOCALE_BOOKING_TAGS[locale]
 
+  const trackBookingStarted = () => {
+    if (bookingStartedTrackedRef.current) return
+
+    bookingStartedTrackedRef.current = true
+    sendDetailedEvent("booking_started", {
+      locale,
+      plan: planId,
+      planName: t?.name ?? plan?.name ?? "",
+      headcount: participants.length,
+      adultCount: counts.adult,
+      childCount: counts.child,
+      under3Count: counts.under3,
+      total: totalPrice,
+      currency: "JPY",
+      source: getAttributionSourceLabel(),
+    })
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (submissionInFlightRef.current) return
     if (!plan || !t) return
 
     // LINE ID tokens expire ~1 hour after login and LIFF never refreshes them,
@@ -416,7 +438,9 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
       toast.error(copy.lineExpiredError)
       return
     }
+    submissionInFlightRef.current = true
     setIsSubmitting(true)
+    let failureCategory = categorizeBookingFailure()
     try {
       const response = await fetch("/api/booking", {
         method: "POST",
@@ -452,6 +476,7 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
           attribution: getAttribution(),
         }),
       })
+      failureCategory = categorizeBookingFailure(response.status)
       const responseData: {
         success?: boolean
         data?: { totalPrice?: unknown; couponDiscount?: unknown }
@@ -478,22 +503,41 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
           ? responseData.data.couponDiscount
           : couponDiscount
       setConfirmedPricing({ totalPrice: confirmedTotalPrice, couponDiscount: confirmedCouponDiscount })
-      trackEvent("booking_submitted", {
+      sendDetailedEvent("booking_submitted", {
         locale,
         plan: planId,
         planName: plan.name,
         headcount: participants.length,
+        adultCount: counts.adult,
+        childCount: counts.child,
+        under3Count: counts.under3,
         total: confirmedTotalPrice,
+        currency: "JPY",
         source: getAttributionSourceLabel(),
+        outcome: "success",
       })
       try {
         window.sessionStorage.removeItem(draftKey(locale))
       } catch {}
       setIsSubmitted(true)
     } catch (error) {
-      trackEvent("booking_failed", { locale, plan: planId, source: getAttributionSourceLabel() })
+      sendDetailedEvent("booking_failed", {
+        locale,
+        plan: planId,
+        planName: t?.name ?? plan?.name ?? "",
+        headcount: participants.length,
+        adultCount: counts.adult,
+        childCount: counts.child,
+        under3Count: counts.under3,
+        total: totalPrice,
+        currency: "JPY",
+        source: getAttributionSourceLabel(),
+        outcome: "failed",
+        errorCategory: failureCategory,
+      })
       toast.error(error instanceof Error ? error.message : copy.genericError)
     } finally {
+      submissionInFlightRef.current = false
       setIsSubmitting(false)
     }
   }
@@ -552,7 +596,7 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8">
+    <form onSubmit={handleSubmit} onInputCapture={trackBookingStarted} className="space-y-8">
       {/* Plan */}
       <Card className="bg-white/80 rounded-3xl ring-1 ring-emerald-100 shadow-lg">
         <CardHeader>
