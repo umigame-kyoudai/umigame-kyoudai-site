@@ -1,7 +1,7 @@
 # 海亀兄弟 Webサイト総合監査レポート
 
 - 監査日: 2026-07-11（Asia/Tokyo）
-- 対象リポジトリ: `genkidama2439-collab/v0-website`
+- 対象リポジトリ: `genkidama2439-collab/umigame-kyoudai-site`
 - 本番URL: https://www.umigamekyoudaimiyakojima.com
 - 監査方針: 読み取り専用。ソースコード、依存関係、設定、デプロイ、Git履歴には変更を加えていない。
 - このファイルは依頼に基づく監査成果物であり、修正実装ではない。

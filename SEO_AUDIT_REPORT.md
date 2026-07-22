@@ -2,7 +2,7 @@
 
 Audit date: 2026-06-19 JST  
 Target: 海亀兄弟 / 宮古島ウミガメシュノーケル系サイト  
-Repository: `/Users/yonetaniyoshikazukari/クロード/v0-website`
+Repository: `/Users/yonetaniyoshikazukari/クロード/umigame-kyoudai-site`
 
 ## 1. 総合評価
 

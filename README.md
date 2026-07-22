@@ -6,7 +6,7 @@
 [![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://www.umigamekyoudaimiyakojima.com)
 
 - 本番サイト: **https://www.umigamekyoudaimiyakojima.com**
-- リポジトリ: https://github.com/genkidama2439-collab/v0-website
+- リポジトリ: https://github.com/genkidama2439-collab/umigame-kyoudai-site
 
 ## 技術スタック
 
