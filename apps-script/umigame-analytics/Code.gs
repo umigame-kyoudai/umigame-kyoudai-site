@@ -471,7 +471,7 @@ function normalizeEvent_(input) {
     viewport_width: safeNumber_(input.viewport_width),
     viewport_height: safeNumber_(input.viewport_height),
     referrer_host: safeText_(input.referrer_host, 180),
-    landing_path: safeText_(input.landing_path, 300),
+    landing_path: safeText_(input.landing_page, 300),
     utm_source: safeText_(input.utm_source, 120),
     utm_medium: safeText_(input.utm_medium, 120),
     utm_campaign: safeText_(input.utm_campaign, 180),
@@ -481,7 +481,7 @@ function normalizeEvent_(input) {
     os: safeText_(input.os, 50),
     screen_width: safeNumber_(input.screen_width),
     screen_height: safeNumber_(input.screen_height),
-    connection: safeText_(input.connection, 30),
+    connection: safeText_(input.connection_type, 30),
     properties: normalizeProperties_(input.properties),
   };
 }
