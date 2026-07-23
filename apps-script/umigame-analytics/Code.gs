@@ -7,6 +7,8 @@ const ANALYTICS_CONFIG = Object.freeze({
   dailySheet: '日別分析',
   eventsSheet: 'イベントデータ',
   definitionsSheet: '設定・定義',
+  sourceDeviceSheet: '流入元・デバイス分析',
+  pageFailureSheet: 'ページ・失敗分析',
 });
 
 const ANALYTICS_EVENTS = Object.freeze([
@@ -112,11 +114,21 @@ function setupAnalyticsWorkbook() {
     spreadsheet,
     ANALYTICS_CONFIG.definitionsSheet
   );
+  const sourceDevice = ensureSheet_(
+    spreadsheet,
+    ANALYTICS_CONFIG.sourceDeviceSheet
+  );
+  const pageFailure = ensureSheet_(
+    spreadsheet,
+    ANALYTICS_CONFIG.pageFailureSheet
+  );
 
   configureEventsSheet_(events);
   configureDailySheet_(daily);
   configureDashboardSheet_(dashboard, daily);
   configureDefinitionsSheet_(definitions);
+  configureSourceDeviceSheet_(sourceDevice);
+  configurePageFailureSheet_(pageFailure);
   removeUnusedDefaultSheets_(spreadsheet);
 
   spreadsheet.setActiveSheet(dashboard);
@@ -219,16 +231,23 @@ function ensureSheet_(spreadsheet, name) {
   return spreadsheet.getSheetByName(name) || spreadsheet.insertSheet(name);
 }
 
-function removeUnusedDefaultSheets_(spreadsheet) {
-  spreadsheet.getSheets().forEach(function (sheet) {
-    const isRequired = [
-      ANALYTICS_CONFIG.dashboardSheet,
-      ANALYTICS_CONFIG.dailySheet,
-      ANALYTICS_CONFIG.eventsSheet,
-      ANALYTICS_CONFIG.definitionsSheet,
-    ].indexOf(sheet.getName()) !== -1;
+function requiredSheetNames_() {
+  return [
+    ANALYTICS_CONFIG.dashboardSheet,
+    ANALYTICS_CONFIG.dailySheet,
+    ANALYTICS_CONFIG.eventsSheet,
+    ANALYTICS_CONFIG.definitionsSheet,
+    ANALYTICS_CONFIG.sourceDeviceSheet,
+    ANALYTICS_CONFIG.pageFailureSheet,
+  ];
+}
 
-    if (!isRequired && spreadsheet.getSheets().length > 4) {
+function removeUnusedDefaultSheets_(spreadsheet) {
+  const required = requiredSheetNames_();
+  spreadsheet.getSheets().forEach(function (sheet) {
+    const isRequired = required.indexOf(sheet.getName()) !== -1;
+
+    if (!isRequired && spreadsheet.getSheets().length > required.length) {
       spreadsheet.deleteSheet(sheet);
     }
   });
@@ -439,6 +458,111 @@ function configureDefinitionsSheet_(sheet) {
   sheet.setColumnWidth(2, 240);
   sheet.setColumnWidth(3, 440);
   sheet.getRange('A:C').setWrap(true).setVerticalAlignment('top');
+}
+
+/**
+ * 流入元(UTM Source)別・デバイス別に「表示→予約開始→予約完了」のファネルとCVRを並べます。
+ * ページ表示イベントには予約系プロパティが付かないため、全イベント共通の列（UTM Source・デバイス）で集計します。
+ */
+function configureSourceDeviceSheet_(sheet) {
+  sheet.clear();
+  sheet.setHiddenGridlines(true);
+  sheet.setFrozenRows(1);
+  sheet.setColumnWidths(1, 17, 120);
+
+  sheet.getRange('A1:H1').setValues([[
+    '流入元(UTM Source)', '表示', '予約開始', '予約完了', '予約失敗', '売上',
+    'CVR 表示→開始', 'CVR 開始→完了',
+  ]]);
+  sheet.getRange('A2').setFormula(
+    '=QUERY({' +
+      'ARRAYFORMULA(IF(\'イベントデータ\'!A2:A="","",IF(\'イベントデータ\'!J2:J="","direct",\'イベントデータ\'!J2:J))),' +
+      'ARRAYFORMULA(N(\'イベントデータ\'!B2:B="page_view")),' +
+      'ARRAYFORMULA(N(\'イベントデータ\'!B2:B="booking_started")),' +
+      'ARRAYFORMULA(N(\'イベントデータ\'!B2:B="booking_submitted")),' +
+      'ARRAYFORMULA(N(\'イベントデータ\'!B2:B="booking_failed")),' +
+      'ARRAYFORMULA(IF(\'イベントデータ\'!B2:B="booking_submitted",\'イベントデータ\'!AA2:AA,0))' +
+    '},"select Col1,sum(Col2),sum(Col3),sum(Col4),sum(Col5),sum(Col6) ' +
+      'where Col1 is not null group by Col1 order by sum(Col2) desc ' +
+      'label Col1 \'流入元\',sum(Col2) \'表示\',sum(Col3) \'予約開始\',' +
+      'sum(Col4) \'予約完了\',sum(Col5) \'予約失敗\',sum(Col6) \'売上\'",0)'
+  );
+  sheet.getRange('G2').setFormula('=ARRAYFORMULA(IF($A2:$A="","",IFERROR($C2:$C/$B2:$B,0)))');
+  sheet.getRange('H2').setFormula('=ARRAYFORMULA(IF($A2:$A="","",IFERROR($D2:$D/$C2:$C,0)))');
+
+  sheet.getRange('J1:Q1').setValues([[
+    'デバイス', '表示', '予約開始', '予約完了', '予約失敗', '売上',
+    'CVR 表示→開始', 'CVR 開始→完了',
+  ]]);
+  sheet.getRange('J2').setFormula(
+    '=QUERY({' +
+      'ARRAYFORMULA(IF(\'イベントデータ\'!A2:A="","",\'イベントデータ\'!E2:E)),' +
+      'ARRAYFORMULA(N(\'イベントデータ\'!B2:B="page_view")),' +
+      'ARRAYFORMULA(N(\'イベントデータ\'!B2:B="booking_started")),' +
+      'ARRAYFORMULA(N(\'イベントデータ\'!B2:B="booking_submitted")),' +
+      'ARRAYFORMULA(N(\'イベントデータ\'!B2:B="booking_failed")),' +
+      'ARRAYFORMULA(IF(\'イベントデータ\'!B2:B="booking_submitted",\'イベントデータ\'!AA2:AA,0))' +
+    '},"select Col1,sum(Col2),sum(Col3),sum(Col4),sum(Col5),sum(Col6) ' +
+      'where Col1 is not null group by Col1 order by sum(Col2) desc ' +
+      'label Col1 \'デバイス\',sum(Col2) \'表示\',sum(Col3) \'予約開始\',' +
+      'sum(Col4) \'予約完了\',sum(Col5) \'予約失敗\',sum(Col6) \'売上\'",0)'
+  );
+  sheet.getRange('P2').setFormula('=ARRAYFORMULA(IF($J2:$J="","",IFERROR($L2:$L/$K2:$K,0)))');
+  sheet.getRange('Q2').setFormula('=ARRAYFORMULA(IF($J2:$J="","",IFERROR($M2:$M/$L2:$L,0)))');
+
+  sheet.getRangeList(['A1:H1', 'J1:Q1'])
+    .setBackground('#0f766e')
+    .setFontColor('#ffffff')
+    .setFontWeight('bold');
+  sheet.getRange('B:B').setNumberFormat('#,##0');
+  sheet.getRange('C:E').setNumberFormat('#,##0');
+  sheet.getRange('F:F').setNumberFormat('¥#,##0');
+  sheet.getRange('G:H').setNumberFormat('0.0%');
+  sheet.getRange('K:N').setNumberFormat('#,##0');
+  sheet.getRange('O:O').setNumberFormat('¥#,##0');
+  sheet.getRange('P:Q').setNumberFormat('0.0%');
+}
+
+/**
+ * ページ別の滞在時間・スクロール到達度と、予約失敗の理由・デバイス内訳を並べます。
+ * コンテンツ改善（滞在の短いページ）と技術的なつまずき（失敗理由）の両方を見つけるためのシートです。
+ */
+function configurePageFailureSheet_(sheet) {
+  sheet.clear();
+  sheet.setHiddenGridlines(true);
+  sheet.setFrozenRows(1);
+  sheet.setColumnWidths(1, 12, 140);
+
+  sheet.getRange('A1:D1').setValues([['ページ', '訪問件数', '平均滞在秒', '平均スクロール率']]);
+  sheet.getRange('A2').setFormula(
+    '=QUERY(\'イベントデータ\'!A:AM,"select C,count(B),avg(AL),avg(AM) ' +
+      'where B=\'page_engagement\' and C is not null group by C order by count(B) desc ' +
+      'label C \'ページ\',count(B) \'訪問件数\',avg(AL) \'平均滞在秒\',avg(AM) \'平均スクロール率\'",1)'
+  );
+
+  sheet.getRange('F1:G1').setValues([['予約失敗の理由', '件数']]);
+  sheet.getRange('F2').setFormula(
+    '=QUERY(\'イベントデータ\'!A:AM,"select AE,count(B) ' +
+      'where B=\'booking_failed\' and AE is not null group by AE order by count(B) desc ' +
+      'label AE \'エラー分類\',count(B) \'件数\'",1)'
+  );
+
+  sheet.getRange('I1:J1').setValues([['予約失敗したデバイス', '件数']]);
+  sheet.getRange('I2').setFormula(
+    '=QUERY(\'イベントデータ\'!A:AM,"select E,count(B) ' +
+      'where B=\'booking_failed\' and E is not null group by E order by count(B) desc ' +
+      'label E \'デバイス\',count(B) \'件数\'",1)'
+  );
+
+  sheet.getRangeList(['A1:D1', 'F1:G1', 'I1:J1'])
+    .setBackground('#0f766e')
+    .setFontColor('#ffffff')
+    .setFontWeight('bold');
+  sheet.getRange('B:B').setNumberFormat('#,##0');
+  sheet.getRange('C:C').setNumberFormat('0.0');
+  sheet.getRange('D:D').setNumberFormat('0.0"%"');
+  sheet.getRange('G:G').setNumberFormat('#,##0');
+  sheet.getRange('J:J').setNumberFormat('#,##0');
 }
 
 function parseRequestBody_(request) {
