@@ -9,7 +9,18 @@ const ANALYTICS_CONFIG = Object.freeze({
   definitionsSheet: '設定・定義',
   sourceDeviceSheet: '流入元・デバイス分析',
   pageFailureSheet: 'ページ・失敗分析',
+  timingSheet: '曜日・時間帯分析',
 });
+
+// WEEKDAY(date,2): 1=月...7=日
+const WEEKDAY_LABELS = Object.freeze(['月', '火', '水', '木', '金', '土', '日']);
+
+const HOUR_BANDS = Object.freeze([
+  [0, 5, '深夜・早朝(0-5時)'],
+  [6, 11, '午前(6-11時)'],
+  [12, 17, '午後(12-17時)'],
+  [18, 23, '夜(18-23時)'],
+]);
 
 const ANALYTICS_EVENTS = Object.freeze([
   'page_view',
@@ -122,6 +133,7 @@ function setupAnalyticsWorkbook() {
     spreadsheet,
     ANALYTICS_CONFIG.pageFailureSheet
   );
+  const timing = ensureSheet_(spreadsheet, ANALYTICS_CONFIG.timingSheet);
 
   configureEventsSheet_(events);
   configureDailySheet_(daily);
@@ -129,6 +141,7 @@ function setupAnalyticsWorkbook() {
   configureDefinitionsSheet_(definitions);
   configureSourceDeviceSheet_(sourceDevice);
   configurePageFailureSheet_(pageFailure);
+  configureTimingSheet_(timing);
   removeUnusedDefaultSheets_(spreadsheet);
 
   spreadsheet.setActiveSheet(dashboard);
@@ -239,6 +252,7 @@ function requiredSheetNames_() {
     ANALYTICS_CONFIG.definitionsSheet,
     ANALYTICS_CONFIG.sourceDeviceSheet,
     ANALYTICS_CONFIG.pageFailureSheet,
+    ANALYTICS_CONFIG.timingSheet,
   ];
 }
 
@@ -313,7 +327,12 @@ function configureDailySheet_(sheet) {
       'sum(Col4) \'予約完了\',sum(Col5) \'予約失敗\',sum(Col6) \'参加人数\',' +
       'sum(Col7) \'売上\'",0)'
   );
-  sheet.getRange('A1:G1')
+  sheet.getRange('H1').setValue('平均予約単価');
+  sheet.getRange('H2').setFormula(
+    '=ARRAYFORMULA(IF($A2:$A="","",IFERROR($G2:$G/$D2:$D,0)))'
+  );
+
+  sheet.getRange('A1:H1')
     .setBackground('#0f766e')
     .setFontColor('#ffffff')
     .setFontWeight('bold');
@@ -321,8 +340,9 @@ function configureDailySheet_(sheet) {
   sheet.getRange('A:A').setNumberFormat('yyyy/mm/dd');
   sheet.getRange('B:F').setNumberFormat('#,##0');
   sheet.getRange('G:G').setNumberFormat('¥#,##0');
+  sheet.getRange('H:H').setNumberFormat('¥#,##0');
   sheet.setColumnWidth(1, 120);
-  sheet.setColumnWidths(2, 6, 120);
+  sheet.setColumnWidths(2, 7, 120);
 }
 
 function configureDashboardSheet_(sheet, dailySheet) {
@@ -461,14 +481,15 @@ function configureDefinitionsSheet_(sheet) {
 }
 
 /**
- * 流入元(UTM Source)別・デバイス別に「表示→予約開始→予約完了」のファネルとCVRを並べます。
- * ページ表示イベントには予約系プロパティが付かないため、全イベント共通の列（UTM Source・デバイス）で集計します。
+ * 流入元(UTM Source)別・デバイス別・ランディングページ別に「表示→予約開始→予約完了」の
+ * ファネルとCVRを並べます。ページ表示イベントには予約系プロパティが付かないため、
+ * 全イベント共通の列（UTM Source・デバイス・初回ページ）で集計します。
  */
 function configureSourceDeviceSheet_(sheet) {
   sheet.clear();
   sheet.setHiddenGridlines(true);
   sheet.setFrozenRows(1);
-  sheet.setColumnWidths(1, 17, 120);
+  sheet.setColumnWidths(1, 26, 120);
 
   sheet.getRange('A1:H1').setValues([[
     '流入元(UTM Source)', '表示', '予約開始', '予約完了', '予約失敗', '売上',
@@ -510,7 +531,27 @@ function configureSourceDeviceSheet_(sheet) {
   sheet.getRange('P2').setFormula('=ARRAYFORMULA(IF($J2:$J="","",IFERROR($L2:$L/$K2:$K,0)))');
   sheet.getRange('Q2').setFormula('=ARRAYFORMULA(IF($J2:$J="","",IFERROR($M2:$M/$L2:$L,0)))');
 
-  sheet.getRangeList(['A1:H1', 'J1:Q1'])
+  sheet.getRange('S1:Z1').setValues([[
+    'ランディングページ', '表示', '予約開始', '予約完了', '予約失敗', '売上',
+    'CVR 表示→開始', 'CVR 開始→完了',
+  ]]);
+  sheet.getRange('S2').setFormula(
+    '=QUERY({' +
+      'ARRAYFORMULA(IF(\'イベントデータ\'!A2:A="","",\'イベントデータ\'!I2:I)),' +
+      'ARRAYFORMULA(N(\'イベントデータ\'!B2:B="page_view")),' +
+      'ARRAYFORMULA(N(\'イベントデータ\'!B2:B="booking_started")),' +
+      'ARRAYFORMULA(N(\'イベントデータ\'!B2:B="booking_submitted")),' +
+      'ARRAYFORMULA(N(\'イベントデータ\'!B2:B="booking_failed")),' +
+      'ARRAYFORMULA(IF(\'イベントデータ\'!B2:B="booking_submitted",\'イベントデータ\'!AA2:AA,0))' +
+    '},"select Col1,sum(Col2),sum(Col3),sum(Col4),sum(Col5),sum(Col6) ' +
+      'where Col1 is not null group by Col1 order by sum(Col2) desc ' +
+      'label Col1 \'ランディングページ\',sum(Col2) \'表示\',sum(Col3) \'予約開始\',' +
+      'sum(Col4) \'予約完了\',sum(Col5) \'予約失敗\',sum(Col6) \'売上\'",0)'
+  );
+  sheet.getRange('Y2').setFormula('=ARRAYFORMULA(IF($S2:$S="","",IFERROR($U2:$U/$T2:$T,0)))');
+  sheet.getRange('Z2').setFormula('=ARRAYFORMULA(IF($S2:$S="","",IFERROR($V2:$V/$U2:$U,0)))');
+
+  sheet.getRangeList(['A1:H1', 'J1:Q1', 'S1:Z1'])
     .setBackground('#0f766e')
     .setFontColor('#ffffff')
     .setFontWeight('bold');
@@ -521,6 +562,9 @@ function configureSourceDeviceSheet_(sheet) {
   sheet.getRange('K:N').setNumberFormat('#,##0');
   sheet.getRange('O:O').setNumberFormat('¥#,##0');
   sheet.getRange('P:Q').setNumberFormat('0.0%');
+  sheet.getRange('T:W').setNumberFormat('#,##0');
+  sheet.getRange('X:X').setNumberFormat('¥#,##0');
+  sheet.getRange('Y:Z').setNumberFormat('0.0%');
 }
 
 /**
@@ -563,6 +607,76 @@ function configurePageFailureSheet_(sheet) {
   sheet.getRange('D:D').setNumberFormat('0.0"%"');
   sheet.getRange('G:G').setNumberFormat('#,##0');
   sheet.getRange('J:J').setNumberFormat('#,##0');
+}
+
+/**
+ * 曜日別・時間帯別に「表示→予約開始→予約完了」の件数と売上を並べます。
+ * 集計対象は固定7曜日・4時間帯のみなので、動的グループ化ではなくSUMPRODUCTで直接算出します。
+ */
+function configureTimingSheet_(sheet) {
+  sheet.clear();
+  sheet.setHiddenGridlines(true);
+  sheet.setFrozenRows(1);
+  sheet.setColumnWidths(1, 13, 130);
+
+  sheet.getRange('A1:F1').setValues([[
+    '曜日', '表示', '予約開始', '予約完了', '予約失敗', '売上',
+  ]]);
+  WEEKDAY_LABELS.forEach(function (label, index) {
+    const row = index + 2;
+    const weekdayNumber = index + 1;
+    sheet.getRange(row, 1).setValue(label);
+    sheet.getRange(row, 2).setFormula(
+      '=SUMPRODUCT((WEEKDAY(\'イベントデータ\'!$A$2:$A,2)=' + weekdayNumber + ')*(\'イベントデータ\'!$B$2:$B="page_view"))'
+    );
+    sheet.getRange(row, 3).setFormula(
+      '=SUMPRODUCT((WEEKDAY(\'イベントデータ\'!$A$2:$A,2)=' + weekdayNumber + ')*(\'イベントデータ\'!$B$2:$B="booking_started"))'
+    );
+    sheet.getRange(row, 4).setFormula(
+      '=SUMPRODUCT((WEEKDAY(\'イベントデータ\'!$A$2:$A,2)=' + weekdayNumber + ')*(\'イベントデータ\'!$B$2:$B="booking_submitted"))'
+    );
+    sheet.getRange(row, 5).setFormula(
+      '=SUMPRODUCT((WEEKDAY(\'イベントデータ\'!$A$2:$A,2)=' + weekdayNumber + ')*(\'イベントデータ\'!$B$2:$B="booking_failed"))'
+    );
+    sheet.getRange(row, 6).setFormula(
+      '=SUMPRODUCT((WEEKDAY(\'イベントデータ\'!$A$2:$A,2)=' + weekdayNumber + ')*(\'イベントデータ\'!$B$2:$B="booking_submitted")*N(\'イベントデータ\'!$AA$2:$AA))'
+    );
+  });
+
+  sheet.getRange('H1:M1').setValues([[
+    '時間帯', '表示', '予約開始', '予約完了', '予約失敗', '売上',
+  ]]);
+  HOUR_BANDS.forEach(function (band, index) {
+    const row = index + 2;
+    const start = band[0];
+    const end = band[1];
+    const label = band[2];
+    sheet.getRange(row, 8).setValue(label);
+    sheet.getRange(row, 9).setFormula(
+      '=SUMPRODUCT((HOUR(\'イベントデータ\'!$A$2:$A)>=' + start + ')*(HOUR(\'イベントデータ\'!$A$2:$A)<=' + end + ')*(\'イベントデータ\'!$B$2:$B="page_view"))'
+    );
+    sheet.getRange(row, 10).setFormula(
+      '=SUMPRODUCT((HOUR(\'イベントデータ\'!$A$2:$A)>=' + start + ')*(HOUR(\'イベントデータ\'!$A$2:$A)<=' + end + ')*(\'イベントデータ\'!$B$2:$B="booking_started"))'
+    );
+    sheet.getRange(row, 11).setFormula(
+      '=SUMPRODUCT((HOUR(\'イベントデータ\'!$A$2:$A)>=' + start + ')*(HOUR(\'イベントデータ\'!$A$2:$A)<=' + end + ')*(\'イベントデータ\'!$B$2:$B="booking_submitted"))'
+    );
+    sheet.getRange(row, 12).setFormula(
+      '=SUMPRODUCT((HOUR(\'イベントデータ\'!$A$2:$A)>=' + start + ')*(HOUR(\'イベントデータ\'!$A$2:$A)<=' + end + ')*(\'イベントデータ\'!$B$2:$B="booking_failed"))'
+    );
+    sheet.getRange(row, 13).setFormula(
+      '=SUMPRODUCT((HOUR(\'イベントデータ\'!$A$2:$A)>=' + start + ')*(HOUR(\'イベントデータ\'!$A$2:$A)<=' + end + ')*(\'イベントデータ\'!$B$2:$B="booking_submitted")*N(\'イベントデータ\'!$AA$2:$AA))'
+    );
+  });
+
+  sheet.getRangeList(['A1:F1', 'H1:M1'])
+    .setBackground('#0f766e')
+    .setFontColor('#ffffff')
+    .setFontWeight('bold');
+  sheet.getRange(2, 2, WEEKDAY_LABELS.length, 4).setNumberFormat('#,##0');
+  sheet.getRange(2, 6, WEEKDAY_LABELS.length, 1).setNumberFormat('¥#,##0');
+  sheet.getRange(2, 9, HOUR_BANDS.length, 4).setNumberFormat('#,##0');
+  sheet.getRange(2, 13, HOUR_BANDS.length, 1).setNumberFormat('¥#,##0');
 }
 
 function parseRequestBody_(request) {
