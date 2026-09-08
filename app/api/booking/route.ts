@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { generateBookingNumber, sendToGAS, createAPIResponse, createAPIError } from '@/lib/services/gas-service'
-import { validateEmail, validatePhoneNumber, validateRequired } from '@/lib/utils/validation'
+import { isValidCalendarDate, validateEmail, validatePhoneNumber, validateRequired } from '@/lib/utils/validation'
 import { PLANS, getStaffFee } from '@/lib/data'
 import { calculateCouponDiscount } from '@/lib/constants/coupons'
 import { getEnPrice } from '@/lib/i18n/en-prices'
@@ -227,7 +227,7 @@ const validateParticipant = (
     return { valid: false, error: `${label}の度付きマスクは選択できません。子供用のご用意はありません` }
   }
 
-  if (!participant.name || !participant.name.trim()) {
+  if (typeof participant.name !== 'string' || !participant.name.trim()) {
     return { valid: false, error: `${label}の氏名が必須です` }
   }
 
@@ -273,6 +273,9 @@ const validateParticipant = (
 
 // 必須フィールドと予約内容の検証
 const validateBookingRequest = (data: BookingRequest): { valid: boolean; error?: string } => {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    return { valid: false, error: 'リクエストの形式が正しくありません' }
+  }
   const { selectedDate, selectedTime, selectedStaff, customerName, customerEmail, customerPhone, participants, selectedPlan } = data
 
   if (!validateRequired(selectedPlan).valid) return { valid: false, error: 'プランが必須です' }
@@ -289,8 +292,8 @@ const validateBookingRequest = (data: BookingRequest): { valid: boolean; error?:
   }
 
   if (!validateRequired(selectedDate).valid) return { valid: false, error: '予約日が必須です' }
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(selectedDate)) {
-    return { valid: false, error: '予約日の形式が正しくありません' }
+  if (!isValidCalendarDate(selectedDate)) {
+    return { valid: false, error: '実在する予約日を選択してください' }
   }
   if (selectedDate < getTodayInJapan()) {
     return { valid: false, error: '過去の日付は予約できません' }
@@ -316,7 +319,10 @@ const validateBookingRequest = (data: BookingRequest): { valid: boolean; error?:
     }
   }
 
-  if (!validateRequired(customerName).valid) return { valid: false, error: '氏名が必須です' }
+  if (typeof customerName !== 'string' || !validateRequired(customerName).valid) return { valid: false, error: '氏名が必須です' }
+  if (typeof customerPhone !== 'string' || typeof customerEmail !== 'string') {
+    return { valid: false, error: '電話番号とメールアドレスを入力してください' }
+  }
   const phoneValidation = validatePhoneNumber(customerPhone || '')
   if (!phoneValidation.valid) return { valid: false, error: phoneValidation.error || '電話番号が無効です' }
   if (!validateRequired(customerEmail || '').valid) return { valid: false, error: 'メールアドレスが必須です' }
@@ -326,6 +332,10 @@ const validateBookingRequest = (data: BookingRequest): { valid: boolean; error?:
 
   if (!Array.isArray(participants) || participants.length === 0) {
     return { valid: false, error: '参加者情報が必要です' }
+  }
+
+  if (participants.some((participant) => !participant || typeof participant !== 'object' || Array.isArray(participant))) {
+    return { valid: false, error: '参加者情報の形式が正しくありません' }
   }
 
   const bookingRuleIssue = validateBookingRules({

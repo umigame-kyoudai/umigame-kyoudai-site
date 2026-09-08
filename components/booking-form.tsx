@@ -59,6 +59,8 @@ import { ADULT_PRICE, BOOKING_PLANS, CHILD_PRICE } from "@/lib/booking-plans"
 import { getStaffFee } from "@/lib/data"
 import { getPlanPriceDisplay, getPlanCode } from "@/lib/plan-price-display"
 import { getPlanMaxParticipants } from "@/lib/booking-rules"
+import { replaceBookingSelectionQuery } from "@/lib/booking-url"
+import { isValidCalendarDate } from "@/lib/utils/validation"
 import {
   clearBookingSubmissionId,
   getOrCreateBookingSubmissionId,
@@ -326,6 +328,7 @@ export function BookingForm() {
 
   useEffect(() => {
     if (hasInitialized.current) return
+    hasInitialized.current = true
 
     const planParam = searchParams?.get("plan")
     const dateParam = searchParams?.get("date")
@@ -333,11 +336,13 @@ export function BookingForm() {
     const canPreselectPlan = !!planFromParam && planFromParam.status !== "coming_soon"
 
     if (planParam || dateParam) {
-      hasInitialized.current = true
       setBookingData((prev) => ({
         ...prev,
+        ...(canPreselectPlan && planParam !== prev.selectedPlan
+          ? { selectedTime: "", nightTime: "" }
+          : {}),
         ...(canPreselectPlan && planParam ? { selectedPlan: planParam } : {}),
-        ...(dateParam && { selectedDate: dateParam }),
+        ...(isValidCalendarDate(dateParam) && { selectedDate: dateParam }),
       }))
 
       // URLやCTA経由の初期選択も、フォーム表示後に1回だけ記録する（入力開始とは別扱い）
@@ -590,6 +595,9 @@ export function BookingForm() {
   ])
 
   const handleInputChange = (field: keyof BookingData, value: any) => {
+    if (field === "selectedPlan" || field === "selectedDate") {
+      replaceBookingSelectionQuery(field === "selectedPlan" ? "plan" : "date", String(value))
+    }
     // 計測のみ。既存の状態更新ロジックには手を入れない。
     if (field === "selectedPlan" && value) {
       trackBookingStarted("plan")
@@ -655,7 +663,7 @@ export function BookingForm() {
           code: normalizedCode,
           signature: `${bookingData.selectedPlan}|${bookingData.adultCount}|${bookingData.childCount}`,
         }
-        setBookingData((prev) => ({ ...prev, couponDiscount: result.discount }))
+        setBookingData((prev) => ({ ...prev, couponCode: normalizedCode, couponDiscount: result.discount }))
       } else {
         appliedCouponRef.current = null
         setBookingData((prev) => ({ ...prev, couponDiscount: 0 }))

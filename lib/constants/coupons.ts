@@ -16,17 +16,22 @@ export const isCouponEligiblePlan = (planId: string | undefined | null): boolean
 export type ParticipantCategory = 'adult' | 'child' | 'under3'
 
 export function calculateCouponDiscount(
-  couponCode: string | undefined | null,
+  couponCode: unknown,
   participants: Array<{ category: string }>,
   planId?: string | null
 ): { discount: number; code: string } {
-  if (!couponCode) return { discount: 0, code: '' }
+  const code = typeof couponCode === 'string' ? couponCode.trim() : ''
+  if (!code || !Object.prototype.hasOwnProperty.call(COUPON_LIST, code)) {
+    return { discount: 0, code: '' }
+  }
   // 対象外プランはコードが有効でも割引0
   if (!isCouponEligiblePlan(planId)) return { discount: 0, code: '' }
-  const discountPerPerson = COUPON_LIST[couponCode]
-  if (!discountPerPerson) return { discount: 0, code: '' }
+  const discountPerPerson = COUPON_LIST[code]
+  if (!Number.isFinite(discountPerPerson) || discountPerPerson <= 0) {
+    return { discount: 0, code: '' }
+  }
   const eligibleCount = participants.filter(
     (p) => p.category === 'adult' || p.category === 'child'
   ).length
-  return { discount: eligibleCount * discountPerPerson, code: couponCode }
+  return { discount: eligibleCount * discountPerPerson, code }
 }

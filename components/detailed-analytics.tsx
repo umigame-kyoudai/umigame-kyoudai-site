@@ -85,10 +85,10 @@ export function DetailedAnalytics() {
         sendDetailedEvent("page_engagement", {
           engagedSeconds: Math.min(seconds, 21_600),
           maxScrollPercent: maxScroll.current,
-        })
+        }, undefined, { pagePath: pathname })
       }
       if (maxScroll.current >= 25) {
-        sendDetailedEvent("scroll_depth", { maxScrollPercent: maxScroll.current })
+        sendDetailedEvent("scroll_depth", { maxScrollPercent: maxScroll.current }, undefined, { pagePath: pathname })
       }
     }
 

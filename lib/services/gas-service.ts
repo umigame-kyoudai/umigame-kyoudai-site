@@ -179,6 +179,15 @@ const sendToGASOnce = async (
 
 // GASにデータを送信（サーバーサイドから呼び出し）
 export const sendToGAS = async (payload: BookingPayload): Promise<GASResponse> => {
+  // JSON.stringify converts NaN/Infinity to null. Reject before serialization so
+  // downstream fallbacks can never turn an invalid calculation into a free booking.
+  if (
+    !Number.isSafeInteger(payload.totalPrice) || payload.totalPrice <= 0 ||
+    (payload.couponDiscount !== undefined &&
+      (!Number.isSafeInteger(payload.couponDiscount) || payload.couponDiscount < 0))
+  ) {
+    throw new Error(GAS_REQUEST_FAILED_MESSAGE);
+  }
   const gasUrl = getGASUrl();
   const startedAt = Date.now();
 

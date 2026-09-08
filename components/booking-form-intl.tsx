@@ -49,6 +49,8 @@ import {
   hasTrackingConsent,
 } from "@/lib/customer-tracking"
 import { getPlanMaxParticipants } from "@/lib/booking-rules"
+import { replaceBookingSelectionQuery } from "@/lib/booking-url"
+import { isValidCalendarDate } from "@/lib/utils/validation"
 import {
   clearBookingSubmissionId,
   getOrCreateBookingSubmissionId,
@@ -138,8 +140,11 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
     if (draft?.planId && bookablePlans.some((p) => p.id === draft.planId)) return draft.planId
     return ""
   })
-  const [date, setDate] = useState(draft?.date ?? "")
-  const [time, setTime] = useState(draft?.time ?? "")
+  const [date, setDate] = useState(() => {
+    const initialDate = searchParams.get("date")
+    return isValidCalendarDate(initialDate) ? initialDate : draft?.date ?? ""
+  })
+  const [time, setTime] = useState(() => planId === draft?.planId ? draft?.time ?? "" : "")
   const [participants, setParticipants] = useState<ParticipantIntl[]>(() => {
     if (!Array.isArray(draft?.participants)) return []
     // 復元した参加者のID連番と、この後追加される参加者のIDが衝突しないよう進めておく
@@ -298,6 +303,7 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
     setParticipants((prev) => prev.map((p) => (p.id === id ? { ...p, [field]: value } : p)))
 
   const handlePlanChange = (id: string) => {
+    replaceBookingSelectionQuery("plan", id)
     trackBookingStarted("plan")
     trackPlanSelected({ planId: id, locale, selectionSource: "manual" })
     setPlanId(id)
@@ -333,6 +339,7 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
           signature: `${planId}|${counts.adult}|${counts.child}`,
         }
         setCouponDiscount(result.discount)
+        setCouponCode(normalizedCode)
         toast.success(copy.couponAppliedToast)
       } else {
         appliedCouponRef.current = null
@@ -785,7 +792,10 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
               required
               min={todayStr()}
               value={date}
-              onChange={(e) => setDate(e.target.value)}
+              onChange={(e) => {
+                replaceBookingSelectionQuery("date", e.target.value)
+                setDate(e.target.value)
+              }}
               className="rounded-xl border-emerald-200"
             />
           </div>

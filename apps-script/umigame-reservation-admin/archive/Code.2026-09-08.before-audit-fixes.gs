@@ -27,7 +27,6 @@ var NOTIFY_SECRET = ''; // Script Properties の NOTIFY_SECRET を優先して�
 var SHEET_NAME = '予約一覧';
 var CALENDAR_ID = 'genkidama2439@gmail.com';
 var ADMIN_EMAIL = 'genkidama2439@gmail.com';
-var BOOKING_APP_VERSION = '2026.09.08-1';
 var BOOKING_SCHEMA_VERSION = '2026.08.24-1';
 var BOOKING_SCHEMA_VERSION_PROPERTY = 'BOOKING_SCHEMA_VERSION';
 
@@ -1471,66 +1470,23 @@ function bookingRowsMatch_(sheet, existingRows, expectedRows) {
     expectedSignatures.join('\u0002');
 }
 
-// 受付GAS・管理GASは別プロジェクトなのでScriptLockを共有できない。
-// 空き行番号を予約せず、Sheets APIのappendCellsで行追加と値の保存を
-// 1回の原子的なリクエストにする。両プロジェクトへ同じ関数を配置する。
-function appendBookingCells_(sheet, rows) {
-  if (!rows.length) return;
-  if (typeof Sheets === 'undefined') {
-    throw new Error('Google Sheets APIサービスを有効にしてから予約を保存してください。');
+// T列などの空行チェックボックス値に影響されず、予約番号(B列)の最後へ追記する。
+function getNextBookingRow_(sheet) {
+  if (sheet.getMaxRows() < 2) return 2;
+
+  var values = sheet
+    .getRange(2, COLUMNS.BOOKING_NUM, sheet.getMaxRows() - 1, 1)
+    .getDisplayValues();
+
+  for (var index = values.length - 1; index >= 0; index -= 1) {
+    if (String(values[index][0] || '').trim()) return index + 3;
   }
-  SpreadsheetApp.flush();
-  var spreadsheet = sheet.getParent();
-  var spreadsheetId = spreadsheet.getId();
-  var timezone = spreadsheet.getSpreadsheetTimeZone();
-  var template = Sheets.Spreadsheets.get(spreadsheetId, {
-    ranges: ["'" + sheet.getName().replace(/'/g, "''") + "'!A2:AW2"],
-    fields: 'sheets(data(rowData(values(dataValidation,userEnteredFormat(numberFormat)))))'
-  });
-  var grid = template.sheets && template.sheets[0] && template.sheets[0].data;
-  var templateRows = grid && grid[0] && grid[0].rowData;
-  var templateCells = templateRows && templateRows[0] && templateRows[0].values || [];
-  var rowData = rows.map(function(row) {
-    return { values: row.map(function(value, index) {
-      var cell = {};
-      var templateFormat = templateCells[index] && templateCells[index].userEnteredFormat;
-      if (templateFormat && templateFormat.numberFormat) {
-        cell.userEnteredFormat = { numberFormat: templateFormat.numberFormat };
-      }
-      if (value instanceof Date) {
-        // Sheetsの日付シリアル値はスプレッドシートのローカル日時を基準にする。
-        var local = Utilities.formatDate(value, timezone, "yyyy-MM-dd'T'HH:mm:ss");
-        cell.userEnteredValue = { numberValue: Date.parse(local + 'Z') / 86400000 + 25569 };
-        cell.userEnteredFormat = { numberFormat: { type: 'DATE_TIME', pattern: 'yyyy/mm/dd hh:mm:ss' } };
-      } else if (typeof value === 'number') {
-        if (!isFinite(value)) throw new Error('予約行に不正な数値があるため保存できません。');
-        cell.userEnteredValue = { numberValue: value };
-      } else if (typeof value === 'boolean') {
-        cell.userEnteredValue = { boolValue: value };
-      } else if (value !== '' && value != null) {
-        // 顧客入力を数式として解釈しない。
-        cell.userEnteredValue = { stringValue: String(value) };
-      }
-      // M/N/S/T等の入力規則を引き継ぐ。V列以降の旧チェックボックスは除去。
-      if (index < 21 && templateCells[index] && templateCells[index].dataValidation) {
-        cell.dataValidation = templateCells[index].dataValidation;
-      }
-      return cell;
-    }) };
-  });
-  Sheets.Spreadsheets.batchUpdate({
-    requests: [{
-      appendCells: {
-        sheetId: sheet.getSheetId(),
-        rows: rowData,
-        fields: 'userEnteredValue,userEnteredFormat.numberFormat,dataValidation'
-      }
-    }]
-  }, spreadsheetId);
+
+  return 2;
 }
 
-// 同一受付GAS内の再送をScriptLockで排他する。別GASとの追記競合は
-// appendBookingCells_が回避する。true=新規保存、false=確認済みの同一予約。
+// true=新規保存、false=同じ予約番号が既に存在。確認から書き込みまで同じロック内で
+// 行うため、同時に同じリクエストが届いてもメール・カレンダーは1回だけになる。
 function writeBookingRows_(sheet, rows) {
   if (!rows || !rows.length) return false;
 
@@ -1574,14 +1530,46 @@ function writeBookingRows_(sheet, rows) {
       return false;
     }
 
-    appendBookingCells_(sheet, rows);
+    var startRow = getNextBookingRow_(sheet);
+    var requiredLastRow = startRow + rows.length - 1;
+
+    if (requiredLastRow > sheet.getMaxRows()) {
+      sheet.insertRowsAfter(
+        sheet.getMaxRows(),
+        requiredLastRow - sheet.getMaxRows()
+      );
+    }
+
+    // 挿入行は直前行の入力規則を引き継ぐことがある。顧客・行動連携列には
+    // 入力規則を設けないため、書き込み対象行だけ毎回解除してから全列を保存する。
+    sheet
+      .getRange(
+        startRow,
+        COLUMNS.EMAIL,
+        rows.length,
+        HEADERS.length - COLUMNS.EMAIL + 1
+      )
+      .clearDataValidations();
+
+    sheet
+      .getRange(startRow, 1, rows.length, HEADERS.length)
+      .setValues(rows);
+
     SpreadsheetApp.flush();
-    var writtenRows = findExistingBookingRows_(sheet, bookingNumber);
-    if (!bookingRowsMatch_(sheet, writtenRows, rows)) {
-      // 保存先を推測して消すと、別GASが追記した予約を消す危険がある。
-      // 内容を保持して管理者の確認に回し、成功扱いにはしない。
+
+    var writtenRows = sheet
+      .getRange(startRow, 1, rows.length, HEADERS.length)
+      .getValues();
+
+    if (!bookingRowsMatch_(sheet, writtenRows.map(function(_, index) {
+      return startRow + index;
+    }), rows)) {
+      sheet
+        .getRange(startRow, 1, rows.length, HEADERS.length)
+        .clearContent();
+      SpreadsheetApp.flush();
       throw new Error(
-        '予約行の保存後検証に失敗しました。保存内容を管理者が確認してください。'
+        '予約行の保存後検証に失敗したため、不完全な行を取り消しました。'
       );
     }
 
@@ -5289,16 +5277,7 @@ function referralProcessBookingSafely_(data) {
   }
 }
 
-function validateIncomingBookingMoney_(data) {
-  if (!data || typeof data !== 'object' || Array.isArray(data) ||
-      !Number.isSafeInteger(data.totalPrice) || data.totalPrice <= 0 ||
-      (data.couponDiscount !== undefined &&
-        (!Number.isSafeInteger(data.couponDiscount) || data.couponDiscount < 0))) {
-    throw new Error('予約金額が不正なため保存できません。');
-  }
-}
-
-// C5/C6を含む最終doPostを包む。金額検証はシート・通知処理より前に行う。
+// C5/C6を含む最終doPostを包む。元処理のレスポンスは一切変更しない。
 var REFERRAL_ORIGINAL_DO_POST = doPost;
 
 doPost = function(e) {
@@ -5306,12 +5285,8 @@ doPost = function(e) {
 
   try {
     data = JSON.parse(e && e.postData && e.postData.contents || '{}');
-    validateIncomingBookingMoney_(data);
   } catch (parseError) {
-    return ContentService.createTextOutput(JSON.stringify({
-      success: false,
-      error: '予約データまたは金額が不正なため保存できません。'
-    })).setMimeType(ContentService.MimeType.JSON);
+    // JSONエラーの応答は元doPostに任せる。
   }
 
   var response = REFERRAL_ORIGINAL_DO_POST(e);

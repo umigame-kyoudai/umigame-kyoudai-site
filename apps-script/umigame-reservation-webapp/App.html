@@ -1554,18 +1554,27 @@
     }
 
     async function cancelLinePreview() {
-      if (els.lineModal.hidden) return;
+      if (els.lineModal.hidden || els.lineCancelButton.disabled) return;
 
       var pending = state.pendingLine;
-      state.pendingLine = null;
-      els.lineModal.hidden = true;
+      els.lineCancelButton.disabled = true;
+      els.lineConfirmButton.disabled = true;
 
-      if (pending && pending.token) {
-        try {
-          await gas('adminCancelLine', { token: pending.token });
-        } catch (error) {
-          // 画面を閉じる操作を優先します。
+      try {
+        if (pending && pending.token) {
+          var result = await gas('adminCancelLine', { token: pending.token });
+          if (result.booking) {
+            replaceBooking(result.booking);
+            renderDrawer();
+          }
         }
+      } catch (error) {
+        showToast('送信キャンセルの確認に失敗しました。次の編集前に画面を再読み込みしてください。', 'error', 7000);
+      } finally {
+        state.pendingLine = null;
+        els.lineModal.hidden = true;
+        els.lineCancelButton.disabled = false;
+        els.lineConfirmButton.disabled = false;
       }
     }
 
@@ -1578,6 +1587,10 @@
 
       try {
         var result = await gas('adminConfirmLine', { token: pending.token });
+        if (result.booking) {
+          replaceBooking(result.booking);
+          renderDrawer();
+        }
 
         if (!result.success) {
           throw new Error(result.error || 'LINEを送信できませんでした。');

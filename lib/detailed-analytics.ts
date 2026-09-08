@@ -58,10 +58,15 @@ export interface DetailedEventUtmOverride {
   utm_term?: string
 }
 
+export interface DetailedEventContext {
+  pagePath: string
+}
+
 export function buildDetailedEvent(
   name: AnalyticsEventName,
   properties: AnalyticsEventProperties = {},
   utmOverride?: DetailedEventUtmOverride,
+  context?: DetailedEventContext,
 ): DetailedAnalyticsEvent | null {
   if (typeof window === "undefined") return null
   if (!hasTrackingConsent()) return null
@@ -69,7 +74,7 @@ export function buildDetailedEvent(
   const attribution = getAttribution()
   const identity = getCustomerTrackingIdentity()
   if (!identity) return null
-  const pathname = window.location.pathname || "/"
+  const pathname = context?.pagePath || window.location.pathname || "/"
 
   return {
     event_name: name,
@@ -157,8 +162,9 @@ export function sendDetailedEvent(
   name: AnalyticsEventName,
   properties: AnalyticsEventProperties = {},
   utmOverride?: DetailedEventUtmOverride,
+  context?: DetailedEventContext,
 ): void {
-  const event = buildDetailedEvent(name, properties, utmOverride)
+  const event = buildDetailedEvent(name, properties, utmOverride, context)
   if (!event) return
 
   forwardToAnalyticsClients(event)
@@ -176,8 +182,9 @@ export function sendDetailedEventBeacon(
   name: AnalyticsEventName,
   properties: AnalyticsEventProperties = {},
   utmOverride?: DetailedEventUtmOverride,
+  context?: DetailedEventContext,
 ): void {
-  const event = buildDetailedEvent(name, properties, utmOverride)
+  const event = buildDetailedEvent(name, properties, utmOverride, context)
   if (!event) return
 
   forwardToAnalyticsClients(event)

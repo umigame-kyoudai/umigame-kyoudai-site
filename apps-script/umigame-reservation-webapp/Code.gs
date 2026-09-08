@@ -6,7 +6,7 @@
  * 予約受信の doPost や既存の編集トリガーには依存しません。
  */
 
-var ADMIN_APP_VERSION = '2026.08.24-1';
+var ADMIN_APP_VERSION = '2026.09.08-1';
 var ADMIN_SCHEMA_VERSION = '2026.08.24-1';
 var ADMIN_SCHEMA_VERSION_PROPERTY = 'ADMIN_BOOKING_SCHEMA_VERSION';
 var ADMIN_SCHEMA_VERIFIED_AT_PROPERTY = 'ADMIN_BOOKING_SCHEMA_VERIFIED_AT';
@@ -23,6 +23,7 @@ var ADMIN_REFERRAL_OUTCOME_SHEET_NAME = '紹介成果';
 var ADMIN_NOTIFY_API_URL =
   'https://www.umigamekyoudaimiyakojima.com/api/line/notify';
 var ADMIN_PENDING_PREFIX = 'ADMIN_LINE_PENDING_';
+var ADMIN_PENDING_CHUNK_PREFIX = 'ADMIN_LINE_CHUNK_';
 var ADMIN_STATUS_SENT_PREFIX = 'ADMIN_STATUS_SENT_';
 var ADMIN_PENDING_TTL_MINUTES = 30;
 
@@ -913,9 +914,10 @@ function adminUpdateBooking(request) {
       targetRows
     );
 
+    SpreadsheetApp.flush();
     return {
       success: true,
-      booking: adminToPublicBooking_(updatedBooking),
+      booking: adminToPublicBooking_(adminFindBooking_(sheet, request.bookingKey)),
       pendingLine: pending,
       warning: warning,
       referrals: referralData
@@ -1108,11 +1110,70 @@ function adminUpdateSchedule(request) {
   }
 }
 
+// 受付GAS・管理GASは別プロジェクトなのでScriptLockを共有できない。
+// 空き行番号を予約せず、Sheets APIのappendCellsで行追加と値の保存を
+// 1回の原子的なリクエストにする。両プロジェクトへ同じ関数を配置する。
+function appendBookingCells_(sheet, rows) {
+  if (!rows.length) return;
+  if (typeof Sheets === 'undefined') {
+    throw new Error('Google Sheets APIサービスを有効にしてから予約を保存してください。');
+  }
+  SpreadsheetApp.flush();
+  var spreadsheet = sheet.getParent();
+  var spreadsheetId = spreadsheet.getId();
+  var timezone = spreadsheet.getSpreadsheetTimeZone();
+  var template = Sheets.Spreadsheets.get(spreadsheetId, {
+    ranges: ["'" + sheet.getName().replace(/'/g, "''") + "'!A2:AW2"],
+    fields: 'sheets(data(rowData(values(dataValidation,userEnteredFormat(numberFormat)))))'
+  });
+  var grid = template.sheets && template.sheets[0] && template.sheets[0].data;
+  var templateRows = grid && grid[0] && grid[0].rowData;
+  var templateCells = templateRows && templateRows[0] && templateRows[0].values || [];
+  var rowData = rows.map(function(row) {
+    return { values: row.map(function(value, index) {
+      var cell = {};
+      var templateFormat = templateCells[index] && templateCells[index].userEnteredFormat;
+      if (templateFormat && templateFormat.numberFormat) {
+        cell.userEnteredFormat = { numberFormat: templateFormat.numberFormat };
+      }
+      if (value instanceof Date) {
+        // Sheetsの日付シリアル値はスプレッドシートのローカル日時を基準にする。
+        var local = Utilities.formatDate(value, timezone, "yyyy-MM-dd'T'HH:mm:ss");
+        cell.userEnteredValue = { numberValue: Date.parse(local + 'Z') / 86400000 + 25569 };
+        cell.userEnteredFormat = { numberFormat: { type: 'DATE_TIME', pattern: 'yyyy/mm/dd hh:mm:ss' } };
+      } else if (typeof value === 'number') {
+        if (!isFinite(value)) throw new Error('予約行に不正な数値があるため保存できません。');
+        cell.userEnteredValue = { numberValue: value };
+      } else if (typeof value === 'boolean') {
+        cell.userEnteredValue = { boolValue: value };
+      } else if (value !== '' && value != null) {
+        // 顧客入力を数式として解釈しない。
+        cell.userEnteredValue = { stringValue: String(value) };
+      }
+      // M/N/S/T等の入力規則を引き継ぐ。V列以降の旧チェックボックスは除去。
+      if (index < 21 && templateCells[index] && templateCells[index].dataValidation) {
+        cell.dataValidation = templateCells[index].dataValidation;
+      }
+      return cell;
+    }) };
+  });
+  Sheets.Spreadsheets.batchUpdate({
+    requests: [{
+      appendCells: {
+        sheetId: sheet.getSheetId(),
+        rows: rowData,
+        fields: 'userEnteredValue,userEnteredFormat.numberFormat,dataValidation'
+      }
+    }]
+  }, spreadsheetId);
+}
+
 /**
  * 予約内容を後から安全に変更します。
  * 単品・2予定セット・3予定セットを相互変換し、予約一覧とGoogleカレンダーを
  * 一括更新します。この処理だけではLINEを送信しません。
  */
+
 function adminChangeReservation(request) {
   var actor = adminAssertAuthorized_();
   request = request || {};
@@ -1159,14 +1220,6 @@ function adminChangeReservation(request) {
     var oldRows = adminReadFullBookingRows_(sheet, beforeBooking.rowNumbers);
     var targetRowNumbers = beforeBooking.rowNumbers.slice(0, plan.components.length);
     var addedRowNumbers = [];
-    var nextAppendRow = Math.max(sheet.getLastRow() + 1, 2);
-
-    while (targetRowNumbers.length < plan.components.length) {
-      var nextRow = nextAppendRow + addedRowNumbers.length;
-      targetRowNumbers.push(nextRow);
-      addedRowNumbers.push(nextRow);
-      sheet.getRange(nextRow, 1, 1, ADMIN_COLUMNS.REFERRAL_CAMPAIGN).clearContent();
-    }
 
     var calendar = adminGetCalendar_();
     var oldCalendar = adminFindCalendarEventsForDeletion_(calendar, beforeBooking);
@@ -1182,6 +1235,13 @@ function adminChangeReservation(request) {
     );
 
     try {
+      if (newRows.length > targetRowNumbers.length) {
+        appendBookingCells_(sheet, newRows.slice(targetRowNumbers.length));
+        addedRowNumbers = adminFindAddedBookingRows_(sheet, beforeBooking);
+        if (addedRowNumbers.length !== newRows.length - targetRowNumbers.length) {
+          throw new Error('追加した予約行の件数が一致しませんでした。');
+        }
+      }
       oldCalendar.events.forEach(function(event) {
         var snapshot = adminSnapshotCalendarEvent_(event);
         event.deleteEvent();
@@ -1189,6 +1249,7 @@ function adminChangeReservation(request) {
       });
 
       targetRowNumbers.forEach(function(rowNumber, index) {
+        adminAssertRowOwner_(sheet, rowNumber, beforeBooking.bookingNumber, false);
         sheet
           .getRange(rowNumber, 1, 1, ADMIN_COLUMNS.REFERRAL_CAMPAIGN)
           .setValues([newRows[index]]);
@@ -1197,6 +1258,7 @@ function adminChangeReservation(request) {
       beforeBooking.rowNumbers
         .slice(plan.components.length)
         .forEach(function(rowNumber) {
+          adminAssertRowOwner_(sheet, rowNumber, beforeBooking.bookingNumber, false);
           sheet
             .getRange(rowNumber, 1, 1, ADMIN_COLUMNS.REFERRAL_CAMPAIGN)
             .clearContent();
@@ -1244,12 +1306,11 @@ function adminChangeReservation(request) {
         }
       });
 
-      rollbackErrors = rollbackErrors.concat(
-        adminRestoreFullBookingRows_(sheet, oldRows)
-      );
-
+      // API応答の受信だけ失敗した場合も、実際に追加された同じ予約番号の行を回収する。
+      addedRowNumbers = adminFindAddedBookingRows_(sheet, beforeBooking);
       addedRowNumbers.forEach(function(rowNumber) {
         try {
+          adminAssertRowOwner_(sheet, rowNumber, beforeBooking.bookingNumber, false);
           sheet
             .getRange(rowNumber, 1, 1, ADMIN_COLUMNS.REFERRAL_CAMPAIGN)
             .clearContent();
@@ -1257,6 +1318,11 @@ function adminChangeReservation(request) {
           rollbackErrors.push('追加行' + rowNumber + 'の取消: ' + error.message);
         }
       });
+
+      // 追加した予定を取り消した後で復旧する。復旧先が別行になっても消さない。
+      rollbackErrors = rollbackErrors.concat(
+        adminRestoreFullBookingRows_(sheet, oldRows)
+      );
 
       if (deletedOldEvents.length) {
         rollbackErrors = rollbackErrors.concat(
@@ -1489,7 +1555,7 @@ function adminFindOldComponentForRole_(booking, role) {
     ) return components[i];
   }
 
-  return components[0] || null;
+  return null;
 }
 
 function adminBuildChangedRows_(sheet, beforeBooking, plan, normalized, rowNumbers) {
@@ -1898,7 +1964,7 @@ function adminPrepareCustomLine(request) {
     rowNumbers: [lineRow.rowNumber],
     sourceRowNumber: lineRow.rowNumber,
     type: 'FREE',
-    expectedValue: message,
+    expectedValue: '',
     summary: '自由メッセージ',
     message: message,
     lineUserId: lineRow.lineUserId,
@@ -2006,8 +2072,18 @@ function adminConfirmLine(request) {
       );
     }
 
+    var refreshedBooking = null;
+    try {
+      SpreadsheetApp.flush();
+      refreshedBooking = adminToPublicBooking_(adminFindBooking_(sheet, pending.bookingKey));
+    } catch (refreshError) {
+      // LINEはすでに送信済みの可能性がある。再読込の失敗で送信結果を覆さない。
+      result.warning = adminJoinWarnings_(result.warning,
+        '予約の最新状態を取得できませんでした。次の編集前に画面を再読み込みしてください。');
+    }
     return {
       success: result.success,
+      booking: refreshedBooking,
       error: result.error || '',
       warning: result.warning || '',
       sentAt: new Date().toISOString(),
@@ -2022,42 +2098,51 @@ function adminConfirmLine(request) {
 function adminCancelLine(request) {
   var actor = adminAssertAuthorized_();
   var token = String(request && request.token || '');
+  var updatedBooking = null;
+  var lock = LockService.getScriptLock();
+  lock.waitLock(10000);
 
-  if (token) {
-    var pending = adminReadPendingLine_(token);
+  try {
+    if (token) {
+      var pending = adminReadPendingLine_(token);
 
-    if (pending) {
-      var sheet = adminGetBookingSheet_();
-      var booking = adminFindBooking_(sheet, pending.bookingKey);
+      if (pending) {
+        var sheet = adminGetBookingSheet_();
+        var booking = adminFindBooking_(sheet, pending.bookingKey);
 
-      if (booking) {
-        var sourceRow = adminSelectLineRow_(booking, pending.sourceRowNumber);
+        if (booking) {
+          var sourceRow = adminSelectLineRow_(booking, pending.sourceRowNumber);
 
-        if (sourceRow && pending.type !== 'FREE') {
-          sheet
-            .getRange(sourceRow.rowNumber, ADMIN_COLUMNS.LINE_CONFIRM)
-            .setValue(false)
-            .setBackground(null);
-          sheet
-            .getRange(sourceRow.rowNumber, ADMIN_COLUMNS.LINE_RESULT)
-            .setValue('WEB送信キャンセル：' + pending.summary)
-            .setBackground(null);
+          if (sourceRow && pending.type !== 'FREE') {
+            sheet
+              .getRange(sourceRow.rowNumber, ADMIN_COLUMNS.LINE_CONFIRM)
+              .setValue(false)
+              .setBackground(null);
+            sheet
+              .getRange(sourceRow.rowNumber, ADMIN_COLUMNS.LINE_RESULT)
+              .setValue('WEB送信キャンセル：' + pending.summary)
+              .setBackground(null);
+          }
+
+          adminAppendAudit_(
+            actor,
+            booking,
+            'LINE送信キャンセル',
+            pending.summary,
+            pending.rowNumbers || []
+          );
+          SpreadsheetApp.flush();
+          updatedBooking = adminToPublicBooking_(adminFindBooking_(sheet, pending.bookingKey));
         }
-
-        adminAppendAudit_(
-          actor,
-          booking,
-          'LINE送信キャンセル',
-          pending.summary,
-          pending.rowNumbers || []
-        );
       }
+
+      adminDeletePendingLine_(token);
     }
 
-    adminDeletePendingLine_(token);
+    return { success: true, booking: updatedBooking };
+  } finally {
+    lock.releaseLock();
   }
-
-  return { success: true };
 }
 
 function adminGetHistory(request) {
@@ -3303,8 +3388,14 @@ function adminArchiveDeletedBooking_(sourceSheet, booking, originalRows, actor) 
     sheet = ss.insertSheet(ADMIN_DELETED_SHEET_NAME);
   }
 
-  if (String(sheet.getRange(1, 1).getValue()) !== headers[0]) {
-    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+  if (sheet.getMaxColumns() < headers.length) {
+    sheet.insertColumnsAfter(sheet.getMaxColumns(), headers.length - sheet.getMaxColumns());
+  }
+
+  var needsHeaderStyle = String(sheet.getRange(1, 1).getValue()) !== headers[0];
+  // 旧45列スキーマの退避先にも、追加された紹介列の見出しを補う。
+  sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+  if (needsHeaderStyle) {
     sheet.setFrozenRows(1);
     sheet
       .getRange(1, 1, 1, headers.length)
@@ -3324,6 +3415,10 @@ function adminArchiveDeletedBooking_(sourceSheet, booking, originalRows, actor) 
     ].concat(item.values);
   });
   var startRow = Math.max(sheet.getLastRow() + 1, 2);
+  var requiredRows = startRow + archiveValues.length - 1;
+  if (sheet.getMaxRows() < requiredRows) {
+    sheet.insertRowsAfter(sheet.getMaxRows(), requiredRows - sheet.getMaxRows());
+  }
 
   sheet
     .getRange(startRow, 1, archiveValues.length, headers.length)
@@ -3504,9 +3599,18 @@ function adminRestoreCalendarEvents_(calendar, snapshots) {
 
 function adminRestoreFullBookingRows_(sheet, originalRows) {
   var errors = [];
+  var appendRows = [];
 
   originalRows.forEach(function(item) {
     try {
+      var bookingNumber = String(item.values[ADMIN_COLUMNS.BOOKING_NUM - 1] || '').trim();
+      var currentNumber = String(sheet.getRange(item.rowNumber, ADMIN_COLUMNS.BOOKING_NUM).getValue() || '').trim();
+      if (!bookingNumber) throw new Error('復旧する予約番号がありません。');
+      if (currentNumber !== bookingNumber) {
+        // 空行も、確認後に受付GASが使用しうる。行番号を再利用せず原子的に追記する。
+        appendRows.push(item.values);
+        return;
+      }
       sheet
         .getRange(item.rowNumber, 1, 1, ADMIN_COLUMNS.REFERRAL_CAMPAIGN)
         .setValues([item.values]);
@@ -3517,6 +3621,7 @@ function adminRestoreFullBookingRows_(sheet, originalRows) {
   });
 
   try {
+    if (appendRows.length) appendBookingCells_(sheet, appendRows);
     SpreadsheetApp.flush();
   } catch (error) {
     Logger.log('削除した予約一覧行の復旧反映失敗: ' + error.message);
@@ -3524,6 +3629,25 @@ function adminRestoreFullBookingRows_(sheet, originalRows) {
   }
 
   return errors;
+}
+
+function adminAssertRowOwner_(sheet, rowNumber, bookingNumber, allowEmpty) {
+  var current = String(sheet.getRange(rowNumber, ADMIN_COLUMNS.BOOKING_NUM).getValue() || '').trim();
+  if (current !== String(bookingNumber) && !(allowEmpty && !current)) {
+    throw new Error('行' + rowNumber + 'は別の予約に使用されているため更新を中止しました。');
+  }
+}
+
+function adminFindAddedBookingRows_(sheet, beforeBooking) {
+  var count = sheet.getLastRow() - 1;
+  if (count < 1) return [];
+  var values = sheet.getRange(2, ADMIN_COLUMNS.BOOKING_NUM, count, 1).getDisplayValues();
+  var rows = [];
+  values.forEach(function(row, index) {
+    if (String(row[0]).trim() === beforeBooking.bookingNumber &&
+        beforeBooking.rowNumbers.indexOf(index + 2) === -1) rows.push(index + 2);
+  });
+  return rows;
 }
 
 function adminRollbackCalendarSchedule_(operations) {
@@ -3602,10 +3726,10 @@ function adminDeletePendingPropertiesForBooking_(booking) {
       var pending = JSON.parse(values[key]);
 
       if (pending.bookingKey === booking.key) {
-        properties.deleteProperty(key);
+        adminDeletePendingLine_(key.slice(ADMIN_PENDING_PREFIX.length));
       }
     } catch (error) {
-      properties.deleteProperty(key);
+      adminDeletePendingLine_(key.slice(ADMIN_PENDING_PREFIX.length));
     }
   });
 }
@@ -3749,10 +3873,39 @@ function adminCreatePendingLine_(sheet, booking, lineRow, messageRow, action, ac
 function adminSavePendingLine_(pending) {
   var token = Utilities.getUuid();
   pending.token = token;
-
-  PropertiesService
-    .getScriptProperties()
-    .setProperty(ADMIN_PENDING_PREFIX + token, JSON.stringify(pending));
+  var properties = PropertiesService.getScriptProperties();
+  var json = JSON.stringify(pending);
+  // 1プロパティ9KBの制限に対し、2000 UTF-16コード単位はUTF-8で最大6KB。
+  // 日本語4500文字でも全文を保持し、本文は予約バージョン等のメタデータと一緒に復元する。
+  var chunks = [];
+  for (var start = 0; start < json.length;) {
+    var end = Math.min(start + 2000, json.length);
+    var lastCode = json.charCodeAt(end - 1);
+    // 絵文字のサロゲートペアを分断すると、保存時のUTF-8変換で文字が壊れる。
+    if (end < json.length && lastCode >= 0xD800 && lastCode <= 0xDBFF) end--;
+    chunks.push(json.slice(start, end));
+    start = end;
+  }
+  var chunkCount = chunks.length;
+  if (chunkCount > 64) throw new Error('LINE送信確認データが大きすぎます。');
+  var manifest = {
+    storageVersion: 2,
+    ready: false,
+    chunkCount: chunkCount,
+    bookingKey: pending.bookingKey,
+    createdAt: pending.createdAt
+  };
+  try {
+    properties.setProperty(ADMIN_PENDING_PREFIX + token, JSON.stringify(manifest));
+    for (var i = 0; i < chunkCount; i++) {
+      properties.setProperty(ADMIN_PENDING_CHUNK_PREFIX + token + '_' + i, chunks[i]);
+    }
+    manifest.ready = true;
+    properties.setProperty(ADMIN_PENDING_PREFIX + token, JSON.stringify(manifest));
+  } catch (error) {
+    adminDeletePendingLine_(token);
+    throw error;
+  }
 
   return {
     token: token,
@@ -3765,23 +3918,35 @@ function adminSavePendingLine_(pending) {
 }
 
 function adminReadPendingLine_(token) {
-  var json = PropertiesService
-    .getScriptProperties()
-    .getProperty(ADMIN_PENDING_PREFIX + token);
+  var properties = PropertiesService.getScriptProperties();
+  var json = properties.getProperty(ADMIN_PENDING_PREFIX + token);
 
   if (!json) return null;
 
   try {
-    return JSON.parse(json);
+    var stored = JSON.parse(json);
+    if (stored.storageVersion !== 2) return stored; // 更新前のプレビューも有効期限まで読める。
+    if (!stored.ready || !Number.isInteger(stored.chunkCount) || stored.chunkCount < 1 || stored.chunkCount > 64) return null;
+    var chunks = [];
+    for (var i = 0; i < stored.chunkCount; i++) {
+      var chunk = properties.getProperty(ADMIN_PENDING_CHUNK_PREFIX + token + '_' + i);
+      if (chunk === null) return null;
+      chunks.push(chunk);
+    }
+    return JSON.parse(chunks.join(''));
   } catch (error) {
     return null;
   }
 }
 
 function adminDeletePendingLine_(token) {
-  PropertiesService
-    .getScriptProperties()
-    .deleteProperty(ADMIN_PENDING_PREFIX + token);
+  var properties = PropertiesService.getScriptProperties();
+  var values = properties.getProperties();
+  var chunkPrefix = ADMIN_PENDING_CHUNK_PREFIX + token + '_';
+  Object.keys(values).forEach(function(key) {
+    if (key.indexOf(chunkPrefix) === 0) properties.deleteProperty(key);
+  });
+  properties.deleteProperty(ADMIN_PENDING_PREFIX + token);
 }
 
 function adminCleanupExpiredPending_() {
@@ -3794,11 +3959,12 @@ function adminCleanupExpiredPending_() {
 
     try {
       var pending = JSON.parse(values[key]);
-      if (new Date(pending.createdAt).getTime() < cutoff) {
-        properties.deleteProperty(key);
+      var createdAt = new Date(pending.createdAt).getTime();
+      if (!isFinite(createdAt) || createdAt < cutoff) {
+        adminDeletePendingLine_(key.slice(ADMIN_PENDING_PREFIX.length));
       }
     } catch (error) {
-      properties.deleteProperty(key);
+      adminDeletePendingLine_(key.slice(ADMIN_PENDING_PREFIX.length));
     }
   });
 }
