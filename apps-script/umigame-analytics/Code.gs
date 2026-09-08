@@ -305,27 +305,61 @@ function doPost(request) {
 
     const event = normalizeEvent_(body.event);
     const spreadsheet = openRequiredSpreadsheet_();
-    const sheet = ensureSheet_(spreadsheet, ANALYTICS_CONFIG.eventsSheet);
-    if (sheet.getLastRow() === 0) {
-      configureEventsSheet_(sheet);
+    let sheet = spreadsheet.getSheetByName(ANALYTICS_CONFIG.eventsSheet);
+    // 初回のヘッダー作成だけを排他する。通常のイベント保存を
+    // ScriptLockで直列化すると、同時送信時に10秒でbusyになり欠測する。
+    if (!sheet || sheet.getLastRow() === 0) {
+      const lock = LockService.getScriptLock();
+      if (!lock.tryLock(10000)) {
+        return jsonResponse_({ ok: false, error: 'busy' });
+      }
+      try {
+        sheet = ensureSheet_(spreadsheet, ANALYTICS_CONFIG.eventsSheet);
+        if (sheet.getLastRow() === 0) configureEventsSheet_(sheet);
+        SpreadsheetApp.flush();
+      } finally {
+        lock.releaseLock();
+      }
     }
 
-    const lock = LockService.getScriptLock();
-    if (!lock.tryLock(10000)) {
-      return jsonResponse_({ ok: false, error: 'busy' });
-    }
-
-    try {
-      sheet.appendRow(eventToRow_(event));
-    } finally {
-      lock.releaseLock();
-    }
-
+    appendAnalyticsEvent_(spreadsheet, sheet, event);
     return jsonResponse_({ ok: true });
   } catch (error) {
     console.error(error);
     return jsonResponse_({ ok: false, error: 'invalid_request' });
   }
+}
+
+// 行番号の取得と書き込みを分けず、Sheets側で末尾への追加を一括実行する。
+// 数値・真偽値・日時の型を保ち、文字列を数式として評価しない。
+function appendAnalyticsEvent_(spreadsheet, sheet, event) {
+  if (typeof Sheets === 'undefined') {
+    throw new Error('Google Sheets API service is required.');
+  }
+  const timezone = spreadsheet.getSpreadsheetTimeZone();
+  const cells = eventToRow_(event).map(function(value) {
+    if (value instanceof Date) {
+      const local = Utilities.formatDate(value, timezone, "yyyy-MM-dd'T'HH:mm:ss");
+      return {
+        userEnteredValue: { numberValue: (Date.parse(local + 'Z') + value.getUTCMilliseconds()) / 86400000 + 25569 },
+        userEnteredFormat: { numberFormat: { type: 'DATE_TIME', pattern: 'yyyy/mm/dd hh:mm:ss' } },
+      };
+    }
+    if (typeof value === 'number') {
+      if (!isFinite(value)) throw new Error('Invalid analytics number.');
+      return { userEnteredValue: { numberValue: value } };
+    }
+    if (typeof value === 'boolean') return { userEnteredValue: { boolValue: value } };
+    if (value === '' || value == null) return {};
+    return { userEnteredValue: { stringValue: String(value) } };
+  });
+  Sheets.Spreadsheets.batchUpdate({
+    requests: [{ appendCells: {
+      sheetId: sheet.getSheetId(),
+      rows: [{ values: cells }],
+      fields: 'userEnteredValue,userEnteredFormat.numberFormat',
+    } }],
+  }, spreadsheet.getId());
 }
 
 function doGet() {
@@ -334,7 +368,7 @@ function doGet() {
       ANALYTICS_CONFIG.spreadsheetProperty
     )
   );
-  return jsonResponse_({ ok: true, configured: configured });
+  return jsonResponse_({ ok: true, configured: configured, version: '2026-09-08-atomic-append' });
 }
 
 function openConfiguredSpreadsheet_(properties) {

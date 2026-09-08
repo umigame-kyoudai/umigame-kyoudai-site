@@ -2,7 +2,11 @@
 
 同意後にサイトから届くイベントを固定列に保存し、Visitor ID・Visit ID・予約ファネルID・予約番号で閲覧履歴と予約データを結合できるようにします。併せて日別集計・予約ファネル・プラン別売上・流入元別売上等を自動表示します。
 
-本番反映状況: **反映済み（2026-08-13・ユーザー確認）**。既存の分析シートに対する再セットアップとWebアプリの新バージョンデプロイまで完了しています。
+本番反映状況: **2026-09-08・版8へ更新済み**。同時送信時に書き込みロックの10秒待機制限で`busy`となる問題を、Sheets APIの`appendCells`による追記へ変更して修正しました。既存の公開URL・保存先・共有秘密を維持しています。[復旧記録](../../docs/analytics-recovery-2026-09-08.md)
+
+通常の保存ではScriptLockを取得しません。初回の空シートへのヘッダー作成だけを排他し、保存済みか不明な失敗を自動再送して重複を作ることも避けています。日時はシートのタイムゾーンとミリ秒精度を保つ数値、他の列は数値・真偽値・文字列として保存します。
+
+既存プロジェクトの更新対象は`Code.gs`（GAS上では`コード.gs`）と`appsscript.json`です。**Google Sheets API v4（識別子`Sheets`）**が必要です。今回の本番反映は実施済みで、ファイルの再差し替えや`setupAnalyticsWorkbook`の再実行は不要です。
 
 ## 保存しない情報
 
@@ -19,7 +23,7 @@
 ## 初回セットアップ
 
 1. Google Apps Scriptで新しいプロジェクトを作成します。
-2. `Code.gs` と `appsscript.json` の内容を同名ファイルへ貼り付けます。`appsscript.json`には、395日後の削除トリガーを作成するための`script.scriptapp`権限が含まれます。
+2. `Code.gs` と `appsscript.json` の内容を同名ファイルへ貼り付け、サービスに`Sheets`が表示されることを確認します。`appsscript.json`にはSheets v4サービスと、395日後の削除トリガーを作成するための`script.scriptapp`権限が含まれます。
 3. `setupAnalyticsWorkbook` を1回実行し、Googleの権限を許可します。
 4. 実行ログの戻り値にある `spreadsheetUrl` を開き、10シートが作成されたことを確認します。
 5. `generateAnalyticsSharedSecret` を1回実行し、戻り値を安全な場所へ一時コピーします。
@@ -39,6 +43,10 @@
 Production / Preview / Development の必要な環境へ登録後、Productionを再デプロイします。秘密文字列をGitHub、チャット、スプレッドシートへ貼らないでください。
 
 ## 動作確認
+
+`/exec`へのGETで`{"ok":true,"configured":true,"version":"2026-09-08-atomic-append"}`を返します。`configured`は保存先IDの設定有無のみで、実際の保存成功はサイトの`/api/analytics/events`の`accepted: true`とシートへの行追加の両方で確認してください。
+
+保存失敗時はVercelのログに許可したエラーコード（`unauthorized`、`busy`、`invalid_request`）、HTTPステータス、所要時間を記録します。共有秘密・イベント本文・任意の上流エラーメッセージは記録しません。
 
 1. 本番サイトを開きます。
 2. ページを移動し、テスト予約を1件送信します。
