@@ -65,6 +65,9 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json({ accepted: false }, { status: 400 })
   }
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return NextResponse.json({ accepted: false }, { status: 400 })
+  }
 
   const eventName = text(raw.event_name, 64)
   if (!eventNames.has(eventName)) {
@@ -114,6 +117,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ accepted: false, reason: "not_configured" }, { status: 202 })
   }
 
+  const startedAt = Date.now()
+  let failureReason = "analytics_webhook_network_error"
+  let upstreamStatus: number | undefined
+  let upstreamError: string | undefined
   try {
     const response = await fetch(webhookUrl, {
       method: "POST",
@@ -121,22 +128,37 @@ export async function POST(request: Request) {
       body: JSON.stringify({ secret, event }),
       cache: "no-store",
     })
-    if (!response.ok) throw new Error("analytics_webhook_failed")
+    upstreamStatus = response.status
+    if (!response.ok) {
+      failureReason = "analytics_webhook_failed"
+      throw new Error(failureReason)
+    }
 
     // Apps Scriptは共有シークレット不一致や不正イベントでもHTTP 200で
     // { ok: false } を返す。本文を確認しないと「送れているのにシートへ
     // 1行も入らない」状態に気づけないため、ok を明示的に検証する。
-    const result = (await response.json().catch(() => null)) as { ok?: unknown } | null
-    if (!result || result.ok !== true) throw new Error("analytics_webhook_rejected")
+    const result = (await response.json().catch(() => null)) as { ok?: unknown; error?: unknown } | null
+    if (!result || result.ok !== true) {
+      failureReason = "analytics_webhook_rejected"
+      // 応答本文や例外の全文には秘密情報が含まれる可能性があるため、
+      // GASで定義したエラーコードだけを運用ログへ記録する。
+      upstreamError = typeof result?.error === "string" &&
+        ["unauthorized", "busy", "invalid_request"].includes(result.error)
+        ? result.error
+        : "invalid_response"
+      throw new Error(failureReason)
+    }
 
     return NextResponse.json({ accepted: true })
-  } catch (error) {
+  } catch {
     // 計測はユーザー操作を妨げない。クライアントは結果を見ないため、
     // ここでの502は運用ログ用のシグナルとして残す。
-    console.error(
-      "[analytics] Sheetsへの記録に失敗:",
-      error instanceof Error ? error.message : "unknown_error"
-    )
+    console.error("[analytics] Sheetsへの記録に失敗:", JSON.stringify({
+      reason: failureReason,
+      upstreamStatus,
+      upstreamError,
+      durationMs: Date.now() - startedAt,
+    }))
     return NextResponse.json({ accepted: false, reason: "delivery_failed" }, { status: 502 })
   }
 }
