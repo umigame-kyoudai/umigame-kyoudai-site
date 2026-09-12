@@ -3,6 +3,7 @@ import Image from "next/image"
 import { Phone, MessageSquare, MapPin, Clock } from "lucide-react"
 import { getDict } from "@/lib/i18n/dict"
 import type { Locale } from "@/lib/i18n/locales"
+import { JA_SITE_LINKS } from "@/lib/navigation"
 import { TrackedCta, TrackedTel } from "@/components/tracked-cta"
 
 const CONTACT_INFO = {
@@ -13,19 +14,6 @@ const CONTACT_INFO = {
   address: "〒906-0014 沖縄県宮古島市平良松原107-1",
   addressEn: "107-1 Hirara Matsubara, Miyakojima City, Okinawa 906-0014, Japan",
 } as const
-
-const QUICK_LINKS_JA = [
-  { href: "/", label: "ホーム" },
-  { href: "/plans", label: "ツアープラン一覧" },
-  { href: "/book", label: "ご予約" },
-  { href: "/miyakojima-sea-turtle", label: "宮古島ウミガメガイド" },
-  { href: "/staff", label: "スタッフ紹介" },
-  { href: "/gallery", label: "ギャラリー" },
-  { href: "/blog", label: "ブログ" },
-  { href: "/faq", label: "よくある質問" },
-  { href: "/safety", label: "安全への取り組み" },
-  { href: "/access", label: "集合場所・アクセス" },
-] as const
 
 const LEGAL_LINKS_JA = [
   { href: "/terms", label: "利用規約・キャンセルポリシー" },
@@ -51,7 +39,7 @@ export function Footer({ locale = "ja" }: { locale?: Locale }) {
   const dictFooter = locale !== "ja" ? getDict(locale).ui.footer : null
   const intl = dictFooter !== null
   const t = dictFooter ?? JA
-  const quickLinks = dictFooter ? dictFooter.quickLinks : QUICK_LINKS_JA
+  const quickLinks = dictFooter ? dictFooter.quickLinks : JA_SITE_LINKS
   const legalLinks = dictFooter ? dictFooter.legalLinks : LEGAL_LINKS_JA
 
   return (
