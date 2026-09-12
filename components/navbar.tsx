@@ -8,21 +8,12 @@ import { Menu, X, MessageSquare, Globe, ChevronDown } from "lucide-react"
 import { trackEvent } from "@/lib/analytics"
 import type { Locale } from "@/lib/i18n/locales"
 import type { IntlUiCopy } from "@/lib/i18n/types"
+import { JA_DESKTOP_NAV_ITEMS, JA_SITE_LINKS } from "@/lib/navigation"
 
 const LINE_URL = "https://lin.ee/jfp4laz"
 
-const NAV_ITEMS_JA = [
-  { href: "/", label: "ホーム" },
-  { href: "/plans", label: "プラン" },
-  { href: "/staff", label: "スタッフ" },
-  { href: "/gallery", label: "ギャラリー" },
-  { href: "/blog", label: "ブログ" },
-  { href: "/miyakojima-sea-turtle", label: "ウミガメガイド" },
-  { href: "/faq", label: "よくある質問" },
-] as const
-
 const JA_NAV: IntlUiCopy["nav"] = {
-  items: NAV_ITEMS_JA,
+  items: JA_DESKTOP_NAV_ITEMS,
   line: "LINEで質問",
   book: "今すぐ予約",
   menuAria: "メニュー",
@@ -64,6 +55,8 @@ export default function Navbar({
   const [langOpen, setLangOpen] = useState(false)
   const t = nav ?? (locale === "ja" ? JA_NAV : EN_NAV_FALLBACK)
   const currentLang = LANGUAGES.find((l) => l.locale === locale) ?? LANGUAGES[0]
+  const mobileItems = locale === "ja" ? JA_SITE_LINKS : t.items
+  const mobileMenuHasBookLink = mobileItems.some((item) => item.href === t.bookHref)
 
   const handleLineClick = () => {
     trackEvent("line_click", { location: "navbar" })
@@ -173,7 +166,7 @@ export default function Navbar({
         {isOpen && (
           <div className="xl:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 bg-white/95 backdrop-blur-xl rounded-lg mt-2 border border-emerald-100">
-              {t.items.map((item) => (
+              {mobileItems.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
@@ -195,9 +188,11 @@ export default function Navbar({
                   <MessageSquare className="w-4 h-4 mr-2" />
                   {t.line}
                 </Button>
-                <Button asChild className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl">
-                  <Link href={t.bookHref} onClick={handleBookClick}>{t.book}</Link>
-                </Button>
+                {!mobileMenuHasBookLink && (
+                  <Button asChild className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl">
+                    <Link href={t.bookHref} onClick={handleBookClick}>{t.book}</Link>
+                  </Button>
+                )}
               </div>
             </div>
           </div>
