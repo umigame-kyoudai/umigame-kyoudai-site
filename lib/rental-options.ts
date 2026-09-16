@@ -19,6 +19,25 @@ export const planOffersRentals = (planId: string): boolean =>
 export const getRentalUnitPrice = (planId: string): number =>
   RENTAL_INCLUDED_PLAN_IDS.has(planId) ? 0 : RENTAL_UNIT_PRICE_YEN
 
+export interface PlanRentalOption {
+  name: string
+  price: number
+  freeForPrivate: boolean
+  adultOnly?: boolean
+}
+
+// 旧 PLANS.options を参照する画面も、予約時と同じレンタル条件を使う。
+// 貸切の実際の追加料金は0円。無料注記だけを付けて有料額を残さない。
+export function getPlanRentalOptions(planId: string): PlanRentalOption[] {
+  if (!planOffersRentals(planId)) return []
+
+  const price = getRentalUnitPrice(planId)
+  return [
+    { name: "ウェットスーツ", price, freeForPrivate: true },
+    { name: "度付きマスク（大人用のみ）", price, freeForPrivate: true, adultOnly: true },
+  ]
+}
+
 export function getRentalCounts(participants: RentalSelection[]) {
   return {
     wetsuit: participants.filter((participant) => participant.wetsuitRental === true).length,

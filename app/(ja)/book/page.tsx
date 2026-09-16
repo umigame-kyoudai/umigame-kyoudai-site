@@ -1,11 +1,14 @@
+import { getBookingPolicyCopy } from "@/lib/booking-policy-copy"
 import type { Metadata } from "next"
 import { Navbar } from "@/components/navbar"
 import { createMetadata } from "@/lib/seo"
 
+const bookingPolicyCopy = getBookingPolicyCopy()
+
 export const metadata: Metadata = {
   ...createMetadata({
     title: "ご予約",
-    description: "海亀兄弟のツアー予約ページ。ウミガメシュノーケル、【貸切】ウミガメシュノーケルツアー、ナイトツアー、サンセットSUP、ドローンSUP。前日までキャンセル無料。",
+    description: `海亀兄弟のツアー予約ページ。ウミガメシュノーケル、【貸切】ウミガメシュノーケルツアー、ナイトツアー、サンセットSUP、ドローンSUP。前日までキャンセル${bookingPolicyCopy.previousDayFee}。`,
     path: "/book",
     locale: "ja",
     intlBasePath: "/book",

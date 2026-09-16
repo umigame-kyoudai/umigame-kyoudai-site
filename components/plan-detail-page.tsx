@@ -1,5 +1,10 @@
 "use client"
 
+import { getBookingPolicyCopy } from "@/lib/booking-policy-copy"
+import { pagePath } from "@/lib/routes"
+
+
+import { SITE_CONFIG } from "@/lib/site-config"
 import Image from "next/image"
 import Link from "next/link"
 import { useState } from "react"
@@ -17,6 +22,8 @@ import { ComingSoonBadge, ComingSoonBanner } from "@/components/coming-soon"
 import { SunsetMonthlyGuide } from "@/components/sunset-monthly-guide"
 import { getPlanPriceDisplay, getPlanCode } from "@/lib/plan-price-display"
 import { SENIOR_RESTRICTED_PLAN_IDS, getPrivateCounterpartName } from "@/lib/plan-flags"
+
+const policyCopy = getBookingPolicyCopy()
 
 const iconMap: Record<string, any> = {
   turtle: Sparkles, camera: Camera, users: Users, shield: Shield,
@@ -727,12 +734,12 @@ function PlanCTA({ plan }: { plan: PlanDetail }) {
             {plan.name}を予約する
           </h2>
           <p className="text-emerald-100 text-sm sm:text-lg mb-2">{priceDisplay?.compact ?? `${plan.price}〜`} / {plan.duration}</p>
-          <p className="text-emerald-100 text-xs sm:text-base mb-6 sm:mb-8">前日までキャンセル無料 ・ 天候不良の中止もキャンセル料なし ・ お支払いは当日現地現金決済</p>
+          <p className="text-emerald-100 text-xs sm:text-base mb-6 sm:mb-8">前日までキャンセル{policyCopy.previousDayFee} ・ お支払いは{policyCopy.paymentSummary}。{policyCopy.prepaymentNotice}{policyCopy.weatherNotice}</p>
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center px-2">
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}>
               <Link
-                href={`/book?plan=${plan.id}`}
+                href={`${pagePath("ja", "book")}?plan=${plan.id}`}
                 onClick={() => trackEvent("book_cta_click", { location: "plan_detail", plan: plan.id })}
                 className="block bg-white text-emerald-700 font-bold text-base px-8 py-3.5 rounded-full shadow-xl transition-colors hover:bg-emerald-50"
               >
@@ -741,7 +748,7 @@ function PlanCTA({ plan }: { plan: PlanDetail }) {
             </motion.div>
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}>
               <a
-                href="https://lin.ee/jfp4laz"
+                href={SITE_CONFIG.lineUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => trackEvent("line_click", { location: "plan_detail", plan: plan.id })}
@@ -924,7 +931,7 @@ function FloatingPlanNav({ currentId }: { currentId: string }) {
               </Link>
             ) : (
               <Link
-                href={`/book?plan=${currentId}`}
+                href={`${pagePath("ja", "book")}?plan=${currentId}`}
                 onClick={() => trackEvent("book_cta_click", { location: "plan_floating_nav", plan: currentId })}
                 className="flex-shrink-0 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold px-5 py-2 rounded-full transition-colors ml-3"
               >

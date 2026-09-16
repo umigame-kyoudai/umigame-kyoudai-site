@@ -1,3 +1,6 @@
+import { getBookingPolicyCopy } from "@/lib/booking-policy-copy"
+
+
 import type { Metadata } from "next"
 import Link from "next/link"
 import { Shield, LifeBuoy, Waves, CloudRainWind, ClipboardCheck, UserX, Sun } from "lucide-react"
@@ -7,6 +10,8 @@ import { MobileCTA } from "@/components/mobile-cta"
 import { BreadcrumbJsonLd } from "@/components/json-ld"
 import { TrackedCta } from "@/components/tracked-cta"
 import { createMetadata, SITE_URL } from "@/lib/seo"
+
+const policyCopy = getBookingPolicyCopy()
 
 export const metadata: Metadata = createMetadata({
   title: "安全への取り組み｜少人数制・ライフジャケット・中止基準",
@@ -67,7 +72,7 @@ const SECTIONS: Array<{ icon: React.ElementType; title: string; body: React.Reac
           をご覧ください）。
         </p>
         <p className="mt-2">
-          安全を最優先し、当店の判断でツアーを中止する場合があります。<strong>当店判断の中止は、ツアー料金もキャンセル料も一切かかりません</strong>。お支払いは当日現地での現金決済のため、事前払いの返金手続きも発生しません。
+          安全を最優先し、当店の判断でツアーを中止する場合があります。<strong>{policyCopy.weatherNotice}</strong>お支払いは{policyCopy.paymentSummary}です。{policyCopy.prepaymentNotice}
         </p>
       </>
     ),
@@ -88,12 +93,14 @@ const SECTIONS: Array<{ icon: React.ElementType; title: string; body: React.Reac
       <>
         <p>次に当てはまる方は、安全上の理由からご参加いただけません。</p>
         <ul className="mt-2 list-disc pl-5 space-y-1">
-          <li>妊娠中、またはその可能性のある方</li>
+          <li>{policyCopy.pregnancyNotice}</li>
           <li>飲酒されている方</li>
-          <li>心臓疾患・てんかん・喘息などの持病をお持ちの方（状態により個別対応しますので、予約前にLINEでご相談ください）</li>
         </ul>
         <p className="mt-2">
-          また、通常（相乗り）のシュノーケル・ドローンSUP系プランでは、60歳以上の方がいるグループは貸切プランのみのご案内としています。ご年配の方にも、周りに合わせず自分のペースで楽しんでいただくための運用です。各プランの対象年齢はプランページでご確認ください。
+          心臓疾患・てんかん・喘息などの持病・健康上の不安がある方は、必ず予約前にLINEでご相談ください。内容を確認したうえで参加可否をご案内します。相談により参加を保証するものではありません。
+        </p>
+        <p className="mt-2">
+          また、通常（相乗り）のシュノーケル・SUP・ナイトツアーおよび通常セットプランでは、60歳以上の方がいるグループは貸切プランのみのご案内としています。ご年配の方にも、周りに合わせず自分のペースで楽しんでいただくための運用です。各プランの対象年齢はプランページでご確認ください。
         </p>
       </>
     ),
@@ -104,7 +111,7 @@ const SECTIONS: Array<{ icon: React.ElementType; title: string; body: React.Reac
     body: (
       <ul className="list-disc pl-5 space-y-1">
         <li>宮古島の紫外線は本州の約1.5〜2倍です。ウォータープルーフの日焼け止め（サンゴにやさしいリーフセーフ推奨）とラッシュガードをご準備ください</li>
-        <li>睡眠不足・二日酔いなど体調がすぐれない場合は無理をせず、日程変更をLINEでご相談ください（前日までの変更・キャンセルは無料です）</li>
+        <li>睡眠不足・二日酔いなど体調がすぐれない場合は無理をせず、日程変更をLINEでご相談ください（前日までの変更・キャンセルは{policyCopy.previousDayFee}です）</li>
         <li>ツアー中はガイドの案内する範囲内でお楽しみください</li>
       </ul>
     ),

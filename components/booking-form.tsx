@@ -1,5 +1,9 @@
 "use client"
 
+import { getBookingPolicyCopy } from "@/lib/booking-policy-copy"
+
+
+import { SITE_CONFIG } from "@/lib/site-config"
 import type React from "react"
 import Link from "next/link"
 import { ParticipantForm } from "./participant-form"
@@ -52,7 +56,8 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import { Calendar, Clock, Users, Calculator, CheckCircle, UserCheck, Check } from "lucide-react"
-import { todayStr, localDateFromYMD } from "@/lib/date-utils"
+import { todayStr } from "@/lib/date-utils"
+import { getMeetingPlaceNotice } from "@/lib/meeting-guidance"
 import BookingTimeSlots from "@/components/booking-time-slots"
 import { ComingSoonBadge } from "@/components/coming-soon"
 import { ADULT_PRICE, BOOKING_PLANS, CHILD_PRICE } from "@/lib/booking-plans"
@@ -81,15 +86,18 @@ import {
   isTripleComboPlan as isTripleComboPlanId,
   planHasSup,
   planHasNight,
+  isNightTourPlan,
   getComboContentText,
   isParticipantAgeValid,
   isOverParticipantAgeLimit,
   getAdultAgeMax,
 } from "@/lib/plan-flags"
 
+const policyCopy = getBookingPolicyCopy()
+
 // 予約確定の連絡はLINE公式アカウントからのプッシュ通知で届く。
 // プッシュは「友だち追加」済みでないと届かないため、完了画面・送信前に友だち追加を促す。
-const LINE_ADD_FRIEND_URL = "https://lin.ee/jfp4laz"
+const LINE_ADD_FRIEND_URL = SITE_CONFIG.lineUrl
 
 interface ParticipantDetails {
   id: string // Added unique ID for each participant
@@ -1344,7 +1352,7 @@ export function BookingForm() {
                 <p className="text-emerald-700">クーポン割引: -¥{(confirmedPricing?.couponDiscount ?? bookingData.couponDiscount).toLocaleString()}</p>
               )}
               <p className="font-semibold text-emerald-800">合計金額: ¥{(confirmedPricing?.totalPrice ?? totalPrice).toLocaleString()}</p>
-              <p className="text-emerald-700">お支払い方法: 現地現金決済（ツアー当日・現金）</p>
+              <p className="text-emerald-700">お支払い方法: {policyCopy.paymentSummary}</p>
             </div>
           </div>
           {/* 確定連絡はLINEのプッシュ通知＝「友だち追加」済みでないと届かない。
@@ -1424,7 +1432,7 @@ export function BookingForm() {
           送信後すぐに確定ではありません。スタッフが内容を確認し、LINEで集合場所や時間をご案内します。
         </p>
         <p className="mt-1.5 text-sm text-gray-600">
-          集合場所は当日の海況で選ぶため前日のご案内です。
+          {getMeetingPlaceNotice(bookingData.selectedPlan)}
           <a href="/access" target="_blank" rel="noopener" className="text-cyan-700 underline underline-offset-2 font-medium">候補ビーチの駐車場・設備はこちら</a>
         </p>
         <p className="mt-2 text-sm font-medium text-amber-700">
@@ -1895,6 +1903,11 @@ export function BookingForm() {
                   </div>
                 </div>
               )}
+              {(isNightTourPlan(selectedPlanData.id) || planHasNight(selectedPlanData.id)) && (
+                <p className="mt-3 text-sm leading-relaxed text-gray-700">
+                  サンダルでもご参加いただけますが、夜道を歩くため歩きやすい靴をおすすめします。
+                </p>
+              )}
             </div>
           )}
         </CardContent>
@@ -2001,7 +2014,7 @@ export function BookingForm() {
               <>
                 <BookingTimeSlots
                   selectedPlan={getPlanType(bookingData.selectedPlan)}
-                  selectedDate={localDateFromYMD(bookingData.selectedDate)}
+                  selectedDate={bookingData.selectedDate}
                   selectedTime={bookingData.selectedTime}
                   onPick={(time) => handleInputChange("selectedTime", time)}
                 />
@@ -2413,7 +2426,7 @@ export function BookingForm() {
               onCheckedChange={(checked) => handleInputChange("agreedToTerms", checked === true)}
               className="mt-1"
             />
-            <Label htmlFor="terms" className="text-sm text-gray-600 leading-relaxed">
+            <Label htmlFor="terms" className="block min-w-0 flex-1 whitespace-normal break-words text-sm text-gray-600 leading-relaxed">
               <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-emerald-700 underline">
                 利用規約・キャンセルポリシー
               </a>
@@ -2424,13 +2437,19 @@ export function BookingForm() {
               に同意します。
               <br />
               <span className="text-xs text-gray-500">
-                ※お支払いはツアー当日・現地での現金決済です。
+                ※お支払いは{policyCopy.paymentSummary}です。{policyCopy.prepaymentNotice} {policyCopy.setPaymentNotice}
                 <br />
-                ※前日までのキャンセルは無料です。
+                ※前日までのキャンセルは{policyCopy.previousDayFee}です。
                 <br />
-                ※当日キャンセル・無断キャンセルは100%のキャンセル料が発生します。
+                ※当日キャンセルはツアー料金の{policyCopy.sameDayFee}、無断キャンセルは{policyCopy.noShowFee}のキャンセル料が発生します。
                 <br />
-                ※悪天候による中止の場合、キャンセル料はかかりません。
+                ※{policyCopy.weatherNotice}
+                <br />
+                ※{policyCopy.partialCancellationNotice}
+                <br />
+                <strong className="text-sm text-gray-800">{policyCopy.pregnancyNotice}</strong>
+                <br />
+                {policyCopy.healthConsultationNotice}
               </span>
             </Label>
           </div>

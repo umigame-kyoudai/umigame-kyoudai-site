@@ -1,56 +1,32 @@
 "use client"
 
+import { SITE_CONFIG } from "@/lib/site-config"
 import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Menu, X, MessageSquare, Globe, ChevronDown } from "lucide-react"
 import { trackEvent } from "@/lib/analytics"
+import { JA_NAVIGATION_ITEMS, JA_DESKTOP_NAVIGATION_ITEMS, getIntlNavFallback } from "@/lib/navigation"
+import { pagePath } from "@/lib/routes"
 import type { Locale } from "@/lib/i18n/locales"
 import type { IntlUiCopy } from "@/lib/i18n/types"
 
-const LINE_URL = "https://lin.ee/jfp4laz"
-
-const NAV_ITEMS_JA = [
-  { href: "/", label: "ホーム" },
-  { href: "/plans", label: "プラン" },
-  { href: "/staff", label: "スタッフ" },
-  { href: "/gallery", label: "ギャラリー" },
-  { href: "/blog", label: "ブログ" },
-  { href: "/miyakojima-sea-turtle", label: "ウミガメガイド" },
-  { href: "/faq", label: "よくある質問" },
-] as const
-
 const JA_NAV: IntlUiCopy["nav"] = {
-  items: NAV_ITEMS_JA,
+  items: JA_DESKTOP_NAVIGATION_ITEMS,
   line: "LINEで質問",
   book: "今すぐ予約",
   menuAria: "メニュー",
-  homeHref: "/",
-  bookHref: "/book",
-}
-
-// nav prop を渡し忘れた英語ページ向けのフォールバック（通常はテンプレートが辞書から渡す）
-const EN_NAV_FALLBACK: IntlUiCopy["nav"] = {
-  items: [
-    { href: "/en", label: "Home" },
-    { href: "/en/plans", label: "Tours" },
-    { href: "/en/miyakojima-sea-turtle", label: "Sea Turtle Guide" },
-    { href: "/en/faq", label: "FAQ" },
-  ],
-  line: "Ask on LINE",
-  book: "Book Now",
-  menuAria: "Menu",
-  homeHref: "/en",
-  bookHref: "/en/book",
+  homeHref: pagePath("ja", "home"),
+  bookHref: pagePath("ja", "book"),
 }
 
 // 言語スイッチャー。各言語名はその言語自身の表記（言語に依存しないためここに直書き）
-const LANGUAGES: Array<{ locale: Locale; label: string; href: string }> = [
-  { locale: "ja", label: "日本語", href: "/" },
-  { locale: "en", label: "English", href: "/en" },
-  { locale: "ko", label: "한국어", href: "/ko" },
-  { locale: "zh-tw", label: "繁體中文", href: "/zh-tw" },
+const LANGUAGES: Array<{ locale: Locale; label: string }> = [
+  { locale: "ja", label: "日本語" },
+  { locale: "en", label: "English" },
+  { locale: "ko", label: "한국어" },
+  { locale: "zh-tw", label: "繁體中文" },
 ]
 
 export default function Navbar({
@@ -62,12 +38,13 @@ export default function Navbar({
 }) {
   const [isOpen, setIsOpen] = useState(false)
   const [langOpen, setLangOpen] = useState(false)
-  const t = nav ?? (locale === "ja" ? JA_NAV : EN_NAV_FALLBACK)
+  const t = nav ?? (locale === "ja" ? JA_NAV : getIntlNavFallback(locale))
+  const mobileItems = locale === "ja" ? JA_NAVIGATION_ITEMS : t.items
   const currentLang = LANGUAGES.find((l) => l.locale === locale) ?? LANGUAGES[0]
 
   const handleLineClick = () => {
     trackEvent("line_click", { location: "navbar" })
-    window.open(LINE_URL, "_blank", "noopener,noreferrer")
+    window.open(SITE_CONFIG.lineUrl, "_blank", "noopener,noreferrer")
   }
   const handleBookClick = () => trackEvent("book_cta_click", { location: "navbar" })
   const closeMenu = () => setIsOpen(false)
@@ -90,7 +67,7 @@ export default function Navbar({
           {LANGUAGES.map((lang) => (
             <Link
               key={lang.locale}
-              href={lang.href}
+              href={pagePath(lang.locale, "home")}
               onClick={() => setLangOpen(false)}
               className={`block px-4 py-2 text-sm transition-colors ${
                 lang.locale === locale
@@ -114,7 +91,7 @@ export default function Navbar({
           <Link href={t.homeHref} className="flex items-center min-w-0 flex-shrink-0">
             <Image
               src="/images/sea-turtle-brothers-logo.png"
-              alt={locale === "ja" ? "海亀兄弟" : "Sea Turtle Brothers"}
+              alt={locale === "ja" ? SITE_CONFIG.siteNameJa : SITE_CONFIG.siteNameEn}
               // 表示は高さ36-44px。元画像の実寸(1276x903)を渡すと1920px幅の
               // 画像が全ページで配信されるため、表示上限に合わせた寸法にする。
               width={124}
@@ -173,12 +150,15 @@ export default function Navbar({
         {isOpen && (
           <div className="xl:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 bg-white/95 backdrop-blur-xl rounded-lg mt-2 border border-emerald-100">
-              {t.items.map((item) => (
+              {mobileItems.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
                   className="block px-3 py-2 text-gray-700 hover:text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors"
-                  onClick={closeMenu}
+                  onClick={() => {
+                    if (locale === "ja" && item.href === t.bookHref) handleBookClick()
+                    closeMenu()
+                  }}
                 >
                   {item.label}
                 </Link>
@@ -195,9 +175,12 @@ export default function Navbar({
                   <MessageSquare className="w-4 h-4 mr-2" />
                   {t.line}
                 </Button>
-                <Button asChild className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl">
-                  <Link href={t.bookHref} onClick={handleBookClick}>{t.book}</Link>
-                </Button>
+                {/* 日本語は一覧内の「ご予約」に統一し、予約CTAの重複を避ける。 */}
+                {locale !== "ja" && (
+                  <Button asChild className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl">
+                    <Link href={t.bookHref} onClick={handleBookClick}>{t.book}</Link>
+                  </Button>
+                )}
               </div>
             </div>
           </div>

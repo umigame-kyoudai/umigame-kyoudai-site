@@ -1,9 +1,14 @@
+import { getBookingPolicyCopy } from "@/lib/booking-policy-copy"
+
+
 import type { Metadata } from "next"
 import Link from "next/link"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { BreadcrumbJsonLd } from "@/components/json-ld"
 import { createMetadata, SITE_URL } from "@/lib/seo"
+
+const policyCopy = getBookingPolicyCopy()
 
 export const metadata: Metadata = createMetadata({
   title: "利用規約・キャンセルポリシー",
@@ -35,7 +40,7 @@ const SECTIONS: Array<{ title: string; body: React.ReactNode }> = [
     title: "第3条（料金とお支払い）",
     body: (
       <p>
-        ツアー料金は各プランページに表示する価格（税込）です。お支払いはツアー当日、現地での現金決済となります。
+        ツアー料金は各プランページに表示する価格（税込）です。お支払いは{policyCopy.paymentSummary}です。{policyCopy.prepaymentNotice} {policyCopy.setPaymentNotice}
       </p>
     ),
   },
@@ -43,9 +48,9 @@ const SECTIONS: Array<{ title: string; body: React.ReactNode }> = [
     title: "第4条（キャンセルポリシー）",
     body: (
       <ul className="list-disc pl-5 space-y-1">
-        <li>前日までのキャンセル: 無料</li>
-        <li>当日のキャンセル: ツアー料金の100%</li>
-        <li>無断キャンセル: ツアー料金の100%</li>
+        <li>前日までのキャンセル: {policyCopy.previousDayFee}</li>
+        <li>当日のキャンセル: ツアー料金の{policyCopy.sameDayFee}</li>
+        <li>無断キャンセル: ツアー料金の{policyCopy.noShowFee}</li>
         <li>キャンセル・変更のご連絡はLINEまたはお電話で承ります</li>
       </ul>
     ),
@@ -54,7 +59,7 @@ const SECTIONS: Array<{ title: string; body: React.ReactNode }> = [
     title: "第5条（天候等による中止）",
     body: (
       <p>
-        天候・海況の悪化等により、安全を最優先して当店の判断でツアーを中止する場合があります。この場合、キャンセル料は発生しません。お支払いはツアー当日・現地での現金決済のため、事前のお支払い・返金は発生しません。
+        安全を最優先し、当店の判断でツアーを中止する場合があります。{policyCopy.weatherNotice}{policyCopy.partialCancellationNotice}
       </p>
     ),
   },
@@ -64,7 +69,8 @@ const SECTIONS: Array<{ title: string; body: React.ReactNode }> = [
       <ul className="list-disc pl-5 space-y-1">
         <li>ツアー中はガイドの指示に従ってください。指示に従わない場合、安全のため参加を中断していただくことがあります</li>
         <li>飲酒されている方、体調不良の方はご参加いただけません</li>
-        <li>持病・妊娠中など健康に不安がある方は、必ず事前にご相談ください</li>
+        <li>{policyCopy.pregnancyNotice}</li>
+        <li>{policyCopy.healthConsultationNotice}</li>
         <li>プランごとの対象年齢・参加条件は各プランページの記載に従います</li>
       </ul>
     ),

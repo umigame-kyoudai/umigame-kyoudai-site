@@ -1,9 +1,15 @@
+import { getBookingPolicyCopy } from "@/lib/booking-policy-copy"
+
+
+import { SITE_CONFIG, formatBusinessHours } from "@/lib/site-config"
 import type { Metadata } from "next"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { BreadcrumbJsonLd } from "@/components/json-ld"
 import { TrackedTel } from "@/components/tracked-cta"
 import { createMetadata, SITE_URL } from "@/lib/seo"
+
+const policyCopy = getBookingPolicyCopy()
 
 export const metadata: Metadata = createMetadata({
   title: "特定商取引法に基づく表記",
@@ -13,25 +19,25 @@ export const metadata: Metadata = createMetadata({
 })
 
 const ITEMS: Array<{ label: string; value: React.ReactNode }> = [
-  { label: "事業者名", value: "海亀兄弟" },
+  { label: "事業者名", value: SITE_CONFIG.siteNameJa },
   { label: "運営責任者", value: "米谷 善和" },
-  { label: "所在地", value: "〒906-0014 沖縄県宮古島市平良松原107-1" },
+  { label: "所在地", value: SITE_CONFIG.address.formattedJa },
   {
     label: "電話番号",
     value: (
       <>
-        <TrackedTel href="tel:08053442439" location="tokushoho" className="text-emerald-700 underline">
-          080-5344-2439
+        <TrackedTel href={`tel:${SITE_CONFIG.phone}`} location="tokushoho" className="text-emerald-700 underline">
+          {SITE_CONFIG.phoneDisplayJa}
         </TrackedTel>
-        （受付時間 7:00〜18:00・年中無休）
+        （受付時間 {formatBusinessHours("ja", "〜")}・年中無休）
       </>
     ),
   },
   {
     label: "メールアドレス",
     value: (
-      <a href="mailto:info@umigamekyoudaimiyakojima.com" className="text-emerald-700 underline break-all">
-        info@umigamekyoudaimiyakojima.com
+      <a href={`mailto:${SITE_CONFIG.publicEmail}`} className="text-emerald-700 underline break-all">
+        {SITE_CONFIG.publicEmail}
       </a>
     ),
   },
@@ -40,20 +46,20 @@ const ITEMS: Array<{ label: string; value: React.ReactNode }> = [
     label: "商品代金以外の必要料金",
     value: "なし（集合場所までの交通費はお客様のご負担となります）",
   },
-  { label: "お支払い方法", value: "ツアー当日に現地での現金決済" },
-  { label: "お支払い時期", value: "ツアー当日" },
+  { label: "お支払い方法", value: `${policyCopy.paymentSummary}。${policyCopy.prepaymentNotice} ${policyCopy.setPaymentNotice}` },
+  { label: "お支払い時期", value: policyCopy.paymentTimingLabel },
   {
     label: "サービスの提供時期",
     value: "ご予約確定後、ご予約いただいた日時にサービスを提供します",
   },
   {
-    label: "キャンセル・返金について",
+    label: "キャンセル・中止時の料金について",
     value: (
       <ul className="list-disc pl-5 space-y-1">
-        <li>前日までのキャンセル: 無料</li>
-        <li>当日のキャンセル: ツアー料金の100%</li>
-        <li>無断キャンセル: ツアー料金の100%</li>
-        <li>天候不良等により当店の判断で中止した場合: キャンセル料は発生しません（お支払いはツアー当日の現地現金決済のため、事前のお支払い・返金はありません）</li>
+        <li>前日までのキャンセル: {policyCopy.previousDayFee}</li>
+        <li>当日のキャンセル: ツアー料金の{policyCopy.sameDayFee}</li>
+        <li>無断キャンセル: ツアー料金の{policyCopy.noShowFee}</li>
+        <li>{policyCopy.weatherNotice}{policyCopy.partialCancellationNotice}</li>
       </ul>
     ),
   },

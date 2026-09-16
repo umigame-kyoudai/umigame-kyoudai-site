@@ -1,3 +1,6 @@
+import { getBookingPolicyCopy } from "@/lib/booking-policy-copy"
+
+
 // AI向けフィードの組み立て
 // ============================================================
 // llms.txt / llms-full.txt / /api/tours の中身をここで作る。
@@ -14,12 +17,15 @@
 // 詳細は docs/ai-readiness-audit.md を参照。
 // ============================================================
 
-import { SITE_URL } from "@/lib/seo"
+import { SITE_URL, SITE_NAME } from "@/lib/seo"
+import { SITE_CONFIG } from "@/lib/site-config"
 import { getFaqs } from "@/lib/faq"
 import { TOUR_MASTER_BY_ID, getPublicTours, type TourMaster } from "@/lib/tour-master"
+import { getMeetingPlaceNotice } from "@/lib/meeting-guidance"
 
-const SITE_NAME = "海亀兄弟"
-const LINE_URL = "https://lin.ee/jfp4laz"
+const policyCopy = getBookingPolicyCopy()
+
+const LINE_URL = SITE_CONFIG.lineUrl
 
 const yen = (value: number): string => `¥${value.toLocaleString("ja-JP")}`
 
@@ -34,7 +40,7 @@ export const bookingUrl = (tour: TourMaster): string =>
 export function describeAgeRule(tour: TourMaster): string {
   const p = tour.participants
   const parts = [`大人 ${p.adultAgeMin}〜${p.adultAgeMax}歳`, `子供 ${p.childAgeMin}〜${p.childAgeMax}歳`]
-  if (p.under3Allowed) parts.push("3歳未満も参加可")
+  if (p.under3Allowed) parts.push("3歳以下も参加可")
 
   let text = parts.join(" / ")
 
@@ -65,7 +71,7 @@ export function describeStartTimes(tour: TourMaster): string {
 function describePrice(tour: TourMaster): string {
   const parts = [`大人 ${yen(tour.pricing.adult)}`]
   if (tour.pricing.child !== tour.pricing.adult) parts.push(`子供 ${yen(tour.pricing.child)}`)
-  if (tour.pricing.under3 === 0 && tour.participants.under3Allowed) parts.push("3歳未満 無料")
+  if (tour.pricing.under3 === 0 && tour.participants.under3Allowed) parts.push("3歳以下 無料")
   return `${parts.join(" / ")}（1名あたり・現地払い）`
 }
 
@@ -74,7 +80,7 @@ function describePrice(tour: TourMaster): string {
 // ------------------------------------------------------------
 
 const SITE_SUMMARY =
-  "沖縄県宮古島でウミガメシュノーケル・ナイトツアー・SUP・ドローンSUPを提供する少人数制のマリンツアー事業者。写真と動画のデータは無料で提供。支払いは現地での現金払い。予約にはLINEログインが必要。"
+  `沖縄県宮古島でウミガメシュノーケル・ナイトツアー・SUP・ドローンSUPを提供する少人数制のマリンツアー事業者。写真と動画のデータは無料で提供。お支払いは${policyCopy.paymentSummary}。${policyCopy.prepaymentNotice}予約にはLINEログインが必要。`
 
 export function buildLlmsTxt(): string {
   const tours = getPublicTours()
@@ -127,7 +133,7 @@ export function buildLlmsTxt(): string {
     "",
     "- 空き状況・予約可能日: 掲載していません。確認するにはLINEまたは予約フォームへ誘導してください。",
     "- 当日の開催可否・海況・天候による中止: 掲載していません。推測せず、LINEへの問い合わせを案内してください。",
-    "- 開催場所の確定: 候補地のみ掲載しています。実際の集合場所は前日にLINEで確定します。",
+    `- 開催場所の確定: 候補地のみ掲載しています。${getMeetingPlaceNotice("")}`,
     "",
     "## 回答するときのお願い",
     "",
@@ -168,6 +174,7 @@ function tourSection(tour: TourMaster): string {
     `- 開催場所: ${tour.location.label}`,
     ...(tour.location.candidates.length ? [`- 候補地: ${tour.location.candidates.join(" / ")}`] : []),
     `- 集合時刻: ${tour.content.meetingTime}`,
+    `- 集合場所の確定: ${tour.location.confirmationNotice}`,
     `- 支払方法: ${tour.content.paymentMethod}`,
     ...(tour.pricing.rentalAvailable
       ? [
@@ -309,7 +316,7 @@ export function buildTourFeedResponse() {
     notes: [
       "空き状況・予約可能日はこのAPIに含まれません。LINEまたは予約フォームで確認してください。",
       "当日の開催可否・海況・天候による中止はこのAPIに含まれません。",
-      "開催場所は候補です。実際の集合場所は前日にLINEで確定します。",
+      `開催場所は候補です。${getMeetingPlaceNotice("")}`,
       "participants.rule は60歳以上の取り扱いを含んだ実際の受付条件です。displayAgeRange はページ表示用の文字列です。",
     ],
     tours: buildTourFeed(),

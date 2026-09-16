@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 
 import { getAllFaqs } from "@/lib/faq"
 import { getPublicTours } from "@/lib/tour-master"
-import { SITE_URL } from "@/lib/seo"
+import { SITE_URL, SITE_NAME } from "@/lib/seo"
 
 // 機械可読なFAQ。/api/tours と同じく、将来の MCP Server / AI Search の入口。
 //
@@ -36,7 +36,7 @@ export function GET() {
 
   return NextResponse.json(
     {
-      site: { name: "海亀兄弟", url: SITE_URL, language: "ja" },
+      site: { name: SITE_NAME, url: SITE_URL, language: "ja" },
       notes: [
         "掲載しているのは日本語の公開FAQのみです。",
         "空き状況・当日の開催可否は含まれません。LINEへの問い合わせを案内してください。",

@@ -1,6 +1,11 @@
+import { getBookingPolicyCopy } from "@/lib/booking-policy-copy"
+import { pagePath } from "@/lib/routes"
+import { SITE_CONFIG } from "@/lib/site-config"
 import Image from "next/image"
 import { BLUR_DATA_URLS } from "@/lib/image-placeholders"
 import { TrackedCta } from "@/components/tracked-cta"
+
+const bookingPolicyCopy = getBookingPolicyCopy()
 
 export function CTASection() {
   return (
@@ -26,7 +31,7 @@ export function CTASection() {
 
         <p className="text-lg text-emerald-100 mb-10 max-w-2xl mx-auto">
           ウミガメとの感動的な出会いが、あなたを待っています。
-          前日までキャンセル無料だから、気軽にご予約ください。
+          前日までキャンセル{bookingPolicyCopy.previousDayFee}だから、気軽にご予約ください。
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -34,7 +39,7 @@ export function CTASection() {
             <TrackedCta
               event="book_cta_click"
               eventProps={{ location: "home_final_cta" }}
-              href="/book"
+              href={pagePath("ja", "book")}
               className="block bg-white text-emerald-700 hover:bg-emerald-50 font-bold text-base px-8 py-3.5 rounded-full shadow-xl transition-all active:scale-95"
             >
               プランを見て予約する
@@ -44,7 +49,7 @@ export function CTASection() {
             <TrackedCta
               event="line_click"
               eventProps={{ location: "home_final_cta" }}
-              href="https://lin.ee/jfp4laz"
+              href={SITE_CONFIG.lineUrl}
               external
               className="block bg-[#06C755] hover:bg-[#05b34d] text-white font-bold text-base px-8 py-3.5 rounded-full shadow-xl transition-all active:scale-95"
             >
@@ -54,7 +59,7 @@ export function CTASection() {
         </div>
 
         <p className="text-emerald-200 text-sm mt-6">
-          ※ 前日までキャンセル無料 ・ 天候不良の中止もキャンセル料なし ・ お支払いは当日現地現金決済
+          ※ 前日までキャンセル{bookingPolicyCopy.previousDayFee} ・ 天候不良の中止もキャンセル料{bookingPolicyCopy.weatherFee} ・ お支払いは{bookingPolicyCopy.paymentSummary}
         </p>
       </div>
     </section>

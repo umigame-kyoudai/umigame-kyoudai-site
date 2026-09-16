@@ -29,6 +29,7 @@ export const TIME_OPTIONAL_PLAN_IDS = new Set(["S4", "S8"])
 // 60歳以上をお断りするプラン（通常/グループ版のみ）。60歳以上は対応する貸切版へ案内する。
 // ※ slide-boat はペアが無いため対象外。貸切版(S2/S4/S5/S7/C2/C4/C6)は60歳以上OK。
 export const SENIOR_RESTRICTED_PLAN_IDS = new Set(["S1", "S3", "S6", "S8", "C1", "C3", "C5"])
+export const SENIOR_RESTRICTED_AGE = 60
 
 // グループ版 → 貸切版の対応（60歳以上の案内先）
 export const PRIVATE_COUNTERPART: Record<string, { id: string; name: string }> = {
@@ -59,6 +60,8 @@ export const FREE_UNDER3_PLAN_IDS = new Set(["S3", "S5"])
 export const NIGHT_TOUR_TIMES = ["19:20", "21:10", "23:20"]
 // 既存のセットプラン用参照名は互換性のため維持する。
 export const COMBO_NIGHT_TIMES = NIGHT_TOUR_TIMES
+// 単品シュノーケルの通常開始時刻（仮受付の追加枠は別管理）。
+export const SNORKEL_TOUR_TIMES = ["07:00", "09:00", "11:00", "14:00", "16:00"]
 // セットの海亀（シュノーケル）開始時刻の候補
 export const COMBO_TURTLE_TIMES = ["09:00", "11:00", "14:00", "16:00"]
 // ドローンSUP単品（S6/S7）の開始時刻の候補（7:00〜16:00の1時間おき）
@@ -100,6 +103,20 @@ export function getParticipantAgeRange(
   if (category === "child") return { min: isNightTourPlan(planId) ? 4 : 5, max: 12 }
   if (category === "under3" && FREE_UNDER3_PLAN_IDS.has(planId)) return { min: 0, max: 3 }
   return null
+}
+
+/** 表示する対象年齢も、フォーム/APIの参加者区分と同じ条件から導出する。 */
+export function getPlanAgeLabel(planId: string): string {
+  const youngest = getParticipantAgeRange(planId, "under3") ?? getParticipantAgeRange(planId, "child")!
+  return `${youngest.min}〜${getAdultAgeMax(planId)}歳`
+}
+
+// セットに含まれる単品ID。通常料金の合計など、お客様向け事実の導出に使う。
+// GAS内部の料金按分・カレンダー占有時間はこの定義から算出しない。
+export const COMBO_COMPONENT_PLAN_IDS: Readonly<Record<string, readonly string[]>> = {
+  C1: ["S1", "S3"], C2: ["S2", "S5"],
+  C3: ["S1", "S6"], C4: ["S2", "S7"],
+  C5: ["S1", "S6", "S3"], C6: ["S2", "S7", "S5"],
 }
 
 /**

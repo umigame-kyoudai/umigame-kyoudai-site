@@ -3,8 +3,7 @@ import { getBlogPosts } from "@/lib/blog"
 import { PLAN_DETAILS } from "@/lib/plan-details"
 import { EN_PLAN_BY_ID } from "@/lib/i18n/en"
 import { INTL_LOCALES, localePath } from "@/lib/i18n/locales"
-
-const SITE_URL = "https://www.umigamekyoudaimiyakojima.com"
+import { SITE_URL } from "@/lib/site-config"
 
 // 静的ページ・プランの最終更新日。new Date() だと毎ビルドで全URLが「今日」になり
 // 鮮度シグナルとして信頼されにくいため、内容更新時に手動で更新する固定日を使う。

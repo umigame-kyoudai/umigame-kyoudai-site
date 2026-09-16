@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { pagePath } from "@/lib/routes"
 import { MapPin, ArrowRight } from "lucide-react"
 
 // トップページ中盤の「宮古島 ウミガメ シュノーケル」訴求＋新ピラーページ(/miyakojima-sea-turtle)への導線カード
@@ -22,7 +23,7 @@ export function TurtleGuideSection() {
             </div>
             <div className="mt-6 sm:mt-0 shrink-0">
               <Link
-                href="/miyakojima-sea-turtle"
+                href={pagePath("ja", "seaTurtleGuide")}
                 className="inline-flex w-full sm:w-auto items-center justify-center gap-2 bg-white text-emerald-700 font-bold px-6 py-3.5 rounded-full shadow-lg hover:bg-emerald-50 transition-all active:scale-95"
               >
                 ウミガメに会える場所を見る

@@ -11,6 +11,7 @@
 //      - 参加条件    → lib/plan-flags.ts / lib/booking-rules.ts
 //      - レンタル    → lib/rental-options.ts
 //      - 開始時刻    → lib/data.ts（PLANS[].timeTags）＝ 予約APIが検証に使う値
+//      - 顧客所要時間 → lib/plan-durations.ts（内部カレンダー時間とは別管理）
 //      - 多言語範囲  → lib/i18n/locales.ts
 //   2. 導出できない情報は持たない。埋めない。推測しない。
 //   3. 予約システム内部の値（LINE User ID・シートID・カレンダーID・NOTIFY_SECRET・
@@ -26,10 +27,12 @@
 import { PLANS } from "@/lib/data"
 import { PLAN_DETAILS } from "@/lib/plan-details"
 import { PLAN_PRICE_DATA } from "@/lib/plan-price-display"
+import { getCustomerDurationDetailLabel, getCustomerDurationHours } from "@/lib/plan-durations"
 import { getPlanMaxParticipants } from "@/lib/booking-rules"
 import { getRentalUnitPrice, planOffersRentals } from "@/lib/rental-options"
 import { INTL_LOCALES, INTL_PLAN_IDS, type IntlLocale } from "@/lib/i18n/locales"
 import { SITE_URL } from "@/lib/seo"
+import { getMeetingPlaceNotice } from "@/lib/meeting-guidance"
 import {
   COMBO_NIGHT_TIMES,
   FREE_UNDER3_PLAN_IDS,
@@ -53,7 +56,7 @@ export interface TourPricing {
   adult: number
   /** 子供1名あたり */
   child: number
-  /** 3歳未満1名あたり。無料対象プランは 0 */
+  /** 3歳以下1名あたり。無料対象プランは 0 */
   under3: number
   /** レンタル1点あたり。貸切プランは 0 */
   rentalUnitPrice: number
@@ -75,8 +78,7 @@ export interface TourParticipants {
   seniorAlternativeId: string | null
   /**
    * ページに表示している対象年齢の文字列（例 "5〜65歳"）。
-   * 上の数値条件とは別管理で、現状は一致していない（docs/ai-readiness-audit.md の M1）。
-   * AIへ公開するときは数値条件を優先すること。
+   * PLAN_DETAILS と同様に参加条件から導出する。
    */
   displayAgeRange: string
 }
@@ -88,6 +90,7 @@ export interface TourSchedule {
   nightStartTimes: string[]
   /** false = 開始時刻が固定でなく、前日にLINEで確定する（サンセットSUP） */
   startTimeFixed: boolean
+  /** お客様向けの体験所要時間の合計。内部カレンダー占有時間は公開しない。 */
   durationHours: number
   /** ページに表示している所要時間の文字列 */
   durationLabel: string
@@ -98,8 +101,10 @@ export interface TourLocation {
   label: string
   /** 候補地の名前。当日の海況で選ぶため確定ではない */
   candidates: string[]
-  /** 集合場所が確定するタイミング */
+  /** 集合場所の確定方法。候補の有無は確定済みであることを意味しない。 */
   confirmedBy: "before_tour_line" | "on_page"
+  /** 海系は前日、夜は当日。セットは構成ごとに案内する。 */
+  confirmationNotice: string
 }
 
 export interface TourContent {
@@ -213,7 +218,7 @@ function resolveParticipants(planId: string, displayAgeRange: string): TourParti
   }
 }
 
-function resolveSchedule(planId: string, durationLabel: string): TourSchedule {
+function resolveSchedule(planId: string): TourSchedule {
   const plan = PLANS.find((candidate) => candidate.id === planId)
 
   return {
@@ -221,8 +226,8 @@ function resolveSchedule(planId: string, durationLabel: string): TourSchedule {
     startTimes: (plan?.timeTags ?? []).filter((tag) => /^\d{2}:\d{2}$/.test(tag)),
     nightStartTimes: planHasNight(planId) ? [...COMBO_NIGHT_TIMES] : [],
     startTimeFixed: !TIME_OPTIONAL_PLAN_IDS.has(planId),
-    durationHours: plan?.durationHours ?? 0,
-    durationLabel,
+    durationHours: getCustomerDurationHours(planId),
+    durationLabel: getCustomerDurationDetailLabel(planId),
   }
 }
 
@@ -233,11 +238,9 @@ function resolveLocation(planId: string): TourLocation {
   return {
     label: detail.location,
     candidates,
-    // 開始時刻が固定でないプラン（サンセットSUP）と、候補から当日選ぶプランは前日LINEで確定する
-    confirmedBy:
-      !TIME_OPTIONAL_PLAN_IDS.has(planId) && candidates.length === 0
-        ? "on_page"
-        : "before_tour_line",
+    // 現行ツアーはLINEで案内する。候補配列が空でもページ上で確定とは扱わない。
+    confirmedBy: "before_tour_line",
+    confirmationNotice: getMeetingPlaceNotice(planId),
   }
 }
 
@@ -262,7 +265,7 @@ function resolveTour(planId: string): TourMaster {
 
     pricing: resolvePricing(planId),
     participants: resolveParticipants(planId, detail.age),
-    schedule: resolveSchedule(planId, detail.duration),
+    schedule: resolveSchedule(planId),
     location: resolveLocation(planId),
 
     content: {

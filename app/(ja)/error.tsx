@@ -1,5 +1,6 @@
 "use client"
 
+import { SITE_CONFIG } from "@/lib/site-config"
 import { useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -24,7 +25,7 @@ export default function Error({
         </div>
         <h1 className="text-3xl font-bold text-gray-900 mb-4">エラーが発生しました</h1>
         <p className="text-gray-600 mb-8 max-w-md mx-auto">
-          申し訳ありません。一時的な問題が発生しました。再読み込みしても解決しない場合は、お電話（080-5344-2439）またはLINEでお気軽にご連絡ください。
+          申し訳ありません。一時的な問題が発生しました。再読み込みしても解決しない場合は、お電話（{SITE_CONFIG.phoneDisplayJa}）またはLINEでお気軽にご連絡ください。
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Button onClick={reset} className="bg-teal-600 hover:bg-teal-700 w-full sm:w-auto">

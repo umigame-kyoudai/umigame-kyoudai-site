@@ -1,15 +1,19 @@
+import { getBookingPolicyCopy } from "@/lib/booking-policy-copy"
 import type { Metadata } from "next"
 import { SiteRootLayout } from "@/components/site-root-layout"
+import { SITE_URL, SITE_NAME } from "@/lib/site-config"
 import "../globals.css"
 
+const bookingPolicyCopy = getBookingPolicyCopy()
+
 export const metadata: Metadata = {
-  metadataBase: new URL("https://www.umigamekyoudaimiyakojima.com"),
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "宮古島ウミガメシュノーケル｜写真無料・初心者OK｜海亀兄弟",
-    template: "%s | 海亀兄弟 - 宮古島",
+    default: `宮古島ウミガメシュノーケル｜写真無料・初心者OK｜${SITE_NAME}`,
+    template: `%s | ${SITE_NAME} - 宮古島`,
   },
   description:
-    "宮古島でウミガメと泳ぐシュノーケルツアー。初心者・5歳のお子様連れも安心の少人数制。写真・動画データ無料、前日までキャンセル無料。海亀兄弟が宮古島の海を安全にご案内します。",
+    `宮古島でウミガメと泳ぐシュノーケルツアー。初心者・5歳のお子様連れも安心の少人数制。写真・動画データ無料、前日までキャンセル${bookingPolicyCopy.previousDayFee}。海亀兄弟が宮古島の海を安全にご案内します。`,
   alternates: {
     canonical: "/",
     languages: {
@@ -32,11 +36,11 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: "宮古島でウミガメと泳ぐシュノーケルツアー｜海亀兄弟",
+    title: `宮古島でウミガメと泳ぐシュノーケルツアー｜${SITE_NAME}`,
     description:
-      "宮古島でウミガメと泳ぐ少人数制シュノーケルツアー。初心者・お子様連れも安心、写真・動画データ無料、前日までキャンセル無料。",
-    url: "https://www.umigamekyoudaimiyakojima.com",
-    siteName: "海亀兄弟",
+      `宮古島でウミガメと泳ぐ少人数制シュノーケルツアー。初心者・お子様連れも安心、写真・動画データ無料、前日までキャンセル${bookingPolicyCopy.previousDayFee}。`,
+    url: SITE_URL,
+    siteName: SITE_NAME,
     locale: "ja_JP",
     type: "website",
     images: [
@@ -50,7 +54,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "宮古島でウミガメと泳ぐシュノーケルツアー｜海亀兄弟",
+    title: `宮古島でウミガメと泳ぐシュノーケルツアー｜${SITE_NAME}`,
     description:
       "宮古島でウミガメと泳ぐ少人数制シュノーケルツアー。初心者・お子様連れも安心、写真・動画データ無料。",
     images: ["/images/og-home.jpg"],

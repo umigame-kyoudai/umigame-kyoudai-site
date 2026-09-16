@@ -1,5 +1,6 @@
 "use client"
 
+import { SITE_CONFIG, formatBusinessHours } from "@/lib/site-config"
 import { useState } from "react"
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
@@ -102,7 +103,7 @@ export function FAQSection({ faqs }: { faqs: FaqEntry[] }) {
                   className="border-green-200 text-green-700 hover:bg-green-50 rounded-xl bg-transparent"
                   onClick={() => {
                     trackEvent("line_click", { location: "faq" })
-                    window.open("https://lin.ee/jfp4laz", "_blank", "noopener,noreferrer")
+                    window.open(SITE_CONFIG.lineUrl, "_blank", "noopener,noreferrer")
                   }}
                 >
                   <MessageSquare className="w-5 h-5 mr-2" />
@@ -114,7 +115,7 @@ export function FAQSection({ faqs }: { faqs: FaqEntry[] }) {
                   className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 rounded-xl bg-transparent"
                   onClick={() => {
                     trackEvent("phone_click", { location: "faq" })
-                    window.open("tel:08053442439")
+                    window.open(`tel:${SITE_CONFIG.phone}`)
                   }}
                 >
                   <Phone className="w-5 h-5 mr-2" />
@@ -124,7 +125,7 @@ export function FAQSection({ faqs }: { faqs: FaqEntry[] }) {
 
               <div className="mt-6 text-sm text-gray-500">
                 <p>LINE: 24時間受付（返信は営業時間内）</p>
-                <p>電話: 営業時間内（7:00〜18:00）</p>
+                <p>電話: 営業時間内（{formatBusinessHours("ja", "〜")}）</p>
               </div>
             </CardContent>
           </Card>

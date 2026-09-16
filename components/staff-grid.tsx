@@ -1,3 +1,5 @@
+import { SITE_CONFIG } from "@/lib/site-config"
+import { pagePath } from "@/lib/routes"
 import Image from "next/image"
 import { BLUR_DATA_URLS } from "@/lib/image-placeholders"
 import { TrackedCta } from "@/components/tracked-cta"
@@ -126,7 +128,7 @@ export function StaffGrid() {
               <TrackedCta
                 event="book_cta_click"
                 eventProps={{ location: "staff" }}
-                href="/book"
+                href={pagePath("ja", "book")}
                 className="bg-white text-emerald-700 font-bold text-sm sm:text-base px-8 py-3.5 rounded-full shadow-xl transition-all active:scale-95 hover:bg-emerald-50"
               >
                 ツアーを予約する
@@ -134,7 +136,7 @@ export function StaffGrid() {
               <TrackedCta
                 event="line_click"
                 eventProps={{ location: "staff" }}
-                href="https://lin.ee/jfp4laz"
+                href={SITE_CONFIG.lineUrl}
                 external
                 className="bg-white/20 text-white font-bold text-sm sm:text-base px-8 py-3.5 rounded-full border border-white/30 transition-all active:scale-95"
               >

@@ -6,7 +6,7 @@ import { PlanJsonLd, BreadcrumbJsonLd, FAQJsonLd } from "@/components/json-ld"
 import { Navbar } from "@/components/navbar"
 import { MobileCTA } from "@/components/mobile-cta"
 import { Footer } from "@/components/footer"
-import { createMetadata } from "@/lib/seo"
+import { createMetadata, SITE_URL } from "@/lib/seo"
 import type { Metadata } from "next"
 
 export function generateStaticParams() {
@@ -39,9 +39,9 @@ export default function Page({ params }: { params: { id: string } }) {
         <FAQJsonLd faqs={plan.faqs.map((faq) => ({ question: faq.q, answer: faq.a }))} />
       )}
       <BreadcrumbJsonLd items={[
-        { name: "ホーム", url: "https://www.umigamekyoudaimiyakojima.com" },
-        { name: "プラン", url: "https://www.umigamekyoudaimiyakojima.com/plans" },
-        { name: plan.name, url: `https://www.umigamekyoudaimiyakojima.com/plans/${plan.id}` },
+        { name: "ホーム", url: SITE_URL },
+        { name: "プラン", url: `${SITE_URL}/plans` },
+        { name: plan.name, url: `${SITE_URL}/plans/${plan.id}` },
       ]} />
       <Navbar />
       <PlanDetailPage plan={plan} />

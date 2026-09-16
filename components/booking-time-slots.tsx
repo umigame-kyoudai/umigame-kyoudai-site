@@ -1,65 +1,26 @@
 "use client"
 
 import { useMemo } from "react"
-import SunCalc from "suncalc"
-import { format } from "date-fns"
-import { ja } from "date-fns/locale"
 import { Button } from "@/components/ui/button"
 import { Clock, Info } from "lucide-react"
 import { DAY_SUP_TIMES, NIGHT_TOUR_TIMES } from "@/lib/plan-flags"
-import { getSunsetSupGuide } from "@/lib/beach-info"
+import { getMiyakojimaSunsetGuide } from "@/lib/miyakojima-sunset"
 
 type PlanId = "night-hunter" | "sunset-sup" | "day-sup" | "slide-boat" | "other"
 
 type Props = {
   selectedPlan: PlanId
-  selectedDate: Date
+  selectedDate: string
   selectedTime: string
   onPick: (time: string) => void
 }
 
-// 宮古島の座標（市街地基準）
-const MIYAKOJIMA = { lat: 24.805, lon: 125.281 }
-
-function roundTo5Min(date: Date) {
-  const d = new Date(date)
-  const ms = 1000 * 60 * 5
-  d.setTime(Math.round(d.getTime() / ms) * ms)
-  return d
-}
-
-function toJSTString(date: Date) {
-  return format(date, "HH:mm", { locale: ja })
-}
-
-function getSunsetSlots(date: Date) {
-  const times = SunCalc.getTimes(date, MIYAKOJIMA.lat, MIYAKOJIMA.lon)
-  const sunset = times.sunset
-  const offsetsMin = [-90, -60, -30]
-  const slots = offsetsMin
-    .map((m) => {
-      const d = new Date(sunset)
-      d.setMinutes(d.getMinutes() + m)
-      return roundTo5Min(d)
-    })
-    .filter((d) => {
-      const h = d.getHours()
-      return h >= 17 && h <= 19 && d.getMinutes() <= 55
-    })
-    .map(toJSTString)
-
-  if (slots.length === 0) {
-    return ["17:30", "18:00", "18:30"]
-  }
-  return Array.from(new Set(slots))
-}
-
-function getTimeSlots(plan: PlanId, date: Date): string[] {
+function getTimeSlots(plan: PlanId): string[] {
   switch (plan) {
     case "night-hunter":
       return NIGHT_TOUR_TIMES
     case "sunset-sup":
-      return getSunsetSlots(date)
+      return [] // 日没に合わせてLINEで確定するため、時刻選択ボタンは表示しない。
     case "day-sup":
       return DAY_SUP_TIMES
     case "slide-boat":
@@ -70,18 +31,11 @@ function getTimeSlots(plan: PlanId, date: Date): string[] {
 }
 
 export default function BookingTimeSlots({ selectedPlan, selectedDate, selectedTime, onPick }: Props) {
-  const slots = useMemo(() => getTimeSlots(selectedPlan, selectedDate), [selectedPlan, selectedDate])
+  const slots = useMemo(() => getTimeSlots(selectedPlan), [selectedPlan])
 
   if (selectedPlan === "sunset-sup") {
     // 日付が選択されていれば、その日の日没（SunCalc）とその月の集合・解散目安を表示する
-    const hasValidDate = selectedDate instanceof Date && !Number.isNaN(selectedDate.getTime())
-    const dateGuide = hasValidDate
-      ? {
-          label: format(selectedDate, "M月d日", { locale: ja }),
-          sunset: toJSTString(SunCalc.getTimes(selectedDate, MIYAKOJIMA.lat, MIYAKOJIMA.lon).sunset),
-          ...getSunsetSupGuide(selectedDate.getMonth() + 1),
-        }
-      : null
+    const dateGuide = getMiyakojimaSunsetGuide(selectedDate)
 
     return (
       <div className="bg-gradient-to-r from-orange-50 to-pink-50 border border-orange-200 rounded-xl p-6">

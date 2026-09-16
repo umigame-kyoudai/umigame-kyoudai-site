@@ -10,6 +10,7 @@ import { BreadcrumbJsonLd } from "@/components/json-ld"
 import { createMetadata, SITE_URL } from "@/lib/seo"
 import { PLANS } from "@/lib/data"
 import { getEnPrice } from "@/lib/i18n/en-prices"
+import { formatIntlPriceNote } from "@/lib/i18n/plan-facts"
 import { getDict } from "@/lib/i18n/dict"
 import { type IntlLocale, localePath } from "@/lib/i18n/locales"
 import { Clock, Users, ChevronRight } from "lucide-react"
@@ -91,7 +92,7 @@ export function IntlPlansPage({ locale }: { locale: IntlLocale }) {
                     <div className="flex items-end justify-between">
                       <div>
                         {t.priceNote ? (
-                          <span className="text-emerald-700 font-black text-2xl">{t.priceNoteShort ?? t.priceNote.split(",")[0].split(".")[0]}</span>
+                          <span className="text-emerald-700 font-black text-2xl">{t.priceNoteShort ?? formatIntlPriceNote(plan.id, locale, true)}</span>
                         ) : (
                           <>
                             <span className="text-emerald-700 font-black text-2xl">¥{getEnPrice(plan).price.toLocaleString()}</span>

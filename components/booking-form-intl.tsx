@@ -22,10 +22,11 @@ import { CheckCircle, MessageCircle, Plus, Trash2 } from "lucide-react"
 import { useLiff } from "@/components/liff-provider"
 import { todayStr } from "@/lib/date-utils"
 import { PLANS, getStaffFee } from "@/lib/data"
+import { SITE_CONFIG } from "@/lib/site-config"
 import type { IntlDict } from "@/lib/i18n/types"
 import { type IntlLocale, LOCALE_BOOKING_TAGS, localePath } from "@/lib/i18n/locales"
 import { getEnPrice } from "@/lib/i18n/en-prices"
-import { SENIOR_RESTRICTED_PLAN_IDS, PRIVATE_COUNTERPART, TIME_OPTIONAL_PLAN_IDS, isParticipantAgeValid, getAdultAgeMax } from "@/lib/plan-flags"
+import { SENIOR_RESTRICTED_PLAN_IDS, SENIOR_RESTRICTED_AGE, PRIVATE_COUNTERPART, TIME_OPTIONAL_PLAN_IDS, FREE_UNDER3_PLAN_IDS, isParticipantAgeValid, getParticipantAgeRange, isNightTourPlan, planHasNight } from "@/lib/plan-flags"
 import { getSunsetSupGuide } from "@/lib/beach-info"
 import { categorizeBookingFailure, trackEvent } from "@/lib/analytics"
 import {
@@ -62,8 +63,6 @@ import {
   planOffersRentals,
 } from "@/lib/rental-options"
 
-const NIGHT_PLAN_IDS = new Set(["S3", "S5"])
-const FREE_UNDER3_PLAN_IDS = NIGHT_PLAN_IDS
 const STAFF_AVAILABLE_PLAN_IDS = new Set(["S1", "S2"])
 // スタッフ選択肢の表示順（"" = 指名なし）。名前の表記は辞書側。
 const STAFF_ORDER = ["", "staff1", "staff2", "staff5", "staff3", "staff4"] as const
@@ -240,7 +239,7 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
 
   const plan = bookablePlans.find((p) => p.id === planId)
   const t = planId ? planById[planId] : undefined
-  const isNight = NIGHT_PLAN_IDS.has(planId)
+  const isNight = isNightTourPlan(planId)
   const timeOptional = TIME_OPTIONAL_PLAN_IDS.has(planId)
   const isDaySup = planId === "S6" || planId === "S7"
   const staffAvailable = STAFF_AVAILABLE_PLAN_IDS.has(planId)
@@ -249,9 +248,7 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
   const isOverParticipantLimit = maxParticipants !== undefined && participants.length > maxParticipants
   const isParticipantLimitReached = maxParticipants !== undefined && participants.length >= maxParticipants
 
-  const childMinAge = isNight ? 4 : 5
-  // 対象年齢の上限はプランページの表記と同じ plan-flags から取る
-  const adultAgeMax = getAdultAgeMax(planId)
+  const childAgeRange = getParticipantAgeRange(planId, "child")!
 
   const counts = useMemo(
     () => ({
@@ -267,7 +264,7 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
 
   const totalPrice = useMemo(() => {
     if (!plan) return 0
-    // 国際版サイトは国際版価格（日本語＋¥2,000）で計算。サーバーも同じ getEnPrice で再計算する。
+    // 現在は日本語と同額。サーバーも同じ getEnPrice で再計算する。
     const { price: adultPrice, childPrice } = getEnPrice(plan)
     const under3Price = FREE_UNDER3_PLAN_IDS.has(plan.id) ? 0 : childPrice
     const base = counts.adult * adultPrice + counts.child * childPrice + counts.under3 * under3Price
@@ -310,7 +307,7 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
     setTime("")
     setCouponDiscount(0)
     if (!STAFF_AVAILABLE_PLAN_IDS.has(id)) setStaffId("")
-    if (!NIGHT_PLAN_IDS.has(id)) {
+    if (!FREE_UNDER3_PLAN_IDS.has(id)) {
       setParticipants((prev) => prev.filter((p) => p.category !== "under3"))
     } else {
       setParticipants((prev) =>
@@ -416,7 +413,7 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
 
   // グループ版プランは60歳以上お断り → 対応する貸切版へ案内（判定は lib/plan-flags が単一ソース）
   const seniorRestricted =
-    SENIOR_RESTRICTED_PLAN_IDS.has(planId) && participants.some((p) => typeof p.age === "number" && p.age >= 60)
+    SENIOR_RESTRICTED_PLAN_IDS.has(planId) && participants.some((p) => typeof p.age === "number" && p.age >= SENIOR_RESTRICTED_AGE)
   const seniorCounterpart = PRIVATE_COUNTERPART[planId]
   const seniorCounterpartName = seniorCounterpart
     ? planById[seniorCounterpart.id]?.name ?? copy.seniorFallbackPlanName
@@ -719,7 +716,7 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
             </p>
             <p className="mt-1 text-xs text-amber-700">{copy.addFriendBox.note}</p>
             <a
-              href="https://lin.ee/jfp4laz"
+              href={SITE_CONFIG.lineUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-3 inline-flex items-center justify-center gap-2 w-full bg-[#06C755] hover:bg-[#05b34c] text-white text-sm font-bold rounded-lg px-5 py-3 transition-colors"
@@ -773,6 +770,11 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
               </button>
             )
           })}
+          {(isNightTourPlan(planId) || planHasNight(planId)) && (
+            <p className="min-w-0 text-sm leading-relaxed text-gray-700 sm:col-span-2">
+              {copy.nightFootwearNotice}
+            </p>
+          )}
         </CardContent>
       </Card>
 
@@ -861,9 +863,9 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
               <Plus className="w-4 h-4 mr-1" /> {copy.addAdult}
             </Button>
             <Button type="button" variant="outline" size="sm" disabled={isParticipantLimitReached} onClick={() => addParticipant("child")} className="rounded-full border-emerald-300 text-emerald-700">
-              <Plus className="w-4 h-4 mr-1" /> {copy.addChild(childMinAge)}
+              <Plus className="w-4 h-4 mr-1" /> {copy.addChild(childAgeRange.min, childAgeRange.max)}
             </Button>
-            {isNight && (
+            {FREE_UNDER3_PLAN_IDS.has(planId) && (
               <Button type="button" variant="outline" size="sm" disabled={isParticipantLimitReached} onClick={() => addParticipant("under3")} className="rounded-full border-emerald-300 text-emerald-700">
                 <Plus className="w-4 h-4 mr-1" /> {copy.addUnder3}
               </Button>
@@ -897,8 +899,8 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
                     id={`intl-p-${p.id}-age`}
                     type="number"
                     required
-                    min={p.category === "under3" ? 0 : p.category === "child" ? childMinAge : 13}
-                    max={p.category === "under3" ? 3 : p.category === "child" ? 12 : adultAgeMax}
+                    min={getParticipantAgeRange(planId, p.category)?.min}
+                    max={getParticipantAgeRange(planId, p.category)?.max}
                     value={p.age}
                     onChange={(e) => updateParticipant(p.id, "age", e.target.value === "" ? "" : Number.parseInt(e.target.value))}
                     className="rounded-xl border-emerald-200"
@@ -1102,7 +1104,7 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
 
           <div className="flex items-start space-x-3">
             <Checkbox id="intl-terms" checked={agreed} onCheckedChange={(checked) => setAgreed(checked === true)} className="mt-1" />
-            <Label htmlFor="intl-terms" className="text-sm text-gray-600 leading-relaxed">
+            <Label htmlFor="intl-terms" className="block min-w-0 flex-1 whitespace-normal break-words text-sm text-gray-600 leading-relaxed">
               {copy.agreeText.before}
               <a href={localePath(locale, "/terms")} target="_blank" rel="noopener noreferrer" className="text-emerald-700 underline">
                 {copy.agreeText.termsLabel}
@@ -1127,8 +1129,8 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
               </h3>
               <p className="text-sm text-gray-700 leading-relaxed mb-4">
                 {copy.lineLoginBody.before}
-                <a href="mailto:info@umigamekyoudaimiyakojima.com" className="text-emerald-700 underline">
-                  info@umigamekyoudaimiyakojima.com
+                <a href={`mailto:${SITE_CONFIG.publicEmail}`} className="text-emerald-700 underline">
+                  {SITE_CONFIG.publicEmail}
                 </a>
                 {copy.lineLoginBody.after}
               </p>
@@ -1173,7 +1175,7 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
           </p>
           <p className="text-xs font-medium text-amber-700 text-center">
             {copy.addFriendWarning.before}
-            <a href="https://lin.ee/jfp4laz" target="_blank" rel="noopener noreferrer" className="underline font-bold">{copy.addFriendWarning.linkText}</a>
+            <a href={SITE_CONFIG.lineUrl} target="_blank" rel="noopener noreferrer" className="underline font-bold">{copy.addFriendWarning.linkText}</a>
             {copy.addFriendWarning.after}
           </p>
         </CardContent>

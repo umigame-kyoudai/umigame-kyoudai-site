@@ -10,10 +10,27 @@
 //
 // 定義がない記事では CTA は一切描画されない（全記事へ一括で同じCTAを出さない）。
 
+import { getBookingPolicyCopy } from "@/lib/booking-policy-copy"
 import { PLAN_DETAILS } from "@/lib/plan-details"
 import { getPlanPriceDisplay } from "@/lib/plan-price-display"
+import { getParticipantAgeRange, isNightTourPlan, PRIVATE_COUNTERPART, SENIOR_RESTRICTED_AGE, SENIOR_RESTRICTED_PLAN_IDS } from "@/lib/plan-flags"
+import { getPlanRentalOptions } from "@/lib/rental-options"
+import { SITE_CONFIG } from "@/lib/site-config"
 
-export const LINE_CONSULT_URL = "https://lin.ee/jfp4laz"
+const bookingPolicyCopy = getBookingPolicyCopy()
+const dayNightMinimumAgeNote = `昼夜セットは参加者全員${getParticipantAgeRange("C1", "child")!.min}歳以上`
+const snorkelRentalNote = getPlanRentalOptions("S1")
+  .map((option) => `${option.name}は${option.price === 0 ? "無料" : `${option.price.toLocaleString("ja-JP")}円`}`)
+  .join("、")
+
+/** ナイト単品の年齢表示には、通常版から貸切版への参加条件も必ず添える。 */
+export function getCtaNightParticipationNotice(planId: string): string {
+  if (!isNightTourPlan(planId) || !SENIOR_RESTRICTED_PLAN_IDS.has(planId)) return ""
+  const counterpart = PRIVATE_COUNTERPART[planId]
+  return `${SENIOR_RESTRICTED_AGE}歳以上の方を含むグループは${counterpart.name}のご予約が必要です。`
+}
+
+export const LINE_CONSULT_URL = SITE_CONFIG.lineUrl
 
 /** CTAの設置位置。計測の location プロパティにそのまま入る。 */
 export type CtaPosition =
@@ -236,7 +253,7 @@ const ARAGUSU_BEACH_CTA: ArticleCtaConfig = {
       title: "海況に左右されずにウミガメと泳ぐなら",
       description:
         "その日いちばん条件の良いポイントへご案内します。人数や泳ぎの自信に合わせて、少人数制と1組貸切から選べます。",
-      features: ["5歳から参加可能", "前日までキャンセル無料", "写真・動画データは無料"],
+      features: ["5歳から参加可能", `前日までキャンセル${bookingPolicyCopy.previousDayFee}`, "写真・動画データは無料"],
       primary: {
         label: "希望日の空き状況を見る",
         href: "/book?plan=S1",
@@ -327,7 +344,7 @@ const SEA_TURTLE_PILLAR_CTA: ArticleCtaConfig = {
       title: "その日の海況に合わせて、会いやすい場所へ",
       description:
         "ウミガメシュノーケル単体のほか、同じビーチでドローンSUPまで続けて楽しめる海空セットもあります。",
-      features: ["少人数制・ガイドがそばでサポート", "器材・ライフジャケット込み", "前日までキャンセル無料"],
+      features: ["少人数制・ガイドがそばでサポート", "器材・ライフジャケット込み", `前日までキャンセル${bookingPolicyCopy.previousDayFee}`],
       primary: {
         label: "希望日の空き状況を見る",
         href: "/book?plan=S1",
@@ -418,7 +435,7 @@ const KIDS_AGE_GUIDE_CTA: ArticleCtaConfig = {
       title: "お子様の年齢に合わせてプランを選べます",
       description:
         "シュノーケルは5歳から。もっと小さいお子様とご一緒なら、0歳から参加できる夜のヤシガニ探検という選び方もあります。",
-      features: ["シュノーケルは5歳から", "ナイトツアーは0歳から・3歳以下無料", "前日までキャンセル無料"],
+      features: ["シュノーケルは5歳から", "ナイトツアーは0歳から・3歳以下無料", `前日までキャンセル${bookingPolicyCopy.previousDayFee}`],
       primary: {
         label: "希望日の空き状況を見る",
         href: "/book?plan=S1",
@@ -509,7 +526,7 @@ const BEGINNER_GUIDE_CTA: ArticleCtaConfig = {
       title: "初めてでも、その日の海況に合った場所から",
       description:
         "波が穏やかで入りやすい場所は日によって変わります。ポイント選びはガイドが担当するので、初めての方でも無理なく参加できます。",
-      features: ["5歳から参加可能", "前日までキャンセル無料", "写真・動画データは無料"],
+      features: ["5歳から参加可能", `前日までキャンセル${bookingPolicyCopy.previousDayFee}`, "写真・動画データは無料"],
       primary: {
         label: "希望日の空き状況を見る",
         href: "/book?plan=S1",
@@ -600,7 +617,7 @@ const TOUR_VS_SELF_CTA: ArticleCtaConfig = {
       title: "海の中も、海の上も楽しみたいなら",
       description:
         "シュノーケル単体のほか、同じビーチでドローンSUPまで続けて楽しめる海空セットもあります。迷っている方はセットで両方を試せます。",
-      features: ["前日までキャンセル無料", "器材・ライフジャケット込み", "写真・動画データは無料"],
+      features: [`前日までキャンセル${bookingPolicyCopy.previousDayFee}`, "器材・ライフジャケット込み", "写真・動画データは無料"],
       primary: {
         label: "希望日の空き状況を見る",
         href: "/book?plan=S1",
@@ -692,7 +709,7 @@ const NIGHT_TOUR_CTA: ArticleCtaConfig = {
       title: "昼の海とまとめると1,000円お得になります",
       description:
         "昼はウミガメシュノーケル、夜はヤシガニ探検。1日で宮古島の昼と夜を両方楽しめる昼夜セットが人気です。",
-      features: ["昼夜セットは単品より1,000円お得", "3歳以下無料", "前日までキャンセル無料"],
+      features: ["昼夜セットは単品より1,000円お得", dayNightMinimumAgeNote, `前日までキャンセル${bookingPolicyCopy.previousDayFee}`],
       priceNote: "ナイトツアー単品 一律¥4,000・3歳以下無料",
       primary: {
         label: "希望日の空き状況を見る",
@@ -762,9 +779,9 @@ const OUTFIT_PACKING_CTA: ArticleCtaConfig = {
       position: "article_middle",
       tone: "strong",
       eyebrow: "寒さ・日焼けが心配な方へ",
-      title: "ウェットスーツと度付きマスクは無料で貸し出しています",
+      title: "ウェットスーツと度付きマスクは予約時に選べます",
       description:
-        "水温が下がる時期はウェットスーツ、コンタクトが苦手な方は度付きマスクを予約時に選べます。当日の追加料金はかかりません。",
+        `通常プランでは、${snorkelRentalNote}です。度付きマスクは大人用のみで、子供用のご用意はありません。`,
       features: [
         "ウェットスーツ・度付きマスクの貸出あり",
         "器材・ライフジャケット込み",
@@ -789,8 +806,8 @@ const OUTFIT_PACKING_CTA: ArticleCtaConfig = {
       eyebrow: "持ち物リストを読み終えた方へ",
       title: "準備が決まったら、あとは日程を押さえるだけ",
       description:
-        "少人数制のため、希望の時間帯は早めに埋まります。前日までのキャンセルは無料なので、日程だけ先に押さえておく方も多いです。",
-      features: ["5歳から参加可能", "前日までキャンセル無料", "所要は約2時間"],
+        `少人数制のため、希望の時間帯は早めに埋まります。前日までのキャンセルは${bookingPolicyCopy.previousDayFee}なので、日程だけ先に押さえておく方も多いです。`,
+      features: ["5歳から参加可能", `前日までキャンセル${bookingPolicyCopy.previousDayFee}`, "所要は約2時間"],
       primary: {
         label: "希望日の空き状況を見る",
         href: "/book?plan=S1",
@@ -881,7 +898,7 @@ const DRONE_SUP_CTA: ArticleCtaConfig = {
       title: "海の中の写真もまとめて残すなら",
       description:
         "同じ日にウミガメシュノーケルとドローンSUPを続けて楽しめる海空セットなら、水中とドローンの両方の写真が残せます。",
-      features: ["海空セットは単品より1,000円お得", "水中写真とドローン写真の両方", "前日までキャンセル無料"],
+      features: ["海空セットは単品より1,000円お得", "水中写真とドローン写真の両方", `前日までキャンセル${bookingPolicyCopy.previousDayFee}`],
       primary: {
         label: "ドローンSUPの空きを見る",
         href: "/book?plan=S6",
@@ -972,12 +989,12 @@ const SUP_BEGINNER_CTA: ArticleCtaConfig = {
       title: "二人だけ・家族だけで海に出るなら",
       description:
         "他のお客様と一緒にならない1組貸切なら、写真を撮る時間もゆっくり取れます。記念日のご利用も多いプランです。",
-      features: ["1組貸切・ドローン撮影付き", "前日までキャンセル無料", "所要は約2時間"],
+      features: ["1組貸切・ドローン撮影付き", `前日までキャンセル${bookingPolicyCopy.previousDayFee}`, "所要は約2時間"],
       primary: {
-        label: "サンセットSUPの空きを見る",
-        href: "/book?plan=S8",
+        label: "貸切サンセットSUPの空きを見る",
+        href: "/book?plan=S4",
         type: "booking",
-        planId: "S8",
+        planId: "S4",
       },
       secondary: {
         label: "1組貸切のサンセットSUPを見る",
@@ -1063,7 +1080,7 @@ const PHOTO_SPOT_CTA: ArticleCtaConfig = {
       title: "夕景を狙うなら、海の上からという選択もあります",
       description:
         "日没の時間帯に合わせて出るサンセットSUPなら、空の色が変わる時間をそのまま撮影できます。水中写真が欲しい方はウミガメシュノーケルとの組み合わせもあります。",
-      features: ["ドローン撮影付き", "前日までキャンセル無料", "5歳から参加可能"],
+      features: ["ドローン撮影付き", `前日までキャンセル${bookingPolicyCopy.previousDayFee}`, "5歳から参加可能"],
       primary: {
         label: "サンセットSUPの空きを見る",
         href: "/book?plan=S8",
@@ -1154,7 +1171,7 @@ const CORAL_REEF_CTA: ArticleCtaConfig = {
       title: "実際の海を見てから、できることを考える",
       description:
         "写真や記事で読むより、実際に海に入って見たほうが伝わることがあります。その日いちばん状態の良いポイントへご案内します。",
-      features: ["5歳から参加可能", "前日までキャンセル無料", "所要は約2時間"],
+      features: ["5歳から参加可能", `前日までキャンセル${bookingPolicyCopy.previousDayFee}`, "所要は約2時間"],
       primary: {
         label: "希望日の空き状況を見る",
         href: "/book?plan=S1",
@@ -1247,8 +1264,8 @@ const RAINY_DAY_CTA: ArticleCtaConfig = {
       eyebrow: "雨の日ガイドを読んだ方へ",
       title: "晴れ間が出たら、海の予定も押さえておく",
       description:
-        "宮古島の天気は半日で変わります。前日までのキャンセルは無料なので、海のツアーも仮に押さえておくと動きやすくなります。",
-      features: ["前日までキャンセル無料", "昼夜セットは単品より1,000円お得", "5歳から参加可能"],
+        `宮古島の天気は半日で変わります。前日までのキャンセルは${bookingPolicyCopy.previousDayFee}なので、海のツアーも仮に押さえておくと動きやすくなります。`,
+      features: [`前日までキャンセル${bookingPolicyCopy.previousDayFee}`, "昼夜セットは単品より1,000円お得", "5歳から参加可能"],
       primary: {
         label: "ウミガメツアーの空きを見る",
         href: "/book?plan=S1",
@@ -1430,8 +1447,8 @@ const SHIMOJISHIMA_AIRPORT_CTA: ArticleCtaConfig = {
       eyebrow: "アクセスを調べ終えた方へ",
       title: "翌日以降の海の予定も、先に押さえておく",
       description:
-        "少人数制のため希望の時間帯は早めに埋まります。前日までのキャンセルは無料なので、日程だけ先に確保する方が多いです。",
-      features: ["前日までキャンセル無料", "5歳から参加可能", "写真・動画データは無料"],
+        `少人数制のため希望の時間帯は早めに埋まります。前日までのキャンセルは${bookingPolicyCopy.previousDayFee}なので、日程だけ先に確保する方が多いです。`,
+      features: [`前日までキャンセル${bookingPolicyCopy.previousDayFee}`, "5歳から参加可能", "写真・動画データは無料"],
       primary: {
         label: "ウミガメツアーの空きを見る",
         href: "/book?plan=S1",
@@ -1522,7 +1539,7 @@ const RENTAL_CAR_CTA: ArticleCtaConfig = {
       title: "夜の運転が不安なら、夜は歩く予定にする",
       description:
         "ヤシガニ探検は歩いて回る夜のツアーです。集合場所までの運転だけで済むので、長距離の夜間ドライブを避けられます。",
-      features: ["所要は約1.5時間", "0歳〜75歳まで参加可能", "前日までキャンセル無料"],
+      features: ["所要は約1.5時間", "0歳〜75歳まで参加可能", `前日までキャンセル${bookingPolicyCopy.previousDayFee}`],
       priceNote: "一律¥4,000・3歳以下無料",
       primary: {
         label: "ナイトツアーの空きを見る",
@@ -1614,7 +1631,7 @@ const HOTEL_GUIDE_CTA: ArticleCtaConfig = {
       title: "夕食までの時間に、夜の予定も入れられます",
       description:
         "ヤシガニ探検は日没後スタートで所要約1.5時間です。夕食前に組み込めるので、滞在中の夜を持て余しません。",
-      features: ["0歳〜75歳まで参加可能", "所要は約1.5時間", "前日までキャンセル無料"],
+      features: ["0歳〜75歳まで参加可能", "所要は約1.5時間", `前日までキャンセル${bookingPolicyCopy.previousDayFee}`],
       priceNote: "一律¥4,000・3歳以下無料",
       primary: {
         label: "ナイトツアーの空きを見る",
@@ -1687,10 +1704,10 @@ const FAMILY_3DAYS_CTA: ArticleCtaConfig = {
         "他のお客様を気にせず進められるので、途中で疲れても切り上げやすくなります。少人数のご家族でも1組貸切で参加できます。",
       features: ["専属ガイドが1組に付きっきり", "子供用の器材も無料で用意", "写真・動画データは無料"],
       primary: {
-        label: "希望日の空き状況を見る",
-        href: "/book?plan=S1",
+        label: "貸切ツアーの空きを見る",
+        href: "/book?plan=S2",
         type: "booking",
-        planId: "S1",
+        planId: "S2",
       },
       secondary: {
         label: "1組貸切でゆっくり参加する",
@@ -1706,7 +1723,7 @@ const FAMILY_3DAYS_CTA: ArticleCtaConfig = {
       title: "下のお子様がまだ小さいご家族へ",
       description:
         "夜のヤシガニ探検は0歳から参加でき、3歳以下は無料です。抱っこやベビーカーのご家族も参加されていて、三世代でのご参加も歓迎です。",
-      features: ["0歳から参加可能・3歳以下無料", "所要は約1.5時間", "昼夜セットは単品より1,000円お得"],
+      features: ["0歳から参加可能・3歳以下無料", "所要は約1.5時間", dayNightMinimumAgeNote],
       priceNote: "ナイトツアー単品 一律¥4,000・3歳以下無料",
       primary: {
         label: "ナイトツアーの空きを見る",
@@ -1779,10 +1796,10 @@ const COUPLE_3DAYS_CTA: ArticleCtaConfig = {
         "写真を撮る時間もゆっくり取れます。ドローン撮影が付いているので、二人が写った空撮を残せます。",
       features: ["1組貸切・ドローン撮影付き", "撮影データは無料", "所要は約2時間"],
       primary: {
-        label: "サンセットSUPの空きを見る",
-        href: "/book?plan=S8",
+        label: "貸切サンセットSUPの空きを見る",
+        href: "/book?plan=S4",
         type: "booking",
-        planId: "S8",
+        planId: "S4",
       },
       secondary: {
         label: "1組貸切のサンセットSUPを見る",
@@ -1798,7 +1815,7 @@ const COUPLE_3DAYS_CTA: ArticleCtaConfig = {
       title: "昼は海の中、夕方は海の上という一日",
       description:
         "午前にウミガメシュノーケル、夕方にサンセットSUP。同じ日に組むと、水中と空撮の両方の写真が残せます。",
-      features: ["少人数制・ガイドがそばでサポート", "前日までキャンセル無料", "写真・動画データは無料"],
+      features: ["少人数制・ガイドがそばでサポート", `前日までキャンセル${bookingPolicyCopy.previousDayFee}`, "写真・動画データは無料"],
       primary: {
         label: "ウミガメツアーの空きを見る",
         href: "/book?plan=S1",
@@ -1889,7 +1906,7 @@ const REPEATER_CTA: ArticleCtaConfig = {
       title: "一日を通しで使う、まるごと1日セット",
       description:
         "ウミガメシュノーケル・ドローンSUP・ナイトツアーを1日でまとめて回るセットです。滞在日数が短いリピーターの方に選ばれています。",
-      features: ["朝から夜まで1日で3種", "セット割引あり", "前日までキャンセル無料"],
+      features: ["朝から夜まで1日で3種", "セット割引あり", `前日までキャンセル${bookingPolicyCopy.previousDayFee}`],
       primary: {
         label: "まるごと1日セットの空きを見る",
         href: "/book?plan=C5",
@@ -1956,10 +1973,10 @@ const JUNE_TRAVEL_CTA: ArticleCtaConfig = {
       position: "article_middle",
       tone: "strong",
       eyebrow: "天候が読めず迷っている方へ",
-      title: "前日までのキャンセルは無料です",
+      title: `前日までのキャンセルは${bookingPolicyCopy.previousDayFee}です`,
       description:
         "予報が固まらない時期なので、先に日程を押さえてから判断する方が多いです。少人数制のため希望の時間帯は早めに埋まります。",
-      features: ["前日までキャンセル無料", "少人数制・ガイドがそばでサポート", "所要は約2時間"],
+      features: [`前日までキャンセル${bookingPolicyCopy.previousDayFee}`, "少人数制・ガイドがそばでサポート", "所要は約2時間"],
       primary: {
         label: "希望日の空き状況を見る",
         href: "/book?plan=S1",
@@ -2072,7 +2089,7 @@ const TOURISM_LATEST_CTA: ArticleCtaConfig = {
       title: "滞在が短いなら、1日でまとめる方法もあります",
       description:
         "昼はウミガメ、夜はヤシガニ探検という組み合わせが人気です。単品で申し込むよりセットのほうがお得になります。",
-      features: ["昼夜セットは単品より1,000円お得", "3歳以下無料", "前日までキャンセル無料"],
+      features: ["昼夜セットは単品より1,000円お得", dayNightMinimumAgeNote, `前日までキャンセル${bookingPolicyCopy.previousDayFee}`],
       primary: {
         label: "昼夜セットの空きを見る",
         href: "/book?plan=C1",
@@ -2257,7 +2274,7 @@ const IZAKAYA_CTA: ArticleCtaConfig = {
       title: "昼と夜をまとめると1,000円お得になります",
       description:
         "昼はウミガメシュノーケル、夜はヤシガニ探検。1日で宮古島の昼と夜を両方楽しんでから、夜の食事へ向かえます。",
-      features: ["昼夜セットは単品より1,000円お得", "3歳以下無料", "前日までキャンセル無料"],
+      features: ["昼夜セットは単品より1,000円お得", dayNightMinimumAgeNote, `前日までキャンセル${bookingPolicyCopy.previousDayFee}`],
       primary: {
         label: "昼夜セットの空きを見る",
         href: "/book?plan=C1",
@@ -2326,7 +2343,7 @@ const MORNING_CAFE_CTA: ArticleCtaConfig = {
       eyebrow: "午前の予定を決める方へ",
       title: "所要2時間なので、昼前には自由になります",
       description:
-        "少人数制のため、午前の回は早めに埋まります。前日までのキャンセルは無料なので、日程だけ先に押さえておく方が多いです。",
+        `少人数制のため、午前の回は早めに埋まります。前日までのキャンセルは${bookingPolicyCopy.previousDayFee}なので、日程だけ先に押さえておく方が多いです。`,
       features: ["所要は約2時間", "器材・ライフジャケット込み", "写真・動画データは無料"],
       primary: {
         label: "希望日の空き状況を見る",
@@ -2348,7 +2365,7 @@ const MORNING_CAFE_CTA: ArticleCtaConfig = {
       title: "海の中と海の上を、一日にまとめる",
       description:
         "午前にウミガメシュノーケル、午後にドローンSUP。海空セットなら単品で申し込むより1,000円お得です。",
-      features: ["海空セットは単品より1,000円お得", "水中写真とドローン写真の両方", "前日までキャンセル無料"],
+      features: ["海空セットは単品より1,000円お得", "水中写真とドローン写真の両方", `前日までキャンセル${bookingPolicyCopy.previousDayFee}`],
       primary: {
         label: "海空セットの空きを見る",
         href: "/book?plan=C3",
@@ -2530,7 +2547,7 @@ const GOURMET_CTA: ArticleCtaConfig = {
       title: "夕食の前に、夜の探検を1.5時間",
       description:
         "ヤシガニ探検は日没後スタートで所要約1.5時間です。終わってから食事へ向かう流れなら、夜の時間を二重に使えます。",
-      features: ["0歳〜75歳まで参加可能", "所要は約1.5時間", "前日までキャンセル無料"],
+      features: ["0歳〜75歳まで参加可能", "所要は約1.5時間", `前日までキャンセル${bookingPolicyCopy.previousDayFee}`],
       priceNote: "一律¥4,000・3歳以下無料",
       primary: {
         label: "ナイトツアーの空きを見る",
@@ -2575,7 +2592,7 @@ const GOURMET_CTA: ArticleCtaConfig = {
  * キーは記事スラッグ（ブログ）またはページパス（ピラーページ）。
  * ここに無いページではCTAを描画しない。
  */
-export const ARTICLE_CTA_CONFIGS: Record<string, ArticleCtaConfig> = {
+const ARTICLE_CTA_DEFINITIONS: Record<string, ArticleCtaConfig> = {
   // アクティビティに直結する記事
   "aragusu-beach-snorkeling-guide": ARAGUSU_BEACH_CTA,
   "miyakojima-kids-snorkeling-age-guide": KIDS_AGE_GUIDE_CTA,
@@ -2610,6 +2627,24 @@ export const ARTICLE_CTA_CONFIGS: Record<string, ArticleCtaConfig> = {
   // ピラーページ
   "/miyakojima-sea-turtle": SEA_TURTLE_PILLAR_CTA,
 }
+
+// 記事固有の文章や配置は保ち、通常ナイトへの導線にだけ正本の参加条件を添える。
+// 主ボタンだけでなく副ボタン・関連記事紹介からの予約前にも条件が分かるようにする。
+export const ARTICLE_CTA_CONFIGS: Record<string, ArticleCtaConfig> = Object.fromEntries(
+  Object.entries(ARTICLE_CTA_DEFINITIONS).map(([key, config]) => [key, {
+    ...config,
+    cards: config.cards.map((card) => {
+      const notices = [...new Set([card.primary, card.secondary]
+        .flatMap((action) => action?.planId ? [getCtaNightParticipationNotice(action.planId)] : [])
+        .filter(Boolean))]
+      return notices.length ? { ...card, features: [...(card.features ?? []), ...notices] } : card
+    }),
+    related: config.related.map((item) => {
+      const notice = item.kind === "plan" ? getCtaNightParticipationNotice(item.planId) : ""
+      return notice ? { ...item, description: `${item.description}${notice}` } : item
+    }),
+  }]),
+)
 
 export function getArticleCtaConfig(key: string): ArticleCtaConfig | undefined {
   return ARTICLE_CTA_CONFIGS[key]

@@ -1,3 +1,6 @@
+import { getPlanMaxParticipants } from "@/lib/booking-rules"
+import { ADULT_AGE_MIN, COMBO_COMPONENT_PLAN_IDS, FREE_UNDER3_PLAN_IDS, getParticipantAgeRange, isPrivatePlan } from "@/lib/plan-flags"
+
 export interface PlanPriceRow {
   label: string
   price: string
@@ -9,8 +12,6 @@ export interface PlanPriceDisplay {
   caption?: string
   compact: string
 }
-
-const UNDER3_FREE_PLAN_IDS = new Set(["S3", "S5"])
 
 export const PLAN_PRICE_DATA: Record<string, { price: number; childPrice?: number; status?: "active" | "coming_soon" }> = {
   S1: { price: 6500, childPrice: 6000 },
@@ -37,13 +38,20 @@ export function getPlanCode(planId: string): string {
 }
 
 function formatYen(price: number): string {
-  return `¥${price.toLocaleString()}`
+  return `¥${price.toLocaleString("ja-JP")}`
 }
 
 function getChildAgeNote(planId: string): string {
-  if (planId === "S3" || planId === "S5") return "4〜12歳"
-  if (planId === "slide-boat") return "5〜12歳予定"
-  return "5〜12歳"
+  const range = getParticipantAgeRange(planId, "child")!
+  return `${range.min}〜${range.max}歳${PLAN_PRICE_DATA[planId]?.status === "coming_soon" ? "予定" : ""}`
+}
+
+/** セット割引は単品の大人料金合計との差額。GASの内部配分額とは別。 */
+export function getComboSavings(planId: string): { regularPrice: number; savings: number } | null {
+  const componentIds = COMBO_COMPONENT_PLAN_IDS[planId]
+  if (!componentIds) return null
+  const regularPrice = componentIds.reduce((total, id) => total + PLAN_PRICE_DATA[id].price, 0)
+  return { regularPrice, savings: regularPrice - PLAN_PRICE_DATA[planId].price }
 }
 
 export function getPlanPriceDisplay(planId: string): PlanPriceDisplay | null {
@@ -53,35 +61,26 @@ export function getPlanPriceDisplay(planId: string): PlanPriceDisplay | null {
   const adultPrice = formatYen(plan.price)
   const childPrice = formatYen(plan.childPrice ?? plan.price)
   const rows: PlanPriceRow[] = [
-    { label: "大人", price: adultPrice, note: "13歳以上" },
+    { label: "大人", price: adultPrice, note: `${ADULT_AGE_MIN}歳以上` },
     { label: "子供", price: childPrice, note: getChildAgeNote(planId) },
   ]
 
   let caption: string | undefined
+  const comboSavings = getComboSavings(planId)
   if (plan.status === "coming_soon") {
     caption = "料金・対象年齢は予定です"
-  } else if (UNDER3_FREE_PLAN_IDS.has(planId)) {
-    caption = "3歳以下無料"
+  } else if (FREE_UNDER3_PLAN_IDS.has(planId)) {
+    caption = `${getParticipantAgeRange(planId, "under3")!.max}歳以下無料`
   } else if (planId === "S2") {
-    caption = "1名あたり・最大10名まで"
+    caption = `1名あたり・最大${getPlanMaxParticipants(planId)}名まで`
   } else if (planId === "S4") {
     caption = "1組貸切・ドローン撮影付き"
   } else if (planId === "S6" || planId === "S8") {
     caption = "ドローン撮影付き"
   } else if (planId === "S7") {
     caption = "1組貸切・ドローン撮影付き"
-  } else if (planId === "C1") {
-    caption = "通常¥10,500・1,000円お得"
-  } else if (planId === "C2") {
-    caption = "貸切通常¥17,000・1,000円お得"
-  } else if (planId === "C3") {
-    caption = "通常¥14,000・1,000円お得"
-  } else if (planId === "C4") {
-    caption = "貸切通常¥18,500・1,000円お得"
-  } else if (planId === "C5") {
-    caption = "通常¥18,000・2,000円お得"
-  } else if (planId === "C6") {
-    caption = "貸切通常¥26,500・2,000円お得"
+  } else if (comboSavings) {
+    caption = `${isPrivatePlan(planId) ? "貸切" : ""}通常${formatYen(comboSavings.regularPrice)}・${comboSavings.savings.toLocaleString("ja-JP")}円お得`
   }
 
   return {

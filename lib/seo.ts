@@ -1,10 +1,12 @@
+import { getBookingPolicyCopy } from "@/lib/booking-policy-copy"
 import type { Metadata } from "next"
 import { type Locale, LOCALE_LANG_TAGS, LOCALE_OG_TAGS, INTL_LOCALES, localePath } from "@/lib/i18n/locales"
+import { SITE_URL, SITE_NAME, SITE_NAME_INTL } from "@/lib/site-config"
 
-export const SITE_URL = "https://www.umigamekyoudaimiyakojima.com"
-export const SITE_NAME = "海亀兄弟"
-export const SITE_NAME_INTL = "Sea Turtle Brothers"
-export const SITE_DESCRIPTION = "宮古島で家族向け少人数制マリン体験なら海亀兄弟。ウミガメシュノーケル、貸切ツアー、ナイトツアー、サンセットSUP、ドローンSUPなど。安全管理徹底、写真・動画無料、前日キャンセル無料。"
+const bookingPolicyCopy = getBookingPolicyCopy()
+
+export { SITE_URL, SITE_NAME, SITE_NAME_INTL } from "@/lib/site-config"
+export const SITE_DESCRIPTION = `宮古島で家族向け少人数制マリン体験なら${SITE_NAME}。ウミガメシュノーケル、貸切ツアー、ナイトツアー、サンセットSUP、ドローンSUPなど。安全管理徹底、写真・動画無料、前日キャンセル${bookingPolicyCopy.previousDayFee}。`
 
 // OGP/SNS共有用画像。LINE等のリンクプレビュー互換のため jpeg を使用。
 // 実寸1200x630（宣言サイズと一致させるため専用に切り出したもの）。

@@ -1,8 +1,13 @@
+import { getBookingPolicyCopy } from "@/lib/booking-policy-copy"
+import { pagePath } from "@/lib/routes"
+import { SITE_CONFIG } from "@/lib/site-config"
 import Image from "next/image"
 import Link from "next/link"
 import { CalendarCheck, Camera, ChevronDown, MapPin, MessageCircle, Shield, Star } from "lucide-react"
 import { BLUR_DATA_URLS } from "@/lib/image-placeholders"
 import { TrackedCta } from "@/components/tracked-cta"
+
+const bookingPolicyCopy = getBookingPolicyCopy()
 
 export function HeroSection() {
   const proofItems = [
@@ -15,7 +20,7 @@ export function HeroSection() {
   const trustItems = [
     { icon: Shield, text: "少人数制・保険加入済み" },
     { icon: Camera, text: "写真・動画データ無料" },
-    { icon: CalendarCheck, text: "前日までキャンセル無料" },
+    { icon: CalendarCheck, text: `前日までキャンセル${bookingPolicyCopy.previousDayFee}` },
   ]
 
   return (
@@ -52,7 +57,7 @@ export function HeroSection() {
           </h1>
 
           <p className="max-w-[21rem] sm:max-w-2xl text-[15px] sm:text-xl text-white/90 mb-4 sm:mb-6 drop-shadow-md leading-7 sm:leading-relaxed">
-            初心者・お子様連れでも迷わず選べる少人数制ツアー。写真・動画無料、前日までキャンセル無料。
+            初心者・お子様連れでも迷わず選べる少人数制ツアー。写真・動画無料、前日までキャンセル{bookingPolicyCopy.previousDayFee}。
           </p>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 max-w-[22rem] sm:max-w-2xl mb-0 sm:mb-6">
@@ -67,7 +72,7 @@ export function HeroSection() {
           {/* モバイル専用：ウミガメガイドへのサブ導線（ヒーロー内） */}
           <div className="sm:hidden mt-4">
             <Link
-              href="/miyakojima-sea-turtle"
+              href={pagePath("ja", "seaTurtleGuide")}
               className="inline-flex w-full items-center justify-center gap-2 bg-white/15 backdrop-blur-sm hover:bg-white/25 text-white font-bold text-[15px] px-6 py-3 rounded-full border border-white/40 transition-all active:scale-95"
             >
               <MapPin className="w-5 h-5" />
@@ -80,7 +85,7 @@ export function HeroSection() {
               <TrackedCta
                 event="book_cta_click"
                 eventProps={{ location: "hero" }}
-                href="/book"
+                href={pagePath("ja", "book")}
                 className="inline-flex w-full sm:w-auto items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-base px-7 py-3.5 rounded-full shadow-lg transition-all active:scale-95"
               >
                 <CalendarCheck className="w-5 h-5" />
@@ -91,7 +96,7 @@ export function HeroSection() {
               <TrackedCta
                 event="line_click"
                 eventProps={{ location: "hero" }}
-                href="https://lin.ee/jfp4laz"
+                href={SITE_CONFIG.lineUrl}
                 external
                 className="inline-flex w-full sm:w-auto items-center justify-center gap-2 bg-white/15 backdrop-blur-sm hover:bg-white/25 text-white font-bold text-base px-7 py-3.5 rounded-full border border-white/35 transition-all active:scale-95"
               >
@@ -101,7 +106,7 @@ export function HeroSection() {
             </div>
             <div>
               <Link
-                href="/miyakojima-sea-turtle"
+                href={pagePath("ja", "seaTurtleGuide")}
                 className="inline-flex w-full sm:w-auto items-center justify-center gap-2 bg-white/15 backdrop-blur-sm hover:bg-white/25 text-white font-bold text-base px-7 py-3.5 rounded-full border border-white/35 transition-all active:scale-95"
               >
                 <MapPin className="w-5 h-5" />

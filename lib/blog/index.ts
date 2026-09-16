@@ -1,6 +1,10 @@
+import { getBookingPolicyCopy } from "@/lib/booking-policy-copy"
 import { BLOG_CATEGORIES, type BlogPost } from "@/lib/data"
 import { loadBlogPosts } from "./posts"
 import { BLOG_PAGE_SIZE } from "./constants"
+import { getCtaNightParticipationNotice } from "./article-cta"
+
+const bookingPolicyCopy = getBookingPolicyCopy()
 
 export { BLOG_PAGE_SIZE } from "./constants"
 
@@ -81,7 +85,7 @@ export function getBlogPostCta(post: BlogPost): BlogCta {
       eyebrow: "この記事を読んだ方へ",
       title: "0歳から参加できる夜のジャングル探検",
       description:
-        "巨大なヤシガニや夜行性の生き物を、ガイドと一緒に探しに行くナイトツアー。一律4,000円・3歳以下無料、写真データも無料です。",
+        `巨大なヤシガニや夜行性の生き物を、ガイドと一緒に探しに行くナイトツアー。一律4,000円・3歳以下無料、写真データも無料です。${getCtaNightParticipationNotice("S3")}`,
       primaryHref: "/plans/S3",
       primaryLabel: "ナイトツアーを見る",
       secondaryHref: "/book?plan=S3",
@@ -118,7 +122,7 @@ export function getBlogPostCta(post: BlogPost): BlogCta {
   if (/雨|天気|ホテル|空港|レンタカー|17END|カフェ|グルメ|居酒屋/.test(searchableText)) {
     return {
       eyebrow: "旅程に海の体験を入れるなら",
-      title: "前日までキャンセル無料の宮古島マリン体験",
+      title: `前日までキャンセル${bookingPolicyCopy.previousDayFee}の宮古島マリン体験`,
       description:
         "旅行中の天候や予定に合わせて相談しやすい少人数制ツアーです。ウミガメシュノーケル、ナイトツアー、サンセットSUPから選べます。",
       primaryHref: "/#plans",

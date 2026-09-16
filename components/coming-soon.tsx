@@ -1,3 +1,4 @@
+import { SITE_CONFIG } from "@/lib/site-config"
 import { Bell, CalendarClock } from "lucide-react"
 import { TrackedCta } from "@/components/tracked-cta"
 
@@ -28,7 +29,7 @@ type ComingSoonBannerProps = {
 export function ComingSoonBanner({
   title = "近日公開・予約受付開始までお待ちください",
   description = "現在は告知のみ公開しています。受付開始後、このページから予約できるようになります。",
-  actionHref = "https://lin.ee/jfp4laz",
+  actionHref = SITE_CONFIG.lineUrl,
   actionLabel = "LINEで開始通知を相談する",
   className = "",
 }: ComingSoonBannerProps) {

@@ -8,6 +8,7 @@ import { BreadcrumbJsonLd } from "@/components/json-ld"
 import { TrackedCta } from "@/components/tracked-cta"
 import { createMetadata, SITE_URL } from "@/lib/seo"
 import { SNORKEL_BEACHES, SUNSET_SUP_SPOTS, SUNSET_SUP_MEETING_TIMES } from "@/lib/beach-info"
+import { getMeetingPlaceNotice } from "@/lib/meeting-guidance"
 
 export const metadata: Metadata = createMetadata({
   title: "集合場所・アクセス｜前日案内の理由と各ビーチの設備",
@@ -167,7 +168,7 @@ export default function AccessPage() {
           </h2>
           <div className="text-gray-700 leading-relaxed text-[15px] space-y-2">
             <p>
-              ツアーは現地集合・現地解散で、送迎は行っていません。宮古島は路線バスの本数が少なくタクシーもつかまりにくいため、レンタカーでのお越しをおすすめしています。集合場所の駐車場情報は前日のLINE案内に含めてお送りします。
+              ツアーは現地集合・現地解散で、送迎は行っていません。宮古島は路線バスの本数が少なくタクシーもつかまりにくいため、レンタカーでのお越しをおすすめしています。{getMeetingPlaceNotice("")}駐車場情報もあわせてお送りします。
             </p>
             <p className="text-sm text-gray-500">
               レンタカーが初めての方は

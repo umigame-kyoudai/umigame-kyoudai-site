@@ -1,3 +1,5 @@
+import { getBookingPolicyCopy } from "@/lib/booking-policy-copy"
+import { SITE_CONFIG } from "@/lib/site-config"
 import type { Metadata } from "next"
 import Link from "next/link"
 import { CalendarCheck, MessageCircle, Shield, Camera, Users, MapPin, CheckCircle2, AlertTriangle } from "lucide-react"
@@ -12,6 +14,8 @@ import { getArticleCtaCard, getArticleCtaConfig, resolveRelatedContent } from "@
 import { ArticleCtaCard } from "@/components/blog/article-cta-card"
 import { ArticleRelatedContent } from "@/components/blog/article-related-content"
 import { ArticleStickyCta } from "@/components/blog/article-sticky-cta"
+
+const bookingPolicyCopy = getBookingPolicyCopy()
 
 const PAGE_PATH = "/miyakojima-sea-turtle"
 // ユーザー指定の長尺タイトル。ルートの title.template による二重サフィックスを避けるため absolute で指定する。
@@ -91,7 +95,7 @@ export default function MiyakojimaSeaTurtlePage() {
               <TrackedCta
                 event="line_click"
                 eventProps={{ location: "pillar" }}
-                href="https://lin.ee/jfp4laz"
+                href={SITE_CONFIG.lineUrl}
                 external
                 className="inline-flex items-center justify-center gap-2 bg-white/15 backdrop-blur-sm hover:bg-white/25 text-white font-bold px-7 py-3.5 rounded-full border border-white/35 transition-all active:scale-95"
               >
@@ -260,7 +264,7 @@ export default function MiyakojimaSeaTurtlePage() {
                 "少人数制で、ガイドが一人ひとりに目が届く",
                 "写真・動画データを無料でプレゼント",
                 "5歳から参加可能。初心者・お子様連れも安心",
-                "前日までのキャンセル無料",
+                `前日までのキャンセル${bookingPolicyCopy.previousDayFee}`,
                 "保険加入済みで安全管理を徹底",
               ].map((item) => (
                 <li key={item} className="flex gap-2.5 text-gray-700 leading-relaxed">

@@ -1,3 +1,7 @@
+import { getBookingPolicyCopy } from "@/lib/booking-policy-copy"
+import { getMeetingPlaceNotice } from "@/lib/meeting-guidance"
+
+
 // サイト内FAQの単一ソース
 // ============================================================
 // 2026-08-16の情報設計監査までは、日本語FAQが3箇所に分かれて書かれていた。
@@ -22,6 +26,10 @@
 //
 // 詳細は docs/ai-readiness-audit.md を参照。
 // ============================================================
+
+import { formatBusinessHours } from "@/lib/site-config"
+
+const policyCopy = getBookingPolicyCopy()
 
 /** FAQを表示する面。1つのFAQを複数の面に出すこともできる。 */
 export type FaqScope = "faq-page" | "home" | "sea-turtle-guide"
@@ -82,7 +90,7 @@ export const FAQ_ENTRIES: FaqEntry[] = [
     scopes: ["faq-page"],
     question: "質問や相談はどこにすればいいですか？",
     answer:
-      "ご質問やご相談は、LINEで24時間受け付けております。お気軽にメッセージをお送りください。営業時間内（7:00-18:00）にスタッフが丁寧にお答えいたします。",
+      `ご質問やご相談は、LINEで24時間受け付けております。お気軽にメッセージをお送りください。営業時間内（${formatBusinessHours("ja", "-")}）にスタッフが丁寧にお答えいたします。`,
   },
   {
     id: "faq-07",
@@ -111,21 +119,21 @@ export const FAQ_ENTRIES: FaqEntry[] = [
     scopes: ["faq-page"],
     question: "支払い方法は何がありますか？クレジットカードは使えますか？",
     answer:
-      "お支払いはツアー当日に現地での現金決済のみとなります。事前のお支払いや、クレジットカード・電子マネーでの決済はございません。当日、現地で現金にてお支払いください（できるだけお釣りが出ないようご協力いただけると助かります）。",
+      `お支払いは${policyCopy.paymentSummary}のみとなります。${policyCopy.prepaymentNotice} ${policyCopy.setPaymentNotice}クレジットカード・電子マネーには対応していません。できるだけお釣りが出ないようご協力ください。`,
   },
   {
     id: "faq-11",
     scopes: ["faq-page"],
     question: "キャンセル料はかかりますか？",
     answer:
-      "前日までにご連絡いただければ、キャンセル料は一切かかりません。当日のキャンセルはツアー料金の100%をいただきます。なお、お支払いはツアー当日・現地での現金決済のため、天候不良により当店の判断で中止とした場合はキャンセル料も料金も一切かかりませんのでご安心ください。",
+      `前日までのキャンセルは${policyCopy.previousDayFee}です。当日のキャンセルはツアー料金の${policyCopy.sameDayFee}、無断キャンセルは${policyCopy.noShowFee}をいただきます。${policyCopy.weatherNotice}${policyCopy.partialCancellationNotice}お支払いは${policyCopy.paymentSummary}です。${policyCopy.prepaymentNotice} ${policyCopy.setPaymentNotice}`,
   },
   {
     id: "faq-12",
     scopes: ["faq-page"],
     question: "妊娠中でも参加できますか？",
     answer:
-      "申し訳ございませんが、妊娠中またはその可能性のある方は安全上の理由からご参加をお断りしております。海水による体の冷えや万が一のリスクを考慮したものです。ご出産後、落ち着かれてからぜひご家族でお越しください！",
+      policyCopy.pregnancyNotice + " 安全のため、事前相談の有無にかかわらずすべてのツアーで参加不可となります。",
   },
   {
     id: "faq-13",
@@ -153,7 +161,7 @@ export const FAQ_ENTRIES: FaqEntry[] = [
     scopes: ["faq-page"],
     question: "駐車場はありますか？",
     answer:
-      "はい、集合場所のビーチに駐車場がございます。ビーチによって有料（¥1,000〜¥2,000）または無料の場合があります。宮古島は公共交通機関が少ないため、レンタカーでのお越しをおすすめしています。詳しい駐車場の場所はツアー前日にLINEでご案内いたします。",
+      `はい、集合場所のビーチに駐車場がございます。ビーチによって有料（¥1,000〜¥2,000）または無料の場合があります。宮古島は公共交通機関が少ないため、レンタカーでのお越しをおすすめしています。${getMeetingPlaceNotice("")}駐車場の場所もあわせてご案内します。`,
   },
   {
     id: "faq-17",
@@ -174,7 +182,7 @@ export const FAQ_ENTRIES: FaqEntry[] = [
     scopes: ["faq-page"],
     question: "当日はどんな服装で行けばいいですか？",
     answer:
-      "水着を中に着た状態でお越しいただくのがスムーズです。その上にTシャツやショートパンツなど、脱ぎ着しやすい服装がおすすめ。足元はビーチサンダルでOKです。ツアー後に着替えるスペースは限られますので、車内で使えるタオルや着替えをご準備ください。",
+      "海のツアーでは、水着を中に着た状態でお越しいただくのがスムーズです。その上にTシャツやショートパンツなど、脱ぎ着しやすい服装がおすすめ。足元はビーチサンダルでOKです。ツアー後に着替えるスペースは限られますので、車内で使えるタオルや着替えをご準備ください。ナイトツアーもサンダルで参加可能ですが、歩きやすい靴をおすすめします。",
   },
   {
     id: "faq-20",
@@ -209,7 +217,7 @@ export const FAQ_ENTRIES: FaqEntry[] = [
     scopes: ["faq-page"],
     question: "持病がありますが参加できますか？",
     answer:
-      "心臓疾患、てんかん、喘息などの持病をお持ちの方は、安全上の理由からご参加をお断りする場合がございます。ご予約前にLINEでお気軽にご相談ください。状態に応じて個別にご対応いたします。飲酒されている方もご参加いただけませんのでご了承ください。",
+      "心臓疾患、てんかん、喘息などの持病・健康上の不安がある方は、必ず予約前にLINEでご相談ください。内容を確認したうえで参加可否をご案内します。相談により参加を保証するものではありません。飲酒されている方はご参加いただけません。",
   },
   {
     id: "home-01",
@@ -230,7 +238,7 @@ export const FAQ_ENTRIES: FaqEntry[] = [
     scopes: ["home"],
     question: "雨の日でも開催しますか？",
     answer:
-      "小雨程度であれば開催いたします。海の中に入ってしまえば雨はほとんど気になりません。ただし、台風や強風など安全が確保できない場合は中止とします。お支払いは当日・現地現金決済のため、中止の場合はキャンセル料も料金もかかりません。",
+      `小雨程度であれば開催いたします。海の中に入ってしまえば雨はほとんど気になりません。ただし、台風や強風など安全が確保できない場合は中止とします。${policyCopy.weatherNotice}${policyCopy.partialCancellationNotice}お支払いは${policyCopy.paymentSummary}です。${policyCopy.prepaymentNotice} ${policyCopy.setPaymentNotice}`,
   },
   {
     id: "home-04",

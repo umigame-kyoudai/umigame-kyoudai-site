@@ -10,6 +10,7 @@ import { createMetadata, SITE_URL } from "@/lib/seo"
 import { TrackedCta } from "@/components/tracked-cta"
 import { getDict } from "@/lib/i18n/dict"
 import { type IntlLocale, localePath } from "@/lib/i18n/locales"
+import { pagePath } from "@/lib/routes"
 import { CalendarCheck } from "lucide-react"
 
 export function intlGuideMetadata(locale: IntlLocale): Metadata {
@@ -85,7 +86,7 @@ export function IntlGuidePage({ locale }: { locale: IntlLocale }) {
             <TrackedCta
               event="book_cta_click"
               eventProps={{ location: `${locale}_pillar` }}
-              href={localePath(locale, "/book")}
+              href={pagePath(locale, "book")}
               className="inline-flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-8 py-3.5 rounded-full shadow-lg transition-all"
             >
               <CalendarCheck className="w-5 h-5" />

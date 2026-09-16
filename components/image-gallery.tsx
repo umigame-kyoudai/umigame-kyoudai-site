@@ -1,5 +1,7 @@
 "use client"
 
+import { SITE_CONFIG } from "@/lib/site-config"
+import { pagePath } from "@/lib/routes"
 import { useState, useRef, useEffect } from "react"
 import Image from "next/image"
 import { X, ChevronLeft, ChevronRight } from "lucide-react"
@@ -279,7 +281,7 @@ export function ImageGallery() {
               <TrackedCta
                 event="book_cta_click"
                 eventProps={{ location: "gallery" }}
-                href="/book"
+                href={pagePath("ja", "book")}
                 className="bg-white text-emerald-700 font-bold text-sm sm:text-base px-8 py-3.5 rounded-full shadow-xl transition-all active:scale-95 hover:bg-emerald-50"
               >
                 今すぐ予約する
@@ -287,7 +289,7 @@ export function ImageGallery() {
               <TrackedCta
                 event="line_click"
                 eventProps={{ location: "gallery" }}
-                href="https://lin.ee/jfp4laz"
+                href={SITE_CONFIG.lineUrl}
                 external
                 className="bg-white/20 text-white font-bold text-sm sm:text-base px-8 py-3.5 rounded-full border border-white/30 transition-all active:scale-95"
               >

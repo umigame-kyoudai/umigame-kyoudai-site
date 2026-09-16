@@ -9,12 +9,14 @@ import { Footer } from "@/components/footer"
 import { MobileCTA } from "@/components/mobile-cta"
 import { BreadcrumbJsonLd } from "@/components/json-ld"
 import { createMetadata, SITE_URL } from "@/lib/seo"
+import { SITE_CONFIG } from "@/lib/site-config"
 import { TrackedCta } from "@/components/tracked-cta"
 import { SunsetMonthlyGuide } from "@/components/sunset-monthly-guide"
 import { PLANS } from "@/lib/data"
 import { getEnPrice } from "@/lib/i18n/en-prices"
 import { getDict } from "@/lib/i18n/dict"
 import { type IntlLocale, localePath } from "@/lib/i18n/locales"
+import { pagePath } from "@/lib/routes"
 import { Clock, Users, MapPin, CalendarCheck, Check, AlertTriangle, Backpack, Camera } from "lucide-react"
 
 export function intlPlanStaticParams(locale: IntlLocale) {
@@ -216,7 +218,7 @@ export function IntlPlanDetailPage({ locale, id }: { locale: IntlLocale; id: str
             {comingSoon ? (
               <p className="text-gray-600">
                 {common.comingSoonCta.before}
-                <TrackedCta event="line_click" eventProps={{ location: `${locale}_plan_detail`, plan: plan.id }} href="https://lin.ee/jfp4laz" external className="text-emerald-700 underline">
+                <TrackedCta event="line_click" eventProps={{ location: `${locale}_plan_detail`, plan: plan.id }} href={SITE_CONFIG.lineUrl} external className="text-emerald-700 underline">
                   {common.comingSoonCta.linkText}
                 </TrackedCta>
                 {common.comingSoonCta.after}
@@ -225,7 +227,7 @@ export function IntlPlanDetailPage({ locale, id }: { locale: IntlLocale; id: str
               <TrackedCta
                 event="book_cta_click"
                 eventProps={{ location: `${locale}_plan_detail`, plan: plan.id }}
-                href={`${localePath(locale, "/book")}?plan=${plan.id}`}
+                href={`${pagePath(locale, "book")}?plan=${plan.id}`}
                 className="inline-flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-lg px-10 py-4 rounded-full shadow-lg transition-all"
               >
                 <CalendarCheck className="w-5 h-5" />

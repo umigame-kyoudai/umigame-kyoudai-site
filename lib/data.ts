@@ -1,14 +1,21 @@
+import { getBookingPolicyCopy } from "@/lib/booking-policy-copy"
+
+
 import { PLAN_COVER_IMAGE, TOUR_IMAGE_PATHS } from "@/lib/tour-assets"
 import { STAFF_MEMBERS } from "@/lib/staff"
 import { PLAN_DETAILS } from "@/lib/plan-details"
-import { PLAN_PRICE_DATA } from "@/lib/plan-price-display"
+import { PLAN_PRICE_DATA, getPlanPriceDisplay } from "@/lib/plan-price-display"
 import { getPlanMaxParticipants } from "@/lib/booking-rules"
-import { NIGHT_TOUR_TIMES } from "@/lib/plan-flags"
+import { COMBO_TURTLE_TIMES, DAY_SUP_TIMES, NIGHT_TOUR_TIMES, SNORKEL_TOUR_TIMES, getPlanAgeLabel } from "@/lib/plan-flags"
+import { getCustomerDurationHours } from "@/lib/plan-durations"
+import { getPlanRentalOptions, type PlanRentalOption } from "@/lib/rental-options"
+
+const policyCopy = getBookingPolicyCopy()
 
 export { PLAN_COVER_IMAGE, TOUR_IMAGE_PATHS } from "@/lib/tour-assets"
 
-export const ADULT_PRICE = 6500
-export const CHILD_PRICE = 6000
+export const ADULT_PRICE = PLAN_PRICE_DATA.S1.price
+export const CHILD_PRICE = PLAN_PRICE_DATA.S1.childPrice ?? ADULT_PRICE
 
 // 指名料のデフォルト額。スタッフ別の例外は STAFF_FEES で上書きする。
 export const STAFF_FEE = 1000
@@ -25,7 +32,7 @@ export function getStaffFee(staffId: string | null | undefined): number {
   return STAFF_FEES[staffId] ?? STAFF_FEE
 }
 
-export const TIME_SLOTS = ["07:00", "09:00", "11:00", "14:00", "16:00"]
+export const TIME_SLOTS = SNORKEL_TOUR_TIMES
 
 // 画像のぼかしプレースホルダーは lib/image-placeholders.ts を唯一の定義元とする。
 
@@ -75,11 +82,7 @@ export interface Plan {
     mapUrl: string
     embedUrl?: string
   }
-  options?: Array<{
-    name: string
-    price: number
-    freeForPrivate?: boolean
-  }>
+  options?: PlanRentalOption[]
   whatToBring?: string[]
   precautions?: string[]
   paymentMethod?: string
@@ -95,12 +98,12 @@ export interface Plan {
   lineConsultUrl?: string
 }
 
-// 予約API・英語サイト用のプラン配列の素データ。
-// name と price/childPrice は下の PLANS で単一ソース（PLAN_DETAILS / PLAN_PRICE_DATA）から上書きする。
-const RAW_PLANS: Plan[] = [
+// 予約API・英語サイト用の本文・画像・表示設定。
+// 共通の事実は型からも除外し、下の PLANS 生成時に既存正本から取得する。
+type PlanContent = Omit<Plan, "name" | "price" | "childPrice" | "priceNote" | "ageRange" | "maxParticipants" | "durationHours" | "options">
+const RAW_PLANS: PlanContent[] = [
   {
     id: "S1",
-    name: "ウミガメと泳ぐシュノーケルツアー",
     description: `《安全管理徹底！少人数制ウミガメシュノーケルツアー》
 ・クマノミや熱帯魚にも会えます。
 ・写真に圧倒的な自信あり！SNS映え間違いなし♪
@@ -147,17 +150,13 @@ SNS映え間違いなし！
 潮の満ち引きは日によって異なりますので、お気軽にご相談くださいね＾＾
 
 完全貸切でのプランもご用意しておりますので、ご希望の方はそちらのプランからご予約お願いします！`,
-    price: 6500,
-    childPrice: 6000,
     privateTourSurcharge: 20000,
     image: PLAN_COVER_IMAGE.snorkel,
     images: TOUR_IMAGE_PATHS.snorkel,
-    timeTags: ["07:00", "09:00", "11:00", "14:00", "16:00"],
+    timeTags: [...SNORKEL_TOUR_TIMES],
     provisionalTimes: ["08:00", "10:00", "12:00", "13:00"],
-    durationHours: 2,
     features: ["少人数制", "器材レンタル込み", "写真 & 動画付き", "Ace Pro 2 高画質撮影"],
     rank: 1,
-    ageRange: "5〜65歳",
     location: {
       northWind: "シギラビーチ",
       southWind: "新城海岸",
@@ -166,25 +165,12 @@ SNS映え間違いなし！
     meetingTime: {
       regular: "開始時刻の15分前に集合",
     },
-    options: [
-      {
-        name: "ウェットスーツ",
-        price: 1000,
-        freeForPrivate: true,
-      },
-      {
-        name: "度付きメガネ",
-        price: 1000,
-        freeForPrivate: true,
-      },
-    ],
     whatToBring: ["着替え", "タオル", "日焼け止め", "飲み物", "サンダル（推奨）"],
-    precautions: ["妊娠中の方は参加不可", "持病をお持ちの方は参加不可", "飲酒されている方は参加不可", "お体に不自由がある場合は必ず事前にご相談ください。", "60歳以上の方がご参加のグループは、安全面を考慮し【貸切】ウミガメシュノーケルツアーをご予約ください。"],
-    paymentMethod: "現地現金決済（できるだけお釣りが出ないようご協力ください）",
+    precautions: [policyCopy.pregnancyNotice, "持病・健康上の不安がある方は必ず予約前にご相談ください。内容を確認したうえで参加可否をご案内します。", "飲酒されている方は参加不可", "お体に不自由がある場合は必ず事前にご相談ください。", "60歳以上の方がご参加のグループは、安全面を考慮し【貸切】ウミガメシュノーケルツアーをご予約ください。"],
+    paymentMethod: `${policyCopy.paymentSummary}（できるだけお釣りが出ないようご協力ください）`,
   },
   {
     id: "S2",
-    name: "【貸切】ウミガメシュノーケルツアー",
     description: `《1組限定・完全貸切！VIPウミガメシュノーケルツアー》
 ・他のお客様を気にせず、自分たちだけのプライベートな時間を満喫！
 ・ウミガメとの高い遭遇率！クマノミや熱帯魚にも会えます。
@@ -228,21 +214,15 @@ SNS映え間違いなし！
 実施海岸はかなり浅く、潮の満ち引きによっては余裕で足がつく深さまで水位が下がります！
 ライフジャケットを着用するため何もしなくても浮きますし、捕まることのできる浮き輪をガイドが常備してます♪
 他の方に気を遣わず、ゆっくりと海に慣れていくことができるので、初めての方にこそおすすめのプランです＾＾`,
-    price: 9000,
-    childPrice: 9000,
     vipSurcharge: 0,
     privateTourSurcharge: 0,
-    maxParticipants: getPlanMaxParticipants("S2"),
-    priceNote: "¥9,000 / 1名（最大10名まで）\n11名以上はLINEよりご相談ください",
     image: PLAN_COVER_IMAGE.snorkelPrivate,
     images: TOUR_IMAGE_PATHS.snorkel,
-    timeTags: ["07:00", "09:00", "11:00", "14:00", "16:00"],
+    timeTags: [...SNORKEL_TOUR_TIMES],
     provisionalTimes: ["08:00", "10:00", "12:00", "13:00"],
     flexibleScheduling: true,
-    durationHours: 2,
-    features: ["完全貸切", "ウミガメシュノーケル", "写真 & 動画サービス", "ウエットスーツ無料", "度付きメガネ無料", "Ace Pro 2 高画質撮影"],
+    features: ["完全貸切", "ウミガメシュノーケル", "写真 & 動画サービス", "ウエットスーツ無料", "度付きマスク無料", "Ace Pro 2 高画質撮影"],
     rank: 2,
-    ageRange: "5〜65歳",
     location: {
       northWind: "シギラビーチ",
       southWind: "新城海岸",
@@ -251,29 +231,16 @@ SNS映え間違いなし！
     meetingTime: {
       regular: "開始時刻の15分前に集合",
     },
-    options: [
-      {
-        name: "ウェットスーツ",
-        price: 1000,
-        freeForPrivate: true,
-      },
-      {
-        name: "度付きメガネ",
-        price: 1000,
-        freeForPrivate: true,
-      },
-    ],
     whatToBring: ["着替え", "タオル", "日焼け止め", "飲み物", "サンダル（推奨）"],
-    precautions: ["妊娠中の方は参加不可", "持病をお持ちの方は参加不可", "飲酒されている方は参加不可", "お体に不自由がある場合は必ず事前にご相談ください。", "60歳以上の方がご参加のグループは、安全面を考慮し本プランをご予約ください。"],
-    paymentMethod: "現地現金決済（できるだけお釣りが出ないようご協力ください）",
+    precautions: [policyCopy.pregnancyNotice, "持病・健康上の不安がある方は必ず予約前にご相談ください。内容を確認したうえで参加可否をご案内します。", "飲酒されている方は参加不可", "お体に不自由がある場合は必ず事前にご相談ください。", "60歳以上の方がご参加のグループは、安全面を考慮し本プランをご予約ください。"],
+    paymentMethod: `${policyCopy.paymentSummary}（できるだけお釣りが出ないようご協力ください）`,
   },
   {
     id: "S3",
-    name: "【アマゾン帰りの男と行く】本格ナイトツアー",
     description: `《0歳から参加OK！わくわくドキドキのジャングルナイトツアー》
 ・巨大なヤシガニや夜行性の生き物たちを探しに行こう！
 ・オカヤドカリや夜行性の生き物など、夜ならではの出会いがいっぱい♪
-・0歳の赤ちゃんからシニアの方まで、ご家族みんなで参加可能◎
+・0歳から参加可能。60歳以上の方を含むグループは【貸切】本格ナイトツアーをご予約ください。
 ・懐中電灯を持って夜の亜熱帯を探検する、ワクワクの非日常体験！
 ・探検中の様子の写真データは全て無料プレゼント★
 
@@ -295,35 +262,28 @@ SNS映え間違いなし！
 必ずご自身で事前にご確認の上ご予約をお願いいたします。
 
 0歳から参加OK！家族みんなで大冒険！
-宮古島の夜は、昼間とは違うワクワクがいっぱい！0歳の赤ちゃんからおじいちゃんおばあちゃんまで、三世代でのご参加も大歓迎です♪
+宮古島の夜は、昼間とは違うワクワクがいっぱい！0歳から参加OK！60歳以上の方を含む三世代のグループは【貸切】本格ナイトツアーをご予約ください。
 お子様の夏の自由研究や、ご家族の忘れられない夜の思い出作りにぴったりです！
 
 珍しい生き物やヤシガニに出会えるかも！
 宮古島の自然を知り尽くしたガイドが、その日一番生き物に出会えそうなポイントへご案内します。
 運が良ければ、絶滅危惧種に指定されている巨大なヤシガニに遭遇できるかも！？他にも夜にしか見られない珍しい植物や生き物たちがたくさん待っています。`,
-    price: 4000,
-    childPrice: 4000,
-    priceNote: "一律 ¥4,000（3歳以下無料）",
     image: PLAN_COVER_IMAGE.night,
     images: TOUR_IMAGE_PATHS.night,
     timeTags: [...NIGHT_TOUR_TIMES],
     provisionalTimes: [...NIGHT_TOUR_TIMES],
-    durationHours: 1.5,
     features: ["親子体験", "安全ガイド同行", "本格ナイトツアー", "3歳以下無料"],
     rank: 3,
-    ageRange: "0歳〜75歳",
-    location: "インギャーマリンガーデン付近（詳細は当日LINEにてご案内）",
+    location: "インギャーマリンガーデン付近・上比屋山遺跡など（集合場所は当日LINEにてご案内）",
     meetingTime: {
       regular: "開始時間と同じ（19:20 / 21:10 / 23:20）",
     },
-    options: [],
-    whatToBring: ["歩きやすい靴（ビーチサンダルも一応可能）", "虫よけスプレー", "飲み物", "懐中電灯（貸出あり）"],
-    precautions: ["お体に不自由がある場合は必ず事前にご相談ください。", "23:20便は翌日0:50頃の解散予定です。"],
-    paymentMethod: "現地現金決済（できるだけお釣りが出ないようご協力ください）",
+    whatToBring: ["歩きやすい靴（サンダルでも参加可能ですが、歩きやすい靴をおすすめします）", "虫よけスプレー", "飲み物", "懐中電灯（貸出あり）"],
+    precautions: [policyCopy.pregnancyNotice, "持病・健康上の不安がある方は必ず予約前にご相談ください。内容を確認したうえで参加可否をご案内します。", "お体に不自由がある場合は必ず事前にご相談ください。", "23:20便は翌日0:50頃の解散予定です。"],
+    paymentMethod: `${policyCopy.paymentSummary}（できるだけお釣りが出ないようご協力ください）`,
   },
   {
     id: "S4",
-    name: "🌅【貸切】サンセットSUP",
     description: `《1組貸切！絶景に癒される宮古島の海で極上のサンセットSUPツアー》
 ・海の上から眺める、オレンジ色に染まる夕日と空のグラデーションは圧巻！
 ・初心者でも安心の、安定感抜群のボードを使用◎
@@ -360,27 +320,22 @@ SUPの漕ぎ方や乗り方を陸上でしっかり丁寧にレクチャー致�
 エモーショナルなシルエット写真！
 夕日をバックにしたSUPツアーならではの、美しくてエモーショナルな「シルエット写真」の撮影が大人気です！
 写真にこだわりのあるガイドが、高性能カメラであなただけの特別な一枚を撮影します。どんなポーズがいいか、リクエストがあればどんどんお伝えくださいね◎もちろんデータは全てもれなくプレゼントいたします！`,
-    price: 9500,
-    childPrice: 8500,
     image: PLAN_COVER_IMAGE.sup,
     images: TOUR_IMAGE_PATHS.sup,
     timeTags: ["集合は日没の約90分前（8月17:45頃・12月16:30頃、前日にLINEで確定）"],
     provisionalTimes: ["集合時間は日没の約90分前（前日にLINEで確定）"],
-    durationHours: 2,
     features: ["1組貸切", "SUP体験", "夕日鑑賞", "初心者歓迎", "写真映え抜群", "ウェットスーツ無料"],
     rank: 4,
-    ageRange: "5〜65歳",
     location: "トゥリバー海浜公園・パシャビーチ・与那覇ビーチ北・インギャーマリンガーデン・西浜ビーチのいずれか（前日にLINEで確定）",
     meetingTime: {
       regular: "日没の約90分前（8月は17:45頃・12月は16:30頃。正確な時間と集合場所は前日にLINEで確定）",
     },
     whatToBring: ["着替え", "タオル", "日焼け止め", "飲み物", "サンダル"],
-    precautions: ["妊娠中の方は参加不可", "持病をお持ちの方は参加不可", "飲酒されている方は参加不可", "お体に不自由がある場合は必ず事前にご相談ください。"],
-    paymentMethod: "現地現金決済（できるだけお釣りが出ないようご協力ください）",
+    precautions: [policyCopy.pregnancyNotice, "持病・健康上の不安がある方は必ず予約前にご相談ください。内容を確認したうえで参加可否をご案内します。", "飲酒されている方は参加不可", "お体に不自由がある場合は必ず事前にご相談ください。"],
+    paymentMethod: `${policyCopy.paymentSummary}（できるだけお釣りが出ないようご協力ください）`,
   },
   {
     id: "S8",
-    name: "🌅 サンセットSUP",
     description: `《絶景に癒される宮古島の海で極上のサンセットSUPツアー》
 ・海の上から眺める、オレンジ色に染まる夕日と空のグラデーションは圧巻！
 ・初心者でも安心の、安定感抜群のボードを使用◎
@@ -418,27 +373,22 @@ SUPの漕ぎ方や乗り方を陸上でしっかり丁寧にレクチャー致�
 エモーショナルなシルエット写真！
 夕日をバックにしたSUPツアーならではの、美しくてエモーショナルな「シルエット写真」の撮影が大人気です！
 写真にこだわりのあるガイドが、高性能カメラであなただけの特別な一枚を撮影します。どんなポーズがいいか、リクエストがあればどんどんお伝えくださいね◎もちろんデータは全てもれなくプレゼントいたします！`,
-    price: 7500,
-    childPrice: 6500,
     image: PLAN_COVER_IMAGE.sup,
     images: TOUR_IMAGE_PATHS.sup,
     timeTags: ["集合は日没の約90分前（8月17:45頃・12月16:30頃、前日にLINEで確定）"],
     provisionalTimes: ["集合時間は日没の約90分前（前日にLINEで確定）"],
-    durationHours: 2,
     features: ["少人数制", "SUP体験", "夕日鑑賞", "初心者歓迎", "写真映え抜群", "穏やかな海"],
     rank: 8,
-    ageRange: "5〜65歳",
     location: "トゥリバー海浜公園・パシャビーチ・与那覇ビーチ北・インギャーマリンガーデン・西浜ビーチのいずれか（前日にLINEで確定）",
     meetingTime: {
       regular: "日没の約90分前（8月は17:45頃・12月は16:30頃。正確な時間と集合場所は前日にLINEで確定）",
     },
     whatToBring: ["着替え", "タオル", "日焼け止め", "飲み物", "サンダル"],
-    precautions: ["妊娠中の方は参加不可", "持病をお持ちの方は参加不可", "飲酒されている方は参加不可", "お体に不自由がある場合は必ず事前にご相談ください。"],
-    paymentMethod: "現地現金決済（できるだけお釣りが出ないようご協力ください）",
+    precautions: [policyCopy.pregnancyNotice, "持病・健康上の不安がある方は必ず予約前にご相談ください。内容を確認したうえで参加可否をご案内します。", "飲酒されている方は参加不可", "お体に不自由がある場合は必ず事前にご相談ください。"],
+    paymentMethod: `${policyCopy.paymentSummary}（できるだけお釣りが出ないようご協力ください）`,
   },
   {
     id: "S6",
-    name: "宮古島ドローンSUP体験",
     description: `《ドローン撮影付き！日中の宮古ブルーSUP体験》
 ・透明度の高い宮古ブルーの海で楽しむ日中SUPツアー。
 ・海上からの写真に加えて、ドローン空撮で宮古島らしい絶景カットを残せます。
@@ -458,34 +408,29 @@ SUPの漕ぎ方や乗り方を陸上で丁寧にレクチャーします。
 
 ※強風・雨・飛行制限・安全判断により、ドローン撮影ができない場合があります。
 ※開始時間・開催場所は、当日の海況・水位・風の状況により前後・変更となる場合があります。`,
-    price: 7500,
-    childPrice: 6500,
     image: PLAN_COVER_IMAGE.daySup,
     images: TOUR_IMAGE_PATHS.daySup,
-    timeTags: ["07:00", "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00"],
+    timeTags: [...DAY_SUP_TIMES],
     provisionalTimes: ["7:00〜16:00の1時間おきから選択"],
-    durationHours: 2,
     features: ["ドローン撮影付き", "日中SUP", "宮古ブルー", "初心者歓迎", "写真・動画付き"],
     rank: 5,
-    ageRange: "5〜65歳",
     location: "当日の海況・水位により変動（前日にLINEでご案内）",
     meetingTime: {
       regular: "選んだ開始時間の15分前に集合（海況・水位により時間が前後する場合があります）",
     },
     whatToBring: ["着替え", "タオル", "日焼け止め", "飲み物", "サンダル"],
     precautions: [
-      "妊娠中の方は参加不可",
-      "持病をお持ちの方は参加不可",
+      policyCopy.pregnancyNotice,
+      "持病・健康上の不安がある方は必ず予約前にご相談ください。内容を確認したうえで参加可否をご案内します。",
       "飲酒されている方は参加不可",
       "お体に不自由がある場合は必ず事前にご相談ください。",
       "開始時間は当日の海況・水位により前後する場合があります。",
       "強風・雨・飛行制限・安全判断により、ドローン撮影ができない場合があります。",
     ],
-    paymentMethod: "現地現金決済（できるだけお釣りが出ないようご協力ください）",
+    paymentMethod: `${policyCopy.paymentSummary}（できるだけお釣りが出ないようご協力ください）`,
   },
   {
     id: "S7",
-    name: "【貸切】宮古島ドローンSUP体験",
     description: `《1組貸切・専属ガイド！ドローン撮影付きの貸切日中SUP体験》
 ・透明度の高い宮古ブルーの海を、お客様グループだけの完全貸切で楽しむ日中SUPツアー。
 ・専属ガイドが付きっきり。海上からの写真に加えて、ドローン空撮で宮古島らしい絶景カットを残せます。
@@ -505,37 +450,31 @@ SUPの漕ぎ方や乗り方を陸上で丁寧にレクチャーします。
 
 ※強風・雨・飛行制限・安全判断により、ドローン撮影ができない場合があります。
 ※開始時間・開催場所は、当日の海況・水位・風の状況により前後・変更となる場合があります。
-※11名以上の場合はLINEよりご相談ください。`,
-    price: 9500,
-    childPrice: 8500,
-    maxParticipants: getPlanMaxParticipants("S7"),
+※${getPlanMaxParticipants("S7")! + 1}名以上の場合はLINEよりご相談ください。`,
     image: PLAN_COVER_IMAGE.daySup,
     images: TOUR_IMAGE_PATHS.daySup,
-    timeTags: ["07:00", "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00"],
+    timeTags: [...DAY_SUP_TIMES],
     provisionalTimes: ["7:00〜16:00の1時間おきから選択"],
-    durationHours: 2,
     features: ["1組貸切", "専属ガイド", "ドローン撮影付き", "日中SUP", "写真・動画付き"],
     rank: 6,
-    ageRange: "5〜65歳",
     location: "当日の海況・水位により変動（前日にLINEでご案内）",
     meetingTime: {
       regular: "選んだ開始時間の15分前に集合（海況・水位により時間が前後する場合があります）",
     },
     whatToBring: ["着替え", "タオル", "日焼け止め", "飲み物", "サンダル"],
     precautions: [
-      "妊娠中の方は参加不可",
-      "持病をお持ちの方は参加不可",
+      policyCopy.pregnancyNotice,
+      "持病・健康上の不安がある方は必ず予約前にご相談ください。内容を確認したうえで参加可否をご案内します。",
       "飲酒されている方は参加不可",
       "お体に不自由がある場合は必ず事前にご相談ください。",
       "開始時間は当日の海況・水位により前後する場合があります。",
       "強風・雨・飛行制限・安全判断により、ドローン撮影ができない場合があります。",
-      "11名以上の場合はLINEよりご相談ください。",
+      `${getPlanMaxParticipants("S7")! + 1}名以上の場合はLINEよりご相談ください。`,
     ],
-    paymentMethod: "現地現金決済（できるだけお釣りが出ないようご協力ください）",
+    paymentMethod: `${policyCopy.paymentSummary}（できるだけお釣りが出ないようご協力ください）`,
   },
   {
     id: "S5",
-    name: "【貸切】本格ナイトツアー",
     description: `《1組限定・完全貸切！プライベートジャングルナイトツアー》
 ・お客様のグループだけの完全貸切ナイトツアー！
 ・巨大なヤシガニや夜行性の生き物たちを専属ガイドと探しに行こう！
@@ -569,29 +508,22 @@ SUPの漕ぎ方や乗り方を陸上で丁寧にレクチャーします。
 専属ガイドのじっくり解説！
 通常プランでは時間の関係でお伝えしきれないことも、貸切プランならたっぷり解説！
 アマゾン帰りのガイドが、お客様の興味に合わせて生き物の生態や宮古島の自然について深く語ります。お子様の「なぜ？」にもじっくりお答えします♪`,
-    price: 8000,
-    childPrice: 8000,
-    priceNote: "一律 ¥8,000（3歳以下無料）",
     image: PLAN_COVER_IMAGE.nightPrivate,
     images: TOUR_IMAGE_PATHS.night,
     timeTags: [...NIGHT_TOUR_TIMES],
     provisionalTimes: [...NIGHT_TOUR_TIMES],
-    durationHours: 1.5,
     features: ["完全貸切", "専属ガイド", "親子体験", "3歳以下無料", "じっくり解説"],
     rank: 5,
-    ageRange: "0歳〜75歳",
-    location: "インギャーマリンガーデン付近（詳細は当日LINEにてご案内）",
+    location: "インギャーマリンガーデン付近・上比屋山遺跡など（集合場所は当日LINEにてご案内）",
     meetingTime: {
       regular: "開始時間と同じ（19:20 / 21:10 / 23:20）",
     },
-    options: [],
-    whatToBring: ["歩きやすい靴（ビーチサンダルも一応可能）", "虫よけスプレー", "飲み物", "懐中電灯（貸出あり）"],
-    precautions: ["お体に不自由がある場合は必ず事前にご相談ください。", "23:20便は翌日0:50頃の解散予定です。"],
-    paymentMethod: "現地現金決済（できるだけお釣りが出ないようご協力ください）",
+    whatToBring: ["歩きやすい靴（サンダルでも参加可能ですが、歩きやすい靴をおすすめします）", "虫よけスプレー", "飲み物", "懐中電灯（貸出あり）"],
+    precautions: [policyCopy.pregnancyNotice, "持病・健康上の不安がある方は必ず予約前にご相談ください。内容を確認したうえで参加可否をご案内します。", "お体に不自由がある場合は必ず事前にご相談ください。", "23:20便は翌日0:50頃の解散予定です。"],
+    paymentMethod: `${policyCopy.paymentSummary}（できるだけお釣りが出ないようご協力ください）`,
   },
   {
     id: "C1",
-    name: "ウミガメシュノーケル＆ヤシガニ探検 昼夜セット",
     description: `《昼はウミガメ、夜はヤシガニ！宮古島の海と夜を1日で楽しむ満喫セット》
 ・昼は宮古島の海でウミガメシュノーケル、夜はヤシガニや夜行性の生き物を探すヤシガニ探検へ。
 ・人気の2ツアーをセットにした昼夜セット。通常より1,000円お得です。
@@ -608,50 +540,35 @@ SUPの漕ぎ方や乗り方を陸上で丁寧にレクチャーします。
 ※ウミガメは野生生物のため、遭遇を保証するものではありません。
 ※ヤシガニ探検で観察できる生き物は、天候や季節により変わります。
 
-〜どちらか一方が中止となった場合の精算ルール〜
+〜当店判断で一部中止となった場合の精算ルール〜
+${policyCopy.partialCancellationNotice}
 ・両方開催：大人¥9,500 / 子供¥9,000
-・海亀のみ開催、夜中止：大人¥6,500 / 子供¥6,000
-・夜のみ開催、海亀中止：大人・子供¥4,000
-・両方中止：無料キャンセル
+・ウミガメのみ開催、夜中止：大人¥6,500 / 子供¥6,000
+・夜のみ開催、ウミガメ中止：大人・子供¥4,000
+・すべて中止の場合：${policyCopy.weatherNotice}
 
-※5歳以上が対象です（3歳以下は参加できません）。
+※参加者全員が5歳以上であることが必要です（0〜4歳のお子様は参加できません）。
 ※安全面を考慮し、60歳以上の方がご参加のグループは【貸切】ウミガメシュノーケル＆ヤシガニ探検 昼夜セットをご予約ください。`,
-    price: 9500,
-    childPrice: 9000,
-    priceNote: "大人¥9,500 / 子供¥9,000（通常¥10,500・1,000円お得）",
     image: PLAN_COVER_IMAGE.combo,
     images: TOUR_IMAGE_PATHS.combo,
-    timeTags: ["09:00", "11:00", "14:00", "16:00"],
-    provisionalTimes: ["09:00", "11:00", "14:00", "16:00"],
-    durationHours: 3.5,
+    timeTags: [...COMBO_TURTLE_TIMES],
+    provisionalTimes: [...COMBO_TURTLE_TIMES],
     features: ["昼:ウミガメシュノーケル", "夜:ヤシガニ探検", "海と夜を1日で", "通常より1,000円お得"],
     rank: 7,
-    ageRange: "5〜65歳",
     location: {
       northWind: "シギラビーチ",
       southWind: "新城海岸",
       default: "新城海岸",
     },
     meetingTime: {
-      regular: "海亀ツアー開始の15分前 / ヤシガニ探検は19:20 / 21:10 / 23:20",
+      regular: "ウミガメツアー開始の15分前 / ヤシガニ探検は19:20 / 21:10 / 23:20",
     },
-    options: [
-      {
-        name: "ウェットスーツ",
-        price: 1000,
-      },
-      {
-        name: "度付きメガネ",
-        price: 1000,
-      },
-    ],
-    whatToBring: ["着替え", "タオル", "日焼け止め", "飲み物", "サンダル（推奨）", "歩きやすい靴（夜用）", "虫よけスプレー"],
-    precautions: ["妊娠中の方は参加不可", "持病をお持ちの方は参加不可", "飲酒されている方は参加不可", "お体に不自由がある場合は必ず事前にご相談ください。", "3歳以下のお子様は参加できません（5歳以上が対象）。", "60歳以上の方がご参加のグループは、安全面を考慮し【貸切】ウミガメシュノーケル＆ヤシガニ探検 昼夜セットをご予約ください。"],
-    paymentMethod: "現地現金決済（できるだけお釣りが出ないようご協力ください）",
+    whatToBring: ["着替え", "タオル", "日焼け止め", "飲み物", "サンダル（推奨）", "歩きやすい靴（夜用・サンダルでも参加可能ですが、歩きやすい靴をおすすめします）", "虫よけスプレー"],
+    precautions: [policyCopy.pregnancyNotice, "持病・健康上の不安がある方は必ず予約前にご相談ください。内容を確認したうえで参加可否をご案内します。", "飲酒されている方は参加不可", "お体に不自由がある場合は必ず事前にご相談ください。", "参加者全員が5歳以上であることが必要です（0〜4歳のお子様は参加できません）。", "60歳以上の方がご参加のグループは、安全面を考慮し【貸切】ウミガメシュノーケル＆ヤシガニ探検 昼夜セットをご予約ください。"],
+    paymentMethod: `${policyCopy.paymentSummary}（できるだけお釣りが出ないようご協力ください）。${policyCopy.setPaymentNotice}`,
   },
   {
     id: "C2",
-    name: "【貸切】ウミガメシュノーケル＆ヤシガニ探検 昼夜セット",
     description: `《昼も夜も貸切！宮古島の海と夜を1日で楽しむ特別セット》
 ・昼は貸切ウミガメシュノーケル、夜は貸切ヤシガニ探検へ。
 ・通常¥17,000の貸切2ツアーをセットにした、¥1,000お得な昼夜セットです。
@@ -668,43 +585,36 @@ SUPの漕ぎ方や乗り方を陸上で丁寧にレクチャーします。
 ※ウミガメは野生生物のため、遭遇を保証するものではありません。
 ※ヤシガニ探検で観察できる生き物は、天候や季節により変わります。
 
-〜どちらか一方が中止となった場合の精算ルール〜
+〜当店判断で一部中止となった場合の精算ルール〜
+${policyCopy.partialCancellationNotice}
 ・両方開催：大人・子供¥16,000
-・海亀のみ開催、夜中止：大人・子供¥9,000
-・夜のみ開催、海亀中止：大人・子供¥8,000
-・両方中止：無料キャンセル
+・ウミガメのみ開催、夜中止：大人・子供¥9,000
+・夜のみ開催、ウミガメ中止：大人・子供¥8,000
+・すべて中止の場合：${policyCopy.weatherNotice}
 
-※5歳以上が対象です（3歳以下は参加できません）。
+※参加者全員が5歳以上であることが必要です（0〜4歳のお子様は参加できません）。
 ※60歳以上の方がご参加のグループも、貸切のため安心してご参加いただけます。
-※11名以上の場合はLINEよりご相談ください。`,
-    price: 16000,
-    childPrice: 16000,
-    maxParticipants: getPlanMaxParticipants("C2"),
-    priceNote: "大人・子供¥16,000（通常¥17,000・1,000円お得）",
+※${getPlanMaxParticipants("C2")! + 1}名以上の場合はLINEよりご相談ください。`,
     image: PLAN_COVER_IMAGE.combo,
     images: TOUR_IMAGE_PATHS.combo,
-    timeTags: ["09:00", "11:00", "14:00", "16:00"],
-    provisionalTimes: ["09:00", "11:00", "14:00", "16:00"],
-    durationHours: 3.5,
+    timeTags: [...COMBO_TURTLE_TIMES],
+    provisionalTimes: [...COMBO_TURTLE_TIMES],
     features: ["昼も夜も完全貸切", "専属ガイド", "夜:ヤシガニ探検", "通常より1,000円お得"],
     rank: 8,
-    ageRange: "5〜65歳",
     location: {
       northWind: "シギラビーチ",
       southWind: "新城海岸",
       default: "新城海岸",
     },
     meetingTime: {
-      regular: "海亀ツアー開始の15分前 / ヤシガニ探検は19:20 / 21:10 / 23:20",
+      regular: "ウミガメツアー開始の15分前 / ヤシガニ探検は19:20 / 21:10 / 23:20",
     },
-    options: [],
-    whatToBring: ["着替え", "タオル", "日焼け止め", "飲み物", "サンダル（推奨）", "歩きやすい靴（夜用）", "虫よけスプレー"],
-    precautions: ["妊娠中の方は参加不可", "持病をお持ちの方は参加不可", "飲酒されている方は参加不可", "お体に不自由がある場合は必ず事前にご相談ください。", "3歳以下のお子様は参加できません（5歳以上が対象）。", "60歳以上の方がご参加のグループは、安全面を考慮し本プランをご予約ください。", "11名以上はLINEよりご相談ください。"],
-    paymentMethod: "現地現金決済（できるだけお釣りが出ないようご協力ください）",
+    whatToBring: ["着替え", "タオル", "日焼け止め", "飲み物", "サンダル（推奨）", "歩きやすい靴（夜用・サンダルでも参加可能ですが、歩きやすい靴をおすすめします）", "虫よけスプレー"],
+    precautions: [policyCopy.pregnancyNotice, "持病・健康上の不安がある方は必ず予約前にご相談ください。内容を確認したうえで参加可否をご案内します。", "飲酒されている方は参加不可", "お体に不自由がある場合は必ず事前にご相談ください。", "参加者全員が5歳以上であることが必要です（0〜4歳のお子様は参加できません）。", "60歳以上の方がご参加のグループは、安全面を考慮し本プランをご予約ください。", `${getPlanMaxParticipants("C2")! + 1}名以上はLINEよりご相談ください。`],
+    paymentMethod: `${policyCopy.paymentSummary}（できるだけお釣りが出ないようご協力ください）。${policyCopy.setPaymentNotice}`,
   },
   {
     id: "C3",
-    name: "ウミガメシュノーケル＆ドローンSUP 海空セット",
     description: `《昼は海でウミガメ、空からドローンSUP！宮古ブルーを海と空で楽しむ海空セット》
 ・宮古島の海でウミガメシュノーケル、そのまま同じビーチでドローンSUP体験へ。
 ・人気の2ツアーをセットにした海空セット。通常より1,000円お得です。
@@ -717,55 +627,40 @@ SUPの漕ぎ方や乗り方を陸上で丁寧にレクチャーします。
 ③そのまま同じビーチでドローンSUP（約1.5時間）：宮古ブルーの海上をSUPでクルージング。ドローンで海上＆空からの絶景を撮影します。
 
 ※当日は基本的に同じビーチで2つのツアーを連続して開催します。ただし海況・水位によっては、異なるビーチでの開催になる場合があります。
-※別のビーチへ移動して開催する場合は、移動時間のぶん所要時間が伸びることがあります。
+※別のビーチへ移動する場合は、移動時間の分だけ延長する場合があります。
 ※海況・水位・天候により、開催時間・開催場所が変更になる場合があります。
 ※ウミガメは野生生物のため、遭遇を保証するものではありません。
 ※ドローン撮影は天候・風により実施できない場合があります。
 
-〜どちらか一方が中止となった場合の精算ルール〜
+〜当店判断で一部中止となった場合の精算ルール〜
+${policyCopy.partialCancellationNotice}
 ・両方開催：大人¥13,000 / 子供¥11,500
 ・シュノーケルのみ開催：大人¥6,500 / 子供¥6,000
 ・ドローンSUPのみ開催：大人¥7,500 / 子供¥6,500
-・両方中止：無料キャンセル
+・すべて中止の場合：${policyCopy.weatherNotice}
 
-※5歳以上が対象です（3歳以下は参加できません）。
+※参加者全員が5歳以上であることが必要です（0〜4歳のお子様は参加できません）。
 ※安全面を考慮し、60歳以上の方がご参加のグループは【貸切】ウミガメシュノーケル＆ドローンSUP 海空セットをご予約ください。`,
-    price: 13000,
-    childPrice: 11500,
-    priceNote: "大人¥13,000 / 子供¥11,500（通常¥14,000・1,000円お得）",
     image: PLAN_COVER_IMAGE.comboSeaSky,
     images: TOUR_IMAGE_PATHS.comboSeaSky,
-    timeTags: ["09:00", "11:00", "14:00", "16:00"],
-    provisionalTimes: ["09:00", "11:00", "14:00", "16:00"],
-    durationHours: 3,
+    timeTags: [...COMBO_TURTLE_TIMES],
+    provisionalTimes: [...COMBO_TURTLE_TIMES],
     features: ["昼:ウミガメシュノーケル", "昼:ドローンSUP空撮", "同じビーチで連続開催", "通常より1,000円お得"],
     rank: 9,
-    ageRange: "5〜65歳",
     location: {
       northWind: "シギラビーチ",
       southWind: "新城海岸",
       default: "新城海岸",
     },
     meetingTime: {
-      regular: "海亀ツアー開始の15分前（ドローンSUPはそのまま同じビーチで続けて開催）",
+      regular: "ウミガメツアー開始の15分前（ドローンSUPはそのまま同じビーチで続けて開催）",
     },
-    options: [
-      {
-        name: "ウェットスーツ",
-        price: 1000,
-      },
-      {
-        name: "度付きメガネ",
-        price: 1000,
-      },
-    ],
     whatToBring: ["着替え", "タオル", "日焼け止め", "飲み物", "サンダル（推奨）"],
-    precautions: ["妊娠中の方は参加不可", "持病をお持ちの方は参加不可", "飲酒されている方は参加不可", "お体に不自由がある場合は必ず事前にご相談ください。", "3歳以下のお子様は参加できません（5歳以上が対象）。", "60歳以上の方がご参加のグループは、安全面を考慮し【貸切】ウミガメシュノーケル＆ドローンSUP 海空セットをご予約ください。"],
-    paymentMethod: "現地現金決済（できるだけお釣りが出ないようご協力ください）",
+    precautions: [policyCopy.pregnancyNotice, "持病・健康上の不安がある方は必ず予約前にご相談ください。内容を確認したうえで参加可否をご案内します。", "飲酒されている方は参加不可", "お体に不自由がある場合は必ず事前にご相談ください。", "参加者全員が5歳以上であることが必要です（0〜4歳のお子様は参加できません）。", "60歳以上の方がご参加のグループは、安全面を考慮し【貸切】ウミガメシュノーケル＆ドローンSUP 海空セットをご予約ください。"],
+    paymentMethod: `${policyCopy.paymentSummary}（できるだけお釣りが出ないようご協力ください）。${policyCopy.setPaymentNotice}`,
   },
   {
     id: "C4",
-    name: "【貸切】ウミガメシュノーケル＆ドローンSUP 海空セット",
     description: `《海も空も1組貸切！宮古ブルーを自分たちのペースで楽しむ貸切海空セット》
 ・貸切ウミガメシュノーケル、そのまま同じビーチで貸切ドローンSUPへ。
 ・通常¥18,500の貸切2ツアーをセットにした、¥1,000お得な海空セットです。
@@ -779,57 +674,41 @@ SUPの漕ぎ方や乗り方を陸上で丁寧にレクチャーします。
 ③そのまま同じビーチで貸切ドローンSUP（約1.5時間）：宮古ブルーの海上をクルージング。ドローンで海上＆空からの絶景を撮影します。
 
 ※当日は基本的に同じビーチで2つのツアーを連続して開催します。ただし海況・水位によっては、異なるビーチでの開催になる場合があります。
-※別のビーチへ移動して開催する場合は、移動時間のぶん所要時間が伸びることがあります。
+※別のビーチへ移動する場合は、移動時間の分だけ延長する場合があります。
 ※海況・水位・天候により、開催時間・開催場所が変更になる場合があります。
 ※ウミガメは野生生物のため、遭遇を保証するものではありません。
 ※ドローン撮影は天候・風により実施できない場合があります。
 
-〜どちらか一方が中止となった場合の精算ルール〜
+〜当店判断で一部中止となった場合の精算ルール〜
+${policyCopy.partialCancellationNotice}
 ・両方開催：大人¥17,500 / 子供¥16,500
 ・シュノーケルのみ開催：大人・子供¥9,000
 ・ドローンSUPのみ開催：大人¥9,500 / 子供¥8,500
-・両方中止：無料キャンセル
+・すべて中止の場合：${policyCopy.weatherNotice}
 
-※5歳以上が対象です（3歳以下は参加できません）。
+※参加者全員が5歳以上であることが必要です（0〜4歳のお子様は参加できません）。
 ※60歳以上の方がご参加のグループも、貸切のため安心してご参加いただけます。
-※11名以上の場合はLINEよりご相談ください。`,
-    price: 17500,
-    childPrice: 16500,
-    maxParticipants: getPlanMaxParticipants("C4"),
-    priceNote: "大人¥17,500 / 子供¥16,500（通常¥18,500・1,000円お得）",
+※${getPlanMaxParticipants("C4")! + 1}名以上の場合はLINEよりご相談ください。`,
     image: PLAN_COVER_IMAGE.comboSeaSky,
     images: TOUR_IMAGE_PATHS.comboSeaSky,
-    timeTags: ["09:00", "11:00", "14:00", "16:00"],
-    provisionalTimes: ["09:00", "11:00", "14:00", "16:00"],
-    durationHours: 3,
-    features: ["昼も昼も完全貸切", "専属ガイド", "ドローン撮影付き", "通常より1,000円お得"],
+    timeTags: [...COMBO_TURTLE_TIMES],
+    provisionalTimes: [...COMBO_TURTLE_TIMES],
+    features: ["海も空も完全貸切", "専属ガイド", "ドローン撮影付き", "通常より1,000円お得"],
     rank: 10,
-    ageRange: "5〜65歳",
     location: {
       northWind: "シギラビーチ",
       southWind: "新城海岸",
       default: "新城海岸",
     },
     meetingTime: {
-      regular: "海亀ツアー開始の15分前（ドローンSUPはそのまま同じビーチで続けて開催）",
+      regular: "ウミガメツアー開始の15分前（ドローンSUPはそのまま同じビーチで続けて開催）",
     },
-    options: [
-      {
-        name: "ウェットスーツ",
-        price: 1000,
-      },
-      {
-        name: "度付きメガネ",
-        price: 1000,
-      },
-    ],
     whatToBring: ["着替え", "タオル", "日焼け止め", "飲み物", "サンダル（推奨）"],
-    precautions: ["妊娠中の方は参加不可", "持病をお持ちの方は参加不可", "飲酒されている方は参加不可", "お体に不自由がある場合は必ず事前にご相談ください。", "3歳以下のお子様は参加できません（5歳以上が対象）。", "60歳以上の方がご参加のグループは、安全面を考慮し本プランをご予約ください。", "11名以上はLINEよりご相談ください。"],
-    paymentMethod: "現地現金決済（できるだけお釣りが出ないようご協力ください）",
+    precautions: [policyCopy.pregnancyNotice, "持病・健康上の不安がある方は必ず予約前にご相談ください。内容を確認したうえで参加可否をご案内します。", "飲酒されている方は参加不可", "お体に不自由がある場合は必ず事前にご相談ください。", "参加者全員が5歳以上であることが必要です（0〜4歳のお子様は参加できません）。", "60歳以上の方がご参加のグループは、安全面を考慮し本プランをご予約ください。", `${getPlanMaxParticipants("C4")! + 1}名以上はLINEよりご相談ください。`],
+    paymentMethod: `${policyCopy.paymentSummary}（できるだけお釣りが出ないようご協力ください）。${policyCopy.setPaymentNotice}`,
   },
   {
     id: "C5",
-    name: "ウミガメシュノーケル＆ドローンSUP＆ナイトツアー まるごと1日セット",
     description: `《宮古島の海・空・夜を1日で遊び尽くす！人気3ツアーのまるごと1日セット》
 ・朝はウミガメシュノーケル、昼はドローンSUP、夜はナイトツアー。
 ・人気の3ツアーをまとめた1日セット。通常より2,000円お得です。
@@ -845,48 +724,33 @@ SUPの漕ぎ方や乗り方を陸上で丁寧にレクチャーします。
 ※ウミガメは野生生物のため、遭遇を保証するものではありません。
 ※ドローン撮影は天候・風により実施できない場合があります。
 
-〜一部中止となった場合の精算ルール〜
-・参加済みのツアー分のみのご精算（ウミガメ¥6,500 / ドローンSUP¥7,500 / ナイトツアー¥4,000・子供料金は各プラン準拠）
-・すべて中止：無料キャンセル
+〜当店判断で一部中止となった場合の精算ルール〜
+${policyCopy.partialCancellationNotice}
+・単品料金（ウミガメ：大人¥6,500 / 子供¥6,000、ドローンSUP：大人¥7,500 / 子供¥6,500、ナイトツアー：大人・子供¥4,000）
+・すべて中止の場合：${policyCopy.weatherNotice}
 
-※5歳以上が対象です（3歳以下は参加できません）。
+※参加者全員が5歳以上であることが必要です（0〜4歳のお子様は参加できません）。
 ※安全面を考慮し、60歳以上の方がご参加のグループは【貸切】ウミガメシュノーケル＆ドローンSUP＆ナイトツアー まるごと1日セットをご予約ください。`,
-    price: 16000,
-    childPrice: 14500,
-    priceNote: "大人¥16,000 / 子供¥14,500（通常¥18,000・2,000円お得）",
     image: PLAN_COVER_IMAGE.comboFullDay,
     images: TOUR_IMAGE_PATHS.comboFullDay,
-    timeTags: ["09:00", "11:00", "14:00", "16:00"],
-    provisionalTimes: ["09:00", "11:00", "14:00", "16:00"],
-    durationHours: 4.5,
+    timeTags: [...COMBO_TURTLE_TIMES],
+    provisionalTimes: [...COMBO_TURTLE_TIMES],
     features: ["朝:ウミガメシュノーケル", "昼:ドローンSUP", "夜:ナイトツアー", "通常より2,000円お得"],
     rank: 11,
-    ageRange: "5〜65歳",
     location: {
       northWind: "シギラビーチ",
       southWind: "新城海岸",
       default: "新城海岸",
     },
     meetingTime: {
-      regular: "海亀ツアー開始の15分前 / ナイトツアーは19:20 / 21:10 / 23:20",
+      regular: "ウミガメツアー開始の15分前 / ナイトツアーは19:20 / 21:10 / 23:20",
     },
-    options: [
-      {
-        name: "ウェットスーツ",
-        price: 1000,
-      },
-      {
-        name: "度付きメガネ",
-        price: 1000,
-      },
-    ],
-    whatToBring: ["着替え", "タオル", "日焼け止め", "飲み物", "サンダル（推奨）", "歩きやすい靴（夜用）", "虫よけスプレー"],
-    precautions: ["1日に3つのツアーを行うため、体力に余裕を持ってご参加ください。", "妊娠中の方は参加不可", "持病をお持ちの方は参加不可", "飲酒されている方は参加不可", "3歳以下のお子様は参加できません（5歳以上が対象）。", "60歳以上の方がご参加のグループは、安全面を考慮し【貸切】ウミガメシュノーケル＆ドローンSUP＆ナイトツアー まるごと1日セットをご予約ください。"],
-    paymentMethod: "現地現金決済（できるだけお釣りが出ないようご協力ください）",
+    whatToBring: ["着替え", "タオル", "日焼け止め", "飲み物", "サンダル（推奨）", "歩きやすい靴（夜用・サンダルでも参加可能ですが、歩きやすい靴をおすすめします）", "虫よけスプレー"],
+    precautions: ["1日に3つのツアーを行うため、体力に余裕を持ってご参加ください。", policyCopy.pregnancyNotice, "持病・健康上の不安がある方は必ず予約前にご相談ください。内容を確認したうえで参加可否をご案内します。", "飲酒されている方は参加不可", "参加者全員が5歳以上であることが必要です（0〜4歳のお子様は参加できません）。", "60歳以上の方がご参加のグループは、安全面を考慮し【貸切】ウミガメシュノーケル＆ドローンSUP＆ナイトツアー まるごと1日セットをご予約ください。"],
+    paymentMethod: `${policyCopy.paymentSummary}（できるだけお釣りが出ないようご協力ください）。${policyCopy.setPaymentNotice}`,
   },
   {
     id: "C6",
-    name: "【貸切】ウミガメシュノーケル＆ドローンSUP＆ナイトツアー まるごと1日セット",
     description: `《海も空も夜も完全貸切！宮古島を1日まるごと遊び尽くす特別セット》
 ・朝のウミガメシュノーケル、昼のドローンSUP、夜のナイトツアーをすべて1組貸切で。
 ・通常¥26,500の貸切3ツアーをまとめた、¥2,000お得な1日セットです。
@@ -903,43 +767,36 @@ SUPの漕ぎ方や乗り方を陸上で丁寧にレクチャーします。
 ※ウミガメは野生生物のため、遭遇を保証するものではありません。
 ※ドローン撮影は天候・風により実施できない場合があります。
 
-〜一部中止となった場合の精算ルール〜
-・参加済みのツアー分のみのご精算（貸切ウミガメ¥9,000 / 貸切ドローンSUP¥9,500 / 貸切ナイトツアー¥8,000）
-・すべて中止：無料キャンセル
+〜当店判断で一部中止となった場合の精算ルール〜
+${policyCopy.partialCancellationNotice}
+・単品料金（貸切ウミガメ：大人・子供¥9,000、貸切ドローンSUP：大人¥9,500 / 子供¥8,500、貸切ナイトツアー：大人・子供¥8,000）
+・すべて中止の場合：${policyCopy.weatherNotice}
 
-※5歳以上が対象です（3歳以下は参加できません）。
+※参加者全員が5歳以上であることが必要です（0〜4歳のお子様は参加できません）。
 ※60歳以上の方がご参加のグループも、貸切のため安心してご参加いただけます。
-※11名以上の場合はLINEよりご相談ください。`,
-    price: 24500,
-    childPrice: 23500,
-    maxParticipants: getPlanMaxParticipants("C6"),
-    priceNote: "大人¥24,500 / 子供¥23,500（通常¥26,500・2,000円お得）",
+※${getPlanMaxParticipants("C6")! + 1}名以上の場合はLINEよりご相談ください。`,
     image: PLAN_COVER_IMAGE.comboFullDay,
     images: TOUR_IMAGE_PATHS.comboFullDay,
-    timeTags: ["09:00", "11:00", "14:00", "16:00"],
-    provisionalTimes: ["09:00", "11:00", "14:00", "16:00"],
-    durationHours: 4.5,
+    timeTags: [...COMBO_TURTLE_TIMES],
+    provisionalTimes: [...COMBO_TURTLE_TIMES],
     features: ["朝も昼も夜も完全貸切", "専属ガイド", "海・空・夜を1日で", "通常より2,000円お得"],
     rank: 12,
-    ageRange: "5〜65歳",
     location: {
       northWind: "シギラビーチ",
       southWind: "新城海岸",
       default: "新城海岸",
     },
     meetingTime: {
-      regular: "海亀ツアー開始の15分前 / ナイトツアーは19:20 / 21:10 / 23:20",
+      regular: "ウミガメツアー開始の15分前 / ナイトツアーは19:20 / 21:10 / 23:20",
     },
-    options: [],
-    whatToBring: ["着替え", "タオル", "日焼け止め", "飲み物", "サンダル（推奨）", "歩きやすい靴（夜用）", "虫よけスプレー"],
-    precautions: ["1日に3つのツアーを行うため、体力に余裕を持ってご参加ください。", "妊娠中の方は参加不可", "持病をお持ちの方は参加不可", "飲酒されている方は参加不可", "3歳以下のお子様は参加できません（5歳以上が対象）。", "60歳以上の方がご参加のグループは、安全面を考慮し本プランをご予約ください。", "11名以上はLINEよりご相談ください。"],
-    paymentMethod: "現地現金決済（できるだけお釣りが出ないようご協力ください）",
+    whatToBring: ["着替え", "タオル", "日焼け止め", "飲み物", "サンダル（推奨）", "歩きやすい靴（夜用・サンダルでも参加可能ですが、歩きやすい靴をおすすめします）", "虫よけスプレー"],
+    precautions: ["1日に3つのツアーを行うため、体力に余裕を持ってご参加ください。", policyCopy.pregnancyNotice, "持病・健康上の不安がある方は必ず予約前にご相談ください。内容を確認したうえで参加可否をご案内します。", "飲酒されている方は参加不可", "参加者全員が5歳以上であることが必要です（0〜4歳のお子様は参加できません）。", "60歳以上の方がご参加のグループは、安全面を考慮し本プランをご予約ください。", `${getPlanMaxParticipants("C6")! + 1}名以上はLINEよりご相談ください。`],
+    paymentMethod: `${policyCopy.paymentSummary}（できるだけお釣りが出ないようご協力ください）。${policyCopy.setPaymentNotice}`,
   },
   {
     id: "slide-boat",
     brand: "umigame-kyodai",
     status: "coming_soon",
-    name: "海亀兄弟のスライダーボートシュノーケル",
     description: `《近日公開！滑り台付きボートで遊ぶ新シュノーケルプラン》
 ・滑り台付きボートで、海へそのままダイブできる新しい海遊び。
 ・飛び込み台付きで、ファミリーもグループもアクティブに楽しめます。
@@ -947,8 +804,6 @@ SUPの漕ぎ方や乗り方を陸上で丁寧にレクチャーします。
 ・午前便と午後便の2便制を予定しています。
 
 現在は告知のみ公開中です。予約受付開始までしばらくお待ちください。`,
-    price: 14000,
-    childPrice: 12000,
     image: "/images/slide-boat-photo.jpg",
     images: TOUR_IMAGE_PATHS.slideBoat,
     timeTags: ["09:00", "13:00"],
@@ -957,10 +812,8 @@ SUPの漕ぎ方や乗り方を陸上で丁寧にレクチャーします。
       { label: "午前便", start: "09:00", end: "12:00" },
       { label: "午後便", start: "13:00", end: "16:00" },
     ],
-    durationHours: 3,
     features: ["滑り台付きボート", "飛び込み台", "ボートシュノーケル", "トゥリバーマリーナ集合"],
     rank: 6,
-    ageRange: "5〜65歳（予定）",
     location: "トゥリバーマリーナ",
     meetingPoint: {
       name: "トゥリバーマリーナ",
@@ -971,17 +824,12 @@ SUPの漕ぎ方や乗り方を陸上で丁寧にレクチャーします。
       regular: "午前便 8:45 / 午後便 12:45（予定）",
     },
     whatToBring: ["水着（着用して集合）", "着替え", "タオル", "日焼け止め", "飲み物", "酔い止め（必要な方）"],
-    precautions: ["現在は近日公開のため予約受付前です", "妊娠中の方は参加不可", "持病をお持ちの方は参加前に必ずご相談ください", "飲酒されている方は参加不可", "海況・天候により内容や開催可否が変更になる場合があります"],
-    paymentMethod: "現地現金決済予定（受付開始時に正式案内）",
+    precautions: ["現在は近日公開のため予約受付前です", policyCopy.pregnancyNotice, "持病・健康上の不安がある方は必ず予約前にご相談ください。内容を確認したうえで参加可否をご案内します。", "飲酒されている方は参加不可", "海況・天候により内容や開催可否が変更になる場合があります"],
+    paymentMethod: `${policyCopy.paymentSummary}予定（受付開始時に正式案内）`,
   },
   ]
 
-export const CANCELLATION_POLICY = {
-  previousDay: "無料",
-  sameDay: "100%",
-  noShow: "100%",
-  weatherCancellation: "無料",
-}
+export { CANCELLATION_POLICY } from "@/lib/booking-policy"
 
 export interface Staff {
   id: string
@@ -1004,16 +852,23 @@ export const STAFFS: Staff[] = STAFF_MEMBERS.map((m) => ({
 // 以前ここにあった FAQS（24件）と FAQ 型は、トップページ・ピラーページの
 // ローカル定義とあわせて lib/faq.ts へ集約した（文言は変更していない）。
 
-// プラン名は PLAN_DETAILS、料金は PLAN_PRICE_DATA を単一ソースとして上書きし、
-// 2マスター間の二重管理（とS3/S4で起きていた名前ドリフト）を解消する。
-// ※ name 検知ベースのGASは影響なし（キーワードは保持）。
+// 本文や画像のローカル設定に、各正本の事実を組み合わせる読み取り用ビュー。
+// 表示時間は顧客向け総所要時間。GAS / Calendar の内部占有時間には使わない。
 export const PLANS: Plan[] = RAW_PLANS.map((plan) => {
   const price = PLAN_PRICE_DATA[plan.id]
+  const priceDisplay = getPlanPriceDisplay(plan.id)
   return {
     ...plan,
-    name: PLAN_DETAILS[plan.id]?.name ?? plan.name,
-    price: price?.price ?? plan.price,
-    childPrice: price?.childPrice ?? plan.childPrice,
+    name: PLAN_DETAILS[plan.id].name,
+    price: price.price,
+    childPrice: price.childPrice,
+    priceNote: priceDisplay
+      ? `${priceDisplay.compact}${priceDisplay.caption ? `（${priceDisplay.caption}）` : ""}`
+      : undefined,
+    ageRange: `${getPlanAgeLabel(plan.id)}${plan.status === "coming_soon" ? "（予定）" : ""}`,
+    maxParticipants: getPlanMaxParticipants(plan.id),
+    durationHours: getCustomerDurationHours(plan.id),
+    options: getPlanRentalOptions(plan.id),
   }
 })
 

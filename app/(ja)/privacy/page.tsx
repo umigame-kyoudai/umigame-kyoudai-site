@@ -1,3 +1,4 @@
+import { SITE_CONFIG, formatBusinessHours } from "@/lib/site-config"
 import type { Metadata } from "next"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
@@ -100,11 +101,11 @@ const SECTIONS: Array<{ title: string; body: React.ReactNode }> = [
     title: "8. お問い合わせ窓口",
     body: (
       <p>
-        海亀兄弟（〒906-0014 沖縄県宮古島市平良松原107-1）
+        {SITE_CONFIG.siteNameJa}（{SITE_CONFIG.address.formattedJa}）
         <br />
-        電話: <TrackedTel href="tel:08053442439" location="privacy" className="text-emerald-700 underline">080-5344-2439</TrackedTel>（7:00〜18:00・年中無休）
+        電話: <TrackedTel href={`tel:${SITE_CONFIG.phone}`} location="privacy" className="text-emerald-700 underline">{SITE_CONFIG.phoneDisplayJa}</TrackedTel>（{formatBusinessHours("ja", "〜")}・年中無休）
         <br />
-        メール: <a href="mailto:info@umigamekyoudaimiyakojima.com" className="text-emerald-700 underline break-all">info@umigamekyoudaimiyakojima.com</a>
+        メール: <a href={`mailto:${SITE_CONFIG.publicEmail}`} className="text-emerald-700 underline break-all">{SITE_CONFIG.publicEmail}</a>
       </p>
     ),
   },

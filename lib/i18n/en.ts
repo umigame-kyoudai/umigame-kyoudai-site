@@ -1,9 +1,31 @@
 // 英語版サイト（/en配下）のコンテンツ定義。
-// 価格・時間帯などの数値は lib/data.ts の PLANS が単一の真実 — ここには文章のみを持つ。
+// 料金・年齢・人数・時刻は plan-facts 経由で既存のWeb正本から取得し、ここでは翻訳を持つ。
 
 import type { IntlCommonCopy, IntlDict, IntlFormCopy, IntlUiCopy } from "./types"
 import { EN_PRICE_SUPPORT_NOTE } from "./en-prices"
 import { INTL_PLAN_IDS } from "./locales"
+import { navigationItems } from "@/lib/navigation"
+import { pagePath } from "@/lib/routes"
+import { ADULT_AGE_MIN, DAY_SUP_TIMES, SENIOR_RESTRICTED_AGE } from "@/lib/plan-flags"
+import { SUNSET_SUP_SPOTS } from "@/lib/beach-info"
+import {
+  formatIntlAgeNote, formatIntlFreeChildNote, formatIntlGroupLimit,
+  formatIntlNightTimeNote, formatIntlPriceNote, formatIntlRentalFee, formatIntlTimeList,
+  getIntlPlanFacts,
+} from "./plan-facts"
+import { SITE_CONFIG, formatBusinessHours } from "@/lib/site-config"
+import { getBookingPolicyCopy } from "@/lib/booking-policy-copy"
+
+const snorkelFacts = getIntlPlanFacts("S2")
+const sunsetFacts = getIntlPlanFacts("S4")
+const nightFacts = getIntlPlanFacts("S5")
+const daySupFacts = getIntlPlanFacts("S7")
+const nightFreeAge = nightFacts.freeAgeRange
+const daySupTimes = formatIntlTimeList(DAY_SUP_TIMES, "en")
+
+const policy = getBookingPolicyCopy("en")
+const previousDayCancellation = `Cancellation until the day before your tour is ${policy.previousDayFee}.`
+const cancellationFees = `${previousDayCancellation} Same-day cancellations: ${policy.sameDayFee} of the tour fee. No-shows: ${policy.noShowFee} of the tour fee.`
 
 export interface EnSection {
   heading: string
@@ -48,27 +70,27 @@ const EN_PLANS_ALL: EnPlanContent[] = [
     tagline: "One group only — your own guide, your own pace, and the turtles all to yourselves.",
     description: [
       "A fully private version of our signature sea turtle snorkeling tour, limited to one group at a time. With a dedicated guide all to yourselves, there's no waiting for other guests and no pressure — perfect if you're worried about small children, slower swimmers, or simply want an unhurried, special experience together.",
-      "You'll enjoy the same shallow, calm beach and high turtle encounter rate as our regular tour, with extra-personal photo support: tell your guide exactly which shots and videos you'd like. Wetsuit and prescription-mask rentals are free on the private plan, and every photo and video is included free of charge.",
+      `You'll enjoy the same shallow, calm beach and high turtle encounter rate as our regular tour, with extra-personal photo support: tell your guide exactly which shots and videos you'd like. Wetsuit and prescription-mask rentals on this plan: ${formatIntlRentalFee("S2", "en")}, and every photo and video is included free of charge.`,
     ],
     highlights: [
       "Completely private — one group per tour",
       "Dedicated guide and fully flexible pacing",
       "High sea turtle encounter rate",
-      "Free wetsuit and prescription-mask rental",
+      `Wetsuit and prescription-mask rental: ${formatIntlRentalFee("S2", "en")}`,
       "Free photos and videos, with custom shot requests welcome",
     ],
-    included: ["Private guide", "Snorkel set and life jacket", "Wetsuit & prescription mask (free on this plan)", "All photo & video files (free, unlimited)", "Insurance"],
+    included: ["Private guide", "Snorkel set and life jacket", `Wetsuit (${formatIntlRentalFee("S2", "en")}) and prescription mask (${formatIntlRentalFee("S2", "en")}; adult sizes only, no child sizes)`, "All photo & video files (free, unlimited)", "Insurance"],
     whatToBring: ["Swimsuit (worn under your clothes)", "Change of clothes & towel", "Sunscreen", "Drinks", "Sandals (recommended)"],
     precautions: [
-      "Guests who are pregnant cannot participate",
-      "Guests with serious pre-existing conditions cannot participate — please ask us first",
+      policy.pregnancyNotice,
+      "If you have a pre-existing medical condition or any health concerns, you must consult us before booking. We will review your situation and let you know whether you can participate",
       "Guests who have been drinking alcohol cannot participate",
-      "This is the recommended plan for groups including guests aged 60 or over",
+      `This is the recommended plan for groups including guests aged ${SENIOR_RESTRICTED_AGE} or over`,
     ],
-    ageNote: "Ages 5 to 65",
-    locationNote: "Aragusuku Beach or Shigira Beach (chosen by wind direction on the day; meet 15 minutes before your start time)",
-    priceNote: "¥9,000 per person, up to 10 guests. For 11 or more, contact us on LINE.",
-    priceNoteShort: "¥9,000 / person",
+    ageNote: formatIntlAgeNote("S2", "en"),
+    locationNote: "Aragusuku Beach, Higashi-Hennazaki Beach, Waiwai Beach, or Shigira Beach (chosen for wind and sea conditions; the meeting point is confirmed via LINE the day before; meet 15 minutes before your start time)",
+    priceNote: formatIntlPriceNote("S2", "en"),
+    priceNoteShort: formatIntlPriceNote("S2", "en", true),
   },
   {
     id: "S4",
@@ -82,18 +104,19 @@ const EN_PLANS_ALL: EnPlanContent[] = [
       "Private for your group — a truly private sunset",
       "Extra-stable boards, beginner-friendly coaching",
       "Drone shots from above plus magic-hour silhouettes, free of charge",
-      "About 2 relaxing hours on the water",
+      `About ${sunsetFacts.durationHours} relaxing hours on the water`,
     ],
-    included: ["SUP board, paddle and life jacket", "Wetsuit and prescription mask (adult sizes only)", "Drone photography", "On-land lesson", "All photo & video files (free, unlimited)", "Insurance"],
+    included: ["SUP board, paddle and life jacket", `Wetsuit and prescription mask (${formatIntlRentalFee("S4", "en")}; mask: adult sizes only, no child sizes)`, "Drone photography", "On-land lesson", "All photo & video files (free, unlimited)", "Insurance"],
     whatToBring: ["Swimsuit (worn under your clothes)", "Change of clothes & towel", "Sunscreen", "Drinks", "Sandals"],
     precautions: [
-      "Guests who are pregnant cannot participate",
-      "Guests with serious pre-existing conditions cannot participate — please ask us first",
+      policy.pregnancyNotice,
+      "If you have a pre-existing medical condition or any health concerns, you must consult us before booking. We will review your situation and let you know whether you can participate",
       "Guests who have been drinking alcohol cannot participate",
+      "Drone shooting may not be possible due to weather, wind, flight restrictions or safety decisions. Photos from the water will still be taken",
     ],
-    ageNote: "Ages 5 to 65",
-    timeNote: "Meet about 90 minutes before sunset — around 5:45–6:00 PM in summer (June–August) and 4:30–5:00 PM in winter (November–February). The tour lasts about 2 hours and ends roughly 30 minutes after sunset. We'll confirm the exact meeting time via LINE the day before your tour.",
-    locationNote: "Held at one of five spots — Turiba Seaside Park, Pasha Beach, the north end of Yonaha Beach, Ingya Marine Garden, or Nishihama Beach — chosen for the day's wind and sea conditions. Your guide will confirm the exact meeting spot with a map via LINE the day before your tour.",
+    ageNote: formatIntlAgeNote("S4", "en"),
+    timeNote: `Meet about 90 minutes before sunset; the time changes with the season. The tour lasts about ${sunsetFacts.durationHours} hours and ends roughly 30 minutes after sunset. We'll confirm the exact meeting time via LINE the day before your tour.`,
+    locationNote: `Held at one of ${SUNSET_SUP_SPOTS.length} spots — Turiba Seaside Park, Pasha Beach, the north end of Yonaha Beach, Ingya Marine Garden, or Nishihama Beach — chosen for the day's wind and sea conditions. Your guide will confirm the exact meeting spot with a map via LINE the day before your tour.`,
   },
   {
     id: "S7",
@@ -102,7 +125,7 @@ const EN_PLANS_ALL: EnPlanContent[] = [
     description: [
       "Enjoy a fully private daytime SUP session on Miyakojima's clear blue water. With a dedicated guide for your group only, you can paddle at your own pace and ask freely for the shots you want — close-up photos from the water and aerial drone shots when conditions allow.",
       "First time on a SUP board? No problem. We use stable boards and your dedicated guide explains the basics on land before you go out. You can paddle seated at first and stand up when you feel comfortable.",
-      "Choose your preferred start time when you book — hourly slots from 7:00 to 16:00. We will send your exact meeting spot via LINE the day before your tour, and if sea conditions, tide level or wind call for a small adjustment to the time, we will confirm that too.",
+      `Choose your preferred start time when you book: ${daySupTimes}. We will send your exact meeting spot via LINE the day before your tour, and if sea conditions, tide level or wind call for a small adjustment to the time, we will confirm that too.`,
     ],
     highlights: [
       "Private tour for your group only, with a dedicated guide",
@@ -111,18 +134,18 @@ const EN_PLANS_ALL: EnPlanContent[] = [
       "Stable boards and beginner-friendly coaching",
       "Free photos and videos from the tour",
     ],
-    included: ["SUP board, paddle and life jacket", "On-land lesson", "Drone shooting when conditions allow", "Photo & video files", "Insurance", "Dedicated private guide"],
+    included: ["SUP board, paddle and life jacket", `Wetsuit (${formatIntlRentalFee("S7", "en")})`, `Prescription mask (${formatIntlRentalFee("S7", "en")}; adult sizes only, no child sizes)`, "On-land lesson", "Drone shooting when conditions allow", "Photo & video files", "Insurance", "Dedicated private guide"],
     whatToBring: ["Swimsuit (worn under your clothes)", "Change of clothes & towel", "Sunscreen", "Drinks", "Sandals"],
     precautions: [
-      "Guests who are pregnant cannot participate",
-      "Guests with serious pre-existing conditions cannot participate — please ask us first",
+      policy.pregnancyNotice,
+      "If you have a pre-existing medical condition or any health concerns, you must consult us before booking. We will review your situation and let you know whether you can participate",
       "Guests who have been drinking alcohol cannot participate",
       "Drone shooting may not be possible due to wind, rain, flight restrictions or safety decisions",
       "Start time and location may change depending on sea conditions, tide level and wind",
-      "For groups of 11 or more, please contact us via LINE",
+      ...(formatIntlGroupLimit("S7", "en") ? [formatIntlGroupLimit("S7", "en")] : []),
     ],
-    ageNote: "Ages 5 to 65",
-    timeNote: "Choose a start time from hourly slots between 7:00 and 16:00 when you book. Meet 15 minutes before the start — the time may shift slightly with sea conditions and tide, and we'll confirm it via LINE.",
+    ageNote: formatIntlAgeNote("S7", "en"),
+    timeNote: `Choose a start time when you book: ${daySupTimes}. Meet 15 minutes before the start — the time may shift slightly with sea conditions and tide, and we'll confirm it via LINE.`,
     locationNote: "Location depends on the day's sea, tide and wind conditions (your guide will tell you via LINE the day before your tour)",
   },
   {
@@ -131,23 +154,23 @@ const EN_PLANS_ALL: EnPlanContent[] = [
     tagline: "The night expedition, fully reserved for your group — explore at exactly your own pace.",
     description: [
       "All the adventure of our jungle night tour, completely private. Your own guide leads only your group, so you can linger over a fascinating creature, stop for photos whenever you like, and let small children or grandparents set the pace — no other guests to keep up with.",
-      "With the guide's full attention, you'll get deeper stories about Miyakojima's wildlife and nature than the regular tour has time for, including patient answers to every \"why?\" your kids can come up with. Babies (age 0) to seniors are welcome, kids 3 and under join free, and expedition photos are all included.",
+      `With the guide's full attention, you'll get deeper stories about Miyakojima's wildlife and nature than the regular tour has time for, including patient answers to every "why?" your kids can come up with. Guests aged ${nightFacts.minAge} to ${nightFacts.maxAge} are welcome. Participation is ${formatIntlFreeChildNote("S5", "en")}, and expedition photos are all included.`,
     ],
     highlights: [
       "Completely private — one group only",
       "Dedicated guide with in-depth commentary",
       "Search for endangered giant coconut crabs",
-      "Open to all ages (0–75), kids 3 and under free",
+      `${formatIntlAgeNote("S5", "en")}; ${formatIntlFreeChildNote("S5", "en")}`,
       "Free photos of your expedition",
     ],
     included: ["Private expert nature guide", "Flashlight rental", "All photo files (free)", "Insurance"],
-    whatToBring: ["Comfortable walking shoes (sandals possible)", "Insect repellent", "Drinks", "Flashlight if you have one (rentals available)"],
-    precautions: ["If you have any mobility or health concerns, please consult us in advance"],
-    ageNote: "Ages 0 to 75",
-    timeNote: "Three departures nightly: 7:20 PM, 9:10 PM, and 11:20 PM (meet at the start time; the 11:20 PM tour ends around 12:50 AM the next day)",
-    locationNote: "Near Ingya Marine Garden (exact meeting point shared via LINE on the day of your tour)",
-    priceNote: "Flat ¥8,000 per person (free for ages 3 and under)",
-    priceNoteShort: "Flat ¥8,000",
+    whatToBring: ["Sandals are allowed, but comfortable walking shoes are recommended", "Insect repellent", "Drinks", "Flashlight if you have one (rentals available)"],
+    precautions: [policy.pregnancyNotice, "If you have a pre-existing medical condition, mobility concerns or any health concerns, you must consult us before booking. We will review your situation and let you know whether you can participate"],
+    ageNote: formatIntlAgeNote("S5", "en"),
+    timeNote: formatIntlNightTimeNote("S5", "en"),
+    locationNote: "Near Ingya Marine Garden or 上比屋山遺跡 (the selected meeting point is shared via LINE on the day of your tour)",
+    priceNote: formatIntlPriceNote("S5", "en"),
+    priceNoteShort: formatIntlPriceNote("S5", "en", true),
   },
 ]
 
@@ -169,24 +192,24 @@ export const EN_FAQS: EnFaq[] = [
   { question: "Do I need a wetsuit?", answer: "From around November through April, water temperatures drop, so we recommend wearing a wetsuit. Rental fees vary by plan: some plans include a wetsuit in the price, while others charge a separate fee. Please check the details of each plan for more information." },
   { question: "I'm not a confident swimmer. Can I still join?", answer: "Absolutely! You'll wear a life jacket, and an experienced guide stays close by to support you at all times, so even non-swimmers can join with peace of mind." },
   { question: "Where is the meeting point?", answer: "The meeting point depends on the plan you book. Once your booking is confirmed, we'll send you detailed directions to the meeting point and parking via LINE (the messaging app we use for all communication). If you have any questions, feel free to message us on LINE anytime." },
-  { question: "Where can I ask questions or get advice?", answer: "We accept questions and inquiries 24 hours a day via LINE, the messaging app we use for all communication. Feel free to send us a message anytime, and our staff will respond carefully during business hours (7:00 AM to 6:00 PM)." },
-  { question: "Can young children go in the water?", answer: "Yes. Children ages 5 and up can join most of our snorkeling tours. With a life jacket and flotation gear, even kids who can't swim well can enjoy the water safely. That said, please keep things comfortable for your child depending on wave conditions and how they're feeling." },
+  { question: "Where can I ask questions or get advice?", answer: `We accept questions and inquiries 24 hours a day via LINE, the messaging app we use for all communication. Feel free to send us a message anytime, and our staff will respond carefully during business hours (${formatBusinessHours("en", " to ")}).` },
+  { question: "Can young children go in the water?", answer: `Yes. Children ages ${snorkelFacts.childMinAge} and up can join most of our snorkeling tours. With a life jacket and flotation gear, even kids who can't swim well can enjoy the water safely. That said, please keep things comfortable for your child depending on wave conditions and how they're feeling.` },
   { question: "What if my child is afraid of the waves?", answer: "Start at a beach with calm waves, such as Aragusuku Beach or Shigira Beach, and let your child get comfortable in shallow water where they can stand. With a life jacket on and a parent close by for support, kids gradually get used to the water." },
   { question: "What are some backup plans for rainy days?", answer: "Miyakojima has plenty of indoor options, including the Miyakojima Underwater Park, the Yukishio (Snow Salt) Museum, and the Shimanoeki Miyako market. Spending time at your hotel pool is another great option." },
   { question: "Can we rent kid-sized snorkeling gear?", answer: "Yes. Many beaches and tour companies rent kid-sized snorkel sets, life jackets, and flotation gear. On Sea Turtle Brothers tours, children's equipment is provided free of charge." },
-  { question: "Is there a cancellation fee?", answer: "Free cancellation until the day before your tour — if you contact us by then, there is no charge at all. Same-day cancellations are charged 100% of the tour price. Payment is made in cash on site on the day, so if we cancel the tour ourselves due to bad weather, there is simply nothing to pay — please don't worry." },
-  { question: "Can I join if I'm pregnant?", answer: "We're sorry, but for safety reasons we cannot accept guests who are pregnant or may be pregnant. This is to protect you from the chilling effect of seawater and any unexpected risks. After your baby arrives and you're settled, we'd love to welcome your whole family!" },
-  { question: "Can I join if I wear contact lenses or glasses?", answer: "If you wear disposable contact lenses, you can keep them in during the tour. We recommend bringing a spare pair in case a lens washes out. For glasses wearers, we offer prescription mask rentals (¥1,000) — just let us know when you book." },
+  { question: "Is there a cancellation fee?", answer: `${cancellationFees} ${policy.weatherNotice} ${policy.partialCancellationNotice} ${policy.prepaymentNotice} ${policy.setPaymentNotice} Payment is in ${policy.paymentSummary}.` },
+  { question: "Can I join if I'm pregnant?", answer: policy.pregnancyNotice },
+  { question: "Can I join if I wear contact lenses or glasses?", answer: `If you wear disposable contact lenses, you can keep them in during the tour. We recommend bringing a spare pair in case a lens washes out. Prescription mask rentals on private plans are ${formatIntlRentalFee("S2", "en")}. Prescription masks are available in adult sizes only; no child sizes are available. Please request one when you book.` },
   { question: "I'm worried about getting seasick. Will I be okay?", answer: "Don't worry! Sea Turtle Brothers tours are beach-entry tours — you walk straight into the ocean from the beach, so there's no boat involved. Enjoying the water without any risk of seasickness is one of the big advantages of our tours. If you're concerned about feeling queasy in the waves, taking an over-the-counter motion sickness remedy about 30 minutes before departure is a good precaution." },
   { question: "Will I get photos and videos from the tour?", answer: "Yes! Your guide takes plenty of photos and videos with a high-quality camera, and all the data is yours free of charge — with no limit on the number of shots. Take home lots of memories, like a photo of you swimming alongside a sea turtle. You're welcome to bring your own camera too, but since there's a risk of water damage, we recommend using a waterproof case." },
-  { question: "Is parking available?", answer: "Yes, there is parking at the meeting-point beach. Depending on the beach, parking is either paid (¥1,000 to ¥2,000) or free. Public transportation on Miyakojima is limited, so we recommend coming by rental car. We'll send you detailed parking directions via LINE the day before your tour." },
+  { question: "Is parking available?", answer: "Yes, there is parking at the meeting-point beach. Depending on the beach, parking is either paid (¥1,000 to ¥2,000) or free. Public transportation on Miyakojima is limited, so we recommend coming by rental car. We send meeting-point and parking directions via LINE the day before sea tours and on the day of night tours." },
   { question: "Can I join during my period?", answer: "Yes, as long as you're feeling about the same as usual, you're welcome to join. Using a tampon or choosing a dark-colored swimsuit can help you feel more comfortable. If you're not feeling well, please don't push yourself — rescheduling is possible, so feel free to reach out to us on LINE." },
   { question: "I'm worried about sunburn. Any tips?", answer: "UV levels on Miyakojima are extremely strong — about 1.5 to 2 times higher than on mainland Japan — so sun protection is a must! Reapply waterproof sunscreen frequently (ideally a reef-safe formula that's gentle on coral). Wearing a rash guard is also a great idea. And don't forget the spots that are easy to miss, like the back of your neck, behind your ears, and the tops of your feet." },
-  { question: "What should I wear on the day of the tour?", answer: "The smoothest option is to arrive with your swimsuit on under your clothes. On top, wear something easy to slip on and off, like a T-shirt and shorts. Flip-flops are fine for footwear. Changing space after the tour is limited, so please bring a towel and a change of clothes you can use in your car." },
-  { question: "How far in advance should I book? Can I book on the same day?", answer: "Because we run private tours only, dates often sell out one to two weeks ahead during busy seasons (July through September, Golden Week in late April to early May, and the New Year holidays). Once you've decided on a date and time, please send your booking request early. If space is available, you can book up until the day before. Message us on LINE anytime and we'll let you know the latest availability right away. Please note that a booking is not confirmed until our staff replies via LINE." },
+  { question: "What should I wear on the day of the tour?", answer: "For sea tours, the smoothest option is to arrive with your swimsuit on under your clothes. On top, wear something easy to slip on and off, like a T-shirt and shorts. Flip-flops are fine for footwear. Changing space after the tour is limited, so please bring a towel and a change of clothes you can use in your car. For night tours, sandals are allowed, but comfortable walking shoes are recommended." },
+  { question: "How far in advance should I book? Can I book on the same day?", answer: "Because we run private tours only, dates often sell out one to two weeks ahead during busy seasons (July through September, Golden Week in late April to early May, and the New Year holidays). Once you've decided on a date and time, please send your booking request early. If space is available, same-day bookings are accepted through our website. Message us on LINE anytime and we'll let you know the latest availability right away. Please note that a booking is not confirmed until our staff replies via LINE." },
   { question: "Can I snorkel in winter?", answer: "Yes! Water temperatures around Miyakojima stay above 20°C (68°F) even in winter, so with a wetsuit you can enjoy snorkeling year-round. Summer (June to September) brings warm, comfortable water, while winter (December to March) is a hidden-gem season with fewer tourists and exceptionally clear water. Whatever the season, the ocean around Miyakojima is spectacular!" },
-  { question: "How long do the tours take?", answer: "Snorkeling tours run about 2 hours from meeting to dismissal, night tours about 1.5 hours, and SUP tours about 2 hours. Time in the water is roughly 60 to 90 minutes. After we meet, we hold a safety briefing and fit your equipment, and after the experience you're free to head off on your own." },
-  { question: "I have a pre-existing medical condition. Can I join?", answer: "For safety reasons, we may not be able to accept guests with conditions such as heart disease, epilepsy, or asthma. Please feel free to consult us via LINE before booking, and we'll respond to your situation individually. Please also note that guests who have been drinking alcohol cannot participate." },
+  { question: "How long do the tours take?", answer: `Snorkeling tours run about ${snorkelFacts.durationHours} hours from meeting to dismissal, night tours about ${nightFacts.durationHours} hours, and SUP tours about ${daySupFacts.durationHours} hours. Time in the water is roughly 60 to 90 minutes. After we meet, we hold a safety briefing and fit your equipment, and after the experience you're free to head off on your own.` },
+  { question: "I have a pre-existing medical condition. Can I join?", answer: "If you have a pre-existing medical condition, such as heart disease, epilepsy or asthma, or any health concerns, you must consult us via LINE before booking. We will review your situation and let you know whether you can participate. Consultation does not guarantee participation. Please also note that guests who have been drinking alcohol cannot participate." },
 ]
 
 // ---------------------------------------------------------------------------
@@ -202,11 +225,11 @@ export const EN_GUIDE: EnSectionsContent = {
     { heading: "A Note Before You Dive In", paragraphs: ["Sea turtles are wild animals. When this page says an area has a \"high encounter rate,\" that is never a guarantee you will see one. For your safety and to protect the turtles, please never touch or chase them — observe quietly and keep your distance."] },
     { heading: "Where You're Most Likely to See Sea Turtles in Miyakojima", paragraphs: ["Coral reefs surround Miyakojima, and the seagrass and algae that sea turtles feed on grow in abundance, so turtles live all around the island. These areas are known for especially high encounter rates.", "You can sometimes meet turtles entering from the beach, but your chances depend heavily on the tide, weather, and that day's sea conditions. If you want the best odds, go with a guide who knows the local spots inside and out."], bullets: ["Around Shigira Beach: Calm waters and a strong chance of meeting sea turtles while snorkeling.", "Aragusuku Beach: Shallow with the reef close to shore, making it easy for beginners to observe turtles.", "Offshore reef points by boat: With fewer people around, turtles stay relaxed, and encounter rates tend to be higher."] },
     { heading: "Best Season and Time of Day for Sea Turtle Encounters", paragraphs: ["You can meet sea turtles in Miyakojima all year, but how easy they are to observe changes with sea conditions.", "Note: Sea turtles are wild animals, so sightings are never guaranteed, regardless of the season or time of day."], bullets: ["Season: April through October is the prime window, when the sea is calm and visibility is at its best. You can still see turtles in winter, but northerly winds make rough days more common.", "Time of day: Mornings are best, when winds are light and the sea is calm.", "Tide: Around high tide it's easier to swim over the reef, which can make observation easier."] },
-    { heading: "Can Beginners and Kids Snorkel with Sea Turtles?", paragraphs: ["Yes. Sea turtle snorkeling is an activity anyone can enjoy, whether or not you're a confident swimmer."], bullets: ["You'll wear a life jacket, so you can float comfortably and watch the turtles from the surface.", "On a private tour, a guide stays right beside you — reassuring for first-timers and nervous swimmers alike.", "Sea Turtle Brothers welcomes kids from age 5, and many families join our tours."] },
+    { heading: "Can Beginners and Kids Snorkel with Sea Turtles?", paragraphs: ["Yes. Sea turtle snorkeling is an activity anyone can enjoy, whether or not you're a confident swimmer."], bullets: ["You'll wear a life jacket, so you can float comfortably and watch the turtles from the surface.", "On a private tour, a guide stays right beside you — reassuring for first-timers and nervous swimmers alike.", `Sea Turtle Brothers welcomes kids from age ${snorkelFacts.childMinAge}, and many families join our tours.`] },
     { heading: "Safety Tips If You Go on Your Own", paragraphs: ["If you snorkel from the beach on your own, please take safety and conservation seriously.", "If you're at all unsure, or simply want a safer and more reliable experience, we recommend joining a guided tour."], bullets: ["Watch for rip currents and tidal flow: Some Miyakojima beaches have fast-moving currents. Always check the designated swimming areas and that day's sea conditions so you don't get carried offshore.", "Never swim alone: Always go with at least one other person and wear a life jacket.", "Don't touch or chase the turtles: Sea turtles are protected wildlife. Never touch them or block their path — keep your distance and observe quietly. Feeding them is strictly prohibited.", "Protect yourself from sun and heat: Wear a rash guard, apply sunscreen, and stay hydrated."] },
     { heading: "Why a Guided Tour Is Worth It", paragraphs: ["A guided tour takes the guesswork out of finding turtles and lets you focus on enjoying the water."], bullets: ["Better odds of an encounter: Your guide chooses the spots where turtles are seen, matched to that day's sea conditions.", "Safety handled by pros: Gear preparation and judgment calls on currents and weather are taken care of, so you can relax and focus on the sea.", "Photos and videos to keep: Your guide captures you swimming alongside the turtles — underwater memories you couldn't take with your phone.", "Generous beginner support: From how to use your snorkel to breathing techniques, our small groups mean careful, personal coaching."] },
-    { heading: "What Makes Sea Turtle Brothers Different", paragraphs: ["Sea Turtle Brothers offers family-friendly, fully private marine experiences in Miyakojima.", "Check our tour plans page for tour types and prices. To check availability and book, use our booking form — note that a booking request is not confirmed until our staff replies via LINE."], bullets: ["One group at a time, so your guide keeps an eye on every single guest", "Photo and video files included free as a gift", "Kids from age 5 welcome — great for beginners and families", "Free cancellation until the day before your tour", "Fully insured, with safety as our top priority"] },
-    { heading: "Swim with Sea Turtles in Miyakojima", paragraphs: ["Private tours where beginners and families feel right at home. Photos and videos are included free, with free cancellation until the day before your tour. Check availability and send a booking request through our booking form, or message us on LINE — your booking is confirmed once our staff replies via LINE."] },
+    { heading: "What Makes Sea Turtle Brothers Different", paragraphs: ["Sea Turtle Brothers offers family-friendly, fully private marine experiences in Miyakojima.", "Check our tour plans page for tour types and prices. To check availability and book, use our booking form — note that a booking request is not confirmed until our staff replies via LINE."], bullets: ["One group at a time, so your guide keeps an eye on every single guest", "Photo and video files included free as a gift", `Kids from age ${snorkelFacts.childMinAge} welcome — great for beginners and families`, `${policy.previousDayFee.replace(/^./, (letter) => letter.toUpperCase())} cancellation until the day before your tour`, "Fully insured, with safety as our top priority"] },
+    { heading: "Swim with Sea Turtles in Miyakojima", paragraphs: [`Private tours where beginners and families feel right at home. Photos and videos are included free, with ${policy.previousDayFee} cancellation until the day before your tour. Check availability and send a booking request through our booking form, or message us on LINE — your booking is confirmed once our staff replies via LINE.`] },
   ],
 }
 
@@ -216,22 +239,22 @@ export const EN_GUIDE: EnSectionsContent = {
 
 export const EN_HOME = {
   metaTitle: "Sea Turtle Snorkeling in Miyakojima | Sea Turtle Brothers",
-  metaDescription: "Private tours and a one-group-per-day Sunset SUP experience in Miyakojima. Free photos & videos. Free cancellation until the day before.",
+  metaDescription: `Private tours and a one-group-per-tour Sunset SUP experience in Miyakojima. Free photos & videos. ${policy.previousDayFee.replace(/^./, (letter) => letter.toUpperCase())} cancellation until the day before.`,
   hero: {
     badge: "Family-Friendly Marine Tours in Miyakojima",
     title: "Swim with Sea Turtles in Miyakojima",
-    subtitle: "Private tours built for beginners and families, plus a one-group-per-day Sunset SUP experience — with free photos and videos, and free cancellation until the day before your tour.",
+    subtitle: `Private tours built for beginners and families, plus a one-group-per-tour Sunset SUP experience — with free photos and videos, and ${policy.previousDayFee} cancellation until the day before your tour.`,
   },
   trustItems: [
     "Private tours, fully insured",
     "Free underwater photos & videos",
-    "Free cancellation until the day before",
-    "Kids ages 5+ welcome, children's gear provided",
+    `${policy.previousDayFee.replace(/^./, (letter) => letter.toUpperCase())} cancellation until the day before`,
+    `Kids ages ${snorkelFacts.childMinAge}+ welcome, children's gear provided`,
   ],
   aboutHeading: "Miyakojima's Sea, at Your Family's Pace",
   aboutParagraphs: [
     "Sea Turtle Brothers (Umigame Kyodai) is a private-tour marine operator on Miyakojima, Okinawa. Our signature experience is snorkeling with wild sea turtles in the island's clear, calm waters, where you can also meet clownfish and colorful tropical fish. Because these are wild animals, sightings can never be 100% guaranteed — but our encounter rate is high, and every tour is private, so you can spend slow, unhurried time with the turtles instead of jostling with a crowd.",
-    "Safety always comes first. Every tour starts with a safety briefing, all tours are covered by insurance, and our guides are used to first-time snorkelers. Children from age 5 can join, and we provide kid-sized equipment, making this an easy choice for families building vacation memories together.",
+    `Safety always comes first. Every tour starts with a safety briefing, all tours are covered by insurance, and our guides are used to first-time snorkelers. Children from age ${snorkelFacts.childMinAge} can join, and we provide kid-sized equipment, making this an easy choice for families building vacation memories together.`,
     "Your guide captures the whole experience with an underwater camera, and every high-quality photo and video is yours free of charge. Beyond turtle snorkeling, we also offer night tours, sunset SUP and drone SUP experiences across Miyakojima's sea and nature, from morning to night.",
   ],
   howToBookHeading: "How Booking Works",
@@ -239,18 +262,18 @@ export const EN_HOME = {
     { title: "Choose your plan", text: "Browse our tours and pick the plan and date that fit your trip. The price for each tour is shown on its own plan page." },
     { title: "Send a booking request", text: "Submit a booking request through our website. You'll need to log in with LINE, a free messaging app, to send it. Please note: a booking request is not a confirmed reservation." },
     { title: "Get confirmation via LINE", text: "Our staff will check availability and reply to you on LINE. Your booking is confirmed only after you receive our reply." },
-    { title: "Pay cash on the day", text: "No prepayment needed — simply pay in cash on site on the day of your tour. Cancellation is free until the day before your tour." },
+    { title: `Pay ${policy.paymentSummary}`, text: `${policy.prepaymentNotice} ${policy.setPaymentNotice} Simply pay in ${policy.paymentSummary}. ${previousDayCancellation}` },
   ],
   lineExplainer: {
     title: "Why do I need LINE?",
-    text: "LINE is a free messaging app — it's the most popular way to chat in Japan, and it's how we confirm bookings and stay in touch with guests before the tour. To send a booking request, you'll need a LINE account, so we recommend downloading the app from the App Store or Google Play before booking (it only takes a minute). Remember, your booking is not confirmed until our staff replies to you on LINE. If you have questions or aren't able to use LINE, feel free to email us at info@umigamekyoudaimiyakojima.com or call +81-80-5344-2439.",
+    text: `LINE is a free messaging app — it's the most popular way to chat in Japan, and it's how we confirm bookings and stay in touch with guests before the tour. To send a booking request, you'll need a LINE account, so we recommend downloading the app from the App Store or Google Play before booking (it only takes a minute). Remember, your booking is not confirmed until our staff replies to you on LINE. If you have questions or aren't able to use LINE, feel free to email us at ${SITE_CONFIG.publicEmail} or call ${SITE_CONFIG.phoneDisplayIntl}.`,
   },
   toursHeading: "Our Tours",
-  toursIntro: "Four experiences across Miyakojima's sea and nature — private sea turtle snorkeling, a private jungle night tour, private drone SUP, and a one-group-per-day sunset SUP.",
+  toursIntro: `${INTL_PLAN_IDS.length} experiences across Miyakojima's sea and nature — private sea turtle snorkeling, a private jungle night tour, private drone SUP, and a one-group-per-tour sunset SUP.`,
   faqHeading: "Frequently Asked Questions",
   faqIntro: "Planning your first snorkeling trip in Miyakojima? Here are answers to the questions travelers ask us most — from swimming ability and kids' participation to cancellation and payment.",
   contactHeading: "Questions? We're Happy to Help",
-  contactText: "Message us on LINE anytime, email us, or call during business hours (7:00 AM – 6:00 PM, open year-round).",
+  contactText: `Message us on LINE anytime, email us, or call during business hours (${formatBusinessHours("en", " – ")}, open year-round).`,
 } as const
 
 // ---------------------------------------------------------------------------
@@ -265,10 +288,10 @@ export const EN_TERMS: EnSectionsContent = {
   sections: [
     { heading: "Article 1: Scope of These Terms", paragraphs: ["These Terms set out the conditions for booking and participating in the marine tours (the \"Tours\") offered by Sea Turtle Brothers (\"we,\" \"us,\" or \"our\"). By submitting the booking form, you are deemed to have agreed to these Terms."] },
     { heading: "Article 2: Booking Confirmation", paragraphs: ["Submitting the booking form is a booking request only; it does not confirm your booking. Your booking is confirmed only when we contact you via LINE or by phone to confirm it. Depending on availability and sea conditions, we may be unable to accommodate your request."] },
-    { heading: "Article 3: Fees and Payment", paragraphs: ["Tour fees are the prices shown on each plan page (tax included). Payment is made in cash, on site, on the day of your tour."] },
-    { heading: "Article 4: Cancellation Policy", paragraphs: ["The following cancellation terms apply to all Tours."], bullets: ["Free cancellation until the day before your tour", "Same-day cancellation: 100% of the tour fee", "No-show: 100% of the tour fee", "Please contact us via LINE or by phone to cancel or change your booking"] },
-    { heading: "Article 5: Cancellation Due to Weather", paragraphs: ["With safety as our top priority, we may cancel a tour at our discretion due to poor weather, rough sea conditions, or similar circumstances. In that case, no cancellation fee applies. Since payment is made in cash on site on the day, there is no advance payment, so nothing is charged."] },
-    { heading: "Article 6: Safety and Participation Requirements", paragraphs: ["To keep every tour safe, we ask all guests to observe the following."], bullets: ["Please follow your guide's instructions throughout the tour. For safety reasons, we may ask you to stop participating if instructions are not followed", "Guests who have consumed alcohol or who are feeling unwell may not participate", "If you have a preexisting medical condition, are pregnant, or have any other health concerns, please consult us in advance", "Age limits and participation requirements for each plan are as stated on the respective plan page"] },
+    { heading: "Article 3: Fees and Payment", paragraphs: [`Tour fees are the prices shown on each plan page (tax included). Payment is made in ${policy.paymentSummary}. ${policy.prepaymentNotice} ${policy.setPaymentNotice}`] },
+    { heading: "Article 4: Cancellation Policy", paragraphs: ["The following cancellation terms apply to all Tours."], bullets: [previousDayCancellation, `Same-day cancellation: ${policy.sameDayFee} of the tour fee`, `No-show: ${policy.noShowFee} of the tour fee`, "Please contact us via LINE or by phone to cancel or change your booking"] },
+    { heading: "Article 5: Cancellation Due to Weather", paragraphs: [`With safety as our top priority, we may cancel a tour at our discretion due to poor weather, rough sea conditions, or similar circumstances. ${policy.weatherNotice}`, policy.partialCancellationNotice] },
+    { heading: "Article 6: Safety and Participation Requirements", paragraphs: ["To keep every tour safe, we ask all guests to observe the following."], bullets: ["Please follow your guide's instructions throughout the tour. For safety reasons, we may ask you to stop participating if instructions are not followed", "Guests who have consumed alcohol or who are feeling unwell may not participate", policy.pregnancyNotice, policy.healthConsultationNotice, "Age limits and participation requirements for each plan are as stated on the respective plan page"] },
     { heading: "Article 7: Photos and Videos", paragraphs: ["Photos and videos taken by our staff during your tour are provided to you free of charge. If we would like to use photos or videos featuring you on our website, social media, or other promotional channels, we will confirm your consent in advance."] },
     { heading: "Article 8: Limitation of Liability", paragraphs: ["While we make every effort to ensure safety, we are not liable for damages arising from a guest's intentional act or negligence, a violation of these Terms, or force majeure, except where the damage results from our own intentional misconduct or gross negligence."] },
     { heading: "Article 9: Changes to These Terms", paragraphs: ["We may revise these Terms as necessary. Revised Terms take effect when they are posted on this page."] },
@@ -290,7 +313,7 @@ export const EN_PRIVACY: EnSectionsContent = {
     { heading: "5. Linked Browsing History, Consent, and Retention", paragraphs: ["Behavioral tracking is optional, and you can still book if you decline. If you consent, we store a Visitor ID in your browser and attach it to your booking so that browsing history can be linked with your name, contact details, and participant information.", "Visitor IDs and behavioral events are retained for up to 395 days. Booking records are retained as needed for booking operations, safety, service history, and legal obligations. You can stop future collection through Data settings and contact us to request deletion of stored data."] },
     { heading: "6. Data Security", paragraphs: ["We take appropriate security measures to protect the personal information in our care against unauthorized access, loss, and leaks."] },
     { heading: "7. Requests to Access, Correct, or Delete Your Information", paragraphs: ["If you would like to access, correct, or delete your personal information, we will respond promptly after verifying your identity. Please reach out using the contact details below."] },
-    { heading: "8. Contact", paragraphs: ["Sea Turtle Brothers (107-1 Hirara Matsubara, Miyakojima City, Okinawa 906-0014, Japan)", "Phone: +81-80-5344-2439 (7:00 AM to 6:00 PM, open year-round)", "Email: info@umigamekyoudaimiyakojima.com"] },
+    { heading: "8. Contact", paragraphs: [`${SITE_CONFIG.siteNameEn} (${SITE_CONFIG.address.formattedEn})`, `Phone: ${SITE_CONFIG.phoneDisplayIntl} (${formatBusinessHours("en", " to ")}, open year-round)`, `Email: ${SITE_CONFIG.publicEmail}`] },
     { heading: "9. Changes to This Policy", paragraphs: ["We may update this policy from time to time in response to changes in the law or in our services. Significant changes will be announced on this page.", "Effective date: June 13, 2026; last revised: August 13, 2026"] },
   ],
 }
@@ -304,29 +327,29 @@ export const EN_UI = {
     tagline: "Private ocean experiences for families, built on safety, sincerity, and a gentle sense of wonder. Meet sea turtles up close in beautifully clear waters.",
     quickLinksHeading: "Quick Links",
     businessHoursHeading: "Business Hours",
-    hours: "7:00 AM - 6:00 PM",
+    hours: formatBusinessHours("en", " - "),
     openYearRound: "Open year-round",
     hoursNote: "Hours may change depending on weather conditions.",
     lineLabel: "Official LINE Account",
-    logoAlt: "Sea Turtle Brothers - EST. 2024",
-    quickLinks: [
-      { href: "/en", label: "Home" },
-      { href: "/en/plans", label: "All Tours" },
-      { href: "/en/book", label: "Book a Tour" },
-      { href: "/en/miyakojima-sea-turtle", label: "Sea Turtle Guide" },
-      { href: "/en/faq", label: "FAQ" },
-    ],
+    logoAlt: `${SITE_CONFIG.siteNameEn} - EST. 2024`,
+    quickLinks: navigationItems("en", [
+      { pageId: "home", label: "Home" },
+      { pageId: "plans", label: "All Tours" },
+      { pageId: "book", label: "Book a Tour" },
+      { pageId: "seaTurtleGuide", label: "Sea Turtle Guide" },
+      { pageId: "faq", label: "FAQ" },
+    ]),
     legalLinks: [
-      { href: "/en/terms", label: "Terms of Service & Cancellation Policy" },
-      { href: "/en/privacy", label: "Privacy Policy" },
-      { href: "/tokushoho", label: "Legal Notice (Japanese)" },
+      { href: pagePath("en", "terms"), label: "Terms of Service & Cancellation Policy" },
+      { href: pagePath("en", "privacy"), label: "Privacy Policy" },
+      { href: pagePath("ja", "tokushoho"), label: "Legal Notice (Japanese)" },
     ],
-    copyright: "Sea Turtle Brothers. All rights reserved.",
+    copyright: `${SITE_CONFIG.siteNameEn}. All rights reserved.`,
   },
   mobileCta: {
     line: "Ask on LINE",
     book: "Book Now",
-    bookHref: "/en/book",
+    bookHref: pagePath("en", "book"),
   },
 } as const
 
@@ -359,17 +382,17 @@ export const EN_COMMON: IntlCommonCopy = {
   guideEyebrow: "Sea Turtle Guide",
   plansMetaTitle: "Tours & Prices | Sea Turtle Brothers Miyakojima",
   plansMetaDescription:
-    "Compare Sea Turtle Brothers tours in Miyakojima: snorkeling, private trips, night tours and SUP. Free photos and videos; free cancellation until the day before.",
+    `Compare Sea Turtle Brothers tours in Miyakojima: snorkeling, private trips, night tours and SUP. Free photos and videos; ${policy.previousDayFee} cancellation until the day before.`,
   plansTitle: "Tours & Prices in Miyakojima",
   plansIntro:
-    "Private sea turtle snorkeling, a private jungle night tour, private drone SUP, and a one-group-per-day sunset SUP. Every tour includes free photos and videos, with free cancellation until the day before.",
+    `Private sea turtle snorkeling, a private jungle night tour, private drone SUP, and a one-group-per-tour sunset SUP. Every tour includes free photos and videos, with ${policy.previousDayFee} cancellation until the day before.`,
   faqMetaTitle: "FAQ | Sea Turtle Brothers Miyakojima",
   faqMetaDescription:
     "Answers to common questions about Sea Turtle Brothers tours in Miyakojima: swimming ability, kids, what to bring, cancellation, weather, payment and more.",
   faqTitle: "Frequently Asked Questions",
   faqIntro:
     "Everything you need to know before joining a tour — swimming ability, kids, cancellation, what to bring and more. Can't find your answer? Message us on LINE anytime.",
-  faqStillQuestions: "Still have questions? We reply carefully during business hours (7:00 AM – 6:00 PM).",
+  faqStillQuestions: `Still have questions? We reply carefully during business hours (${formatBusinessHours("en", " – ")}).`,
   askOnLine: "Ask on LINE",
   orEmail: "or email",
   readyToBook: "Ready to book? Check availability here",
@@ -387,7 +410,7 @@ export const EN_COMMON: IntlCommonCopy = {
   bringHeading: "What to bring",
   notesHeading: "Important notes",
   paymentNote: {
-    before: "Payment is in cash, on site, on the day of your tour. Free cancellation until the day before — see our ",
+    before: `Payment is in ${policy.paymentSummary}. ${policy.prepaymentNotice} ${policy.setPaymentNotice} ${previousDayCancellation} See our `,
     linkText: "cancellation policy",
     after: ".",
   },
@@ -399,10 +422,10 @@ export const EN_COMMON: IntlCommonCopy = {
   bookThisTour: "Book this tour",
   detailsLabel: "Details",
   guideCtaHeading: "Ready to meet the turtles?",
-  guideCtaText: "Private tours with free photos & videos. Free cancellation until the day before.",
+  guideCtaText: `Private tours with free photos & videos. ${policy.previousDayFee.replace(/^./, (letter) => letter.toUpperCase())} cancellation until the day before.`,
   bookMetaTitle: "Book a Tour | Sea Turtle Brothers Miyakojima",
   bookMetaDescription:
-    "Send a tour booking request in Miyakojima. Check prices automatically, cancel free until the day before, and receive availability confirmation via LINE.",
+    `Send a tour booking request in Miyakojima. Check prices automatically, cancel ${policy.previousDayFee} until the day before, and receive availability confirmation via LINE.`,
   bookTitle: "Booking Request",
   bookIntro:
     "Fill in your details below — the price is calculated automatically. We'll confirm availability and reply via LINE. ",
@@ -422,10 +445,11 @@ export const EN_COMMON: IntlCommonCopy = {
 export const EN_FORM: IntlFormCopy = {
   staffNoPreference: "No preference",
   staffNames: { staff1: "Yama-chan", staff2: "Hikaru", staff5: "Sotaro", staff3: "Soichiro", staff4: "Nagi" },
-  limitToast: (max) => `Online booking is limited to ${max} guests. Please contact us on LINE for 11 or more.`,
+  limitToast: (max) => `Online booking is limited to ${max} guests. Please contact us on LINE for ${max + 1} or more.`,
   groupLimitInfo: (max, current) =>
-    `Online booking is limited to ${max} guests. Current group: ${current}. Contact us on LINE for 11 or more.`,
+    `Online booking is limited to ${max} guests. Current group: ${current}. Contact us on LINE for ${max + 1} or more.`,
   sectionChooseTour: "Choose your tour",
+  nightFootwearNotice: "You can join the night tour in sandals, but we recommend comfortable walking shoes for the nighttime walk.",
   sectionDateTime: "Date & start time",
   sectionParticipants: "Who's joining?",
   sectionStaff: "Request a guide (optional)",
@@ -434,7 +458,7 @@ export const EN_FORM: IntlFormCopy = {
   startTimeLabel: "Start time",
   startTimeSunset: "(decided by sunset)",
   sunsetNote:
-    "The start time follows the sunset and changes by season — you'll meet about 90 minutes before sunset (around 5:45 PM in August). We'll confirm the exact time and meeting spot via LINE the day before your tour.",
+    `The start time follows the sunset and changes by season — you'll meet about 90 minutes before sunset. We'll confirm the exact time and meeting spot via LINE the day before your tour.`,
   sunsetDateGuide: (month, meet, end) => {
     const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
     return `Guide for ${months[month - 1]}: meet around ${meet}, finish around ${end}.`
@@ -445,10 +469,10 @@ export const EN_FORM: IntlFormCopy = {
   participantsIntroBase: "Age is required for safety.",
   participantsIntroShoe:
     "Shoe size (in cm) is required so we can prepare your fins — height and weight are optional but help us pick the right gear.",
-  addAdult: "Adult (13+)",
-  addChild: (minAge) => `Child (${minAge}–12)`,
-  addUnder3: "Age 0–3 (free)",
-  guestCategoryLabel: { adult: "Adult", child: "Child", under3: "Age 0–3" },
+  addAdult: `Adult (${ADULT_AGE_MIN}+)`,
+  addChild: (minAge, maxAge) => `Child (${minAge}–${maxAge})`,
+  addUnder3: nightFreeAge ? `Age ${nightFreeAge.min}–${nightFreeAge.max} (free)` : "",
+  guestCategoryLabel: { adult: "Adult", child: "Child", under3: nightFreeAge ? `Age ${nightFreeAge.min}–${nightFreeAge.max}` : "" },
   guestHeading: (index, categoryLabel) => `Guest ${index} (${categoryLabel})`,
   removeGuestAria: (index) => `Remove guest ${index}`,
   defaultGuestName: (index) => `Guest ${index}`,
@@ -467,8 +491,8 @@ export const EN_FORM: IntlFormCopy = {
   prescriptionMaskAdultsOnly: "Prescription masks are available in adult sizes only; child sizes are not available.",
   rentalSummary: (wetsuitCount, maskCount) =>
     `Rentals: ${wetsuitCount} wetsuit${wetsuitCount === 1 ? "" : "s"}, ${maskCount} prescription mask${maskCount === 1 ? "" : "s"}`,
-  needAdultError: "At least one adult (13+) must join.",
-  seniorNotice: { before: "For safety, groups including guests aged 60+ should book the ", after: " instead." },
+  needAdultError: `At least one adult (${ADULT_AGE_MIN}+) must join.`,
+  seniorNotice: { before: `For safety, groups including guests aged ${SENIOR_RESTRICTED_AGE}+ should book the `, after: " instead." },
   seniorFallbackPlanName: "the private plan",
   staffIntro: "No preference is perfectly fine — every guide will give you a great tour.",
   fullNameLabel: "Full name *",
@@ -488,12 +512,12 @@ export const EN_FORM: IntlFormCopy = {
   partySummary: (counts) => {
     const parts = [`${counts.adult} adult${counts.adult !== 1 ? "s" : ""}`]
     if (counts.child > 0) parts.push(`${counts.child} child${counts.child !== 1 ? "ren" : ""}`)
-    if (counts.under3 > 0) parts.push(`${counts.under3} under 3 (free)`)
+    if (counts.under3 > 0 && nightFreeAge) parts.push(`${counts.under3} age ${nightFreeAge.max} and under (free)`)
     return parts.join(", ")
   },
   guideFeeLine: (fee) => `Guide request: +¥${fee}`,
   estimatedTotalLabel: "Estimated total:",
-  cashOnDay: "cash on the day",
+  cashOnDay: policy.paymentSummary,
   agreeText: {
     before: "I agree to the ",
     termsLabel: "Terms of Service & Cancellation Policy",
@@ -502,7 +526,7 @@ export const EN_FORM: IntlFormCopy = {
     after: ".",
   },
   cancellationSmallPrint:
-    "Free cancellation until the day before. Same-day cancellations and no-shows are charged 100% of the tour fee. Full refund if we cancel due to weather.",
+    `${cancellationFees} ${policy.weatherNotice} ${policy.partialCancellationNotice} ${policy.prepaymentNotice} ${policy.setPaymentNotice} Payment is in ${policy.paymentSummary}. ${policy.pregnancyNotice} ${policy.healthConsultationNotice}`,
   lineLoginHeading: "One last step: log in with LINE",
   lineLoginBody: {
     before:
@@ -517,8 +541,8 @@ export const EN_FORM: IntlFormCopy = {
   missingDate: "Pick a date",
   missingTime: "Pick a start time",
   missingAddGuest: "Add at least one guest",
-  missingAdult: "Include at least one adult (13+)",
-  missingReduceGroup: (max) => `Reduce the group to ${max} guests (contact us on LINE for 11+)`,
+  missingAdult: `Include at least one adult (${ADULT_AGE_MIN}+)`,
+  missingReduceGroup: (max) => `Reduce the group to ${max} guests (contact us on LINE for ${max + 1}+)`,
   missingAgeFor: (index) => `Age/category for guest ${index}`,
   missingShoeFor: (index) => `Shoe size for guest ${index}`,
   missingFullName: "Your full name",
@@ -548,7 +572,7 @@ export const EN_FORM: IntlFormCopy = {
   successGuestsLabel: "Guests: ",
   successCouponLabel: "Coupon discount: ",
   successTotalPrefix: "Estimated total: ",
-  successTotalSuffix: " (cash, on the day)",
+  successTotalSuffix: ` (${policy.paymentSummary})`,
   addFriendBox: {
     title: "⚠️ Please read this",
     bodyPre: "We send your booking confirmation through our ",
@@ -571,17 +595,17 @@ const EN_UI_INTL: IntlUiCopy = {
   footer: EN_UI.footer,
   mobileCta: EN_UI.mobileCta,
   nav: {
-    items: [
-      { href: "/en", label: "Home" },
-      { href: "/en/plans", label: "Tours" },
-      { href: "/en/miyakojima-sea-turtle", label: "Sea Turtle Guide" },
-      { href: "/en/faq", label: "FAQ" },
-    ],
+    items: navigationItems("en", [
+      { pageId: "home", label: "Home" },
+      { pageId: "plans", label: "Tours" },
+      { pageId: "seaTurtleGuide", label: "Sea Turtle Guide" },
+      { pageId: "faq", label: "FAQ" },
+    ]),
     line: "Ask on LINE",
     book: "Book Now",
     menuAria: "Menu",
-    homeHref: "/en",
-    bookHref: "/en/book",
+    homeHref: pagePath("en", "home"),
+    bookHref: pagePath("en", "book"),
   },
   bookingFormLoading: "Loading booking form",
 }

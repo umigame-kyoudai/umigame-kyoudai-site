@@ -1,9 +1,31 @@
 // 韓国語サイト（/ko配下）のコンテンツ定義。構成は en.ts と同一（IntlDict）。
-// 価格・時間帯などの数値は lib/data.ts の PLANS が単一の真実。
+// 料金・年齢・人数・時刻は plan-facts 経由で既存のWeb正本から取得し、ここでは翻訳を持つ。
 // 掲載プランは英語版と同じく貸切のみ（INTL_PLAN_IDS）、料金は日本語サイトと同額。
 
 import type { IntlCommonCopy, IntlDict, IntlFaq, IntlFormCopy, IntlPlanContent, IntlSectionsContent, IntlUiCopy } from "./types"
 import { INTL_PLAN_IDS } from "./locales"
+import { navigationItems } from "@/lib/navigation"
+import { pagePath } from "@/lib/routes"
+import { ADULT_AGE_MIN, DAY_SUP_TIMES, SENIOR_RESTRICTED_AGE } from "@/lib/plan-flags"
+import { SUNSET_SUP_SPOTS } from "@/lib/beach-info"
+import {
+  formatIntlAgeNote, formatIntlFreeChildNote, formatIntlGroupLimit,
+  formatIntlNightTimeNote, formatIntlPriceNote, formatIntlRentalFee, formatIntlTimeList,
+  getIntlPlanFacts,
+} from "./plan-facts"
+import { SITE_CONFIG, formatBusinessHours } from "@/lib/site-config"
+import { getBookingPolicyCopy } from "@/lib/booking-policy-copy"
+
+const snorkelFacts = getIntlPlanFacts("S2")
+const sunsetFacts = getIntlPlanFacts("S4")
+const nightFacts = getIntlPlanFacts("S5")
+const daySupFacts = getIntlPlanFacts("S7")
+const nightFreeAge = nightFacts.freeAgeRange
+const daySupTimes = formatIntlTimeList(DAY_SUP_TIMES, "ko")
+
+const policy = getBookingPolicyCopy("ko")
+const previousDayCancellation = `투어 전날까지 취소 수수료는 ${policy.previousDayFee}입니다.`
+const cancellationFees = `${previousDayCancellation} 당일 취소 시 투어 요금의 ${policy.sameDayFee}, 노쇼(무단 불참) 시 투어 요금의 ${policy.noShowFee}가 부과됩니다.`
 
 // ---------------------------------------------------------------------------
 // ツアープラン
@@ -17,27 +39,27 @@ const KO_PLANS_ALL: IntlPlanContent[] = [
     tagline: "한 팀만을 위한 프라이빗 투어 — 전담 가이드와 함께, 우리 가족만의 속도로.",
     description: [
       "대표 투어인 바다거북 스노클링을 한 번에 한 팀만 받는 완전 전세로 즐기는 플랜입니다. 전담 가이드가 여러분만 안내하므로 다른 손님을 기다릴 필요도, 서두를 필요도 없습니다. 어린 자녀나 수영이 서툰 가족이 걱정되는 분, 특별한 시간을 여유롭게 보내고 싶은 분께 안성맞춤입니다.",
-      "일반 투어와 같은 잔잔하고 얕은 해변에서 같은 수준의 높은 바다거북 만남 확률을 즐기실 수 있고, 사진 촬영도 더 세심하게 지원됩니다. 원하는 구도나 영상을 가이드에게 자유롭게 요청하세요. 전세 플랜은 웨트슈트와 도수 마스크 대여가 무료이며, 모든 사진·영상도 무료로 제공됩니다.",
+      `일반 투어와 같은 잔잔하고 얕은 해변에서 같은 수준의 높은 바다거북 만남 확률을 즐기실 수 있고, 사진 촬영도 더 세심하게 지원됩니다. 원하는 구도나 영상을 가이드에게 자유롭게 요청하세요. 이 플랜의 웨트슈트와 도수 마스크 대여는 ${formatIntlRentalFee("S2", "ko")}이며, 모든 사진·영상도 무료로 제공됩니다.`,
     ],
     highlights: [
       "완전 전세 — 투어당 한 팀만",
       "전담 가이드와 자유로운 페이스 조절",
       "높은 바다거북 만남 확률",
-      "웨트슈트·도수 마스크 무료 대여",
+      `웨트슈트·도수 마스크 대여: ${formatIntlRentalFee("S2", "ko")}`,
       "사진·영상 무료, 원하는 컷 요청 가능",
     ],
-    included: ["전담 가이드", "스노클링 세트·구명조끼", "웨트슈트·도수 마스크(본 플랜 무료)", "모든 사진·영상 데이터(무료·무제한)", "보험"],
+    included: ["전담 가이드", "스노클링 세트·구명조끼", `웨트슈트(${formatIntlRentalFee("S2", "ko")})·도수 마스크(${formatIntlRentalFee("S2", "ko")}, 성인용만 제공, 어린이용 없음)`, "모든 사진·영상 데이터(무료·무제한)", "보험"],
     whatToBring: ["수영복(옷 안에 미리 착용)", "갈아입을 옷·수건", "선크림", "음료", "샌들(권장)"],
     precautions: [
-      "임신 중인 분은 참여하실 수 없습니다",
-      "중대한 지병이 있는 분은 참여하실 수 없습니다 — 먼저 문의해 주세요",
+      policy.pregnancyNotice,
+      "지병이나 건강상 우려가 있는 분은 반드시 예약 전에 상담해 주세요. 내용을 확인한 후 참여 가능 여부를 안내해 드립니다",
       "음주하신 분은 참여하실 수 없습니다",
-      "60세 이상이 포함된 그룹께 권장하는 플랜입니다",
+      `${SENIOR_RESTRICTED_AGE}세 이상이 포함된 그룹께 권장하는 플랜입니다`,
     ],
-    ageNote: "5세~65세",
-    locationNote: "아라구스쿠 비치 또는 시기라 비치(당일 풍향에 따라 결정, 시작 15분 전 집합)",
-    priceNote: "1인 ¥9,000, 최대 10명. 11명 이상은 LINE으로 문의해 주세요.",
-    priceNoteShort: "1인 ¥9,000",
+    ageNote: formatIntlAgeNote("S2", "ko"),
+    locationNote: "아라구스쿠 비치, 히가시헨나자키 비치, 와이와이 비치, 시기라 비치 중 풍향과 바다 상황에 따라 결정합니다. 집합 장소는 투어 전날 LINE으로 안내하며 시작 15분 전 집합입니다",
+    priceNote: formatIntlPriceNote("S2", "ko"),
+    priceNoteShort: formatIntlPriceNote("S2", "ko", true),
   },
   {
     id: "S4",
@@ -51,18 +73,19 @@ const KO_PLANS_ALL: IntlPlanContent[] = [
       "그룹 단독 프라이빗 — 온전히 프라이빗한 선셋",
       "안정성 높은 보드와 초보자 맞춤 코칭",
       "드론 상공 촬영과 매직아워 실루엣 사진 무료 제공",
-      "바다 위에서 보내는 여유로운 약 2시간",
+      `바다 위에서 보내는 여유로운 약 ${sunsetFacts.durationHours}시간`,
     ],
-    included: ["SUP 보드·패들·구명조끼", "웻슈트·도수 마스크(성인용만)", "드론 촬영", "육상 레슨", "모든 사진·영상 데이터(무료·무제한)", "보험"],
+    included: ["SUP 보드·패들·구명조끼", `웨트슈트·도수 마스크(${formatIntlRentalFee("S4", "ko")}, 마스크는 성인용만 제공, 어린이용 없음)`, "드론 촬영", "육상 레슨", "모든 사진·영상 데이터(무료·무제한)", "보험"],
     whatToBring: ["수영복(옷 안에 미리 착용)", "갈아입을 옷·수건", "선크림", "음료", "샌들"],
     precautions: [
-      "임신 중인 분은 참여하실 수 없습니다",
-      "중대한 지병이 있는 분은 참여하실 수 없습니다 — 먼저 문의해 주세요",
+      policy.pregnancyNotice,
+      "지병이나 건강상 우려가 있는 분은 반드시 예약 전에 상담해 주세요. 내용을 확인한 후 참여 가능 여부를 안내해 드립니다",
       "음주하신 분은 참여하실 수 없습니다",
+      "날씨·바람·비행 규제·안전 판단에 따라 드론 촬영이 불가할 수 있습니다. 이 경우에도 해상에서 사진을 촬영합니다",
     ],
-    ageNote: "5세~65세",
-    timeNote: "집합은 일몰 약 90분 전입니다 — 여름(6~8월)은 17:45~18:00경, 겨울(11~2월)은 16:30~17:00경. 투어는 약 2시간으로, 일몰 약 30분 후에 해산합니다. 정확한 집합 시간은 투어 전날 LINE으로 확정해 드립니다.",
-    locationNote: "투리바 해변공원, 파샤 비치, 요나하 비치 북측, 잉갸 마린 가든, 니시하마 비치 등 5곳 중 당일 풍향과 바다 상황이 가장 좋은 곳에서 진행합니다. 확정된 집합 장소는 투어 전날 LINE으로 지도와 함께 안내해 드립니다.",
+    ageNote: formatIntlAgeNote("S4", "ko"),
+    timeNote: `집합은 일몰 약 90분 전이며 계절에 따라 시간이 달라집니다. 투어는 약 ${sunsetFacts.durationHours}시간으로, 일몰 약 30분 후에 해산합니다. 정확한 집합 시간은 투어 전날 LINE으로 확정해 드립니다.`,
+    locationNote: `투리바 해변공원, 파샤 비치, 요나하 비치 북측, 잉갸 마린 가든, 니시하마 비치 등 ${SUNSET_SUP_SPOTS.length}곳 중 당일 풍향과 바다 상황이 가장 좋은 곳에서 진행합니다. 확정된 집합 장소는 투어 전날 LINE으로 지도와 함께 안내해 드립니다.`,
   },
   {
     id: "S7",
@@ -71,7 +94,7 @@ const KO_PLANS_ALL: IntlPlanContent[] = [
     description: [
       "미야코지마의 투명한 푸른 바다에서 낮의 SUP를 완전 전세로 즐기는 플랜입니다. 전담 가이드가 우리 팀만 안내하므로 나만의 속도로 패들링하며, 원하는 촬영 컷을 자유롭게 요청할 수 있습니다. 수면 근접 촬영과 함께 조건이 맞으면 드론 공중 촬영도 진행합니다.",
       "SUP가 처음이어도 괜찮습니다. 안정성 높은 보드를 사용하고, 출발 전에 전담 가이드가 육지에서 기초를 설명해 드립니다. 처음엔 앉아서 젓다가 익숙해지면 일어서면 됩니다.",
-      "예약 시 7:00~16:00 사이 1시간 단위로 원하는 시작 시간을 선택하세요. 정확한 집합 장소는 투어 전날 LINE으로 안내하며, 바다 상황·조수·바람에 따라 시간을 조금 조정해야 할 경우에도 LINE으로 확정해 드립니다.",
+      `예약 시 다음 시간 중 원하는 시작 시간을 선택하세요: ${daySupTimes}. 정확한 집합 장소는 투어 전날 LINE으로 안내하며, 바다 상황·조수·바람에 따라 시간을 조금 조정해야 할 경우에도 LINE으로 확정해 드립니다.`,
     ],
     highlights: [
       "우리 팀 전용 프라이빗 투어, 전담 가이드 동행",
@@ -80,18 +103,18 @@ const KO_PLANS_ALL: IntlPlanContent[] = [
       "안정성 높은 보드와 초보자 맞춤 코칭",
       "투어 사진·영상 무료 제공",
     ],
-    included: ["SUP 보드·패들·구명조끼", "육상 레슨", "조건 충족 시 드론 촬영", "사진·영상 데이터", "보험", "전담 프라이빗 가이드"],
+    included: ["SUP 보드·패들·구명조끼", `웨트슈트(${formatIntlRentalFee("S7", "ko")})`, `도수 마스크(${formatIntlRentalFee("S7", "ko")}, 성인용만 제공, 어린이용 없음)`, "육상 레슨", "조건 충족 시 드론 촬영", "사진·영상 데이터", "보험", "전담 프라이빗 가이드"],
     whatToBring: ["수영복(옷 안에 미리 착용)", "갈아입을 옷·수건", "선크림", "음료", "샌들"],
     precautions: [
-      "임신 중인 분은 참여하실 수 없습니다",
-      "중대한 지병이 있는 분은 참여하실 수 없습니다 — 먼저 문의해 주세요",
+      policy.pregnancyNotice,
+      "지병이나 건강상 우려가 있는 분은 반드시 예약 전에 상담해 주세요. 내용을 확인한 후 참여 가능 여부를 안내해 드립니다",
       "음주하신 분은 참여하실 수 없습니다",
       "바람·비·비행 규제·안전 판단에 따라 드론 촬영이 불가할 수 있습니다",
       "바다 상황·조수·바람에 따라 시작 시간과 장소가 변경될 수 있습니다",
-      "11명 이상은 LINE으로 문의해 주세요",
+      ...(formatIntlGroupLimit("S7", "ko") ? [formatIntlGroupLimit("S7", "ko")] : []),
     ],
-    ageNote: "5세~65세",
-    timeNote: "예약 시 7:00~16:00 사이 1시간 단위로 시작 시간을 선택하세요. 시작 15분 전 집합 — 바다 상황과 조수에 따라 시간이 조금 달라질 수 있으며 LINE으로 확정해 드립니다.",
+    ageNote: formatIntlAgeNote("S7", "ko"),
+    timeNote: `예약 시 다음 시간 중 시작 시간을 선택하세요: ${daySupTimes}. 시작 15분 전 집합 — 바다 상황과 조수에 따라 시간이 조금 달라질 수 있으며 LINE으로 확정해 드립니다.`,
     locationNote: "당일 바다·조수·바람 상황에 따라 장소가 결정됩니다(투어 전날 가이드가 LINE으로 안내)",
   },
   {
@@ -100,23 +123,23 @@ const KO_PLANS_ALL: IntlPlanContent[] = [
     tagline: "밤의 탐험을 우리 가족만을 위해 통째로 — 완전히 우리만의 속도로 즐기는 프라이빗 플랜.",
     description: [
       "정글 나이트 투어의 모든 재미를 완전 전세로 즐기는 플랜입니다. 전담 가이드가 우리 팀만 안내하므로 신기한 생물 앞에서 마음껏 머무르고, 원할 때마다 사진을 찍고, 어린 자녀나 조부모님의 걸음에 맞춰 진행할 수 있습니다. 다른 손님과 보조를 맞출 필요가 없습니다.",
-      "가이드의 관심이 온전히 우리 팀에 집중되어, 일반 투어에서는 시간이 부족해 못다 한 미야코지마의 야생과 자연 이야기를 더 깊이 들을 수 있습니다. 아이들의 끝없는 '왜요?'에도 차분히 답해 드립니다. 0세 아기부터 어르신까지 환영하며, 3세 이하는 무료, 탐험 사진도 모두 포함입니다.",
+      `가이드의 관심이 온전히 우리 팀에 집중되어, 일반 투어에서는 시간이 부족해 못다 한 미야코지마의 야생과 자연 이야기를 더 깊이 들을 수 있습니다. 아이들의 끝없는 '왜요?'에도 차분히 답해 드립니다. ${nightFacts.minAge}세부터 ${nightFacts.maxAge}세까지 참여하실 수 있습니다. 요금은 ${formatIntlFreeChildNote("S5", "ko")}이며, 탐험 사진도 모두 포함입니다.`,
     ],
     highlights: [
       "완전 전세 — 한 팀만 안내",
       "전담 가이드의 깊이 있는 해설",
       "멸종위기종 야자집게 탐색",
-      "전 연령 참여 가능(0~75세), 3세 이하 무료",
+      `${formatIntlAgeNote("S5", "ko")}, ${formatIntlFreeChildNote("S5", "ko")}`,
       "탐험 사진 무료 제공",
     ],
     included: ["전담 자연 전문 가이드", "손전등 대여", "모든 사진 데이터(무료)", "보험"],
-    whatToBring: ["걷기 편한 신발(샌들 가능)", "벌레 퇴치제", "음료", "손전등(있는 경우, 대여도 가능)"],
-    precautions: ["거동이나 건강에 불안이 있는 분은 사전에 상담해 주세요"],
-    ageNote: "0세~75세",
-    timeNote: "매일 밤 3회 출발: 19:20 / 21:10 / 23:20 (시작 시간에 집합, 23:20 투어는 익일 00:50경 종료)",
-    locationNote: "잉갸 마린 가든 부근(정확한 집합 장소는 투어 당일 LINE으로 안내)",
-    priceNote: "1인 ¥8,000 균일(3세 이하 무료)",
-    priceNoteShort: "1인 ¥8,000",
+    whatToBring: ["샌들도 가능하지만 걷기 편한 신발을 권장합니다", "벌레 퇴치제", "음료", "손전등(있는 경우, 대여도 가능)"],
+    precautions: [policy.pregnancyNotice, "지병이 있거나 거동 또는 건강에 우려가 있는 분은 반드시 예약 전에 상담해 주세요. 내용을 확인한 후 참여 가능 여부를 안내해 드립니다"],
+    ageNote: formatIntlAgeNote("S5", "ko"),
+    timeNote: formatIntlNightTimeNote("S5", "ko"),
+    locationNote: "잉갸 마린 가든 부근 또는 上比屋山遺跡(선정된 집합 장소는 투어 당일 LINE으로 안내)",
+    priceNote: formatIntlPriceNote("S5", "ko"),
+    priceNoteShort: formatIntlPriceNote("S5", "ko", true),
   },
 ]
 
@@ -133,24 +156,24 @@ const KO_FAQS: IntlFaq[] = [
   { question: "웨트슈트가 필요한가요?", answer: "11월부터 4월경까지는 수온이 내려가므로 웨트슈트 착용을 권장합니다. 대여 요금은 플랜에 따라 다릅니다. 요금에 포함된 플랜도 있고 별도 요금인 플랜도 있으니 각 플랜의 상세 내용을 확인해 주세요." },
   { question: "수영을 잘 못하는데 참여할 수 있나요?", answer: "물론입니다! 구명조끼를 착용하고 경험 많은 가이드가 항상 곁에서 도와 드리므로, 수영을 전혀 못 하는 분도 안심하고 참여하실 수 있습니다." },
   { question: "집합 장소는 어디인가요?", answer: "집합 장소는 예약하신 플랜에 따라 다릅니다. 예약이 확정되면 저희가 모든 연락에 사용하는 메신저 앱 LINE으로 집합 장소와 주차장 안내를 자세히 보내 드립니다. 궁금한 점이 있으면 언제든 LINE으로 메시지를 보내 주세요." },
-  { question: "질문이나 상담은 어디로 하면 되나요?", answer: "저희가 모든 연락에 사용하는 LINE으로 24시간 질문과 문의를 받고 있습니다. 언제든 편하게 메시지를 보내 주시면, 영업시간(7:00~18:00) 중에 스태프가 정성껏 답변해 드립니다." },
-  { question: "어린아이도 물에 들어갈 수 있나요?", answer: "네. 5세 이상 어린이는 대부분의 스노클링 투어에 참여할 수 있습니다. 구명조끼와 보조 튜브가 있어 수영을 잘 못하는 아이도 안전하게 바다를 즐길 수 있습니다. 다만 파도 상태와 아이의 컨디션에 맞춰 무리하지 않도록 해 주세요." },
+  { question: "질문이나 상담은 어디로 하면 되나요?", answer: `저희가 모든 연락에 사용하는 LINE으로 24시간 질문과 문의를 받고 있습니다. 언제든 편하게 메시지를 보내 주시면, 영업시간(${formatBusinessHours("ko", "~")}) 중에 스태프가 정성껏 답변해 드립니다.` },
+  { question: "어린아이도 물에 들어갈 수 있나요?", answer: `네. ${snorkelFacts.childMinAge}세 이상 어린이는 대부분의 스노클링 투어에 참여할 수 있습니다. 구명조끼와 보조 튜브가 있어 수영을 잘 못하는 아이도 안전하게 바다를 즐길 수 있습니다. 다만 파도 상태와 아이의 컨디션에 맞춰 무리하지 않도록 해 주세요.` },
   { question: "아이가 파도를 무서워하면 어떻게 하나요?", answer: "아라구스쿠 비치나 시기라 비치처럼 파도가 잔잔한 해변에서, 발이 닿는 얕은 곳부터 천천히 적응하게 해 주세요. 구명조끼를 입고 부모님이 곁에서 잡아 주면 아이들은 서서히 물에 익숙해집니다." },
   { question: "비 오는 날의 대체 일정으로는 무엇이 있나요?", answer: "미야코지마에는 실내에서 즐길 곳이 많습니다. 미야코지마 해중공원, 유키시오(눈소금) 뮤지엄, 시마노에키 미야코 시장 등이 대표적이고, 호텔 수영장에서 시간을 보내는 것도 좋은 선택입니다." },
   { question: "아이용 스노클링 장비도 빌릴 수 있나요?", answer: "네. 많은 해변과 투어 업체에서 아이용 스노클 세트·구명조끼·보조 기구를 대여합니다. Sea Turtle Brothers 투어에서는 어린이 장비를 무료로 제공합니다." },
-  { question: "취소 수수료가 있나요?", answer: "투어 전날까지는 취소 무료입니다 — 전날까지 연락 주시면 요금이 전혀 발생하지 않습니다. 당일 취소는 투어 요금의 100%가 부과됩니다. 결제는 당일 현장에서 현금으로 하므로, 악천후로 저희가 투어를 중지하는 경우에는 지불하실 금액 자체가 없으니 안심하세요." },
-  { question: "임신 중에도 참여할 수 있나요?", answer: "죄송하지만 안전상의 이유로 임신 중이거나 임신 가능성이 있는 분은 참여하실 수 없습니다. 바닷물로 인한 체온 저하와 예기치 못한 위험으로부터 보호하기 위한 조치입니다. 아기가 태어나 안정된 후에 온 가족을 다시 맞이할 날을 기다리겠습니다!" },
-  { question: "콘택트렌즈나 안경을 쓰는데 참여할 수 있나요?", answer: "일회용 콘택트렌즈라면 착용한 채 투어에 참여할 수 있습니다. 렌즈가 빠질 경우를 대비해 여분을 챙겨 오시길 권장합니다. 안경을 쓰시는 분께는 도수 마스크 대여(¥1,000)를 제공하니 예약 시 알려 주세요." },
+  { question: "취소 수수료가 있나요?", answer: `${cancellationFees} ${policy.weatherNotice} ${policy.partialCancellationNotice} ${policy.prepaymentNotice} ${policy.setPaymentNotice} 결제 방식은 ${policy.paymentSummary}입니다.` },
+  { question: "임신 중에도 참여할 수 있나요?", answer: policy.pregnancyNotice },
+  { question: "콘택트렌즈나 안경을 쓰는데 참여할 수 있나요?", answer: `일회용 콘택트렌즈라면 착용한 채 투어에 참여할 수 있습니다. 렌즈가 빠질 경우를 대비해 여분을 챙겨 오시길 권장합니다. 프라이빗 플랜의 도수 마스크 대여는 ${formatIntlRentalFee("S2", "ko")}입니다. 도수 마스크는 성인용만 제공하며 어린이용은 없습니다. 예약 시 알려 주세요.` },
   { question: "뱃멀미가 걱정되는데 괜찮을까요?", answer: "걱정하지 마세요! Sea Turtle Brothers의 투어는 해변에서 바로 바다로 걸어 들어가는 비치 엔트리 방식이라 배를 타지 않습니다. 뱃멀미 걱정 없이 바다를 즐길 수 있다는 것이 저희 투어의 큰 장점입니다. 파도에 흔들려 울렁거림이 걱정된다면 출발 30분 전쯤 일반 멀미약을 복용해 두면 안심입니다." },
   { question: "투어 사진과 영상을 받을 수 있나요?", answer: "네! 가이드가 고화질 카메라로 사진과 영상을 듬뿍 촬영하고, 모든 데이터를 장수 제한 없이 무료로 드립니다. 바다거북과 나란히 헤엄치는 사진 같은 추억을 잔뜩 가져가세요. 본인 카메라를 가져오셔도 되지만 침수 위험이 있으니 방수 케이스 사용을 권장합니다." },
-  { question: "주차장이 있나요?", answer: "네, 집합 장소인 해변에 주차장이 있습니다. 해변에 따라 유료(¥1,000~¥2,000)인 곳도, 무료인 곳도 있습니다. 미야코지마는 대중교통이 많지 않아 렌터카 이용을 권장합니다. 자세한 주차 안내는 투어 전날 LINE으로 보내 드립니다." },
+  { question: "주차장이 있나요?", answer: "네, 집합 장소인 해변에 주차장이 있습니다. 해변에 따라 유료(¥1,000~¥2,000)인 곳도, 무료인 곳도 있습니다. 미야코지마는 대중교통이 많지 않아 렌터카 이용을 권장합니다. 집합 장소와 주차 안내는 해양 투어의 경우 전날, 나이트 투어의 경우 당일에 LINE으로 보내 드립니다." },
   { question: "생리 중에도 참여할 수 있나요?", answer: "네, 평소와 비슷한 컨디션이라면 참여하셔도 괜찮습니다. 탐폰을 사용하거나 어두운 색 수영복을 고르면 한결 편안합니다. 몸이 좋지 않을 때는 무리하지 마세요 — 일정 변경도 가능하니 LINE으로 편하게 상담해 주세요." },
   { question: "햇볕에 타는 게 걱정입니다. 팁이 있나요?", answer: "미야코지마의 자외선은 일본 본토의 약 1.5~2배로 매우 강해 자외선 차단이 필수입니다! 방수 선크림을 수시로 덧바르세요(산호에 부담이 적은 리프세이프 제품 권장). 래시가드 착용도 좋은 방법입니다. 목 뒤, 귀 뒤, 발등처럼 놓치기 쉬운 부위도 잊지 마세요." },
-  { question: "투어 당일에는 어떤 옷차림이 좋나요?", answer: "옷 안에 수영복을 미리 입고 오시는 것이 가장 편합니다. 겉옷은 티셔츠와 반바지처럼 입고 벗기 쉬운 차림이 좋고, 신발은 슬리퍼면 충분합니다. 투어 후 갈아입을 공간이 넉넉하지 않으니 차 안에서 쓸 수 있는 수건과 갈아입을 옷을 준비해 주세요." },
-  { question: "예약은 얼마나 미리 해야 하나요? 당일 예약도 가능한가요?", answer: "프라이빗 투어라서 성수기(7~9월, 4월 말~5월 초 골든위크, 연말연시)에는 1~2주 전에 마감되는 경우가 많습니다. 날짜와 시간이 정해지면 서둘러 예약 신청을 보내 주세요. 자리가 있으면 전날까지 예약할 수 있습니다. LINE으로 메시지를 주시면 최신 예약 가능 상황을 바로 알려 드립니다. 예약은 스태프가 LINE으로 회신해야 확정된다는 점을 유의해 주세요." },
+  { question: "투어 당일에는 어떤 옷차림이 좋나요?", answer: "해양 투어는 옷 안에 수영복을 미리 입고 오시는 것이 가장 편합니다. 겉옷은 티셔츠와 반바지처럼 입고 벗기 쉬운 차림이 좋고, 신발은 슬리퍼면 충분합니다. 투어 후 갈아입을 공간이 넉넉하지 않으니 차 안에서 쓸 수 있는 수건과 갈아입을 옷을 준비해 주세요. 나이트 투어는 샌들도 가능하지만 걷기 편한 신발을 권장합니다." },
+  { question: "예약은 얼마나 미리 해야 하나요? 당일 예약도 가능한가요?", answer: "프라이빗 투어라서 성수기(7~9월, 4월 말~5월 초 골든위크, 연말연시)에는 1~2주 전에 마감되는 경우가 많습니다. 날짜와 시간이 정해지면 서둘러 예약 신청을 보내 주세요. 자리가 있으면 당일에도 웹사이트에서 예약할 수 있습니다. LINE으로 메시지를 주시면 최신 예약 가능 상황을 바로 알려 드립니다. 예약은 스태프가 LINE으로 회신해야 확정된다는 점을 유의해 주세요." },
   { question: "겨울에도 스노클링을 할 수 있나요?", answer: "네! 미야코지마 주변 바다는 겨울에도 수온이 20°C 이상이라 웨트슈트를 입으면 일 년 내내 스노클링을 즐길 수 있습니다. 여름(6~9월)은 따뜻하고 쾌적한 수온이 매력이고, 겨울(12~3월)은 관광객이 적고 투명도가 유난히 높은 숨은 명품 시즌입니다. 어느 계절이든 미야코지마의 바다는 감동적입니다!" },
-  { question: "투어 소요 시간은 얼마나 되나요?", answer: "스노클링 투어는 집합부터 해산까지 약 2시간, 나이트 투어는 약 1.5시간, SUP 투어는 약 2시간입니다. 물속에 있는 시간은 대략 60~90분입니다. 집합 후 안전 교육과 장비 착용을 하고, 체험이 끝나면 현지에서 자유롭게 해산합니다." },
-  { question: "지병이 있는데 참여할 수 있나요?", answer: "안전상의 이유로 심장 질환, 뇌전증, 천식 등이 있는 분은 참여가 어려울 수 있습니다. 예약 전에 LINE으로 편하게 상담해 주시면 상황에 맞게 개별적으로 안내해 드립니다. 또한 음주하신 분은 참여하실 수 없다는 점도 양해 부탁드립니다." },
+  { question: "투어 소요 시간은 얼마나 되나요?", answer: `스노클링 투어는 집합부터 해산까지 약 ${snorkelFacts.durationHours}시간, 나이트 투어는 약 ${nightFacts.durationHours}시간, SUP 투어는 약 ${daySupFacts.durationHours}시간입니다. 물속에 있는 시간은 대략 60~90분입니다. 집합 후 안전 교육과 장비 착용을 하고, 체험이 끝나면 현지에서 자유롭게 해산합니다.` },
+  { question: "지병이 있는데 참여할 수 있나요?", answer: "심장 질환, 뇌전증, 천식 등의 지병이나 건강상 우려가 있는 분은 반드시 예약 전에 LINE으로 상담해 주세요. 내용을 확인한 후 참여 가능 여부를 안내해 드립니다. 상담하더라도 참여가 보장되는 것은 아닙니다. 또한 음주하신 분은 참여하실 수 없다는 점도 양해 부탁드립니다." },
 ]
 
 // ---------------------------------------------------------------------------
@@ -166,11 +189,11 @@ const KO_GUIDE: IntlSectionsContent = {
     { heading: "시작하기 전에", paragraphs: ["바다거북은 야생동물입니다. 이 페이지에서 '만남 확률이 높다'고 표현하더라도 만남을 보장하는 것은 아닙니다. 여러분의 안전과 바다거북 보호를 위해 절대 만지거나 쫓아가지 마시고, 거리를 두고 조용히 관찰해 주세요."] },
     { heading: "미야코지마에서 바다거북을 만나기 쉬운 곳", paragraphs: ["미야코지마는 산호초로 둘러싸여 있고 바다거북의 먹이인 해초와 해조류가 풍부해, 섬 주변 곳곳에 바다거북이 서식합니다. 특히 아래 지역이 만남 확률이 높기로 유명합니다.", "해변에서 들어가서 만날 수도 있지만, 확률은 조수·날씨·그날의 바다 상황에 크게 좌우됩니다. 확률을 높이고 싶다면 현지 포인트를 속속들이 아는 가이드와 함께 가세요."], bullets: ["시기라 비치 주변: 물살이 잔잔하고 스노클링 중 바다거북을 만날 가능성이 높습니다.", "아라구스쿠 비치: 수심이 얕고 산호초가 해안 가까이 있어 초보자도 관찰하기 쉽습니다.", "보트로 나가는 앞바다 산호초 포인트: 사람이 적어 거북이 경계하지 않아 만남 확률이 높은 편입니다."] },
     { heading: "바다거북을 만나기 좋은 시기와 시간대", paragraphs: ["미야코지마에서는 일 년 내내 바다거북을 만날 수 있지만, 관찰 난이도는 바다 상황에 따라 달라집니다.", "참고: 바다거북은 야생동물이므로 계절과 시간대에 관계없이 만남이 보장되지는 않습니다."], bullets: ["시기: 바다가 잔잔하고 투명도가 가장 좋은 4~10월이 최적기입니다. 겨울에도 만날 수 있지만 북풍으로 파도가 높은 날이 많아집니다.", "시간대: 바람이 약하고 바다가 잔잔한 오전이 가장 좋습니다.", "조수: 만조 전후에는 산호초 위를 헤엄치기 쉬워 관찰이 수월해집니다."] },
-    { heading: "초보자나 아이도 바다거북 스노클링을 할 수 있나요?", paragraphs: ["네. 바다거북 스노클링은 수영 실력과 관계없이 누구나 즐길 수 있는 액티비티입니다."], bullets: ["구명조끼를 착용하므로 수면에 편안하게 떠서 바다거북을 관찰할 수 있습니다.", "프라이빗 투어에서는 가이드가 바로 옆에 있어 처음이거나 물이 무서운 분도 안심입니다.", "Sea Turtle Brothers는 5세부터 참여 가능하며 가족 단위 참가자가 많습니다."] },
+    { heading: "초보자나 아이도 바다거북 스노클링을 할 수 있나요?", paragraphs: ["네. 바다거북 스노클링은 수영 실력과 관계없이 누구나 즐길 수 있는 액티비티입니다."], bullets: ["구명조끼를 착용하므로 수면에 편안하게 떠서 바다거북을 관찰할 수 있습니다.", "프라이빗 투어에서는 가이드가 바로 옆에 있어 처음이거나 물이 무서운 분도 안심입니다.", `Sea Turtle Brothers는 ${snorkelFacts.childMinAge}세부터 참여 가능하며 가족 단위 참가자가 많습니다.`] },
     { heading: "개별적으로 갈 때의 안전 수칙", paragraphs: ["해변에서 개인적으로 스노클링을 한다면 안전과 자연 보호에 충분히 유의해 주세요.", "조금이라도 불안하거나 더 안전하고 확실한 체험을 원한다면 가이드 투어 참여를 권장합니다."], bullets: ["이안류와 조류에 주의: 미야코지마의 일부 해변은 물살이 빠릅니다. 지정 수영 구역과 그날의 바다 상황을 반드시 확인해 먼바다로 떠내려가지 않도록 하세요.", "혼자 수영하지 않기: 반드시 2인 이상 함께 가고 구명조끼를 착용하세요.", "바다거북을 만지거나 쫓지 않기: 바다거북은 보호 야생동물입니다. 만지거나 진로를 막지 말고 거리를 두고 조용히 관찰하세요. 먹이 주기는 엄격히 금지되어 있습니다.", "자외선·더위 대비: 래시가드를 입고 선크림을 바르고 수분을 충분히 섭취하세요."] },
     { heading: "가이드 투어가 좋은 이유", paragraphs: ["가이드 투어라면 바다거북을 찾는 수고를 덜고 바다를 즐기는 데만 집중할 수 있습니다."], bullets: ["더 높은 만남 확률: 가이드가 그날의 바다 상황에 맞춰 거북이 자주 나타나는 포인트를 선택합니다.", "프로가 책임지는 안전: 장비 준비와 조류·날씨 판단을 맡겨 두고 편안하게 바다에 집중할 수 있습니다.", "간직할 사진과 영상: 바다거북과 나란히 헤엄치는 모습을 가이드가 촬영해 드립니다 — 휴대폰으로는 담을 수 없는 수중 추억입니다.", "든든한 초보자 지원: 스노클 사용법부터 호흡법까지, 프라이빗 투어라 세심하고 개별적인 코칭이 가능합니다."] },
-    { heading: "Sea Turtle Brothers가 특별한 이유", paragraphs: ["Sea Turtle Brothers는 미야코지마에서 가족 친화적인 프라이빗 마린 체험을 제공합니다.", "투어 종류와 요금은 플랜 페이지에서 확인하세요. 예약 가능 여부 확인과 신청은 예약 양식을 이용해 주세요 — 예약 신청은 스태프가 LINE으로 회신해야 확정됩니다."], bullets: ["한 번에 한 팀만 안내해 가이드가 모든 참가자를 살핍니다", "사진·영상 데이터를 무료 선물로 제공", "5세부터 참여 가능 — 초보자와 가족에게 최적", "투어 전날까지 취소 무료", "보험 완비, 안전 최우선"] },
-    { heading: "미야코지마에서 바다거북과 헤엄치세요", paragraphs: ["초보자와 가족이 편안하게 즐길 수 있는 프라이빗 투어. 사진·영상 무료, 투어 전날까지 취소 무료입니다. 예약 양식에서 예약 가능 여부를 확인하고 신청하시거나 LINE으로 메시지를 보내 주세요 — 스태프가 LINE으로 회신하면 예약이 확정됩니다."] },
+    { heading: "Sea Turtle Brothers가 특별한 이유", paragraphs: ["Sea Turtle Brothers는 미야코지마에서 가족 친화적인 프라이빗 마린 체험을 제공합니다.", "투어 종류와 요금은 플랜 페이지에서 확인하세요. 예약 가능 여부 확인과 신청은 예약 양식을 이용해 주세요 — 예약 신청은 스태프가 LINE으로 회신해야 확정됩니다."], bullets: ["한 번에 한 팀만 안내해 가이드가 모든 참가자를 살핍니다", "사진·영상 데이터를 무료 선물로 제공", `${snorkelFacts.childMinAge}세부터 참여 가능 — 초보자와 가족에게 최적`, `투어 전날까지 취소 ${policy.previousDayFee}`, "보험 완비, 안전 최우선"] },
+    { heading: "미야코지마에서 바다거북과 헤엄치세요", paragraphs: [`초보자와 가족이 편안하게 즐길 수 있는 프라이빗 투어. 사진·영상 무료, 투어 전날까지 취소 ${policy.previousDayFee}입니다. 예약 양식에서 예약 가능 여부를 확인하고 신청하시거나 LINE으로 메시지를 보내 주세요 — 스태프가 LINE으로 회신하면 예약이 확정됩니다.`] },
   ],
 }
 
@@ -180,22 +203,22 @@ const KO_GUIDE: IntlSectionsContent = {
 
 const KO_HOME = {
   metaTitle: "미야코지마 바다거북 스노클링 | Sea Turtle Brothers",
-  metaDescription: "미야코지마의 프라이빗 투어와 프라이빗 선셋 SUP. 사진·영상 무료, 전날까지 취소 무료. Sea Turtle Brothers.",
+  metaDescription: `미야코지마의 프라이빗 투어와 프라이빗 선셋 SUP. 사진·영상 무료, 전날까지 취소 ${policy.previousDayFee}. Sea Turtle Brothers.`,
   hero: {
     badge: "미야코지마 가족 친화 마린 투어",
     title: "미야코지마에서 바다거북과 헤엄치다",
-    subtitle: "초보자와 가족을 위해 설계된 프라이빗 투어와 프라이빗 선셋 SUP — 사진·영상 무료, 투어 전날까지 취소 무료.",
+    subtitle: `초보자와 가족을 위해 설계된 프라이빗 투어와 프라이빗 선셋 SUP — 사진·영상 무료, 투어 전날까지 취소 ${policy.previousDayFee}.`,
   },
   trustItems: [
     "프라이빗 투어, 보험 완비",
     "수중 사진·영상 무료",
-    "전날까지 취소 무료",
-    "5세 이상 어린이 환영, 아동 장비 제공",
+    `전날까지 취소 ${policy.previousDayFee}`,
+    `${snorkelFacts.childMinAge}세 이상 어린이 환영, 아동 장비 제공`,
   ],
   aboutHeading: "미야코지마의 바다를, 우리 가족의 속도로",
   aboutParagraphs: [
     "Sea Turtle Brothers(우미가메 형제)는 오키나와 미야코지마의 프라이빗 마린 투어 업체입니다. 대표 체험은 투명하고 잔잔한 바다에서 야생 바다거북과 함께하는 스노클링으로, 흰동가리와 알록달록한 열대어도 만날 수 있습니다. 야생동물이라 만남을 100% 보장할 수는 없지만 만남 확률은 높고, 모든 투어를 프라이빗으로 운영해 붐비는 인파 없이 바다거북과 느긋하고 여유로운 시간을 보낼 수 있습니다.",
-    "안전이 언제나 최우선입니다. 모든 투어는 안전 교육으로 시작하고 보험이 적용되며, 가이드는 스노클링이 처음인 분들에게 익숙합니다. 5세부터 참여할 수 있고 아이용 장비도 준비되어 있어, 가족 여행의 추억 만들기에 부담 없는 선택입니다.",
+    `안전이 언제나 최우선입니다. 모든 투어는 안전 교육으로 시작하고 보험이 적용되며, 가이드는 스노클링이 처음인 분들에게 익숙합니다. ${snorkelFacts.childMinAge}세부터 참여할 수 있고 아이용 장비도 준비되어 있어, 가족 여행의 추억 만들기에 부담 없는 선택입니다.`,
     "가이드가 수중 카메라로 체험 전 과정을 촬영하고, 고화질 사진·영상을 모두 무료로 드립니다. 바다거북 스노클링 외에도 나이트 투어, 선셋 SUP, 드론 SUP 등 미야코지마의 바다와 자연을 아침부터 밤까지 즐길 수 있는 체험을 운영합니다.",
   ],
   howToBookHeading: "예약 방법",
@@ -203,18 +226,18 @@ const KO_HOME = {
     { title: "플랜 고르기", text: "투어를 둘러보고 여행 일정에 맞는 플랜과 날짜를 고르세요. 각 투어의 요금은 해당 플랜 페이지에서 확인하실 수 있습니다." },
     { title: "예약 신청 보내기", text: "웹사이트에서 예약 신청을 보내세요. 전송에는 무료 메신저 앱 LINE 로그인이 필요합니다. 예약 신청 단계에서는 아직 예약이 확정되지 않는다는 점을 유의해 주세요." },
     { title: "LINE으로 확정 안내 받기", text: "스태프가 예약 가능 여부를 확인한 뒤 LINE으로 회신해 드립니다. 저희의 회신을 받으셔야 예약이 확정됩니다." },
-    { title: "당일 현금 결제", text: "선결제가 없습니다 — 투어 당일 현장에서 현금으로 결제하시면 됩니다. 투어 전날까지 취소는 무료입니다." },
+    { title: policy.paymentSummary, text: `${policy.prepaymentNotice} ${policy.setPaymentNotice} 결제 방식은 ${policy.paymentSummary}입니다. ${previousDayCancellation}` },
   ],
   lineExplainer: {
     title: "왜 LINE이 필요한가요?",
-    text: "LINE(라인)은 무료 메신저 앱으로, 일본에서 가장 널리 쓰이는 연락 수단입니다. 저희는 예약 확정과 투어 전 안내를 모두 LINE으로 진행합니다. 예약 신청을 보내려면 LINE 계정이 필요하니, 카카오톡을 주로 쓰시는 분도 예약 전에 App Store나 Google Play에서 LINE 앱을 미리 설치해 두시길 권장합니다(1분이면 됩니다). 스태프가 LINE으로 회신해야 예약이 확정된다는 점을 기억해 주세요. 질문이 있거나 LINE 사용이 어려운 경우에는 info@umigamekyoudaimiyakojima.com 으로 이메일을 보내시거나 +81-80-5344-2439 로 전화 주세요.",
+    text: `LINE(라인)은 무료 메신저 앱으로, 일본에서 가장 널리 쓰이는 연락 수단입니다. 저희는 예약 확정과 투어 전 안내를 모두 LINE으로 진행합니다. 예약 신청을 보내려면 LINE 계정이 필요하니, 카카오톡을 주로 쓰시는 분도 예약 전에 App Store나 Google Play에서 LINE 앱을 미리 설치해 두시길 권장합니다(1분이면 됩니다). 스태프가 LINE으로 회신해야 예약이 확정된다는 점을 기억해 주세요. 질문이 있거나 LINE 사용이 어려운 경우에는 ${SITE_CONFIG.publicEmail} 으로 이메일을 보내시거나 ${SITE_CONFIG.phoneDisplayIntl} 로 전화 주세요.`,
   },
   toursHeading: "투어 소개",
-  toursIntro: "프라이빗 바다거북 스노클링, 프라이빗 정글 나이트 투어, 프라이빗 드론 SUP, 그리고 프라이빗 선셋 SUP — 미야코지마의 바다와 자연을 즐기는 4가지 체험.",
+  toursIntro: `프라이빗 바다거북 스노클링, 프라이빗 정글 나이트 투어, 프라이빗 드론 SUP, 그리고 프라이빗 선셋 SUP — 미야코지마의 바다와 자연을 즐기는 ${INTL_PLAN_IDS.length}가지 체험.`,
   faqHeading: "자주 묻는 질문",
   faqIntro: "미야코지마에서의 첫 스노클링을 계획 중이신가요? 수영 실력, 아이 참여, 취소, 결제까지 여행자들이 가장 많이 묻는 질문에 답해 드립니다.",
   contactHeading: "궁금한 점이 있으신가요?",
-  contactText: "LINE으로 언제든 메시지를 보내시거나, 이메일 또는 영업시간(7:00~18:00, 연중무휴) 중 전화로 문의해 주세요.",
+  contactText: `LINE으로 언제든 메시지를 보내시거나, 이메일 또는 영업시간(${formatBusinessHours("ko", "~")}, 연중무휴) 중 전화로 문의해 주세요.`,
 } as const
 
 // ---------------------------------------------------------------------------
@@ -229,10 +252,10 @@ const KO_TERMS: IntlSectionsContent = {
   sections: [
     { heading: "제1조 (적용 범위)", paragraphs: ["본 약관은 Sea Turtle Brothers(이하 '당사')가 제공하는 마린 투어(이하 '투어')의 예약 및 참여 조건을 정합니다. 예약 양식을 제출하시면 본 약관에 동의한 것으로 간주됩니다."] },
     { heading: "제2조 (예약 확정)", paragraphs: ["예약 양식 제출은 예약 신청일 뿐이며 예약을 확정하지 않습니다. 당사가 LINE 또는 전화로 확정을 안내한 시점에 예약이 확정됩니다. 예약 상황 및 바다 상황에 따라 신청을 수락하지 못할 수 있습니다."] },
-    { heading: "제3조 (요금 및 결제)", paragraphs: ["투어 요금은 각 플랜 페이지에 표시된 금액(세금 포함)입니다. 결제는 투어 당일 현장에서 현금으로 진행합니다."] },
-    { heading: "제4조 (취소 정책)", paragraphs: ["모든 투어에 아래 취소 조건이 적용됩니다."], bullets: ["투어 전날까지 취소 무료", "당일 취소: 투어 요금의 100%", "노쇼(무단 불참): 투어 요금의 100%", "취소·변경은 LINE 또는 전화로 연락해 주세요"] },
-    { heading: "제5조 (기상 악화로 인한 중지)", paragraphs: ["안전을 최우선으로 하여, 악천후·높은 파도 등의 상황에서는 당사 판단으로 투어를 중지할 수 있습니다. 이 경우 취소 수수료는 없습니다. 결제는 당일 현장 현금 결제로 선결제가 없으므로 청구되는 금액도 없습니다."] },
-    { heading: "제6조 (안전 및 참여 조건)", paragraphs: ["모든 투어의 안전을 위해 참가자 여러분께 아래 사항을 부탁드립니다."], bullets: ["투어 중에는 가이드의 지시를 따라 주세요. 지시를 따르지 않는 경우 안전상의 이유로 참여 중단을 요청할 수 있습니다", "음주하신 분, 몸이 불편한 분은 참여할 수 없습니다", "지병이 있는 분, 임신 중인 분, 기타 건강에 우려가 있는 분은 사전에 상담해 주세요", "각 플랜의 연령 제한과 참여 조건은 해당 플랜 페이지의 기재를 따릅니다"] },
+    { heading: "제3조 (요금 및 결제)", paragraphs: [`투어 요금은 각 플랜 페이지에 표시된 금액(세금 포함)입니다. 결제 방식은 ${policy.paymentSummary}입니다. ${policy.prepaymentNotice} ${policy.setPaymentNotice}`] },
+    { heading: "제4조 (취소 정책)", paragraphs: ["모든 투어에 아래 취소 조건이 적용됩니다."], bullets: [previousDayCancellation, `당일 취소: 투어 요금의 ${policy.sameDayFee}`, `노쇼(무단 불참): 투어 요금의 ${policy.noShowFee}`, "취소·변경은 LINE 또는 전화로 연락해 주세요"] },
+    { heading: "제5조 (기상 악화로 인한 중지)", paragraphs: [`안전을 최우선으로 하여, 악천후·높은 파도 등의 상황에서는 당사 판단으로 투어를 중지할 수 있습니다. ${policy.weatherNotice}`, policy.partialCancellationNotice] },
+    { heading: "제6조 (안전 및 참여 조건)", paragraphs: ["모든 투어의 안전을 위해 참가자 여러분께 아래 사항을 부탁드립니다."], bullets: ["투어 중에는 가이드의 지시를 따라 주세요. 지시를 따르지 않는 경우 안전상의 이유로 참여 중단을 요청할 수 있습니다", "음주하신 분, 몸이 불편한 분은 참여할 수 없습니다", policy.pregnancyNotice, policy.healthConsultationNotice, "각 플랜의 연령 제한과 참여 조건은 해당 플랜 페이지의 기재를 따릅니다"] },
     { heading: "제7조 (사진 및 영상)", paragraphs: ["투어 중 스태프가 촬영한 사진과 영상은 무료로 제공됩니다. 참가자가 나온 사진·영상을 당사 웹사이트, SNS 등 홍보 채널에 사용하고자 할 경우 사전에 동의를 확인합니다."] },
     { heading: "제8조 (책임의 제한)", paragraphs: ["당사는 안전 확보에 최선을 다하지만, 참가자의 고의 또는 과실, 본 약관 위반, 불가항력으로 인한 손해에 대해서는 당사의 고의 또는 중대한 과실로 인한 경우를 제외하고 책임을 지지 않습니다."] },
     { heading: "제9조 (약관의 변경)", paragraphs: ["당사는 필요에 따라 본 약관을 개정할 수 있습니다. 개정된 약관은 본 페이지에 게시된 시점부터 효력이 발생합니다."] },
@@ -254,7 +277,7 @@ const KO_PRIVACY: IntlSectionsContent = {
     { heading: "5. 연결된 열람 기록, 동의 및 보관 기간", paragraphs: ["행동 추적은 선택 사항이며 거부해도 예약할 수 있습니다. 동의하면 Visitor ID를 예약에 첨부해 열람 기록을 성명·연락처·참가자 정보와 연결합니다.", "Visitor ID와 행동 이벤트는 최대 395일 보관합니다. 데이터 설정에서 향후 수집을 중지할 수 있고, 저장된 데이터 삭제는 문의처로 요청할 수 있습니다."] },
     { heading: "6. 정보 보안", paragraphs: ["당사는 보유한 개인정보를 무단 접근, 분실, 유출로부터 보호하기 위해 적절한 보안 조치를 취합니다."] },
     { heading: "7. 열람·정정·삭제 요청", paragraphs: ["개인정보의 열람·정정·삭제를 원하시면 본인 확인 후 신속하게 대응하겠습니다. 아래 연락처로 문의해 주세요."] },
-    { heading: "8. 문의처", paragraphs: ["Sea Turtle Brothers (〒906-0014 일본 오키나와현 미야코지마시 히라라 마쓰바라 107-1)", "전화: +81-80-5344-2439 (7:00~18:00, 연중무휴)", "이메일: info@umigamekyoudaimiyakojima.com"] },
+    { heading: "8. 문의처", paragraphs: [`${SITE_CONFIG.siteNameEn} (${SITE_CONFIG.address.formattedKo})`, `전화: ${SITE_CONFIG.phoneDisplayIntl} (${formatBusinessHours("ko", "~")}, 연중무휴)`, `이메일: ${SITE_CONFIG.publicEmail}`] },
     { heading: "9. 방침의 변경", paragraphs: ["법령이나 서비스 변경에 따라 본 방침을 수시로 갱신할 수 있습니다. 중요한 변경은 본 페이지에서 공지합니다.", "시행일: 2026년 6월 13일, 최종 개정일: 2026년 8월 13일"] },
   ],
 }
@@ -268,42 +291,42 @@ const KO_UI: IntlUiCopy = {
     tagline: "안전과 진심, 그리고 잔잔한 설렘을 담은 가족 친화 프라이빗 바다 체험. 눈부시게 투명한 바다에서 바다거북을 가까이 만나 보세요.",
     quickLinksHeading: "바로가기",
     businessHoursHeading: "영업시간",
-    hours: "7:00 - 18:00",
+    hours: formatBusinessHours("ko", " - "),
     openYearRound: "연중무휴",
     hoursNote: "날씨에 따라 변경될 수 있습니다.",
     lineLabel: "LINE 공식 계정",
-    logoAlt: "Sea Turtle Brothers - EST. 2024",
-    quickLinks: [
-      { href: "/ko", label: "홈" },
-      { href: "/ko/plans", label: "투어 전체 보기" },
-      { href: "/ko/book", label: "투어 예약" },
-      { href: "/ko/miyakojima-sea-turtle", label: "바다거북 가이드" },
-      { href: "/ko/faq", label: "자주 묻는 질문" },
-    ],
+    logoAlt: `${SITE_CONFIG.siteNameEn} - EST. 2024`,
+    quickLinks: navigationItems("ko", [
+      { pageId: "home", label: "홈" },
+      { pageId: "plans", label: "투어 전체 보기" },
+      { pageId: "book", label: "투어 예약" },
+      { pageId: "seaTurtleGuide", label: "바다거북 가이드" },
+      { pageId: "faq", label: "자주 묻는 질문" },
+    ]),
     legalLinks: [
-      { href: "/ko/terms", label: "이용약관·취소 정책" },
-      { href: "/ko/privacy", label: "개인정보 처리방침" },
-      { href: "/tokushoho", label: "특정상거래법 표기(일본어)" },
+      { href: pagePath("ko", "terms"), label: "이용약관·취소 정책" },
+      { href: pagePath("ko", "privacy"), label: "개인정보 처리방침" },
+      { href: pagePath("ja", "tokushoho"), label: "특정상거래법 표기(일본어)" },
     ],
-    copyright: "Sea Turtle Brothers. All rights reserved.",
+    copyright: `${SITE_CONFIG.siteNameEn}. All rights reserved.`,
   },
   mobileCta: {
     line: "LINE 문의",
     book: "지금 예약",
-    bookHref: "/ko/book",
+    bookHref: pagePath("ko", "book"),
   },
   nav: {
-    items: [
-      { href: "/ko", label: "홈" },
-      { href: "/ko/plans", label: "투어" },
-      { href: "/ko/miyakojima-sea-turtle", label: "바다거북 가이드" },
-      { href: "/ko/faq", label: "FAQ" },
-    ],
+    items: navigationItems("ko", [
+      { pageId: "home", label: "홈" },
+      { pageId: "plans", label: "투어" },
+      { pageId: "seaTurtleGuide", label: "바다거북 가이드" },
+      { pageId: "faq", label: "FAQ" },
+    ]),
     line: "LINE 문의",
     book: "지금 예약",
     menuAria: "메뉴",
-    homeHref: "/ko",
-    bookHref: "/ko/book",
+    homeHref: pagePath("ko", "home"),
+    bookHref: pagePath("ko", "book"),
   },
   bookingFormLoading: "예약 양식을 불러오는 중입니다",
 }
@@ -336,14 +359,14 @@ const KO_COMMON: IntlCommonCopy = {
   tourPlansEyebrow: "Tour Plans",
   guideEyebrow: "Sea Turtle Guide",
   plansMetaTitle: "투어·요금 안내 | Sea Turtle Brothers 미야코지마",
-  plansMetaDescription: "미야코지마 Sea Turtle Brothers의 투어 비교: 스노클링, 전세 투어, 나이트 투어, SUP. 사진·영상 무료, 전날까지 취소 무료.",
+  plansMetaDescription: `미야코지마 Sea Turtle Brothers의 투어 비교: 스노클링, 전세 투어, 나이트 투어, SUP. 사진·영상 무료, 전날까지 취소 ${policy.previousDayFee}.`,
   plansTitle: "미야코지마 투어·요금 안내",
-  plansIntro: "프라이빗 바다거북 스노클링, 프라이빗 정글 나이트 투어, 프라이빗 드론 SUP, 프라이빗 선셋 SUP. 모든 투어에 사진·영상이 무료로 포함되며 투어 전날까지 취소 무료입니다.",
+  plansIntro: `프라이빗 바다거북 스노클링, 프라이빗 정글 나이트 투어, 프라이빗 드론 SUP, 프라이빗 선셋 SUP. 모든 투어에 사진·영상이 무료로 포함되며 투어 전날까지 취소 ${policy.previousDayFee}입니다.`,
   faqMetaTitle: "자주 묻는 질문 | Sea Turtle Brothers 미야코지마",
   faqMetaDescription: "미야코지마 Sea Turtle Brothers 투어에 관한 자주 묻는 질문: 수영 실력, 아이 참여, 준비물, 취소, 날씨, 결제 등.",
   faqTitle: "자주 묻는 질문",
   faqIntro: "투어 참여 전에 알아 두면 좋은 모든 것 — 수영 실력, 아이 참여, 취소, 준비물 등. 원하는 답을 찾지 못하셨나요? 언제든 LINE으로 메시지를 보내 주세요.",
-  faqStillQuestions: "아직 궁금한 점이 있으신가요? 영업시간(7:00~18:00) 중에 정성껏 답변해 드립니다.",
+  faqStillQuestions: `아직 궁금한 점이 있으신가요? 영업시간(${formatBusinessHours("ko", "~")}) 중에 정성껏 답변해 드립니다.`,
   askOnLine: "LINE으로 질문하기",
   orEmail: "또는 이메일",
   readyToBook: "예약하시겠어요? 여기서 예약 가능 여부를 확인하세요",
@@ -361,7 +384,7 @@ const KO_COMMON: IntlCommonCopy = {
   bringHeading: "준비물",
   notesHeading: "유의 사항",
   paymentNote: {
-    before: "결제는 투어 당일 현장에서 현금으로 진행합니다. 투어 전날까지 취소 무료 — 자세한 내용은 ",
+    before: `결제 방식은 ${policy.paymentSummary}입니다. ${policy.prepaymentNotice} ${policy.setPaymentNotice} ${previousDayCancellation} 자세한 내용은 `,
     linkText: "취소 정책",
     after: "을 확인하세요.",
   },
@@ -373,9 +396,9 @@ const KO_COMMON: IntlCommonCopy = {
   bookThisTour: "이 투어 예약하기",
   detailsLabel: "자세히 보기",
   guideCtaHeading: "바다거북을 만날 준비 되셨나요?",
-  guideCtaText: "프라이빗 투어, 사진·영상 무료. 투어 전날까지 취소 무료입니다.",
+  guideCtaText: `프라이빗 투어, 사진·영상 무료. 투어 전날까지 취소 ${policy.previousDayFee}입니다.`,
   bookMetaTitle: "투어 예약 | Sea Turtle Brothers 미야코지마",
-  bookMetaDescription: "미야코지마 투어 예약 신청. 요금 자동 계산, 전날까지 취소 무료, LINE으로 예약 확정 안내를 받아보세요.",
+  bookMetaDescription: `미야코지마 투어 예약 신청. 요금 자동 계산, 전날까지 취소 ${policy.previousDayFee}, LINE으로 예약 확정 안내를 받아보세요.`,
   bookTitle: "예약 신청",
   bookIntro: "아래 정보를 입력해 주세요 — 요금은 자동으로 계산됩니다. 예약 가능 여부를 확인한 뒤 LINE으로 회신해 드립니다. ",
   bookIntroStrong: "저희의 회신을 받으시기 전까지는 예약이 확정되지 않습니다.",
@@ -394,9 +417,10 @@ const KO_COMMON: IntlCommonCopy = {
 const KO_FORM: IntlFormCopy = {
   staffNoPreference: "지정 없음",
   staffNames: { staff1: "야마짱", staff2: "히카루", staff5: "소타로", staff3: "소이치로", staff4: "나기" },
-  limitToast: (max) => `온라인 예약은 최대 ${max}명까지입니다. 11명 이상은 LINE으로 문의해 주세요.`,
-  groupLimitInfo: (max, current) => `온라인 예약은 최대 ${max}명까지입니다. 현재 인원: ${current}명. 11명 이상은 LINE으로 문의해 주세요.`,
+  limitToast: (max) => `온라인 예약은 최대 ${max}명까지입니다. ${max + 1}명 이상은 LINE으로 문의해 주세요.`,
+  groupLimitInfo: (max, current) => `온라인 예약은 최대 ${max}명까지입니다. 현재 인원: ${current}명. ${max + 1}명 이상은 LINE으로 문의해 주세요.`,
   sectionChooseTour: "투어 선택",
+  nightFootwearNotice: "나이트 투어는 샌들을 신고도 참여하실 수 있습니다. 다만 밤길을 걷기 때문에 걷기 편한 신발을 추천합니다.",
   sectionDateTime: "날짜·시작 시간",
   sectionParticipants: "참가자 정보",
   sectionStaff: "가이드 지명(선택)",
@@ -404,16 +428,16 @@ const KO_FORM: IntlFormCopy = {
   dateLabel: "날짜(일본 시간) *",
   startTimeLabel: "시작 시간",
   startTimeSunset: "(일몰에 따라 결정)",
-  sunsetNote: "시작 시간은 일몰에 맞춰 계절마다 달라집니다 — 집합은 일몰 약 90분 전(8월은 17:45경)입니다. 정확한 시간과 집합 장소는 투어 전날 LINE으로 확정해 드립니다.",
+  sunsetNote: `시작 시간은 일몰에 맞춰 계절마다 달라집니다 — 집합은 일몰 약 90분 전입니다. 정확한 시간과 집합 장소는 투어 전날 LINE으로 확정해 드립니다.`,
   sunsetDateGuide: (month, meet, end) => `${month}월 기준: 집합 ${meet}경, 해산 ${end}경.`,
   daySupNote: "바다 상황과 조수에 따라 시작 시간이 조금 달라질 수 있습니다 — 최종 시간은 LINE으로 확정해 드립니다.",
   chooseTourFirst: "먼저 투어를 선택해 주세요",
   participantsIntroBase: "안전을 위해 나이 입력이 필요합니다.",
   participantsIntroShoe: "핀 준비를 위해 신발 사이즈(cm)가 필요합니다 — 신장·체중은 선택 사항이지만 장비 선택에 도움이 됩니다.",
-  addAdult: "성인(13세 이상)",
-  addChild: (minAge) => `어린이(${minAge}~12세)`,
-  addUnder3: "0~3세(무료)",
-  guestCategoryLabel: { adult: "성인", child: "어린이", under3: "0~3세" },
+  addAdult: `성인(${ADULT_AGE_MIN}세 이상)`,
+  addChild: (minAge, maxAge) => `어린이(${minAge}~${maxAge}세)`,
+  addUnder3: nightFreeAge ? `${nightFreeAge.min}~${nightFreeAge.max}세(무료)` : "",
+  guestCategoryLabel: { adult: "성인", child: "어린이", under3: nightFreeAge ? `${nightFreeAge.min}~${nightFreeAge.max}세` : "" },
   guestHeading: (index, categoryLabel) => `참가자 ${index} (${categoryLabel})`,
   removeGuestAria: (index) => `참가자 ${index} 삭제`,
   defaultGuestName: (index) => `참가자 ${index}`,
@@ -432,8 +456,8 @@ const KO_FORM: IntlFormCopy = {
   prescriptionMaskAdultsOnly: "도수 마스크는 성인용만 있으며 어린이용은 없습니다.",
   rentalSummary: (wetsuitCount, maskCount) =>
     `렌탈: 웨트수트 ${wetsuitCount}명, 도수 마스크 ${maskCount}명`,
-  needAdultError: "성인(13세 이상)이 최소 1명 필요합니다.",
-  seniorNotice: { before: "안전을 위해 60세 이상이 포함된 그룹은 ", after: " 을(를) 예약해 주세요." },
+  needAdultError: `성인(${ADULT_AGE_MIN}세 이상)이 최소 1명 필요합니다.`,
+  seniorNotice: { before: `안전을 위해 ${SENIOR_RESTRICTED_AGE}세 이상이 포함된 그룹은 `, after: " 을(를) 예약해 주세요." },
   seniorFallbackPlanName: "전세 플랜",
   staffIntro: "지정하지 않으셔도 괜찮습니다 — 어느 가이드든 최고의 투어를 선사합니다.",
   fullNameLabel: "성명 *",
@@ -453,12 +477,12 @@ const KO_FORM: IntlFormCopy = {
   partySummary: (counts) => {
     const parts = [`성인 ${counts.adult}명`]
     if (counts.child > 0) parts.push(`어린이 ${counts.child}명`)
-    if (counts.under3 > 0) parts.push(`3세 이하 ${counts.under3}명(무료)`)
+    if (counts.under3 > 0 && nightFreeAge) parts.push(`${nightFreeAge.max}세 이하 ${counts.under3}명(무료)`)
     return parts.join(", ")
   },
   guideFeeLine: (fee) => `가이드 지명: +¥${fee}`,
   estimatedTotalLabel: "예상 합계:",
-  cashOnDay: "당일 현금 결제",
+  cashOnDay: policy.paymentSummary,
   agreeText: {
     before: "",
     termsLabel: "이용약관·취소 정책",
@@ -466,7 +490,7 @@ const KO_FORM: IntlFormCopy = {
     privacyLabel: "개인정보 처리방침",
     after: "에 동의합니다.",
   },
-  cancellationSmallPrint: "투어 전날까지 취소 무료. 당일 취소·노쇼는 투어 요금의 100%가 부과됩니다. 기상 악화로 저희가 중지하는 경우 전액 환불(청구 없음)입니다.",
+  cancellationSmallPrint: `${cancellationFees} ${policy.weatherNotice} ${policy.partialCancellationNotice} ${policy.prepaymentNotice} ${policy.setPaymentNotice} 결제 방식은 ${policy.paymentSummary}입니다. ${policy.pregnancyNotice} ${policy.healthConsultationNotice}`,
   lineLoginHeading: "마지막 단계: LINE으로 로그인",
   lineLoginBody: {
     before: "모든 예약은 무료 메신저 앱 LINE으로 확정 안내를 드립니다. 예약 신청을 보내려면 LINE 로그인이 필요합니다 — 아직 앱이 없다면 App Store 또는 Google Play에서 먼저 설치해 주세요(1분이면 됩니다). 입력하신 내용은 자동 저장되어 로그인 후에도 그대로 남아 있습니다. LINE 사용이 어려운 경우에는 ",
@@ -480,8 +504,8 @@ const KO_FORM: IntlFormCopy = {
   missingDate: "날짜 선택",
   missingTime: "시작 시간 선택",
   missingAddGuest: "참가자 1명 이상 추가",
-  missingAdult: "성인(13세 이상) 1명 이상 포함",
-  missingReduceGroup: (max) => `인원을 ${max}명 이하로 조정(11명 이상은 LINE 문의)`,
+  missingAdult: `성인(${ADULT_AGE_MIN}세 이상) 1명 이상 포함`,
+  missingReduceGroup: (max) => `인원을 ${max}명 이하로 조정(${max + 1}명 이상은 LINE 문의)`,
   missingAgeFor: (index) => `참가자 ${index}의 나이/구분`,
   missingShoeFor: (index) => `참가자 ${index}의 신발 사이즈`,
   missingFullName: "성명 입력",
@@ -510,7 +534,7 @@ const KO_FORM: IntlFormCopy = {
   successGuestsLabel: "인원: ",
   successCouponLabel: "쿠폰 할인: ",
   successTotalPrefix: "예상 합계: ",
-  successTotalSuffix: " (당일 현금 결제)",
+  successTotalSuffix: ` (${policy.paymentSummary})`,
   addFriendBox: {
     title: "⚠️ 꼭 읽어 주세요",
     bodyPre: "예약 확정 안내는 저희 ",

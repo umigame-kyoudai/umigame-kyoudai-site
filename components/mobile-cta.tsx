@@ -1,5 +1,6 @@
 "use client"
 
+import { SITE_CONFIG } from "@/lib/site-config"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -7,12 +8,13 @@ import { MessageSquare, Calendar } from "lucide-react"
 import { trackEvent } from "@/lib/analytics"
 import type { Locale } from "@/lib/i18n/locales"
 import type { IntlUiCopy } from "@/lib/i18n/types"
+import { pagePath } from "@/lib/routes"
 
-const JA = { line: "LINE相談", book: "空き確認・予約", bookHref: "/book" } as const
+const JA = { line: "LINE相談", book: "空き確認・予約" } as const
 
 // cta prop を渡し忘れた英語ページ向けのフォールバック（通常はテンプレートが辞書から渡す）。
 // クライアントコンポーネントなので辞書全体は import しない（バンドル肥大防止）。
-const EN_FALLBACK = { line: "Ask on LINE", book: "Book Now", bookHref: "/en/book" } as const
+const EN_FALLBACK = { line: "Ask on LINE", book: "Book Now" } as const
 
 export function MobileCTA({
   locale = "ja",
@@ -22,7 +24,7 @@ export function MobileCTA({
   cta?: IntlUiCopy["mobileCta"]
 }) {
   const pathname = usePathname()
-  const t = cta ?? (locale === "ja" ? JA : EN_FALLBACK)
+  const t = cta ?? { ...(locale === "ja" ? JA : EN_FALLBACK), bookHref: pagePath(locale, "book") }
   const isBookingPage = pathname === t.bookHref
 
   return (
@@ -44,7 +46,7 @@ export function MobileCTA({
               className={`${isBookingPage ? "w-full" : "min-w-0 flex-1"} h-11 px-2 text-xs min-[380px]:text-sm border-green-300 text-green-700 hover:bg-green-50 bg-white/80 font-semibold`}
               onClick={() => {
                 trackEvent("line_click", { location: "mobile_cta" })
-                window.open("https://lin.ee/jfp4laz", "_blank", "noopener,noreferrer")
+                window.open(SITE_CONFIG.lineUrl, "_blank", "noopener,noreferrer")
               }}
             >
               <MessageSquare className="w-4 h-4 mr-2" />

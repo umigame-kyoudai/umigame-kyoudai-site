@@ -6,9 +6,11 @@ import { Footer } from "@/components/footer"
 import { MobileCTA } from "@/components/mobile-cta"
 import { BreadcrumbJsonLd, FAQJsonLd } from "@/components/json-ld"
 import { createMetadata, SITE_URL } from "@/lib/seo"
+import { SITE_CONFIG } from "@/lib/site-config"
 import { TrackedCta } from "@/components/tracked-cta"
 import { getDict } from "@/lib/i18n/dict"
 import { type IntlLocale, localePath } from "@/lib/i18n/locales"
+import { pagePath } from "@/lib/routes"
 import { ChevronRight, MessageCircle } from "lucide-react"
 
 export function intlFaqMetadata(locale: IntlLocale): Metadata {
@@ -61,7 +63,7 @@ export function IntlFaqPage({ locale }: { locale: IntlLocale }) {
             <TrackedCta
               event="line_click"
               eventProps={{ location: `${locale}_faq` }}
-              href="https://lin.ee/jfp4laz"
+              href={SITE_CONFIG.lineUrl}
               external
               className="inline-flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-bold px-6 py-3 rounded-full transition-colors"
             >
@@ -70,14 +72,14 @@ export function IntlFaqPage({ locale }: { locale: IntlLocale }) {
             </TrackedCta>
             <p className="mt-3 text-sm text-gray-500">
               {common.orEmail}{" "}
-              <a href="mailto:info@umigamekyoudaimiyakojima.com" className="text-emerald-700 underline">
-                info@umigamekyoudaimiyakojima.com
+              <a href={`mailto:${SITE_CONFIG.publicEmail}`} className="text-emerald-700 underline">
+                {SITE_CONFIG.publicEmail}
               </a>
             </p>
           </div>
 
           <div className="mt-8 text-center">
-            <TrackedCta event="book_cta_click" eventProps={{ location: `${locale}_faq` }} href={localePath(locale, "/book")} className="text-emerald-700 font-semibold underline">
+            <TrackedCta event="book_cta_click" eventProps={{ location: `${locale}_faq` }} href={pagePath(locale, "book")} className="text-emerald-700 font-semibold underline">
               {common.readyToBook}
             </TrackedCta>
           </div>

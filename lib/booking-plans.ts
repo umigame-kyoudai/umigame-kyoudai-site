@@ -1,6 +1,7 @@
 import { PLAN_DETAILS } from "@/lib/plan-details"
 import { PLAN_PRICE_DATA } from "@/lib/plan-price-display"
 import { getPlanMaxParticipants } from "@/lib/booking-rules"
+import { getCustomerDurationHours } from "@/lib/plan-durations"
 
 export const STAFF_FEE = 1000
 export const ADULT_PRICE = PLAN_PRICE_DATA.S1.price
@@ -15,6 +16,7 @@ export interface BookingPlanSummary {
   childPrice?: number
   vipSurcharge?: number
   maxParticipants?: number
+  /** お客様向け所要時間。内部カレンダーの占有時間には使用しない。 */
   durationHours: number
   features: string[]
   ageRange: string
@@ -23,8 +25,6 @@ export interface BookingPlanSummary {
 export const BOOKING_PLANS = Object.values(PLAN_DETAILS).reduce<BookingPlanSummary[]>((items, plan) => {
   const price = PLAN_PRICE_DATA[plan.id]
   if (!price) return items
-
-  const durationHours = Number(plan.duration.match(/[\d.]+/)?.[0] ?? 0)
 
   items.push({
     id: plan.id,
@@ -37,7 +37,7 @@ export const BOOKING_PLANS = Object.values(PLAN_DETAILS).reduce<BookingPlanSumma
     ...(getPlanMaxParticipants(plan.id) !== undefined
       ? { maxParticipants: getPlanMaxParticipants(plan.id) }
       : {}),
-    durationHours,
+    durationHours: getCustomerDurationHours(plan.id),
     features: plan.highlights.map((highlight) => highlight.title),
     ageRange: plan.age,
   })

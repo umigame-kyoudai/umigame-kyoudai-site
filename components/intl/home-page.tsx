@@ -9,11 +9,13 @@ import { Footer } from "@/components/footer"
 import { MobileCTA } from "@/components/mobile-cta"
 import { BreadcrumbJsonLd } from "@/components/json-ld"
 import { createMetadata, SITE_URL } from "@/lib/seo"
+import { SITE_CONFIG } from "@/lib/site-config"
 import { TrackedCta, TrackedTel } from "@/components/tracked-cta"
 import { PLANS, formatPriceWithTilde } from "@/lib/data"
 import { getEnPrice } from "@/lib/i18n/en-prices"
 import { getDict } from "@/lib/i18n/dict"
 import { type IntlLocale, localePath } from "@/lib/i18n/locales"
+import { pagePath } from "@/lib/routes"
 import { Shield, Camera, CalendarCheck, Users, MessageCircle, Phone, Mail, ChevronRight, Star } from "lucide-react"
 
 const TRUST_ICONS = [Shield, Camera, CalendarCheck, Users]
@@ -69,14 +71,14 @@ export function IntlHomePage({ locale }: { locale: IntlLocale }) {
               <TrackedCta
                 event="book_cta_click"
                 eventProps={{ location: `${locale}_home` }}
-                href={localePath(locale, "/book")}
+                href={pagePath(locale, "book")}
                 className="inline-flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-base px-7 py-3.5 rounded-full shadow-lg transition-all"
               >
                 <CalendarCheck className="w-5 h-5" />
                 {common.checkAvailability}
               </TrackedCta>
               <Link
-                href={localePath(locale, "/plans")}
+                href={pagePath(locale, "plans")}
                 className="inline-flex items-center justify-center gap-2 bg-white/15 backdrop-blur-sm hover:bg-white/25 text-white font-bold text-base px-7 py-3.5 rounded-full border border-white/35 transition-all"
               >
                 {common.seeAllTours}
@@ -110,7 +112,7 @@ export function IntlHomePage({ locale }: { locale: IntlLocale }) {
               ))}
             </div>
             <Link
-              href={localePath(locale, "/miyakojima-sea-turtle")}
+              href={pagePath(locale, "seaTurtleGuide")}
               className="mt-6 inline-flex items-center gap-1 text-emerald-700 font-semibold hover:text-emerald-800"
             >
               {common.readGuideLink}
@@ -213,7 +215,7 @@ export function IntlHomePage({ locale }: { locale: IntlLocale }) {
                 </details>
               ))}
             </div>
-            <Link href={localePath(locale, "/faq")} className="mt-6 inline-flex items-center gap-1 text-emerald-700 font-semibold hover:text-emerald-800">
+            <Link href={pagePath(locale, "faq")} className="mt-6 inline-flex items-center gap-1 text-emerald-700 font-semibold hover:text-emerald-800">
               {common.seeAllQuestions}
               <ChevronRight className="w-4 h-4" />
             </Link>
@@ -229,7 +231,7 @@ export function IntlHomePage({ locale }: { locale: IntlLocale }) {
               <TrackedCta
                 event="line_click"
                 eventProps={{ location: `${locale}_home` }}
-                href="https://lin.ee/jfp4laz"
+                href={SITE_CONFIG.lineUrl}
                 external
                 className="inline-flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-bold px-6 py-3 rounded-full transition-colors"
               >
@@ -237,19 +239,19 @@ export function IntlHomePage({ locale }: { locale: IntlLocale }) {
                 {common.messageOnLine}
               </TrackedCta>
               <a
-                href="mailto:info@umigamekyoudaimiyakojima.com"
+                href={`mailto:${SITE_CONFIG.publicEmail}`}
                 className="inline-flex items-center justify-center gap-2 bg-white ring-1 ring-emerald-200 hover:bg-emerald-50 text-emerald-700 font-bold px-6 py-3 rounded-full transition-colors"
               >
                 <Mail className="w-5 h-5" />
                 {common.emailUs}
               </a>
               <TrackedTel
-                href="tel:08053442439"
+                href={`tel:${SITE_CONFIG.phone}`}
                 location={`${locale}_home`}
                 className="inline-flex items-center justify-center gap-2 bg-white ring-1 ring-emerald-200 hover:bg-emerald-50 text-emerald-700 font-bold px-6 py-3 rounded-full transition-colors"
               >
                 <Phone className="w-5 h-5" />
-                +81-80-5344-2439
+                {SITE_CONFIG.phoneDisplayIntl}
               </TrackedTel>
             </div>
           </div>

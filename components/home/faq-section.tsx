@@ -5,6 +5,7 @@ import Link from "next/link"
 import { ChevronDown } from "lucide-react"
 
 import { getFaqs } from "@/lib/faq"
+import { pagePath } from "@/lib/routes"
 
 // FAQの文言は lib/faq.ts が単一ソース。ここでは表示だけを行う。
 const faqs = getFaqs("home")
@@ -56,7 +57,7 @@ export function FAQSection() {
 
         <div className="text-center mt-8">
           <Link
-            href="/faq"
+            href={pagePath("ja", "faq")}
             className="inline-flex items-center text-emerald-700 hover:text-emerald-800 font-semibold transition-colors"
           >
             すべてのFAQを見る →

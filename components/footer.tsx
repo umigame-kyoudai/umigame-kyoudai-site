@@ -1,49 +1,29 @@
+import { SITE_CONFIG, formatBusinessHours } from "@/lib/site-config"
 import Link from "next/link"
 import Image from "next/image"
 import { Phone, MessageSquare, MapPin, Clock } from "lucide-react"
 import { getDict } from "@/lib/i18n/dict"
+import { JA_NAVIGATION_ITEMS, navigationItems } from "@/lib/navigation"
 import type { Locale } from "@/lib/i18n/locales"
 import { TrackedCta, TrackedTel } from "@/components/tracked-cta"
 
-const CONTACT_INFO = {
-  phone: "08053442439",
-  phoneDisplay: "080-5344-2439",
-  phoneDisplayEn: "+81-80-5344-2439",
-  lineUrl: "https://lin.ee/jfp4laz",
-  address: "〒906-0014 沖縄県宮古島市平良松原107-1",
-  addressEn: "107-1 Hirara Matsubara, Miyakojima City, Okinawa 906-0014, Japan",
-} as const
-
-const QUICK_LINKS_JA = [
-  { href: "/", label: "ホーム" },
-  { href: "/plans", label: "ツアープラン一覧" },
-  { href: "/book", label: "ご予約" },
-  { href: "/miyakojima-sea-turtle", label: "宮古島ウミガメガイド" },
-  { href: "/staff", label: "スタッフ紹介" },
-  { href: "/gallery", label: "ギャラリー" },
-  { href: "/blog", label: "ブログ" },
-  { href: "/faq", label: "よくある質問" },
-  { href: "/safety", label: "安全への取り組み" },
-  { href: "/access", label: "集合場所・アクセス" },
-] as const
-
-const LEGAL_LINKS_JA = [
-  { href: "/terms", label: "利用規約・キャンセルポリシー" },
-  { href: "/privacy", label: "プライバシーポリシー" },
-  { href: "/tokushoho", label: "特定商取引法に基づく表記" },
-] as const
+const LEGAL_LINKS_JA = navigationItems("ja", [
+  { pageId: "terms", label: "利用規約・キャンセルポリシー" },
+  { pageId: "privacy", label: "プライバシーポリシー" },
+  { pageId: "tokushoho", label: "特定商取引法に基づく表記" },
+])
 
 const JA = {
   tagline:
     "家族向け少人数制マリン体験で、安心・誠実・やわらかな高揚感をお届けします。透明度抜群の海で海亀との感動的な出会いを。",
   quickLinksHeading: "クイックリンク",
   businessHoursHeading: "営業時間",
-  hours: "7:00 - 18:00",
+  hours: formatBusinessHours("ja"),
   openYearRound: "年中無休",
   hoursNote: "※天候により変更の場合があります",
   lineLabel: "LINE公式アカウント",
-  logoAlt: "海亀兄弟 SEA TURTLE BROTHERS EST. 2024",
-  copyright: "海亀兄弟. All rights reserved.",
+  logoAlt: `${SITE_CONFIG.siteNameJa} ${SITE_CONFIG.siteNameEn.toUpperCase()} EST. 2024`,
+  copyright: `${SITE_CONFIG.siteNameJa}. All rights reserved.`,
 } as const
 
 export function Footer({ locale = "ja" }: { locale?: Locale }) {
@@ -51,7 +31,7 @@ export function Footer({ locale = "ja" }: { locale?: Locale }) {
   const dictFooter = locale !== "ja" ? getDict(locale).ui.footer : null
   const intl = dictFooter !== null
   const t = dictFooter ?? JA
-  const quickLinks = dictFooter ? dictFooter.quickLinks : QUICK_LINKS_JA
+  const quickLinks = dictFooter ? dictFooter.quickLinks : JA_NAVIGATION_ITEMS
   const legalLinks = dictFooter ? dictFooter.legalLinks : LEGAL_LINKS_JA
 
   return (
@@ -71,19 +51,19 @@ export function Footer({ locale = "ja" }: { locale?: Locale }) {
             <div className="space-y-2 text-sm text-emerald-200">
               <div className="flex items-center">
                 <Phone className="w-4 h-4 mr-2 flex-shrink-0" />
-                <TrackedTel href={`tel:${CONTACT_INFO.phone}`} location="footer" className="hover:text-white transition-colors">
-                  {intl ? CONTACT_INFO.phoneDisplayEn : CONTACT_INFO.phoneDisplay}
+                <TrackedTel href={`tel:${SITE_CONFIG.phone}`} location="footer" className="hover:text-white transition-colors">
+                  {intl ? SITE_CONFIG.phoneDisplayIntl : SITE_CONFIG.phoneDisplayJa}
                 </TrackedTel>
               </div>
               <div className="flex items-center">
                 <MessageSquare className="w-4 h-4 mr-2 flex-shrink-0" />
-                <TrackedCta event="line_click" eventProps={{ location: "footer" }} href={CONTACT_INFO.lineUrl} external className="hover:text-white transition-colors">
+                <TrackedCta event="line_click" eventProps={{ location: "footer" }} href={SITE_CONFIG.lineUrl} external className="hover:text-white transition-colors">
                   {t.lineLabel}
                 </TrackedCta>
               </div>
               <div className="flex items-center">
                 <MapPin className="w-4 h-4 mr-2 flex-shrink-0" />
-                <span>{intl ? CONTACT_INFO.addressEn : CONTACT_INFO.address}</span>
+                <span>{intl ? SITE_CONFIG.address.formattedEn : SITE_CONFIG.address.formattedJa}</span>
               </div>
             </div>
           </div>

@@ -1,3 +1,4 @@
+import { getBookingPolicyCopy } from "@/lib/booking-policy-copy"
 import type { Metadata } from "next"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
@@ -6,10 +7,12 @@ import { PlansSection } from "@/components/home/plans-section"
 import { BreadcrumbJsonLd } from "@/components/json-ld"
 import { createMetadata, SITE_URL } from "@/lib/seo"
 
+const bookingPolicyCopy = getBookingPolicyCopy()
+
 export const metadata: Metadata = createMetadata({
   title: "ツアープラン一覧｜料金・対象年齢で比較",
   description:
-    "海亀兄弟の宮古島ツアー一覧。ウミガメシュノーケル、貸切ツアー、本格ナイトツアー、サンセットSUP、ドローンSUPを料金・対象年齢で比較。写真・動画データ無料、前日までキャンセル無料。",
+    `海亀兄弟の宮古島ツアー一覧。ウミガメシュノーケル、貸切ツアー、本格ナイトツアー、サンセットSUP、ドローンSUPを料金・対象年齢で比較。写真・動画データ無料、前日までキャンセル${bookingPolicyCopy.previousDayFee}。`,
   path: "/plans",
   locale: "ja",
   intlBasePath: "/plans",

@@ -1,7 +1,7 @@
 // 多言語サイト（/en /ko /zh-tw）の辞書型。
 // 1ロケール = 1辞書オブジェクト（IntlDict）。ページテンプレート（components/intl/*）と
 // 国際版予約フォーム（components/booking-form-intl.tsx）はこの辞書だけを見る。
-// 価格・時間帯などの数値は lib/data.ts の PLANS、国際版価格は lib/i18n/en-prices.ts が単一の真実。
+// 可変の数値は plan-facts.ts 経由で既存の正本を参照する。国際版価格の経路は en-prices.ts を維持。
 
 export interface IntlSection {
   heading: string
@@ -30,7 +30,7 @@ export interface IntlPlanContent {
   timeNote?: string
   locationNote?: string
   priceNote?: string
-  /** 一覧カードに載せる priceNote の短縮形（「¥11,000/人」など）。CJK言語は必須（英語はカンマ区切りで自動短縮） */
+  /** 一覧カード用の短い料金文。未指定時も翻訳文章を分割せず正本の料金から生成する。 */
   priceNoteShort?: string
   options?: Array<{ name: string; price: number; note?: string }>
 }
@@ -156,6 +156,7 @@ export interface IntlFormCopy {
   limitToast: (max: number) => string
   groupLimitInfo: (max: number, current: number) => string
   sectionChooseTour: string
+  nightFootwearNotice: string
   sectionDateTime: string
   sectionParticipants: string
   sectionStaff: string
@@ -171,7 +172,7 @@ export interface IntlFormCopy {
   participantsIntroBase: string
   participantsIntroShoe: string
   addAdult: string
-  addChild: (minAge: number) => string
+  addChild: (minAge: number, maxAge: number) => string
   addUnder3: string
   guestCategoryLabel: Record<IntlGuestCategory, string>
   guestHeading: (index: number, categoryLabel: string) => string

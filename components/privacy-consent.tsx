@@ -99,7 +99,7 @@ export function PrivacyConsent() {
           role="dialog"
           aria-modal="true"
           aria-labelledby="tracking-consent-title"
-          className="fixed inset-x-3 bottom-3 z-[100] mx-auto max-w-3xl rounded-2xl border border-emerald-200 bg-white p-5 shadow-2xl sm:bottom-5 sm:p-6"
+          className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-[100] mx-auto max-h-[calc(100dvh-1.5rem-env(safe-area-inset-bottom))] max-w-3xl overflow-y-auto rounded-2xl border border-emerald-200 bg-white p-5 shadow-2xl sm:bottom-5 sm:p-6"
         >
           <div className="flex items-start gap-3">
             <ShieldCheck className="mt-0.5 h-6 w-6 flex-none text-emerald-700" aria-hidden="true" />
@@ -130,13 +130,17 @@ export function PrivacyConsent() {
         </section>
       )}
       {status !== "unknown" && !open && (
-        <button
-          type="button"
-          onClick={openTrackingPreferences}
-          className="fixed bottom-3 left-3 z-50 rounded-full border border-emerald-200 bg-white/95 px-3 py-2 text-xs font-medium text-emerald-800 shadow-md hover:bg-emerald-50"
-        >
-          {copy.settings}
-        </button>
+        // モバイルはページ末尾の通常配置にし、固定CTAとsafe-areaの分を空ける。
+        // z-indexでCTAを覆わず、フッターのリンクにも重ならない。
+        <div className="bg-emerald-900 px-3 pt-3 pb-[calc(5.25rem+env(safe-area-inset-bottom))] md:contents">
+          <button
+            type="button"
+            onClick={openTrackingPreferences}
+            className="min-h-11 rounded-full border border-emerald-200 bg-white/95 px-3 py-2 text-xs font-medium text-emerald-800 shadow-md hover:bg-emerald-50 md:fixed md:bottom-3 md:left-3 md:z-50"
+          >
+            {copy.settings}
+          </button>
+        </div>
       )}
     </>
   )
