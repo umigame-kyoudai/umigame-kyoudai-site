@@ -11,6 +11,7 @@
       data: null,
       view: 'reservations',
       selectedKey: '',
+      settlements: Object.create(null),
       history: [],
       pendingLine: null,
       loading: false
@@ -579,7 +580,7 @@
             '<span class="date-sub">' + escapeHtml(bookingTimeDisplay(booking)) + '</span></td>' +
           '<td><span class="customer-name">' + escapeHtml(booking.name || '名前未登録') + '</span>' +
             '<span class="customer-sub">' + escapeHtml(booking.bookingNumber || '予約番号なし') + '</span></td>' +
-          '<td><span class="plan-name">' + escapeHtml(booking.displayPlan || 'プラン未登録') + '</span>' +
+          '<td><span class="plan-name">' + escapeHtml(booking.displayPlan || 'プラン未登録') + (!booking.planId ? '（要確認）' : '') + '</span>' +
             (booking.componentCount > 1 ? '<span class="plan-sub">' + booking.componentCount + 'つの予定をまとめて表示</span>' : '') + '</td>' +
           '<td>' + statusChip(booking.bookingStatus) + '</td>' +
           '<td><span class="location-text">' + escapeHtml(booking.location) + '</span></td>' +
@@ -596,7 +597,7 @@
             '<div class="mobile-booking-time">' + escapeHtml(bookingTimeDisplay(booking)) + '</div>' +
           '</div>' + statusChip(booking.bookingStatus) + '</div>' +
           '<div class="mobile-booking-name">' + escapeHtml(booking.name || '名前未登録') + '</div>' +
-          '<div class="mobile-booking-plan">' + escapeHtml(booking.displayPlan || 'プラン未登録') + '</div>' +
+          '<div class="mobile-booking-plan">' + escapeHtml(booking.displayPlan || 'プラン未登録') + (!booking.planId ? '（要確認）' : '') + '</div>' +
           '<div class="mobile-booking-foot">' +
             '<span class="mobile-booking-meta">' + escapeHtml(booking.location) + '・' + escapeHtml(booking.staff) + '</span>' +
             '<strong>' + escapeHtml(formatMoney(booking.totalPrice)) + '</strong>' +
@@ -765,10 +766,12 @@
         '<section class="detail-hero">' +
           '<div class="detail-hero-top"><div>' +
             '<div class="detail-number">' + escapeHtml(booking.bookingNumber || '予約番号なし') + '</div>' +
-            '<p class="detail-plan">' + escapeHtml(booking.displayPlan || 'プラン未登録') + '</p>' +
+            '<p class="detail-plan">' + escapeHtml(booking.displayPlan || 'プラン未登録') + (!booking.planId ? '（要確認）' : '') + '</p>' +
           '</div>' + statusChip(booking.bookingStatus) + '</div>' +
           '<div class="detail-datetime"><strong>' + escapeHtml(bookingDateDisplay(booking)) + '</strong><span>' + escapeHtml(bookingTimeDisplay(booking)) + '</span></div>' +
         '</section>' +
+
+        (!booking.planId ? '<p class="change-warning" role="status">プランは要確認です。元予約データ・メール → 予約内容 → LINE履歴 → 予約シート → Calendarの順に照合し、通常／貸切を確認してください。金額から自動判定はしません。</p>' : '') +
 
         reservationChangeEditorHtml(booking) +
 
@@ -786,9 +789,12 @@
         '<div class="detail-grid">' +
           infoCard('電話番号', booking.phone || '未登録') +
           infoCard('LINE名', booking.lineName || '未登録') +
-          infoCard('人数', booking.headcount || '未登録') +
+          infoCard('人数', customerAgeLabel(booking.headcount) || '未登録') +
           infoCard('合計金額', formatMoney(booking.totalPrice) + (booking.couponDiscount ? ' / 割引 ' + formatMoney(booking.couponDiscount) : '')) +
         '</div>' +
+
+        '<section class="detail-section"><h3 class="section-title">受領・返金・精算</h3>' +
+          '<div data-settlement-content>' + settlementHtml(booking) + '</div></section>' +
 
         referralHtml +
 
@@ -798,7 +804,7 @@
 
         '<section class="detail-section">' +
           '<h3 class="section-title">参加者詳細</h3>' +
-          '<div class="participants-box">' + escapeHtml(booking.participants || '参加者詳細なし') + '</div>' +
+          '<div class="participants-box">' + escapeHtml(customerAgeLabel(booking.participants) || '参加者詳細なし') + '</div>' +
         '</section>' +
 
         '<section class="detail-section">' +
@@ -906,7 +912,7 @@
           '<div class="change-count-grid">' +
             changeCountField('大人', 'adult', counts.adult) +
             changeCountField('子供', 'child', counts.child) +
-            changeCountField('3歳未満', 'under3', counts.under3) +
+            changeCountField('3歳以下', 'under3', counts.under3) +
           '</div>' +
           '<div class="change-grid">' +
             '<label class="change-field"><span>料金の決め方</span>' +
@@ -914,7 +920,7 @@
                 '<option value="manual">現在の金額を基準に手入力</option>' +
                 '<option value="standard">標準料金で再計算</option>' +
               '</select></label>' +
-            '<label class="change-field"><span>合計受取金額</span>' +
+            '<label class="change-field"><span>予約合計料金（入金実績ではありません）</span>' +
               '<input type="number" min="0" max="10000000" step="1" class="field-input" data-change-total value="' + attr(booking.totalPrice || 0) + '"></label>' +
             '<label class="change-field"><span>クーポンコード</span>' +
               '<input class="field-input" data-change-coupon-code maxlength="100" value="' + attr(booking.couponCode || '') + '"' + (currentIsCombo ? ' disabled' : '') + '></label>' +
@@ -922,7 +928,7 @@
               '<input type="number" min="0" max="1000000" step="1" class="field-input" data-change-coupon-discount value="' + attr(currentIsCombo ? 0 : (booking.couponDiscount || 0)) + '"' + (currentIsCombo ? ' disabled' : '') + '></label>' +
           '</div>' +
           '<p class="standard-price-note" data-standard-price-note>標準料金の目安：' +
-            escapeHtml(formatMoney(currentStandardPrice)) +
+            escapeHtml(currentCatalogPlan ? formatMoney(currentStandardPrice) : 'プランの確認が必要です') +
             '（レンタル・指名料は含みません' +
             (currentIsCombo ? '／セットプランはクーポン対象外' : '') + '）</p>' +
           '<div class="change-schedule-grid" data-change-schedules>' +
@@ -1045,7 +1051,267 @@
       }).join('');
     }
 
+    function settlementState(key) {
+      if (!state.settlements[key]) state.settlements[key] = { data: null, loading: false, saving: false, error: '', pending: null, viewVersion: '' };
+      return state.settlements[key];
+    }
+
+    function settlementMoney(value) {
+      return value === null || typeof value === 'undefined' ? '未記録' : formatMoney(value);
+    }
+
+    function settlementKindLabel(kind) {
+      return ({ receive: '受領', assess: '最終請求の確定', refund: '実際の返金', correct_last: '直前記録の訂正' })[kind] || String(kind || '記録');
+    }
+
+    function settlementHtml(booking) {
+      var entry = settlementState(booking.key);
+      var data = entry.data;
+      var html = '<p class="line-state">予約料金やCalendar・LINE本文は入金実績ではありません。精算履歴は下のボタンで読み込みます。</p>' +
+        '<button type="button" class="secondary-button" data-settlement-load' + (entry.loading || entry.saving ? ' disabled' : '') + '>' + (entry.loading ? '読込中' : '精算履歴を読み込む') + '</button>';
+      if (entry.error) html += '<p class="change-warning" role="alert">' + escapeHtml(entry.error) + '</p>';
+      if (entry.pending) {
+        html += '<p class="change-warning">保存結果を確認できていません。入力内容と受付番号を保持しています。同じ記録を再送して結果を確認してください。</p>' +
+          '<button type="button" class="primary-button" data-settlement-retry' + (entry.saving || entry.loading ? ' disabled' : '') + '>' + (entry.saving ? '保存中' : '同じ記録を再送する') + '</button>';
+      }
+      if (!data) return html;
+      html += '<p class="line-state" role="status">' + escapeHtml(data.message || '') + '</p>';
+      if (!data.available) return html;
+      var summary = data.summary || {};
+      var status = ({ unrecorded: '未記録', unsettled: '未精算', settled: '精算済み' })[summary.status] || '要確認';
+      html += '<div class="detail-grid">' + infoCard('実受領額', settlementMoney(summary.receivedAmount)) +
+        infoCard('最終請求額', settlementMoney(summary.finalCharge)) + infoCard('必要返金額', settlementMoney(summary.refundRequired)) +
+        infoCard('実返金済額', settlementMoney(summary.refundedAmount)) +
+        infoCard('未返金残額', summary.refundRequired == null ? '未記録' : formatMoney(Math.max(0, summary.refundRequired - Number(summary.refundedAmount || 0)))) + infoCard('精算状況', status) + '</div>';
+      var history = Array.isArray(data.history) ? data.history : [];
+      html += '<div class="history-list">' + (history.length ? history.map(function(item) {
+        return '<article class="history-item"><div class="history-head"><strong>' + escapeHtml(settlementKindLabel(item.kind)) + '</strong>' +
+          '<span>' + escapeHtml(item.eventDate || '') + '</span></div><p class="history-message">担当：' + escapeHtml(item.handler || '') +
+          '\n記録日時：' + escapeHtml(item.recordedAt || '') + '\n' + escapeHtml(item.note || '') + '</p></article>';
+      }).join('') : '<p class="history-empty">精算履歴は未記録です。予約額から自動で入金を補完しません。</p>') + '</div>';
+      if (entry.pending || entry.loading || entry.saving) return html;
+      if (entry.viewVersion !== booking.version) return html + '<p class="change-warning">予約内容が変更されています。精算履歴を再読み込みしてください。</p>';
+      if (data.writable !== true || data.needsReview || !data.plan || !data.plan.id || (data.plan.components || []).length < 2) {
+        return html + '<p class="line-state">この予約は精算の書き込み対象になっていません。内容・権限・保存先を確認してください。予約一覧や既存の編集は引き続き利用できます。</p>';
+      }
+      return html + settlementEditorHtml(data);
+    }
+
+    function settlementNumberField(label, attributes, value) {
+      return '<label class="change-field"><span>' + escapeHtml(label) + '</span><input class="field-input" type="number" min="0" step="1" ' + attributes +
+        ' value="' + attr(value == null ? '' : value) + '"></label>';
+    }
+
+    function settlementEditorHtml(data) {
+      var history = data.history || [];
+      var received = data.summary && data.summary.receivedAmount != null;
+      var canReceive = !received || (data.summary.receivedAmount === 0 && (data.summary.finalCharge === null || data.summary.finalCharge === data.packagePrice));
+      var canAssess = received && data.summary.finalCharge === null;
+      var canRefund = received && data.summary.finalCharge !== null && data.summary.refundRequired > Number(data.summary.refundedAmount || 0);
+      var initialKind = canReceive ? 'receive' : canAssess ? 'assess' : canRefund ? 'refund' : 'correct_last';
+      var components = data.plan.components || [];
+      var choices = (canReceive ? '<option value="receive">実際の受領を記録</option>' : '') +
+        (canAssess ? '<option value="assess">実施結果から最終請求を確定</option>' : '') +
+        (canRefund ? '<option value="refund">実際の返金を記録</option>' : '') +
+        (history.length ? '<option value="correct_last">直前の記録を訂正（無効化）</option>' : '');
+      if (!choices) return '';
+      return '<div data-settlement-editor data-settlement-new-receipt="' + (received ? 'false' : 'true') + '" class="reservation-change-body">' +
+        '<p class="line-state">' + escapeHtml(data.plan.name || data.plan.id) + '／予約料金 ' + escapeHtml(formatMoney(data.packagePrice)) + '（入金実績ではありません）</p>' +
+        '<label class="change-field"><span>記録する内容</span><select data-settlement-kind>' + choices + '</select></label>' +
+        '<div class="change-grid"><label class="change-field"><span>実際の受領・実施・返金日</span><input type="date" class="field-input" data-settlement-date></label>' +
+        '<label class="change-field"><span>記録担当者</span><input class="field-input" data-settlement-handler maxlength="80"></label></div>' +
+        '<div data-settlement-amount-section' + (initialKind === 'receive' || initialKind === 'refund' ? '' : ' hidden') + '>' + settlementNumberField('実際に受領／返金した金額（円）', 'data-settlement-amount', '') +
+          '<label><input type="checkbox" data-settlement-zero-confirmed> 受領額が0円の場合、実際に未受領であることを確認しました</label></div>' +
+        '<div data-settlement-basis' + (received ? ' hidden' : '') + '><p class="line-state">人数と単品料金は、予約時の見積・案内を確認してください。表示単価は確認用の候補で、内部売上配分は使用しません。</p>' +
+          '<label class="change-field"><span>人数・単品料金の確認状況</span><select data-settlement-basis-mode><option value="confirmed">人数・全単品料金を確認して記録</option><option value="unconfirmed">人数・単品料金は未確認（全中止の精算のみ）</option></select></label>' +
+          '<div data-settlement-known-basis>' +
+          '<label class="change-field"><span>単品料金の適用根拠</span><select data-settlement-price-source><option value="current_catalog">現行の単品料金</option><option value="verified_historical">根拠を確認した予約時の旧単価</option></select></label>' +
+          '<div class="change-count-grid">' + settlementNumberField('大人の人数', 'data-settlement-count="adult"', '') +
+          settlementNumberField('子供の人数', 'data-settlement-count="child"', '') + settlementNumberField('3歳以下の人数', 'data-settlement-count="under3"', '') + '</div>' +
+          components.map(function(component) {
+            return '<fieldset data-settlement-unit="' + attr(component.id) + '"><legend>' + escapeHtml(component.name || component.id) + 'の単品料金</legend><div class="change-grid">' +
+              settlementNumberField('大人単価（円）', 'data-settlement-price="adultPrice"', component.adultPrice) +
+              settlementNumberField('子供単価（円）', 'data-settlement-price="childPrice"', component.childPrice) +
+              settlementNumberField('3歳以下単価（円）', 'data-settlement-price="under3Price"', component.under3Price) + '</div></fieldset>';
+          }).join('') + '</div>' +
+          '<p data-settlement-unknown-basis hidden class="change-warning">未確認の人数・単価は空のまま保存します。一部中止の金額計算には使えません。全中止の場合は、確認できた受領額をもとに全額返金できます。</p>' +
+          '<label class="change-field"><span>確認できた情報と根拠</span><textarea class="message-compose compact-compose" data-settlement-evidence maxlength="1000" placeholder="受領額の確認根拠。人数・単価が未確認の場合はその範囲も記載"></textarea></label>' +
+          '<label><input type="checkbox" data-settlement-basis-confirmed> 実受領額と、人数・単価の確認済み／未確認の範囲を確認しました</label></div>' +
+        '<div data-settlement-assess' + (initialKind === 'assess' ? '' : ' hidden') + '><label class="change-field"><span>実施結果</span><select data-settlement-outcome><option value="completed">すべて実施（予約料金を請求）</option><option value="operator_weather">当店判断の悪天候・海況不良中止あり</option></select></label>' +
+          '<div data-settlement-performed hidden>' + (data.summary.partialAssessmentAllowed === true ? '<p class="line-state">実際に実施した単品だけ選択してください。全中止はすべて未選択です。</p>' + components.map(function(component) {
+            return '<p><label><input type="checkbox" data-settlement-performed-id="' + attr(component.id) + '"> ' + escapeHtml(component.name || component.id) + '</label></p>';
+          }).join('') : '<p class="change-warning">人数・単品料金が未確認のため、中止時は全中止の精算のみ可能です。一部を実施した場合はここで確定せず、根拠を確認してください。</p>') + '</div></div>' +
+        '<p data-settlement-correction' + (initialKind === 'correct_last' ? '' : ' hidden') + ' class="line-state">入力誤りの訂正です。直前の記録を訂正履歴で無効化し、その前の状態へ戻します。実際に返金したお金を戻す操作ではありません。理由を記入し、正しい内容はその後に新しい記録として入力してください。</p>' +
+        '<label class="change-field"><span>記録の理由・根拠（必須）</span><textarea class="message-compose compact-compose" data-settlement-note maxlength="1000"></textarea></label>' +
+        '<button type="button" class="primary-button" data-settlement-save>内容を確認して記録する</button></div>';
+    }
+
+    function renderSettlement(key) {
+      if (state.selectedKey !== key) return;
+      var container = els.drawerBody.querySelector('[data-settlement-content]');
+      var booking = findBooking(key);
+      if (container && booking) container.innerHTML = settlementHtml(booking);
+    }
+
+    async function loadSettlement() {
+      var booking = findBooking(state.selectedKey);
+      if (!booking) return;
+      var key = booking.key;
+      var entry = settlementState(key);
+      if (entry.loading || entry.saving) return;
+      entry.loading = true;
+      entry.error = '';
+      renderSettlement(key);
+      try {
+        entry.data = await gas('adminGetSettlement', { bookingKey: key });
+        entry.viewVersion = booking.version;
+      } catch (error) {
+        entry.data = null;
+        entry.error = '精算履歴を取得できませんでした：' + error.message;
+      } finally {
+        entry.loading = false;
+        renderSettlement(key);
+      }
+    }
+
+    function updateSettlementFields(editor) {
+      if (!editor) return;
+      var kind = editor.querySelector('[data-settlement-kind]').value;
+      editor.querySelector('[data-settlement-amount-section]').hidden = kind !== 'receive' && kind !== 'refund';
+      editor.querySelector('[data-settlement-basis]').hidden = kind !== 'receive' || editor.getAttribute('data-settlement-new-receipt') !== 'true';
+      var unknownBasis = editor.querySelector('[data-settlement-basis-mode]').value === 'unconfirmed';
+      editor.querySelector('[data-settlement-known-basis]').hidden = unknownBasis;
+      editor.querySelector('[data-settlement-unknown-basis]').hidden = !unknownBasis;
+      editor.querySelector('[data-settlement-assess]').hidden = kind !== 'assess';
+      editor.querySelector('[data-settlement-performed]').hidden = kind !== 'assess' || editor.querySelector('[data-settlement-outcome]').value !== 'operator_weather';
+      editor.querySelector('[data-settlement-correction]').hidden = kind !== 'correct_last';
+    }
+
+    function settlementInteger(input, label) {
+      var raw = input ? String(input.value).trim() : '';
+      if (!/^\d+$/.test(raw) || !Number.isSafeInteger(Number(raw))) throw new Error(label + 'は0以上の整数で入力してください。');
+      return Number(raw);
+    }
+
+    function settlementRequest(booking, data, editor) {
+      if (!data || data.writable !== true || data.needsReview) throw new Error('この予約は精算を書き込めません。');
+      var value = function(selector) { var input = editor.querySelector(selector); return input ? String(input.value).trim() : ''; };
+      var request = { bookingKey: booking.key, expectedBookingVersion: data.bookingVersion, expectedSettlementVersion: data.historyVersion,
+        kind: value('[data-settlement-kind]'), eventDate: value('[data-settlement-date]'), handler: value('[data-settlement-handler]'), note: value('[data-settlement-note]') };
+      var dateValue = new Date(request.eventDate + 'T00:00:00Z');
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(request.eventDate) || isNaN(dateValue.getTime()) || dateValue.toISOString().slice(0, 10) !== request.eventDate || !request.handler) throw new Error('実際の日付と記録担当者を入力してください。');
+      if (!request.note) throw new Error('記録理由（訂正時は訂正理由）を入力してください。');
+      if (request.kind === 'receive' || request.kind === 'refund') request.amount = settlementInteger(editor.querySelector('[data-settlement-amount]'), '実際の金額');
+      if (request.kind === 'receive') {
+        if (data.summary.receivedAmount > 0) throw new Error('受領は記録済みです。');
+        if (request.amount !== 0 && request.amount !== data.packagePrice) throw new Error('実際に受け取った予約料金全額、または確認済み未受領の0円を記録してください。');
+        if (request.amount === 0 && !editor.querySelector('[data-settlement-zero-confirmed]').checked) throw new Error('0円の受領記録には、実際に未受領であることの確認が必要です。');
+        if (data.summary.receivedAmount === 0) {
+          if (request.amount !== data.packagePrice || request.amount === 0) throw new Error('未受領の確認後は、実際に受け取った予約料金全額を記録してください。');
+          return request;
+        }
+        var confirmed = editor.querySelector('[data-settlement-basis-confirmed]');
+        if (!confirmed || !confirmed.checked || !value('[data-settlement-evidence]')) throw new Error('実受領額・人数・単品料金の確認状況の確認と根拠の入力が必要です。');
+        var basisMode = value('[data-settlement-basis-mode]');
+        if (basisMode === 'unconfirmed') {
+          request.priceBasis = { counts: null, unitPrices: null, evidence: value('[data-settlement-evidence]'), source: 'current_catalog', confirmed: true };
+          return request;
+        }
+        if (basisMode !== 'confirmed') throw new Error('人数・単品料金の確認状況を選択してください。');
+        var counts = {};
+        ['adult', 'child', 'under3'].forEach(function(category) { counts[category] = settlementInteger(editor.querySelector('[data-settlement-count="' + category + '"]'), '人数'); });
+        if (counts.adult + counts.child < 1 || counts.under3 !== 0) throw new Error('セットの参加人数を確認してください。3歳以下はセットに参加できません。');
+        var unitPrices = {};
+        [].slice.call(editor.querySelectorAll('[data-settlement-unit]')).forEach(function(field) {
+          var prices = {};
+          ['adultPrice', 'childPrice', 'under3Price'].forEach(function(category) { prices[category] = settlementInteger(field.querySelector('[data-settlement-price="' + category + '"]'), '単品料金'); });
+          unitPrices[field.getAttribute('data-settlement-unit')] = prices;
+        });
+        var priceSource = value('[data-settlement-price-source]');
+        if (priceSource !== 'current_catalog' && priceSource !== 'verified_historical') throw new Error('単品料金の適用根拠を選択してください。');
+        if (priceSource === 'current_catalog' && (data.plan.components || []).some(function(component) {
+          var prices = unitPrices[component.id];
+          return !prices || ['adultPrice', 'childPrice', 'under3Price'].some(function(category) { return prices[category] !== component[category]; });
+        })) throw new Error('現行料金と異なる場合は、根拠を確認した予約時の旧単価を選択してください。');
+        request.priceBasis = { counts: counts, unitPrices: unitPrices, evidence: value('[data-settlement-evidence]'), source: priceSource, confirmed: true };
+      } else if (request.kind === 'assess') {
+        if (data.summary.receivedAmount == null || data.summary.finalCharge != null) throw new Error('受領状況の記録後に最終請求を確定してください。確定済み金額の訂正は直前記録の訂正から行います。');
+        request.outcome = value('[data-settlement-outcome]');
+        if (request.outcome !== 'completed' && request.outcome !== 'operator_weather') throw new Error('実施結果を選択してください。');
+        request.performedPlanIds = request.outcome === 'completed' ? (data.plan.components || []).map(function(component) { return component.id; }) :
+          [].slice.call(editor.querySelectorAll('[data-settlement-performed-id]')).filter(function(input) { return input.checked; }).map(function(input) { return input.getAttribute('data-settlement-performed-id'); });
+        if (request.outcome === 'operator_weather' && request.performedPlanIds.length >= data.plan.components.length) throw new Error('中止したツアーは実施済みにチェックしないでください。');
+        if (request.outcome === 'operator_weather' && request.performedPlanIds.length && data.summary.partialAssessmentAllowed !== true) throw new Error('人数・単品料金が未確認のため、一部中止の金額は計算できません。');
+      } else if (request.kind === 'correct_last') {
+        var last = (data.history || []).slice(-1)[0];
+        if (!last || !request.note) throw new Error('訂正する直前の記録と訂正理由が必要です。');
+        request.correctsEventId = last.eventId;
+      } else if (request.kind === 'refund') {
+        if (data.summary.finalCharge == null || request.amount <= 0 || request.amount > data.summary.refundRequired - Number(data.summary.refundedAmount || 0)) throw new Error('実返金額は確定済みの未返金残額を超えない金額で入力してください。');
+      } else throw new Error('記録する内容を選択してください。');
+      return request;
+    }
+
+    function settlementConfirmation(request, data) {
+      var lines = ['精算履歴へ記録します。', settlementKindLabel(request.kind), '日付：' + request.eventDate, '担当：' + request.handler];
+      if (typeof request.amount === 'number') lines.push('実際の金額：' + formatMoney(request.amount));
+      if (request.priceBasis) {
+        if (request.priceBasis.counts && request.priceBasis.unitPrices) {
+          lines.push('人数：大人' + request.priceBasis.counts.adult + '名／子供' + request.priceBasis.counts.child + '名／3歳以下' + request.priceBasis.counts.under3 + '名');
+          (data.plan.components || []).forEach(function(component) {
+            var prices = request.priceBasis.unitPrices[component.id];
+            lines.push(component.name + ' 単品：大人' + formatMoney(prices.adultPrice) + '／子供' + formatMoney(prices.childPrice) + '／3歳以下' + formatMoney(prices.under3Price));
+          });
+          lines.push('単価：' + (request.priceBasis.source === 'verified_historical' ? '根拠確認済みの旧単価' : '現行料金'));
+        } else lines.push('人数・単品料金：未確認。中止時は全中止の精算のみ可能です。');
+        lines.push('確認根拠：' + request.priceBasis.evidence);
+      }
+      if (request.kind === 'assess') lines.push(request.outcome === 'completed' ? 'すべて実施：予約料金 ' + formatMoney(data.packagePrice) + 'を請求' :
+        '当店判断による中止／実施した単品：' + ((data.plan.components || []).filter(function(component) { return request.performedPlanIds.indexOf(component.id) >= 0; }).map(function(component) { return component.name; }).join('、') || 'なし（全中止）'));
+      if (request.correctsEventId) lines.push('訂正対象：' + request.correctsEventId);
+      lines.push('メモ：' + (request.note || 'なし'), '', 'この操作では送金やLINE送信は行いません。');
+      return lines.join('\n');
+    }
+
+    async function saveSettlement(retry) {
+      var booking = findBooking(state.selectedKey);
+      if (!booking) return;
+      var key = booking.key;
+      var entry = settlementState(key);
+      if (entry.loading || entry.saving) return;
+      try {
+        if (!entry.pending) {
+          if (retry) return;
+          var editor = els.drawerBody.querySelector('[data-settlement-editor]');
+          if (!editor || entry.viewVersion !== booking.version) throw new Error('精算履歴を再読み込みしてください。');
+          var request = settlementRequest(booking, entry.data, editor);
+          if (!window.confirm(settlementConfirmation(request, entry.data))) return;
+          request.requestId = window.crypto && window.crypto.randomUUID ? window.crypto.randomUUID() : 'settlement-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+          entry.pending = JSON.parse(JSON.stringify(request));
+        } else if (!retry) return;
+        entry.saving = true;
+        entry.error = '';
+        renderSettlement(key);
+        var result = await gas('adminSaveSettlement', entry.pending);
+        if (!result || result.success !== true) throw new Error('保存完了を確認できませんでした。');
+        entry.data = result;
+        entry.viewVersion = booking.version;
+        entry.pending = null;
+        showToast(result.replayed ? '同じ記録の保存済み結果を確認しました。' : '精算履歴を記録しました。', 'success');
+      } catch (error) {
+        entry.error = error.message;
+        if (!entry.pending) showToast(error.message, 'error');
+      } finally {
+        entry.saving = false;
+        renderSettlement(key);
+      }
+    }
+
     function handleDrawerClick(event) {
+      if (event.target.closest('[data-settlement-load]')) { loadSettlement(); return; }
+      if (event.target.closest('[data-settlement-save]')) { saveSettlement(false); return; }
+      if (event.target.closest('[data-settlement-retry]')) { saveSettlement(true); return; }
+
       var deleteButton = event.target.closest('[data-delete-booking]');
       if (deleteButton) {
         deleteBooking(deleteButton);
@@ -1132,6 +1398,10 @@
     }
 
     function handleDrawerInput(event) {
+      if (event.target.matches('[data-settlement-kind], [data-settlement-outcome], [data-settlement-basis-mode]')) {
+        updateSettlementFields(event.target.closest('[data-settlement-editor]'));
+        return;
+      }
       var changeEditor = event.target.closest('[data-change-editor]');
       if (changeEditor) {
         handleReservationChangeInput(event, changeEditor);
@@ -1194,14 +1464,7 @@
           ? '標準料金の目安：' + formatMoney(standardPrice) +
             '（レンタル・指名料は含みません' +
             (isCombo ? '／セットプランはクーポン対象外' : '') + '）'
-          : '';
-      }
-
-      if (pricingMode && pricingMode.value === 'standard' && totalInput) {
-        totalInput.value = String(Math.max(
-          0,
-          standardPrice - Number(couponDiscount && couponDiscount.value || 0)
-        ));
+          : 'プランの確認が必要です。元予約・メール等を照合してください。';
       }
 
       if (couponCode) couponCode.disabled = !!isCombo;
@@ -1209,6 +1472,14 @@
       if (isCombo) {
         if (couponCode) couponCode.value = '';
         if (couponDiscount) couponDiscount.value = '0';
+      }
+
+      // セットへ変更した最初の入力イベントでも、変更前の割引を差し引かない。
+      if (plan && pricingMode && pricingMode.value === 'standard' && totalInput) {
+        totalInput.value = String(Math.max(
+          0,
+          standardPrice - Number(couponDiscount && couponDiscount.value || 0)
+        ));
       }
     }
 
@@ -1278,7 +1549,7 @@
       }
 
       var afterHeadcount = '大人' + counts.adult + '名 / 子供' + counts.child +
-        '名 / 3歳未満' + counts.under3 + '名';
+        '名 / 3歳以下' + counts.under3 + '名';
       var scheduleSummary = components.map(function(component) {
         return component.date + ' ' + component.time;
       }).join(' / ');
@@ -1286,7 +1557,7 @@
         'プラン：' + booking.displayPlan + ' → ' + plan.name,
         '日時：' + bookingDateDisplay(booking) + ' ' + bookingTimeDisplay(booking) +
           ' → ' + scheduleSummary,
-        '人数：' + booking.headcount + ' → ' + afterHeadcount,
+        '人数：' + customerAgeLabel(booking.headcount) + ' → ' + afterHeadcount,
         '金額：' + formatMoney(booking.totalPrice) + ' → ' + formatMoney(totalPrice)
       ];
 
@@ -1750,6 +2021,10 @@
       return times.length ? times.join(' / ') : '時間未設定';
     }
 
+    function customerAgeLabel(value) {
+      return String(value || '').replace(/3歳未満/g, '3歳以下');
+    }
+
     function parseHeadcount(value) {
       var text = String(value || '');
       var read = function(pattern) {
@@ -1760,7 +2035,7 @@
       return {
         adult: read(/大人\s*(\d+)\s*名?/),
         child: read(/子供\s*(\d+)\s*名?/),
-        under3: read(/3歳未満\s*(\d+)\s*名?/)
+        under3: read(/3歳(?:以下|未満)\s*(\d+)\s*名?/)
       };
     }
 

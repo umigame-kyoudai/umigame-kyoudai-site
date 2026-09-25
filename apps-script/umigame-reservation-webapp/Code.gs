@@ -122,99 +122,116 @@ var ADMIN_REFERRAL_OUTCOME_COLUMNS = {
   NOTE: 18
 };
 
+// Web公開条件の照合用メタデータ。年齢・人数・60歳以上の案内先はWeb正本と回帰テストで検査する。
+// webBookingRules はWeb受付の案内条件であり、管理者による手動の人数・年齢・金額例外を禁止しない。
+// sourcePlanId は公開単品との対応だけを表す。plan は既存のシート/Calendar用内部名、duration は内部占有分数。
 var ADMIN_PLAN_CATALOG = [
   {
     id: 'S1', name: 'ウミガメと泳ぐシュノーケルツアー',
     adultPrice: 6500, childPrice: 6000, under3Price: 6000,
-    components: [{ plan: 'ウミガメと泳ぐシュノーケルツアー', role: 'turtle', duration: 120 }]
+    webBookingRules: { minAge: 5, maxAge: 65, maxParticipants: null, seniorPrivateFromAge: 60, seniorPrivatePlanId: 'S2' },
+    components: [{ sourcePlanId: 'S1', plan: 'ウミガメと泳ぐシュノーケルツアー', role: 'turtle', duration: 120 }]
   },
   {
     id: 'S2', name: '【貸切】ウミガメシュノーケルツアー',
     adultPrice: 9000, childPrice: 9000, under3Price: 9000,
-    components: [{ plan: '【貸切】ウミガメシュノーケルツアー', role: 'turtle', duration: 120 }]
+    webBookingRules: { minAge: 5, maxAge: 65, maxParticipants: 10, seniorPrivateFromAge: null, seniorPrivatePlanId: null },
+    components: [{ sourcePlanId: 'S2', plan: '【貸切】ウミガメシュノーケルツアー', role: 'turtle', duration: 120 }]
   },
   {
     id: 'S3', name: '本格ナイトツアー',
     adultPrice: 4000, childPrice: 4000, under3Price: 0,
-    components: [{ plan: '本格ナイトツアー', role: 'night', duration: 90 }]
+    webBookingRules: { minAge: 0, maxAge: 75, maxParticipants: null, seniorPrivateFromAge: 60, seniorPrivatePlanId: 'S5' },
+    components: [{ sourcePlanId: 'S3', plan: '本格ナイトツアー', role: 'night', duration: 90 }]
   },
   {
     id: 'S4', name: '【貸切】サンセットSUP',
     adultPrice: 9500, childPrice: 8500, under3Price: 8500,
-    components: [{ plan: '【貸切】サンセットSUP', role: 'sup', duration: 120 }]
+    webBookingRules: { minAge: 5, maxAge: 65, maxParticipants: 10, seniorPrivateFromAge: null, seniorPrivatePlanId: null },
+    components: [{ sourcePlanId: 'S4', plan: '【貸切】サンセットSUP', role: 'sup', duration: 120 }]
   },
   {
     id: 'S8', name: 'サンセットSUP',
     adultPrice: 7500, childPrice: 6500, under3Price: 6500,
-    components: [{ plan: 'サンセットSUP', role: 'sup', duration: 120 }]
+    webBookingRules: { minAge: 5, maxAge: 65, maxParticipants: null, seniorPrivateFromAge: 60, seniorPrivatePlanId: 'S4' },
+    components: [{ sourcePlanId: 'S8', plan: 'サンセットSUP', role: 'sup', duration: 120 }]
   },
   {
     id: 'S5', name: '【貸切】本格ナイトツアー',
     adultPrice: 8000, childPrice: 8000, under3Price: 0,
-    components: [{ plan: '【貸切】本格ナイトツアー', role: 'night', duration: 90 }]
+    webBookingRules: { minAge: 0, maxAge: 75, maxParticipants: null, seniorPrivateFromAge: null, seniorPrivatePlanId: null },
+    components: [{ sourcePlanId: 'S5', plan: '【貸切】本格ナイトツアー', role: 'night', duration: 90 }]
   },
   {
     id: 'S6', name: '宮古島ドローンSUP体験',
     adultPrice: 7500, childPrice: 6500, under3Price: 6500,
-    components: [{ plan: '宮古島ドローンSUP体験', role: 'sup', duration: 120 }]
+    webBookingRules: { minAge: 5, maxAge: 65, maxParticipants: null, seniorPrivateFromAge: 60, seniorPrivatePlanId: 'S7' },
+    components: [{ sourcePlanId: 'S6', plan: '宮古島ドローンSUP体験', role: 'sup', duration: 120 }]
   },
   {
     id: 'S7', name: '【貸切】宮古島ドローンSUP体験',
     adultPrice: 9500, childPrice: 8500, under3Price: 8500,
-    components: [{ plan: '【貸切】宮古島ドローンSUP体験', role: 'sup', duration: 120 }]
+    webBookingRules: { minAge: 5, maxAge: 65, maxParticipants: 10, seniorPrivateFromAge: null, seniorPrivatePlanId: null },
+    components: [{ sourcePlanId: 'S7', plan: '【貸切】宮古島ドローンSUP体験', role: 'sup', duration: 120 }]
   },
   {
     id: 'C1', name: 'ウミガメシュノーケル＆ヤシガニ探検 昼夜セット',
     adultPrice: 9500, childPrice: 9000, under3Price: 9000,
+    webBookingRules: { minAge: 5, maxAge: 65, maxParticipants: null, seniorPrivateFromAge: 60, seniorPrivatePlanId: 'C2' },
     components: [
-      { plan: '昼夜セット海亀', role: 'turtle', duration: 90 },
-      { plan: '昼夜セットヤシガニ', role: 'night', duration: 90 }
+      { sourcePlanId: 'S1', plan: '昼夜セット海亀', role: 'turtle', duration: 90 },
+      { sourcePlanId: 'S3', plan: '昼夜セットヤシガニ', role: 'night', duration: 90 }
     ]
   },
   {
     id: 'C2', name: '【貸切】ウミガメシュノーケル＆ヤシガニ探検 昼夜セット',
     adultPrice: 16000, childPrice: 16000, under3Price: 16000,
+    webBookingRules: { minAge: 5, maxAge: 65, maxParticipants: 10, seniorPrivateFromAge: null, seniorPrivatePlanId: null },
     components: [
-      { plan: '昼夜セット海亀', role: 'turtle', duration: 90 },
-      { plan: '昼夜セットヤシガニ', role: 'night', duration: 90 }
+      { sourcePlanId: 'S2', plan: '昼夜セット海亀', role: 'turtle', duration: 90 },
+      { sourcePlanId: 'S5', plan: '昼夜セットヤシガニ', role: 'night', duration: 90 }
     ]
   },
   {
     id: 'C3', name: 'ウミガメシュノーケル＆ドローンSUP 海空セット',
     adultPrice: 13000, childPrice: 11500, under3Price: 11500,
+    webBookingRules: { minAge: 5, maxAge: 65, maxParticipants: null, seniorPrivateFromAge: 60, seniorPrivatePlanId: 'C4' },
     autoSup: true,
     components: [
-      { plan: '海空セット（ウミガメシュノーケル）', role: 'turtle', duration: 90 },
-      { plan: '海空セット（ドローンSUP）', role: 'sup', duration: 90 }
+      { sourcePlanId: 'S1', plan: '海空セット（ウミガメシュノーケル）', role: 'turtle', duration: 90 },
+      { sourcePlanId: 'S6', plan: '海空セット（ドローンSUP）', role: 'sup', duration: 90 }
     ]
   },
   {
     id: 'C4', name: '【貸切】ウミガメシュノーケル＆ドローンSUP 海空セット',
     adultPrice: 17500, childPrice: 16500, under3Price: 16500,
+    webBookingRules: { minAge: 5, maxAge: 65, maxParticipants: 10, seniorPrivateFromAge: null, seniorPrivatePlanId: null },
     autoSup: true,
     components: [
-      { plan: '海空セット（ウミガメシュノーケル）', role: 'turtle', duration: 90 },
-      { plan: '海空セット（ドローンSUP）', role: 'sup', duration: 90 }
+      { sourcePlanId: 'S2', plan: '海空セット（ウミガメシュノーケル）', role: 'turtle', duration: 90 },
+      { sourcePlanId: 'S7', plan: '海空セット（ドローンSUP）', role: 'sup', duration: 90 }
     ]
   },
   {
     id: 'C5', name: 'ウミガメシュノーケル＆ドローンSUP＆ナイトツアー まるごと1日セット',
     adultPrice: 16000, childPrice: 14500, under3Price: 14500,
+    webBookingRules: { minAge: 5, maxAge: 65, maxParticipants: null, seniorPrivateFromAge: 60, seniorPrivatePlanId: 'C6' },
     autoSup: true,
     components: [
-      { plan: 'まるごと1日セット海亀', role: 'turtle', duration: 90 },
-      { plan: 'まるごと1日セットドローンSUP', role: 'sup', duration: 90 },
-      { plan: 'まるごと1日セットヤシガニ', role: 'night', duration: 90 }
+      { sourcePlanId: 'S1', plan: 'まるごと1日セット海亀', role: 'turtle', duration: 90 },
+      { sourcePlanId: 'S6', plan: 'まるごと1日セットドローンSUP', role: 'sup', duration: 90 },
+      { sourcePlanId: 'S3', plan: 'まるごと1日セットヤシガニ', role: 'night', duration: 90 }
     ]
   },
   {
     id: 'C6', name: '【貸切】ウミガメシュノーケル＆ドローンSUP＆ナイトツアー まるごと1日セット',
     adultPrice: 24500, childPrice: 23500, under3Price: 23500,
+    webBookingRules: { minAge: 5, maxAge: 65, maxParticipants: 10, seniorPrivateFromAge: null, seniorPrivatePlanId: null },
     autoSup: true,
     components: [
-      { plan: '貸切まるごと1日セット海亀', role: 'turtle', duration: 90 },
-      { plan: '貸切まるごと1日セットドローンSUP', role: 'sup', duration: 90 },
-      { plan: '貸切まるごと1日セットヤシガニ', role: 'night', duration: 90 }
+      { sourcePlanId: 'S2', plan: '貸切まるごと1日セット海亀', role: 'turtle', duration: 90 },
+      { sourcePlanId: 'S7', plan: '貸切まるごと1日セットドローンSUP', role: 'sup', duration: 90 },
+      { sourcePlanId: 'S5', plan: '貸切まるごと1日セットヤシガニ', role: 'night', duration: 90 }
     ]
   }
 ];
@@ -361,9 +378,11 @@ function adminGetAppData() {
           adultPrice: plan.adultPrice,
           childPrice: plan.childPrice,
           under3Price: plan.under3Price,
+          webBookingRules: plan.webBookingRules,
           autoSup: !!plan.autoSup,
           components: plan.components.map(function(component) {
             return {
+              sourcePlanId: component.sourcePlanId,
               plan: component.plan,
               role: component.role,
               duration: component.duration
@@ -828,6 +847,9 @@ function adminUpdateBooking(request) {
     }
 
     var targetRows = adminResolveTargetRows_(beforeBooking, request);
+    if (String(updates.status || '').trim() === '確定') {
+      adminAssertPlanConfirmed_(beforeBooking);
+    }
     var auditChanges = [];
     var lineAction = null;
 
@@ -1399,7 +1421,7 @@ function adminNormalizeReservationChange_(beforeBooking, plan, request) {
   var counts = request.counts || {};
   var adult = adminValidateCount_(counts.adult, '大人');
   var child = adminValidateCount_(counts.child, '子供');
-  var under3 = adminValidateCount_(counts.under3, '3歳未満');
+  var under3 = adminValidateCount_(counts.under3, '3歳以下');
 
   if (adult + child + under3 < 1) {
     throw new Error('参加人数は1名以上にしてください。');
@@ -1500,7 +1522,7 @@ function adminNormalizeReservationChange_(beforeBooking, plan, request) {
 
   return {
     counts: { adult: adult, child: child, under3: under3 },
-    headcount: '大人' + adult + '名 / 子供' + child + '名 / 3歳未満' + under3 + '名',
+    headcount: '大人' + adult + '名 / 子供' + child + '名 / 3歳以下' + under3 + '名',
     totalPrice: Math.round(totalPrice),
     couponDiscount: Math.round(couponDiscount),
     couponCode: String(request.couponCode || '').trim().slice(0, 100),
@@ -1647,7 +1669,10 @@ function adminCreateChangedCalendarEvent_(
     'この予定の売上: ' + adminFormatYen_(
       rowValues[ADMIN_COLUMNS.TOTAL_PRICE - 1]
     ),
-    '予約全体の受取金額: ' + adminFormatYen_(normalized.totalPrice),
+    '予約全体の予定料金（受領実績ではありません）: ' + adminFormatYen_(normalized.totalPrice),
+    (plan.components.length > 1
+      ? '※ 各予定の売上は内部計上額です。当店判断で一部中止した場合は実施した単品ツアー分だけを請求し、受領済みの場合は実施単品料金との差額を返金してください。内部配分額は返金計算に使用しません。実際の受領・返金・精算履歴は予約管理側を正本とし、Calendar本文から受領済みと判断しないでください。'
+      : ''),
     '参加者詳細: ' + (normalized.participants || 'なし'),
     '参加者年齢: ' + (normalized.participantAges || 'なし'),
     '参加者身長: ' + (normalized.participantHeights || 'なし'),
@@ -1744,7 +1769,7 @@ function adminBuildChangeNoticeMessage_(booking, summary) {
     '【変更後の内容】\n' +
     'プラン：' + booking.displayPlan + '\n' +
     '日時：' + adminBuildScheduleText_(booking) + '\n' +
-    '人数：' + booking.headcount + '\n' +
+    '人数：' + adminCustomerAgeLabel_(booking.headcount) + '\n' +
     '合計金額：' + adminFormatYen_(booking.totalPrice) + '\n\n' +
     '内容をご確認いただき、ご不明点がございましたらご連絡ください。\n\n' +
     '海亀兄弟'
@@ -2014,6 +2039,9 @@ function adminConfirmLine(request) {
     }
 
     adminAssertPendingStillValid_(booking, pending);
+    if (pending.type === 'STATUS' && booking.bookingStatus === '確定') {
+      adminAssertPlanConfirmed_(booking);
+    }
 
     if (
       pending.type === 'STATUS' &&
@@ -2559,7 +2587,8 @@ function adminBuildBooking_(key, rows) {
   var lineResults = rows.map(function(row) {
     return row.lineResult;
   }).filter(String);
-  var inferredPlanId = adminInferPlanIdFromRows_(rows);
+  var planResolution = adminResolvePlanFromRows_(rows);
+  var inferredPlanId = planResolution.planId;
 
   var booking = {
     key: key,
@@ -2568,6 +2597,7 @@ function adminBuildBooking_(key, rows) {
     time: times.join(' / '),
     name: first.name,
     planId: inferredPlanId,
+    planResolution: planResolution,
     displayPlan: adminGetDisplayPlan_(rows, inferredPlanId),
     totalPrice: rows.reduce(function(sum, row) { return sum + row.totalPrice; }, 0),
     couponDiscount: rows.reduce(function(sum, row) {
@@ -2708,6 +2738,8 @@ function adminToPublicBooking_(booking) {
     bookingNumber: booking.bookingNumber,
     name: booking.name,
     planId: booking.planId,
+    planResolution: booking.planResolution,
+    settlementStatus: 'unrecorded',
     displayPlan: booking.displayPlan,
     totalPrice: booking.totalPrice,
     couponDiscount: booking.couponDiscount,
@@ -2759,22 +2791,8 @@ function adminGetDisplayPlan_(rows, planId) {
   var catalogPlan = adminGetPlanById_(planId);
   if (catalogPlan) return catalogPlan.name;
 
-  var plans = rows.map(function(row) { return row.plan; });
-  var joined = plans.join(' ');
-
-  if (joined.indexOf('まるごと1日セット') !== -1) {
-    return joined.indexOf('貸切') !== -1
-      ? '【貸切】ウミガメシュノーケル＆ドローンSUP＆ナイトツアー まるごと1日セット'
-      : 'ウミガメシュノーケル＆ドローンSUP＆ナイトツアー まるごと1日セット';
-  }
-  if (joined.indexOf('海空セット') !== -1) {
-    return 'ウミガメシュノーケル＆ドローンSUP 海空セット';
-  }
-  if (joined.indexOf('昼夜セット') !== -1) {
-    return 'ウミガメシュノーケル＆ヤシガニ探検 昼夜セット';
-  }
-
-  return adminUnique_(plans.filter(String)).join(' / ');
+  // ID不明時は通常/貸切の意味を足さず、旧予約の原文を表示する。
+  return adminUnique_(rows.map(function(row) { return row.plan; }).filter(String)).join(' / ');
 }
 
 function adminGetPlanById_(planId) {
@@ -2797,7 +2815,7 @@ function adminParseHeadcount_(headcount) {
   return {
     adult: read(/大人\s*(\d+)\s*名?/),
     child: read(/子供\s*(\d+)\s*名?/),
-    under3: read(/3歳未満\s*(\d+)\s*名?/)
+    under3: read(/3歳(?:以下|未満)\s*(\d+)\s*名?/)
   };
 }
 
@@ -2813,43 +2831,386 @@ function adminCalculateStandardPrice_(plan, counts) {
   );
 }
 
-function adminInferPlanIdFromRows_(rows) {
-  if (!rows || !rows.length) return '';
-
+// 元データの明示ID、または一意に一致する正式名だけを使う。料金は判定根拠にしない。
+function adminResolvePlanFromRows_(rows) {
+  var unresolved = function(reason, candidates) {
+    return { planId: '', status: 'needs_review', reason: reason, candidateIds: candidates || [] };
+  };
+  if (!rows || !rows.length) return unresolved('予約内容を確認してください');
   var explicit = adminUnique_(rows.map(function(row) {
     return String(row.planId || '').trim().toUpperCase();
   }).filter(String));
-
-  if (explicit.length === 1 && adminGetPlanById_(explicit[0])) {
-    return explicit[0];
+  if (explicit.length) {
+    if (explicit.length === 1 && adminGetPlanById_(explicit[0])) {
+      return { planId: explicit[0], status: 'resolved', reason: 'saved_plan_id', candidateIds: explicit };
+    }
+    return unresolved('保存されたプランIDが不明、または予約内で一致していません', explicit);
   }
-
-  var rowPlans = rows.map(function(row) { return String(row.plan || ''); }).sort();
+  var rowPlans = rows.map(function(row) { return String(row.plan || '').trim(); }).sort();
   var candidates = ADMIN_PLAN_CATALOG.filter(function(plan) {
-    var componentPlans = plan.components
-      .map(function(component) { return component.plan; })
-      .sort();
-
-    return componentPlans.length === rowPlans.length &&
-      componentPlans.every(function(componentPlan, index) {
-        return componentPlan === rowPlans[index];
-      });
+    if (rowPlans.length === 1 && rowPlans[0] === plan.name) return true;
+    var componentPlans = plan.components.map(function(component) { return component.plan; }).sort();
+    return componentPlans.length === rowPlans.length && componentPlans.every(function(name, i) {
+      return name === rowPlans[i];
+    });
   });
+  if (candidates.length === 1) {
+    return { planId: candidates[0].id, status: 'resolved', reason: 'unique_exact_name', candidateIds: [candidates[0].id] };
+  }
+  return unresolved('プランの確認が必要です。元予約・メール等で通常／貸切を確認してください', candidates.map(function(plan) { return plan.id; }));
+}
 
-  if (!candidates.length) return '';
-  if (candidates.length === 1) return candidates[0].id;
+function adminInferPlanIdFromRows_(rows) {
+  return adminResolvePlanFromRows_(rows).planId;
+}
 
-  var counts = adminParseHeadcount_(rows[0].headcount);
-  var currentTotal = rows.reduce(function(sum, row) {
-    return sum + Number(row.totalPrice || 0) + Number(row.couponDiscount || 0);
-  }, 0);
-
-  candidates.sort(function(a, b) {
-    return Math.abs(adminCalculateStandardPrice_(a, counts) - currentTotal) -
-      Math.abs(adminCalculateStandardPrice_(b, counts) - currentTotal);
+// 精算の計算候補だけ。49列には受領・返金の正本がないため、公開API/保存処理へは未接続。
+// 計算候補は現在の単品カタログを使用するが、旧予約への適用・保存は未接続。
+// 精算確定には実施内容・適用単価・受領根拠の確認と保存が別途必要。
+// Calendar/LINE/内部セット配分/TOTAL_PRICEから入金実績を推測しない。
+function adminPreviewOperatorCancellation_(input) {
+  if (!input || input.cancellationReason !== 'operator_weather') {
+    throw new Error('当店判断による中止だけが計算対象です。その他は個別確認が必要です');
+  }
+  var plan = adminGetPlanById_(input.planId);
+  if (!plan || plan.components.length < 2) throw new Error('セットプランの確認が必要です');
+  var safeAmount = function(value) {
+    return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
+  };
+  if (!safeAmount(input.receivedAmount)) throw new Error('実際の受領額の確認が必要です');
+  var counts = input.counts;
+  var performed = input.performedPlanIds;
+  if (!Array.isArray(performed) || performed.length >= plan.components.length ||
+      adminUnique_(performed).length !== performed.length) {
+    throw new Error('実施済みツアーの確認が必要です。全実施のセットは再計算対象ではありません');
+  }
+  // 全中止なら単価・人数を使わず、確認済み受領額の全額が返金候補となる。
+  if (performed.length && (!counts || !['adult', 'child', 'under3'].every(function(key) { return safeAmount(counts[key]); }) ||
+      !safeAmount(counts.adult + counts.child) || counts.adult + counts.child < 1 || counts.under3 !== 0)) {
+    throw new Error('人数・年齢区分の確認が必要です。旧予約の対象外年齢は推測で計算しません');
+  }
+  var componentIds = plan.components.map(function(component) { return component.sourcePlanId; });
+  var priceLines = performed.map(function(id) {
+    if (componentIds.indexOf(id) === -1) throw new Error('セットに含まれないツアーです。実施内容を確認してください');
+    var single = adminGetPlanById_(id);
+    if (!single || !safeAmount(single.adultPrice) || !safeAmount(single.childPrice)) {
+      throw new Error('単品料金の根拠が不足しています');
+    }
+    var amount = single.adultPrice * counts.adult + single.childPrice * counts.child;
+    if (!safeAmount(amount)) throw new Error('計算金額が不正です。人数と単価の確認が必要です');
+    return { planId: id, adultUnitPrice: single.adultPrice, childUnitPrice: single.childPrice, amount: amount };
   });
+  var finalCharge = priceLines.reduce(function(sum, line) { return sum + line.amount; }, 0);
+  if (!safeAmount(finalCharge)) throw new Error('合計金額が不正です。確認してください');
+  var difference = input.receivedAmount - finalCharge;
+  return {
+    receivedAmount: input.receivedAmount,
+    finalCharge: finalCharge,
+    refundAmount: Math.max(0, difference),
+    balanceDue: Math.max(0, -difference),
+    priceLines: priceLines,
+    priceBasis: performed.length ? 'standalone_catalog_requires_effective_price_confirmation' : 'all_cancelled_no_tour_charge',
+    settlementStatus: 'unrecorded',
+    persisted: false
+  };
+}
 
-  return candidates[0].id;
+// ============================================================
+// 予約精算履歴（ローカル候補・本番適用前）
+// 予約一覧49列を変更しない。別シートは手動承認後に準備し、このコードから作成・修復しない。
+// この候補は書込無効。明示承認後のリリース時だけ有効化する。Script Propertiesを追加しない。
+// ============================================================
+var ADMIN_SETTLEMENT_WRITES_ENABLED = false;
+var ADMIN_SETTLEMENT_SHEET_NAME = '予約精算履歴';
+var ADMIN_SETTLEMENT_SCHEMA = 'settlement-v1';
+var ADMIN_SETTLEMENT_HEADERS = [
+  '精算schema', 'イベントID', '予約番号', '連番', '直前イベントID', '処理種別',
+  '精算日', '記録日時', '記録者', '精算担当者', '予約版', 'プランID',
+  '操作JSON', '精算snapshotJSON', '受取済額', '最終請求額', '返金必要額',
+  '返金済額', '精算状態', '理由・根拠', '入力hash', '履歴hash'
+];
+
+function adminSettlementMoney_(value) {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
+}
+
+function adminSettlementText_(value, label, maxLength) {
+  if (typeof value !== 'string' || !value.trim() || value.length > maxLength) {
+    throw new Error(label + 'の確認が必要です');
+  }
+  return value.trim();
+}
+
+function adminSettlementCanonical_(value) {
+  if (value === undefined) return null;
+  if (Array.isArray(value)) return value.map(adminSettlementCanonical_);
+  if (value && typeof value === 'object') {
+    var result = Object.create(null);
+    Object.keys(value).sort().forEach(function(key) { result[key] = adminSettlementCanonical_(value[key]); });
+    return result;
+  }
+  return value;
+}
+
+function adminSettlementJson_(value) {
+  return JSON.stringify(adminSettlementCanonical_(value));
+}
+
+function adminSettlementEmpty_() {
+  return { receivedAmount: null, finalCharge: null, refundRequired: null,
+    refundedAmount: null, status: 'unrecorded', basis: null, outcome: null, performedPlanIds: null };
+}
+
+// 読取に既存のschema自動修復・期限切れ処理・送信処理を含めない。
+function adminSettlementBooking_(ss, key) {
+  var sheet = ss.getSheetByName(ADMIN_BOOKING_SHEET_NAME);
+  if (!sheet || sheet.getMaxColumns() < ADMIN_CANONICAL_HEADERS.length) throw new Error('予約一覧schemaの確認が必要です');
+  var headers = sheet.getRange(1, 1, 1, ADMIN_CANONICAL_HEADERS.length).getDisplayValues()[0];
+  if (headers.some(function(value, i) { return value !== ADMIN_CANONICAL_HEADERS[i]; })) throw new Error('予約一覧schemaの確認が必要です');
+  return adminFindBooking_(sheet, key);
+}
+
+function adminSettlementFingerprint_(booking) {
+  // LINE結果・電話・日時等の変更は価格根拠を失効させない。料金・人数・商品変更だけを区別する。
+  return adminHash_(adminSettlementJson_({ planId: booking.planId, totalPrice: booking.totalPrice,
+    couponDiscount: booking.couponDiscount, headcount: booking.headcount,
+    participantAges: booking.participantAges,
+    components: booking.components.map(function(c) { return c.plan; }).sort() }));
+}
+
+function adminSettlementKey_(request) {
+  var key = adminSettlementText_(request && request.bookingKey, '予約番号', 180);
+  if (key.indexOf('BOOKING:') !== 0 || !key.slice(8).trim()) throw new Error('予約番号のない旧予約は個別確認が必要です');
+  return key;
+}
+
+function adminSettlementRead_(ss, bookingNumber) {
+  var sheet = ss.getSheetByName(ADMIN_SETTLEMENT_SHEET_NAME);
+  var result = { available: !!sheet, sheet: sheet, history: [], historyVersion: '0', summary: adminSettlementEmpty_() };
+  if (!sheet) return result;
+  if (sheet.getMaxColumns() < ADMIN_SETTLEMENT_HEADERS.length || sheet.getLastRow() < 1) throw new Error('精算履歴schemaの確認が必要です');
+  var header = sheet.getRange(1, 1, 1, ADMIN_SETTLEMENT_HEADERS.length).getDisplayValues()[0];
+  if (header.some(function(v, i) { return v !== ADMIN_SETTLEMENT_HEADERS[i]; })) throw new Error('精算履歴schemaの確認が必要です');
+  var rows = sheet.getLastRow() < 2 ? [] : sheet.getRange(2, 1, sheet.getLastRow() - 1, ADMIN_SETTLEMENT_HEADERS.length).getValues();
+  var ids = Object.create(null);
+  rows.forEach(function(row) {
+    if (row.some(function(v) { return v !== '' && v !== null; }) && !String(row[2] || '').trim()) {
+      throw new Error('予約番号が欠損した精算履歴があります。自動補完せず確認してください');
+    }
+    if (String(row[2]) !== bookingNumber) return;
+    try {
+      var previous = result.history[result.history.length - 1];
+      if (row[0] !== ADMIN_SETTLEMENT_SCHEMA || typeof row[1] !== 'string' || !row[1] || ids[row[1]] ||
+          row[3] !== result.history.length + 1 || row[4] !== (previous ? previous.eventId : '')) throw new Error('連番/ID');
+      if (row[21] !== adminHash_(result.historyVersion + '\n' + JSON.stringify(row.slice(0, 21)))) throw new Error('hash');
+      var op = JSON.parse(row[12]);
+      var state = adminSettlementApply_(result.summary, op, result.history);
+      if (row[5] !== op.kind || row[13] !== adminSettlementJson_(state) || row[14] !== (state.receivedAmount === null ? '' : state.receivedAmount) ||
+          row[15] !== (state.finalCharge === null ? '' : state.finalCharge) ||
+          row[16] !== (state.refundRequired === null ? '' : state.refundRequired) ||
+          row[17] !== (state.refundedAmount === null ? '' : state.refundedAmount) || row[18] !== state.status) throw new Error('金額/snapshot');
+      ids[row[1]] = true;
+      result.summary = state;
+      result.historyVersion = row[21];
+      result.history.push({ eventId: row[1], kind: row[5], eventDate: row[6], recordedAt: row[7], actor: row[8],
+        handler: row[9], note: row[19], requestHash: row[20], state: state, operation: op });
+    } catch (error) {
+      throw new Error('精算履歴に欠損・重複・不整合があります。金額を推測せず確認してください');
+    }
+  });
+  return result;
+}
+
+function adminSettlementApply_(before, op, history) {
+  var state = JSON.parse(JSON.stringify(before));
+  if (op.kind === 'receive') {
+    if (!adminSettlementMoney_(op.amount)) throw new Error('受領記録の確認が必要です');
+    if (state.basis) {
+      // 確認済み未受領の記録後に実際の全額受領があった場合。既存の価格根拠は上書きしない。
+      if (state.receivedAmount !== 0 || state.refundedAmount !== 0 || state.outcome === 'operator_weather' ||
+          op.amount === 0 || op.amount !== state.basis.packagePrice) throw new Error('重複受領または対象外の追加入金です');
+      state.receivedAmount = op.amount;
+      if (state.finalCharge !== null) state.refundRequired = Math.max(0, state.receivedAmount - state.finalCharge);
+    } else {
+      if (!op.basis || !adminSettlementMoney_(op.basis.packagePrice) ||
+          (op.amount !== op.basis.packagePrice && op.amount !== 0)) throw new Error('セット全額または確認済み未受領の記録が必要です');
+      state = { receivedAmount: op.amount, finalCharge: null, refundRequired: null, refundedAmount: 0,
+        status: 'unsettled', basis: op.basis, outcome: null, performedPlanIds: null };
+    }
+  } else if (op.kind === 'assess') {
+    if (!state.basis || state.finalCharge !== null) throw new Error('最終額の訂正は直前記録の訂正から行ってください');
+    var ids = state.basis.components.map(function(c) { return c.id; });
+    var performed = op.performedPlanIds;
+    if (!Array.isArray(performed) || adminUnique_(performed).length !== performed.length ||
+        performed.some(function(id) { return ids.indexOf(id) === -1; })) throw new Error('実施ツアーの確認が必要です');
+    if (op.outcome === 'completed') {
+      if (performed.length !== ids.length) throw new Error('全ツアー実施の確認が必要です');
+      state.finalCharge = state.basis.packagePrice;
+    } else if (op.outcome === 'operator_weather') {
+      if (performed.length >= ids.length) throw new Error('当店判断による一部または全部中止だけが対象です');
+      state.finalCharge = performed.reduce(function(sum, id) {
+        var p = state.basis.components.filter(function(c) { return c.id === id; })[0];
+        if (!p.unitPrices || !state.basis.counts) throw new Error('適用単価・人数の確認が必要です');
+        return sum + p.unitPrices.adultPrice * state.basis.counts.adult +
+          p.unitPrices.childPrice * state.basis.counts.child + p.unitPrices.under3Price * state.basis.counts.under3;
+      }, 0);
+    } else throw new Error('お客様都合の途中中止には適用できません');
+    if (!adminSettlementMoney_(state.finalCharge)) throw new Error('計算金額の確認が必要です');
+    state.refundRequired = Math.max(0, state.receivedAmount - state.finalCharge);
+    state.outcome = op.outcome;
+    state.performedPlanIds = performed;
+  } else if (op.kind === 'refund') {
+    if (state.finalCharge === null || !adminSettlementMoney_(op.amount) || op.amount === 0 ||
+        op.amount > state.refundRequired - state.refundedAmount) throw new Error('実返金額の確認が必要です');
+    state.refundedAmount += op.amount;
+  } else if (op.kind === 'correct_last') {
+    if (!history.length || op.correctsEventId !== history[history.length - 1].eventId) throw new Error('訂正対象は直前の記録だけです');
+    state = history.length > 1 ? JSON.parse(JSON.stringify(history[history.length - 2].state)) : adminSettlementEmpty_();
+  } else throw new Error('精算処理の確認が必要です');
+  if (state.basis) state.status = state.finalCharge !== null && state.receivedAmount - state.refundedAmount === state.finalCharge ? 'settled' : 'unsettled';
+  return state;
+}
+
+function adminSettlementBasis_(booking, input) {
+  var plan = adminGetPlanById_(booking.planId);
+  if (!plan || plan.components.length < 2 || booking.planResolution.status !== 'resolved') throw new Error('セットプランの確認が必要です');
+  adminAssertPlanConfirmed_(booking);
+  if (!input || input.confirmed !== true) throw new Error('予約の金額・適用単価の確認が必要です');
+  var evidence = adminSettlementText_(input.evidence, '単価の適用根拠', 1000);
+  var source = input.source || 'current_catalog';
+  if (['current_catalog', 'verified_historical'].indexOf(source) === -1) throw new Error('単価の出典の確認が必要です');
+  if (!adminSettlementMoney_(booking.totalPrice)) throw new Error('合意したセット料金の確認が必要です');
+  var counts = input.counts;
+  // 全中止の精算用に、単価未確認のまま受領事実だけ保存することも許容。部分実施の計算は停止する。
+  if (counts !== null && counts !== undefined && (!['adult', 'child', 'under3'].every(function(k) { return adminSettlementMoney_(counts[k]); }) ||
+      !Number.isSafeInteger(counts.adult + counts.child + counts.under3) || counts.adult + counts.child < 1 || counts.under3 !== 0)) {
+    throw new Error('人数・年齢区分の確認が必要です');
+  }
+  var components = plan.components.map(function(component) {
+    var single = adminGetPlanById_(component.sourcePlanId);
+    var price = input.unitPrices && input.unitPrices[component.sourcePlanId];
+    if (price !== undefined && price !== null && (!price || !['adultPrice', 'childPrice', 'under3Price'].every(function(k) { return adminSettlementMoney_(price[k]); }))) {
+      throw new Error('単品の適用単価の確認が必要です');
+    }
+    if (price && source === 'current_catalog' && ['adultPrice', 'childPrice', 'under3Price'].some(function(k) { return price[k] !== single[k]; })) {
+      throw new Error('現行の単品料金と一致しません。旧単価の場合は出典を確認してください');
+    }
+    return { id: component.sourcePlanId, name: single.name, unitPrices: price ? {
+      adultPrice: price.adultPrice, childPrice: price.childPrice, under3Price: price.under3Price
+    } : null };
+  });
+  return { planId: plan.id, packagePrice: booking.totalPrice, components: components,
+    counts: counts ? { adult: counts.adult, child: counts.child, under3: counts.under3 } : null,
+    evidence: evidence, source: source, fingerprint: adminSettlementFingerprint_(booking), currency: 'JPY' };
+}
+
+function adminSettlementView_(ledger, booking) {
+  var summary = ledger.summary;
+  var changed = !!(summary.basis && booking && summary.basis.fingerprint !== adminSettlementFingerprint_(booking));
+  var plan = booking && adminGetPlanById_(booking.planId);
+  return {
+    available: ledger.available, writable: !!(ADMIN_SETTLEMENT_WRITES_ENABLED && ledger.available && booking &&
+      plan && plan.components.length > 1 && booking.planResolution.status === 'resolved' && !changed),
+    needsReview: changed || !booking || !plan || (booking.planResolution && booking.planResolution.status !== 'resolved'),
+    message: !ledger.available ? '精算履歴シートは未準備です。予約料金から入金実績を推測しません。' :
+      !booking ? '予約一覧に元予約がありません。保存済み精算履歴を保持しています。' :
+      changed ? '予約の金額・人数・プランが保存時と変わっています。精算は要確認です。' :
+      !ADMIN_SETTLEMENT_WRITES_ENABLED ? '保存機能は本番適用の承認前のため無効です。' : '',
+    bookingVersion: booking ? booking.version : '', historyVersion: ledger.historyVersion,
+    summary: { receivedAmount: summary.receivedAmount, finalCharge: summary.finalCharge,
+      refundRequired: summary.refundRequired, refundedAmount: summary.refundedAmount, status: summary.status,
+      partialAssessmentAllowed: !!(summary.basis && summary.basis.counts && summary.basis.components.every(function(c) { return !!c.unitPrices; })) },
+    history: ledger.history.map(function(e) { return { eventId: e.eventId, kind: e.kind, eventDate: e.eventDate,
+      handler: e.handler, recordedAt: e.recordedAt, note: e.note }; }),
+    plan: plan ? { id: plan.id, name: plan.name, components: plan.components.map(function(c) {
+      var p = adminGetPlanById_(c.sourcePlanId); return { id: p.id, name: p.name, adultPrice: p.adultPrice, childPrice: p.childPrice, under3Price: p.under3Price };
+    }) } : null,
+    packagePrice: booking ? booking.totalPrice : null
+  };
+}
+
+function adminGetSettlement(request) {
+  adminAssertAuthorized_();
+  var key = adminSettlementKey_(request);
+  var ss = adminGetSpreadsheet_();
+  try {
+    return adminSettlementView_(adminSettlementRead_(ss, key.slice(8)), adminSettlementBooking_(ss, key));
+  } catch (error) {
+    return { available: false, writable: false, needsReview: true, message: error.message,
+      bookingVersion: '', historyVersion: '', summary: adminSettlementEmpty_(), history: [], plan: null, packagePrice: null };
+  }
+}
+
+function adminSaveSettlement(request) {
+  var actor = adminAssertAuthorized_();
+  if (!ADMIN_SETTLEMENT_WRITES_ENABLED) throw new Error('精算保存は本番適用の承認前のため無効です');
+  var key = adminSettlementKey_(request);
+  var requestId = adminSettlementText_(request.requestId, '再送防止ID', 100);
+  if (!/^[A-Za-z0-9_-]{8,100}$/.test(requestId)) throw new Error('再送防止IDの確認が必要です');
+  var handler = adminSettlementText_(request.handler, '精算担当者', 100);
+  var note = adminSettlementText_(request.note, '記録理由', 1000);
+  var date = adminSettlementText_(request.eventDate, '精算日', 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || isNaN(Date.parse(date + 'T00:00:00Z')) || new Date(date + 'T00:00:00Z').toISOString().slice(0, 10) !== date) throw new Error('精算日の確認が必要です');
+  // 表示日時や操作者をクライアントから受け取らない。関係する入力だけを正規化する。
+  var input = { kind: request.kind, eventDate: date, handler: handler, note: note, amount: request.amount,
+    outcome: request.outcome, performedPlanIds: request.performedPlanIds, correctsEventId: request.correctsEventId,
+    priceBasis: request.priceBasis, expectedBookingVersion: request.expectedBookingVersion,
+    expectedSettlementVersion: request.expectedSettlementVersion };
+  var requestHash = adminHash_(actor + '\n' + key + '\n' + adminSettlementJson_(input));
+  if (adminSettlementJson_(input).length > 15000) throw new Error('精算入力が長すぎます');
+  var lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    var ss = adminGetSpreadsheet_();
+    var ledger = adminSettlementRead_(ss, key.slice(8));
+    if (!ledger.available) throw new Error('精算履歴シートが未準備です。自動作成はしません');
+    var booking = adminSettlementBooking_(ss, key);
+    var duplicate = ledger.history.filter(function(e) { return e.eventId === requestId; })[0];
+    if (duplicate) {
+      if (duplicate.requestHash !== requestHash) throw new Error('同じ再送防止IDに異なる内容が指定されています');
+      var replay = adminSettlementView_(ledger, booking); replay.success = true; replay.replayed = true; return replay;
+    }
+    if (!booking || !request.expectedBookingVersion || !request.expectedSettlementVersion ||
+        request.expectedBookingVersion !== booking.version || request.expectedSettlementVersion !== ledger.historyVersion) {
+      throw new Error('予約または精算履歴が更新されています。再読込して確認してください');
+    }
+    if (ledger.summary.basis && request.kind !== 'correct_last' &&
+        ledger.summary.basis.fingerprint !== adminSettlementFingerprint_(booking)) throw new Error('予約の金額・人数・プランが変わっています。精算根拠の確認が必要です');
+    var op = { kind: request.kind };
+    if (op.kind === 'receive') {
+      op.amount = request.amount;
+      if (!ledger.summary.basis) op.basis = adminSettlementBasis_(booking, request.priceBasis);
+    }
+    else if (op.kind === 'assess') { op.outcome = request.outcome; op.performedPlanIds = request.performedPlanIds; }
+    else if (op.kind === 'refund') op.amount = request.amount;
+    else if (op.kind === 'correct_last') op.correctsEventId = request.correctsEventId;
+    var state = adminSettlementApply_(ledger.summary, op, ledger.history);
+    // 管理側の同時編集は同じScriptLockで排他。受付GASとは別lockなので、直前にも予約内容を再照合する。
+    var current = adminSettlementBooking_(ss, key);
+    if (!current || current.version !== booking.version) throw new Error('予約が更新されています。保存前に再確認してください');
+    var row = [ADMIN_SETTLEMENT_SCHEMA, requestId, key.slice(8), ledger.history.length + 1,
+      ledger.history.length ? ledger.history[ledger.history.length - 1].eventId : '', op.kind, date,
+      new Date().toISOString(), actor, handler, booking.version, state.basis ? state.basis.planId : booking.planId,
+      adminSettlementJson_(op), adminSettlementJson_(state), state.receivedAmount === null ? '' : state.receivedAmount,
+      state.finalCharge === null ? '' : state.finalCharge, state.refundRequired === null ? '' : state.refundRequired,
+      state.refundedAmount === null ? '' : state.refundedAmount, state.status, note, requestHash];
+    row.push(adminHash_(ledger.historyVersion + '\n' + JSON.stringify(row)));
+    try {
+      // appendCellsのstringValueを使い、担当者/理由が '=' で始まっても数式として実行しない。
+      Sheets.Spreadsheets.batchUpdate({ requests: [{ appendCells: {
+        sheetId: ledger.sheet.getSheetId(), fields: 'userEnteredValue', rows: [{ values: row.map(function(value) {
+          return { userEnteredValue: typeof value === 'number' ? { numberValue: value } : { stringValue: value } };
+        }) }]
+      } }] }, ss.getId());
+    } catch (error) {
+      // 応答消失でも成功済みかもしれない。行の削除・別IDでの再保存はしない。
+      throw new Error('保存結果を確認できません。同じ再送防止IDのまま再確認・再送してください');
+    }
+    var saved = adminSettlementRead_(ss, key.slice(8));
+    var match = saved.history.filter(function(e) { return e.eventId === requestId; });
+    if (match.length !== 1 || match[0].requestHash !== requestHash) throw new Error('保存結果が未確認です。同じ再送防止IDで再確認してください');
+    var result = adminSettlementView_(saved, current); result.success = true; result.replayed = false; return result;
+  } finally { lock.releaseLock(); }
 }
 
 function adminBuildDashboard_(bookings) {
@@ -3216,100 +3577,163 @@ function adminBuildCalendarScheduleOperations_(booking, changes, assignments) {
     };
   });
 
-  var dateReplacements = {};
-  var timeReplacements = {};
-
   operations.forEach(function(operation) {
-    adminRegisterTextReplacement_(
-      dateReplacements,
-      operation.component.date,
-      operation.change.date
+    operation.newDescription = adminUpdateCalendarScheduleDescription_(
+      operation,
+      operations
     );
-    adminRegisterTextReplacement_(
-      timeReplacements,
-      adminFormatCalendarTime_(operation.oldStart),
-      adminFormatCalendarTime_(operation.newStart)
-    );
-    adminRegisterTextReplacement_(
-      timeReplacements,
-      adminFormatCalendarTime_(operation.oldEnd),
-      adminFormatCalendarTime_(operation.newEnd)
-    );
-  });
-
-  operations.forEach(function(operation) {
-    var description = adminApplyTextReplacements_(
-      operation.oldDescription,
-      dateReplacements,
-      'DATE'
-    );
-
-    description = adminApplyTextReplacements_(
-      description,
-      timeReplacements,
-      'TIME'
-    );
-
-    description = description.replace(
-      /(^|\n)参加日\s*[:：]\s*[^\n]*/,
-      '$1参加日: ' + operation.change.date
-    );
-    description = description.replace(
-      /(^|\n)時間\s*[:：]\s*[^\n]*/,
-      '$1時間: ' + operation.change.time
-    );
-
-    operation.newDescription = description;
   });
 
   return operations;
 }
 
-function adminRegisterTextReplacement_(map, oldValue, newValue) {
-  var oldText = String(oldValue || '');
-  var newText = String(newValue || '');
-
-  if (!oldText || oldText === newText) return;
-
-  if (
-    Object.prototype.hasOwnProperty.call(map, oldText) &&
-    map[oldText] !== newText
-  ) {
-    map[oldText] = null;
-    return;
-  }
-
-  if (!Object.prototype.hasOwnProperty.call(map, oldText)) {
-    map[oldText] = newText;
-  }
+// 生成した日時欄と構成別の進行時刻だけを更新する。自由記述内の同じ日時は変更しない。
+function adminUpdateCalendarScheduleDescription_(operation, operations) {
+  var freeText = false;
+  var dateUpdated = false;
+  var timeUpdated = false;
+  var description = String(operation.oldDescription || '').split('\n').map(function(line) {
+    if (adminIsCalendarFreeTextLine_(line)) {
+      freeText = true;
+    }
+    if (freeText) return line;
+    if (!dateUpdated && /^参加日\s*[:：]/.test(line)) {
+      dateUpdated = true;
+      return '参加日: ' + operation.change.date;
+    }
+    if (!timeUpdated && /^時間\s*[:：]/.test(line)) {
+      timeUpdated = true;
+      return '時間: ' + operation.change.time;
+    }
+    for (var i = 0; i < operations.length; i++) {
+      var item = operations[i];
+      var start = adminFormatCalendarTime_(item.newStart);
+      var end = adminFormatCalendarTime_(item.newEnd);
+      var flowPrefix = adminGetComponentScheduleLabel_(item.component) + '：';
+      if (line.indexOf(flowPrefix) === 0) {
+        return flowPrefix + line.slice(flowPrefix.length).replace(
+          /^\d{1,2}:\d{2}[〜～~-]\d{1,2}:\d{2}/,
+          start + '〜' + end
+        );
+      }
+      // 内訳の時刻を更新した後、既知の生成書式だけ受取担当を全構成の日時順に合わせる。
+      var componentMarker = item.component.plan + '（';
+      var markerIndex = line.indexOf(componentMarker);
+      if (markerIndex !== -1 && /^(?:受取担当\s*[:：]\s*)?\s*(?:🐢|🛸|🦀)\s*$/.test(line.slice(0, markerIndex))) {
+        var timeIndex = markerIndex + componentMarker.length;
+        return line.slice(0, timeIndex) + line.slice(timeIndex).replace(
+          /^\d{1,2}:\d{2}〜）/,
+          start + '〜）'
+        );
+      }
+    }
+    return line;
+  }).join('\n');
+  return adminUpdateCalendarCollectionInstructions_(description, operation, operations);
 }
 
-function adminApplyTextReplacements_(text, replacements, prefix) {
-  var result = String(text || '');
-  var tokens = [];
+function adminIsCalendarFreeTextLine_(line) {
+  return /^(?:【参加者詳細】|【特別なご要望・アレルギー等】|(?:参加者詳細|要望|備考|特別なご要望・アレルギー等)\s*[:：])/.test(line);
+}
 
-  Object.keys(replacements).forEach(function(oldValue, index) {
-    var newValue = replacements[oldValue];
-
-    if (newValue === null || oldValue === newValue) return;
-
-    var token = '__ADMIN_' + prefix + '_' + index + '__';
-    result = result.split(oldValue).join(token);
-    tokens.push({ token: token, value: newValue });
+// 予定上の受取担当だけを更新する。受領実績や金額をCalendar本文から推測しない。
+function adminUpdateCalendarCollectionInstructions_(description, operation, operations) {
+  var lines = description.split('\n');
+  var limit = lines.length;
+  for (var i = 0; i < lines.length; i++) {
+    if (adminIsCalendarFreeTextLine_(lines[i])) { limit = i; break; }
+  }
+  var prefix = lines.slice(0, limit);
+  var header = prefix.indexOf('【セット全体の予定料金（受領実績ではありません）】');
+  var hasInstructions = prefix.some(function(line) {
+    return /^受取担当\s*[:：]/.test(line) || /^【セット全体の/.test(line);
   });
-
-  tokens.forEach(function(item) {
-    result = result.split(item.token).join(item.value);
+  if (!hasInstructions) return description;
+  var review = function() {
+    throw new Error('Calendarの受取担当の確認が必要です。生成書式または最初の予定を一意に確認できないため、日時はまだ変更していません。受領実績は別途確認してください。');
+  };
+  if (operations.length < 2 || operations.some(function(item) { return !isFinite(item.newStart.getTime()); })) return review();
+  var ordered = operations.slice().sort(function(a, b) { return a.newStart.getTime() - b.newStart.getTime(); });
+  if (ordered[0].newStart.getTime() === ordered[1].newStart.getTime()) return review();
+  var first = ordered[0];
+  var collectorLines = prefix.filter(function(line) { return /^受取担当\s*[:：]/.test(line); });
+  var keepExistingInstructions = function() {
+    // 旧書式の受取済み表現は再解釈しない。最初の構成と明記された担当が変わらなければ日時だけ更新できる。
+    if (operations.some(function(item) { return !isFinite(item.oldStart.getTime()); })) return review();
+    var oldOrdered = operations.slice().sort(function(a, b) { return a.oldStart.getTime() - b.oldStart.getTime(); });
+    var savedCollector = collectorLines.length === 1 && collectorLines[0].match(/^受取担当: (?:🐢|🛸|🦀) (.+)（\d{1,2}:\d{2}〜） の開始時に全額$/);
+    if (oldOrdered[0].oldStart.getTime() === oldOrdered[1].oldStart.getTime() ||
+        oldOrdered[0].component.rowNumber !== first.component.rowNumber ||
+        !savedCollector || savedCollector[1] !== first.component.plan) return review();
+    return description;
+  };
+  if (header === -1) return keepExistingInstructions();
+  var end = limit;
+  for (var j = header + 1; j < limit; j++) {
+    if (/^【/.test(lines[j])) { end = j; break; }
+  }
+  var total = [];
+  var collector = [];
+  var notes = [];
+  var breakdown = [];
+  var collectNote = '※ セット合計をこのツアー開始時に1回だけ受け取ってください。';
+  var otherNote = '※ 二重受領を避け、予約管理側の受領記録を確認してください。';
+  // 受付GASの既知の生成行だけを認識する。手書きの受領行などがあれば担当指示を作り直さない。
+  var knownLines = [
+    '',
+    '内訳（担当ごとの売上計上）',
+    '※ 上の「売上」はこのツアー分の内部計上額で、一部中止時の請求額ではありません。',
+    '※ 当店判断で一部中止した場合、実施した単品ツアー分だけを請求します。受領済みの場合は実施単品料金との差額を返金してください。内部配分額は返金計算に使用しません。実際の受領・返金・精算履歴は予約管理側を正本とし、Calendar本文から受領済みと判断しないでください。'
+  ];
+  var unknownLine = false;
+  for (var k = header + 1; k < end; k++) {
+    var line = lines[k];
+    var known = knownLines.indexOf(line) !== -1;
+    var match = line.match(/^(予約合計料金: ¥[\d,]+)(?:　← このツアー開始時に全額受け取る|（最初のツアーで受領予定。受領実績は要確認）)?$/);
+    if (match) { total.push({ index: k, amount: match[1] }); known = true; }
+    match = line.match(/^受取担当: (🐢|🛸|🦀) (.+)（\d{1,2}:\d{2}〜） の開始時に全額$/);
+    if (match) { collector.push({ index: k, plan: match[2] }); known = true; }
+    match = line.match(/^　(🐢|🛸|🦀) (.+)（\d{1,2}:\d{2}〜） … (¥[\d,]+)(?:　← 受取担当)?$/);
+    if (match) { breakdown.push({ index: k, emoji: match[1], plan: match[2], amount: match[3] }); known = true; }
+    if ([collectNote, otherNote, '※ セット合計は最初のツアー開始時に1回だけ受け取ります。'].indexOf(line) !== -1) { notes.push(k); known = true; }
+    if (!known) unknownLine = true;
+  }
+  if (unknownLine || total.length !== 1 || collector.length !== 1 || collectorLines.length !== 1 || notes.length !== 1 || breakdown.length !== operations.length) return keepExistingInstructions();
+  var complete = operations.every(function(item) {
+    return breakdown.filter(function(row) { return row.plan === item.component.plan; }).length === 1;
+  }) && breakdown.every(function(row) {
+    return operations.filter(function(item) { return row.plan === item.component.plan; }).length === 1;
   });
-
-  return result;
+  if (!complete || !operations.some(function(item) { return item.component.plan === collector[0].plan; })) return keepExistingInstructions();
+  var firstRow = breakdown.filter(function(row) { return row.plan === first.component.plan; })[0];
+  var isCollector = operation.component.rowNumber === first.component.rowNumber;
+  lines[total[0].index] = total[0].amount + (isCollector
+    ? '　← このツアー開始時に全額受け取る'
+    : '（最初のツアーで受領予定。受領実績は要確認）');
+  lines[collector[0].index] = '受取担当: ' + firstRow.emoji + ' ' + firstRow.plan +
+    '（' + adminFormatCalendarTime_(first.newStart) + '〜） の開始時に全額';
+  breakdown.forEach(function(row) {
+    var item = operations.filter(function(candidate) { return candidate.component.plan === row.plan; })[0];
+    lines[row.index] = '　' + row.emoji + ' ' + row.plan + '（' + adminFormatCalendarTime_(item.newStart) +
+      '〜） … ' + row.amount + (row.plan === firstRow.plan ? '　← 受取担当' : '');
+  });
+  lines[notes[0]] = isCollector ? collectNote : otherNote;
+  return lines.join('\n');
 }
 
 // 既存予定の長さを引き継げないとき（全日予定・長さが壊れている等）だけ使う既定値。
-// プラン詳細ページの所要時間表示と合わせる。
+// お客様向け総所要時間とは別。カタログのCalendar内部占有分数を優先する。
 function adminGetDefaultDurationMinutes_(planName) {
   var plan = String(planName || '');
 
+  for (var i = 0; i < ADMIN_PLAN_CATALOG.length; i++) {
+    var components = ADMIN_PLAN_CATALOG[i].components;
+    for (var j = 0; j < components.length; j++) {
+      if (components[j].plan === plan) return components[j].duration;
+    }
+  }
+
+  // カタログにない旧内部名の互換処理を維持する。
   if (plan.indexOf('海空セット') !== -1) return 90;
   if (plan.indexOf('まるごと1日セット') !== -1) return 90;
   if (plan.indexOf('昼夜セットヤシガニ') !== -1) return 90;
@@ -4164,12 +4588,34 @@ function adminMarkSuccessfulStatusSent_(bookingNumber, summary) {
 // LINE文面
 // ============================================================
 
+function adminAssertPlanConfirmed_(booking) {
+  if (booking.planResolution && booking.planResolution.status === 'needs_review') {
+    throw new Error('プランの確認が必要です。元予約・メール等で通常／貸切を確認してから予約確定・確定LINEを操作してください。');
+  }
+  var plan = adminGetPlanById_(booking.planId);
+  if (!plan) {
+    plan = ADMIN_PLAN_CATALOG.filter(function(candidate) {
+      return candidate.name === booking.displayPlan;
+    })[0];
+  }
+  if (plan && plan.components.length > 1) {
+    var actual = (booking.components || []).map(function(component) {
+      return String(component.plan || '').trim();
+    }).sort();
+    var expected = plan.components.map(function(component) { return component.plan; }).sort();
+    if (actual.length !== expected.length || expected.some(function(name, index) { return name !== actual[index]; })) {
+      throw new Error('セットの構成を確認してください。予定の欠落・重複・プランとの不一致があるため、予約確定・確定LINEを中止しました。');
+    }
+  }
+}
+
 function adminBuildStatusMessage_(booking, status) {
   if (status === '満席') {
     return adminBuildFullMessage_(booking);
   }
 
   if (status !== '確定') return '';
+  adminAssertPlanConfirmed_(booking);
 
   var plan = booking.displayPlan;
 
@@ -4224,6 +4670,11 @@ function adminBuildScheduleText_(booking) {
   }).join('\n');
 }
 
+// 旧予約のシート値・内部キーは変えず、表示する年齢区分だけ補正します。
+function adminCustomerAgeLabel_(value) {
+  return String(value || '').replace(/3歳未満/g, '3歳以下');
+}
+
 function adminBuildDetailBlock_(booking) {
   var scheduleText = adminBuildScheduleText_(booking);
   var schedulePrefix = booking.components && booking.components.length > 1
@@ -4235,7 +4686,7 @@ function adminBuildDetailBlock_(booking) {
     '予約番号：' + booking.bookingNumber + '\n' +
     'プラン：' + booking.displayPlan + '\n' +
     schedulePrefix + scheduleText + '\n' +
-    '人数：' + adminValueOrNone_(booking.headcount) + '\n' +
+    '人数：' + adminValueOrNone_(adminCustomerAgeLabel_(booking.headcount)) + '\n' +
     '合計金額：' + adminFormatYen_(booking.totalPrice) + '\n' +
     'クーポン：' + adminFormatCoupon_(booking.couponCode, booking.couponDiscount) + '\n\n' +
     '【お客様情報】\n' +
@@ -4243,7 +4694,7 @@ function adminBuildDetailBlock_(booking) {
     'LINE名：' + adminValueOrNone_(booking.lineName) + '\n' +
     'スタッフ指名：' + adminValueOrNone_(booking.staff === '未設定' ? '指名なし' : booking.staff) + '\n\n' +
     '【参加者詳細】\n' +
-    adminValueOrNone_(booking.participants)
+    adminValueOrNone_(adminCustomerAgeLabel_(booking.participants))
   );
 }
 
@@ -4270,14 +4721,17 @@ function adminBuildSnorkelConfirm_(booking) {
 
 function adminBuildNightConfirm_(booking) {
   return adminConfirmOpening_(booking, '🦀') +
+    '\n\n【所要時間】約1.5時間（90分）' +
     '\n\n【当日持ってくると便利なもの】\n' +
     '・虫よけスプレー\n' +
-    '・靴（サンダル不可・推奨）\n' +
+    '・サンダルでも参加可能ですが、歩きやすい靴をおすすめします\n' +
     '・長ズボン（虫刺されが気になる方）\n\n' +
     '【集合場所について】\n' +
     '当日にLINEにてご連絡いたします。\n\n' +
     '【ご注意】\n' +
-    '足腰が悪い方・体が不自由な方は事前に一度ご相談ください。\n\n' +
+    '持病・健康上の不安がある方は、必ず予約前にご相談ください。\n' +
+    '内容を確認したうえで参加可否をご案内します。\n' +
+    '足腰に不安がある方・体が不自由な方も事前にご相談ください。\n\n' +
     adminCancelPolicy_();
 }
 
@@ -4325,8 +4779,8 @@ function adminBuildDayNightConfirm_(booking) {
     '・ヤシガニ探検：当日にLINEでご連絡します\n\n' +
     '【当日の持ち物】\n' +
     '〔昼・ウミガメ〕水着・タオル・酔い止め（必要な方）\n' +
-    '〔夜・ヤシガニ探検〕虫よけスプレー・歩きやすい靴（サンダル不可）・飲み物\n\n' +
-    adminCancelPolicy_();
+    '〔夜・ヤシガニ探検〕虫よけスプレー・歩きやすい靴（推奨・サンダルでも参加可能）・飲み物\n\n' +
+    adminCancelPolicy_(true);
 }
 
 function adminBuildSeaSkyConfirm_(booking) {
@@ -4336,19 +4790,20 @@ function adminBuildSeaSkyConfirm_(booking) {
   return adminConfirmOpening_(booking, '🐢🛸') +
     '\n\n【プラン内容】\n' +
     'ウミガメシュノーケル＋ドローンSUPの海空セットです。\n' +
-    '所要時間の目安は約3.5〜4時間です。\n\n' +
+    '所要時間の目安は約3時間です。\n\n' +
     '🐢 ウミガメシュノーケル：' + adminFormatComponentSchedule_(turtle) + '〜 約1.5時間\n' +
     '🛸 ドローンSUP：' + adminFormatComponentSchedule_(sup) + '〜 約1.5時間\n' +
     '※ ウミガメシュノーケル終了後、そのまま続けてドローンSUPを行います。\n\n' +
     '【開催場所について】\n' +
     '基本的に同じビーチで、続けて開催します。\n' +
     '海況・水位によっては、ドローンSUPを別のビーチで開催する場合があります。\n' +
+    '別のビーチへ移動する場合は、移動時間の分だけ延長する場合があります。\n' +
     '集合場所は前日にLINEでご連絡いたします。\n\n' +
     '【当日の持ち物】\n' +
     '・水着（着替えは現地でできます）\n' +
     '・タオル\n' +
     '・酔い止め（必要な方）\n\n' +
-    adminCancelPolicy_();
+    adminCancelPolicy_(true);
 }
 
 function adminBuildTripleConfirm_(booking) {
@@ -4367,8 +4822,8 @@ function adminBuildTripleConfirm_(booking) {
     '・ナイトツアー：当日にLINEでご連絡します\n\n' +
     '【当日の持ち物】\n' +
     '〔昼・海亀／SUP〕水着・タオル・酔い止め（必要な方）\n' +
-    '〔夜・ナイトツアー〕虫よけスプレー・歩きやすい靴（サンダル不可）・飲み物\n\n' +
-    adminCancelPolicy_();
+    '〔夜・ナイトツアー〕虫よけスプレー・歩きやすい靴（推奨・サンダルでも参加可能）・飲み物\n\n' +
+    adminCancelPolicy_(true);
 }
 
 function adminBuildFullMessage_(booking) {
@@ -4402,8 +4857,8 @@ function adminBuildLocationMessage_(location, selectedTime, planName) {
     '現地にてお待ちください。' + nightFooter;
   var nightCommon =
     '【持ち物・服装】\n' +
-    '特に持ち物はありませんが、2時間ほど歩きますので水分の持参をおすすめします。\n' +
-    '動きやすい格好・長袖長ズボン・靴（完全舗装ではないためサンダル不可）でお越しください。\n' +
+    'ツアーの所要時間は約1.5時間（90分）です。歩いて探検するため、水分の持参をおすすめします。\n' +
+    '動きやすい格好でお越しください。虫刺されが気になる方には長袖長ズボンをおすすめします。サンダルでも参加可能ですが、歩きやすい靴をおすすめします。\n' +
     '🚻 トイレがありませんので、事前に済ませてからお越しください。\n\n';
   var higashihenna =
     '明日のツアー開催場所のご案内です。\n' +
@@ -4476,11 +4931,16 @@ function adminBuildLocationMessage_(location, selectedTime, planName) {
   return message;
 }
 
-function adminCancelPolicy_() {
+function adminCancelPolicy_(isSet) {
   return (
+    (isSet ? '当店判断でセットの一部を中止した場合、実際に実施した単品ツアー分だけを請求します。最終的なご負担は実施済み単品料金の合計です。受領済みセット料金からこの合計を差し引いた金額を返金します。\n\n' : '') +
     '【キャンセルポリシー】\n' +
     '前日まで：無料\n' +
-    '当日：100%\n\n' +
+    '当日：100%\n' +
+    '無断キャンセル：100%\n' +
+    '悪天候・海況不良により当店判断でツアーの全構成を中止する場合、ツアー料金・キャンセル料ともに請求しません。全構成が中止で、すでに料金を受領している場合は全額返金します。\n\n' +
+    '【お支払い】\n' +
+    '事前決済はありません。当日現地で現金にてお支払いください。セットツアーは最初のツアー開始時にセット料金の全額を現地で現金にてお支払いください。\n\n【参加条件】\n妊娠中、または妊娠の可能性がある方は参加できません。\n持病・その他の健康上の不安がある方は必ず予約前にご相談ください。内容を確認したうえで参加可否をご案内します。\n\n' +
     'ご不明な点はお気軽にご連絡ください。\n' +
     '海亀兄弟'
   );
