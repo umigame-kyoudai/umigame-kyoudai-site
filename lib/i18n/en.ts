@@ -1,3 +1,4 @@
+import { NIGHT_GUIDE } from "@/lib/staff"
 // 英語版サイト（/en配下）のコンテンツ定義。
 // 価格・時間帯などの数値は lib/data.ts の PLANS が単一の真実 — ここには文章のみを持つ。
 
@@ -421,7 +422,7 @@ export const EN_COMMON: IntlCommonCopy = {
 
 export const EN_FORM: IntlFormCopy = {
   staffNoPreference: "No preference",
-  staffNames: { staff1: "Yama-chan", staff2: "Hikaru", staff5: "Sotaro", staff3: "Soichiro", staff4: "Nagi" },
+  staffNames: { staff1: "Yama-chan", staff2: "Hikaru", staff5: "Sotaro", staff3: NIGHT_GUIDE.latinName, staff4: "Nagi" },
   limitToast: (max) => `Online booking is limited to ${max} guests. Please contact us on LINE for 11 or more.`,
   groupLimitInfo: (max, current) =>
     `Online booking is limited to ${max} guests. Current group: ${current}. Contact us on LINE for 11 or more.`,

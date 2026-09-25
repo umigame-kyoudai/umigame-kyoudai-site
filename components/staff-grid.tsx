@@ -1,11 +1,13 @@
+import { SITE_CONFIG } from "@/lib/site-config"
 import Image from "next/image"
+import Link from "next/link"
 import { BLUR_DATA_URLS } from "@/lib/image-placeholders"
 import { TrackedCta } from "@/components/tracked-cta"
 import { STAFF_MEMBERS, type StaffMember } from "@/lib/staff"
 
 function StaffCard({ member }: { member: StaffMember }) {
   return (
-    <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-xl transition-shadow duration-500">
+    <div id={member.id} className="scroll-mt-24 bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-xl transition-shadow duration-500">
       {/* Photo */}
       <div className="relative aspect-[4/5] overflow-hidden">
         <Image
@@ -29,6 +31,7 @@ function StaffCard({ member }: { member: StaffMember }) {
         {/* Name overlay on photo */}
         <div className="absolute bottom-0 left-0 right-0 p-5">
           <h3 className="text-2xl sm:text-3xl font-black text-white drop-shadow-lg">{member.name}</h3>
+          {member.latinName && <p className="text-white/80 text-xs tracking-widest mt-1">{member.latinName.toUpperCase()}</p>}
           <p className="text-white/70 text-sm mt-1 italic">&ldquo;{member.catchphrase}&rdquo;</p>
         </div>
       </div>
@@ -58,6 +61,19 @@ function StaffCard({ member }: { member: StaffMember }) {
             ))}
           </div>
         </div>
+        {member.tourPage && (
+          <Link href={member.tourPage} className="inline-flex mt-5 text-sm font-semibold text-emerald-700 hover:text-emerald-900 underline underline-offset-4">
+            {member.name}のナイトツアーを見る →
+          </Link>
+        )}
+        {member.book && (
+          <div className="mt-5 border-t border-emerald-100 pt-5">
+            <p className="text-sm font-semibold text-gray-900">{member.book.heading}</p>
+            <a href={member.book.url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-emerald-700 hover:text-emerald-900 underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-700" aria-label={`${member.name}の書籍をAmazonで購入する（新しいタブで開きます）`}>
+              書籍をAmazonで購入する <span aria-hidden="true">↗</span>
+            </a>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -117,7 +133,7 @@ export function StaffGrid() {
         <div className="mt-12 sm:mt-16 text-center">
           <div className="bg-gradient-to-br from-emerald-600 to-cyan-600 rounded-2xl sm:rounded-3xl p-8 sm:p-12 max-w-3xl mx-auto">
             <h3 className="text-xl sm:text-3xl font-bold text-white mb-3">
-              このスタッフたちと、<br className="sm:hidden" />海に出かけよう
+              このスタッフたちと、<br className="sm:hidden" />宮古島を冒険しよう
             </h3>
             <p className="text-emerald-100 text-sm sm:text-base mb-6 max-w-lg mx-auto">
               初めてでも大丈夫。私たちが全力でサポートします。
@@ -134,7 +150,7 @@ export function StaffGrid() {
               <TrackedCta
                 event="line_click"
                 eventProps={{ location: "staff" }}
-                href="https://lin.ee/jfp4laz"
+                href={SITE_CONFIG.lineUrl}
                 external
                 className="bg-white/20 text-white font-bold text-sm sm:text-base px-8 py-3.5 rounded-full border border-white/30 transition-all active:scale-95"
               >

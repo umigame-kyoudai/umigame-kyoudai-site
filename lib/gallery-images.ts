@@ -1,3 +1,5 @@
+import { NIGHT_GUIDE } from "@/lib/staff"
+
 // =============================================================================
 // ギャラリー画像の唯一の管理場所（Single Source of Truth）
 // -----------------------------------------------------------------------------
@@ -169,7 +171,7 @@ const GALLERY_IMAGE_SOURCE: GalleryImage[] = [
   // --- スタッフ・ガイド ---
   { id: "other-guide-001", src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/DSC06630.JPG-s6zKQo4DVkcMP4KFXSzSbTqVHYZyJy.jpeg", category: "other", title: "ガイドサービス", alt: "海亀兄弟のガイドサービス", order: 310 },
   { id: "other-staff-hikaru", src: "/hikaru-staff-photo.jpg", category: "other", title: "ひかる - やまちゃんの右腕", alt: "スタッフ ひかる", order: 320 },
-  { id: "other-staff-souichiro", src: "/souichiro-staff-photo.jpg", category: "other", title: "そういちろう - ナイトツアー専門", alt: "スタッフ そういちろう", order: 330 },
+  { id: "other-staff-souichiro", src: NIGHT_GUIDE.storyImage, category: "other", title: `${NIGHT_GUIDE.name} - ${NIGHT_GUIDE.role}`, alt: `スタッフ ${NIGHT_GUIDE.name}`, order: 330 },
   { id: "other-staff-nagi", src: "/nagi-staff-photo.jpg", category: "other", title: "凪", alt: "スタッフ 凪", order: 340 },
 
   // --- ナイトツアー ---

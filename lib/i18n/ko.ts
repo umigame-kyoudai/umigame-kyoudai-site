@@ -1,3 +1,4 @@
+import { NIGHT_GUIDE } from "@/lib/staff"
 // 韓国語サイト（/ko配下）のコンテンツ定義。構成は en.ts と同一（IntlDict）。
 // 価格・時間帯などの数値は lib/data.ts の PLANS が単一の真実。
 // 掲載プランは英語版と同じく貸切のみ（INTL_PLAN_IDS）、料金は日本語サイトと同額。
@@ -393,7 +394,7 @@ const KO_COMMON: IntlCommonCopy = {
 
 const KO_FORM: IntlFormCopy = {
   staffNoPreference: "지정 없음",
-  staffNames: { staff1: "야마짱", staff2: "히카루", staff5: "소타로", staff3: "소이치로", staff4: "나기" },
+  staffNames: { staff1: "야마짱", staff2: "히카루", staff5: "소타로", staff3: `소이치로 (${NIGHT_GUIDE.latinName})`, staff4: "나기" },
   limitToast: (max) => `온라인 예약은 최대 ${max}명까지입니다. 11명 이상은 LINE으로 문의해 주세요.`,
   groupLimitInfo: (max, current) => `온라인 예약은 최대 ${max}명까지입니다. 현재 인원: ${current}명. 11명 이상은 LINE으로 문의해 주세요.`,
   sectionChooseTour: "투어 선택",

@@ -4,7 +4,7 @@ import { createMetadata } from "@/lib/seo"
 
 export const metadata: Metadata = createMetadata({
   title: "スタッフ紹介",
-  description: "海亀兄弟のスタッフをご紹介。宮古島の海を知り尽くした経験豊富なガイドが、安全で楽しい体験をお届けします。",
+  description: "海亀兄弟のスタッフをご紹介。海のガイドから、アマゾン帰りのジャングル・ナイトツアー担当まで。それぞれの得意分野で宮古島の自然をご案内します。",
   path: "/staff",
   image: "/yamachan-staff-photo.jpg",
 })

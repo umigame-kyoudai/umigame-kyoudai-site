@@ -1,3 +1,4 @@
+import { NIGHT_GUIDE } from "@/lib/staff"
 // 繁体字中国語サイト（/zh-tw配下・台湾向け）のコンテンツ定義。構成は en.ts と同一（IntlDict）。
 // 価格・時間帯などの数値は lib/data.ts の PLANS が単一の真実。
 // 掲載プランは英語版と同じく貸切のみ（INTL_PLAN_IDS）、料金は日本語サイトと同額。
@@ -393,7 +394,7 @@ const ZH_COMMON: IntlCommonCopy = {
 
 const ZH_FORM: IntlFormCopy = {
   staffNoPreference: "不指定",
-  staffNames: { staff1: "山醬", staff2: "Hikaru", staff5: "Sotaro", staff3: "Soichiro", staff4: "Nagi" },
+  staffNames: { staff1: "山醬", staff2: "Hikaru", staff5: "Sotaro", staff3: NIGHT_GUIDE.latinName, staff4: "Nagi" },
   limitToast: (max) => `線上預約最多${max}位。11位以上請透過LINE洽詢。`,
   groupLimitInfo: (max, current) => `線上預約最多${max}位。目前人數：${current}位。11位以上請透過LINE洽詢。`,
   sectionChooseTour: "選擇行程",

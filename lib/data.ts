@@ -986,6 +986,7 @@ export const CANCELLATION_POLICY = {
 export interface Staff {
   id: string
   name: string
+  latinName?: string
   role: string
   description: string
   image: string
@@ -995,6 +996,7 @@ export interface Staff {
 export const STAFFS: Staff[] = STAFF_MEMBERS.map((m) => ({
   id: m.id,
   name: m.name,
+  latinName: m.latinName,
   role: m.role,
   description: m.description,
   image: m.image,

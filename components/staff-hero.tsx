@@ -23,10 +23,10 @@ export function StaffHero() {
         <div>
           <p className="text-emerald-300 font-semibold text-xs sm:text-sm tracking-widest uppercase mb-3">Our Team</p>
           <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-white mb-3 drop-shadow-2xl">
-            海を愛するスタッフ
+            宮古島を案内するスタッフ
           </h1>
           <p className="text-sm sm:text-lg text-white/80 max-w-lg">
-            安全・誠実・やわらかな高揚感。経験豊富なプロが、あなたの最高の思い出をつくります。
+            海のガイドも、夜のジャングルの案内人も。一人ひとりの得意分野で、あなたの冒険を支えます。
           </p>
         </div>
       </div>

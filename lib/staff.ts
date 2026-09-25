@@ -1,8 +1,8 @@
 // ============================================================
 // スタッフ情報の単一ソース（Single Source of Truth）
 // ------------------------------------------------------------
-// /staff のカード(staff-grid)・トップのOur Team(home/staff-section)・
-// 構造化データ(json-ld 経由の data.ts STAFFS) が全てここを参照する。
+// /staff・トップのOur Team・ナイト専用ページ・予約時の人物表示・
+// 構造化データ(json-ld 経由の data.ts STAFFS) がここを参照する。
 // スタッフを増減するときは、この配列だけを編集すれば3箇所に反映される。
 //
 // ※ lucide アイコン等のUI依存は持たない純データ（サーバー側からも安全に import 可能）。
@@ -11,6 +11,7 @@
 export interface StaffMember {
   id: string
   name: string
+  latinName?: string
   role: string
   /** 役割バッジの色（Tailwind クラス） */
   badgeColor: string
@@ -27,7 +28,46 @@ export interface StaffMember {
   details: string[]
   /** 担当ツアー */
   tours: string[]
+  /** スタッフ紹介から案内する代表プラン */
+  tourPage?: string
+  /** 本人の書籍紹介と外部の購入先 */
+  book?: {
+    heading: string
+    description: string
+    url: string
+  }
 }
+
+// そういちろうはスタッフ紹介とナイトページで同じ人物。
+// 日本語・ローマ字・役割・写真の共通情報を各ページへ渡す。
+// bookingId と id は既存予約・Instagram専用入口の識別子を維持する。
+export const NIGHT_GUIDE = {
+  id: "souichiro",
+  bookingId: "staff3",
+  name: "そういちろう",
+  latinName: "Souichirou",
+  role: "ジャングル・ナイトツアー担当",
+  badgeColor: "bg-purple-500",
+  image: "/images/night-tour-coconut-crab.jpg",
+  storyImage: "/souichiro-staff-photo.jpg",
+  objectPosition: "center center",
+  catchphrase: "夜の宮古島、冒険しよう。",
+  description: "アマゾンで暮らし、宮古島に帰ってきた冒険家。現地での経験を生かして、夜のジャングルで生き物を探すナイトツアーをご案内します。",
+  shortDescription: "アマゾン帰りの、夜のジャングルの案内人",
+  details: [
+    "アマゾンでの生活・探検の経験",
+    "夜行性生物のエキスパート",
+    "子どもを夢中にさせるトーク力",
+    "安全な夜間ガイドの技術",
+  ],
+  tours: ["本格ナイトツアー", "【貸切】本格ナイトツアー"],
+  tourPage: "/plans/S3",
+  book: {
+    heading: "そういちろうの世界を、本でも。",
+    description: "夜の森を案内するそういちろうは、本も書いています。ツアーの前に、旅の余韻に。気になった方は、ぜひ手に取ってみてください。",
+    url: "https://amzn.asia/d/0a7IhcAU",
+  },
+} satisfies StaffMember & { bookingId: string; storyImage: string }
 
 export const STAFF_MEMBERS: StaffMember[] = [
   {
@@ -84,24 +124,7 @@ export const STAFF_MEMBERS: StaffMember[] = [
     ],
     tours: ["ウミガメシュノーケル", "【貸切】ウミガメシュノーケルツアー"],
   },
-  {
-    id: "souichiro",
-    name: "そういちろう",
-    role: "ナイトツアー専門",
-    badgeColor: "bg-purple-500",
-    image: "/images/night-tour-coconut-crab.jpg",
-    objectPosition: "center center",
-    catchphrase: "夜の宮古島、冒険しよう。",
-    description: "アマゾン帰りの冒険家。夜のジャングルのスペシャリストとして、ワクワクする生き物探しをご案内。",
-    shortDescription: "夜の冒険のスペシャリスト",
-    details: [
-      "アマゾン探検の経験あり",
-      "夜行性生物のエキスパート",
-      "子どもを夢中にさせるトーク力",
-      "安全な夜間ガイドの技術",
-    ],
-    tours: ["本格ナイトツアー", "貸切ナイトツアー"],
-  },
+  NIGHT_GUIDE,
   {
     id: "nagi",
     name: "凪",

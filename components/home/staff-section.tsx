@@ -10,6 +10,7 @@ const staffMembers = STAFF_MEMBERS.map((m) => ({
   image: m.image,
   description: m.shortDescription,
   objectPosition: m.objectPosition,
+  tourPage: m.tourPage,
 }))
 
 export function StaffSection() {
@@ -21,7 +22,7 @@ export function StaffSection() {
           <h2 className="text-3xl md:text-5xl font-bold text-gray-900 mb-4">
             頼れる<span className="text-emerald-600">スタッフ</span>
           </h2>
-          <p className="text-gray-500 text-lg">安心して楽しめるのは、経験豊富なスタッフがいるから</p>
+          <p className="text-gray-500 text-lg">海も、夜の森も。それぞれの得意分野で、宮古島をご案内します。</p>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 md:gap-8">
@@ -47,6 +48,7 @@ export function StaffSection() {
                 <h3 className="text-lg font-bold text-gray-900 mb-1">{staff.name}</h3>
                 <p className="text-emerald-700 text-sm font-medium mb-2">{staff.role}</p>
                 <p className="text-gray-500 text-xs leading-relaxed">{staff.description}</p>
+                {staff.tourPage && <Link href={staff.tourPage} className="inline-block mt-3 text-xs font-semibold text-emerald-700 underline underline-offset-4">{staff.name}のナイトツアーを見る →</Link>}
               </div>
             </div>
           ))}

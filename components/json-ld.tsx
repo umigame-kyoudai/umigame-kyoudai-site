@@ -56,18 +56,20 @@ export function OrganizationJsonLd() {
 export function StaffPersonJsonLd({
   staff,
 }: {
-  staff: { id: string; name: string; role?: string; image?: string }[]
+  staff: { id: string; name: string; latinName?: string; role?: string; image?: string }[]
 }) {
   const schema = staff.map((person) => ({
     "@context": "https://schema.org",
     "@type": "Person",
+    "@id": `${SITE_URL}/staff#${person.id}`,
     name: person.name,
+    ...(person.latinName ? { alternateName: person.latinName } : {}),
     ...(person.role ? { jobTitle: person.role } : {}),
     ...(person.image
       ? { image: person.image.startsWith("http") ? person.image : `${SITE_URL}${person.image}` }
       : {}),
     worksFor: { "@id": `${SITE_URL}/#organization` },
-    url: `${SITE_URL}/staff`,
+    url: `${SITE_URL}/staff#${person.id}`,
   }))
 
   return (
