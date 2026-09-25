@@ -6,6 +6,7 @@ import { ParticipantForm } from "./participant-form"
 import { useLiff } from "./liff-provider"
 import { categorizeBookingFailure, trackEvent } from "@/lib/analytics"
 import { sendDetailedEvent } from "@/lib/detailed-analytics"
+import { getBookingSourceToken } from "@/lib/booking-source-client"
 import { getAttribution, getAttributionSourceLabel } from "@/lib/attribution"
 import {
   TRACKING_CONSENT_EVENT,
@@ -271,10 +272,8 @@ export function BookingForm() {
   const searchParams = useSearchParams()
   const hasInitialized = useRef(false)
 
-  // 初期値にはLINEログインのリダイレクト前に保存した下書きを復元する
-  // （このフォームはSuspense配下のクライアント描画のため、初期化はブラウザでのみ走る）
+  // サーバーと初回のブラウザ描画は同じ初期値にする。下書きはマウント後に復元する。
   const [bookingData, setBookingData] = useState<BookingData>(() => {
-    const restoredDraft = loadBookingDraft() ?? {}
     return {
       selectedPlan: "",
       selectedDate: "",
@@ -292,12 +291,12 @@ export function BookingForm() {
       specialRequests: "",
       agreedToTerms: false,
       couponCode: "",
-      ...restoredDraft,
       // 人数・プランと紐づく割引額は保存値を信用せず、必ず再検証する。
       couponDiscount: 0,
     }
   })
 
+  const [hasRestoredDraft, setHasRestoredDraft] = useState(false)
   const [totalPrice, setTotalPrice] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -335,15 +334,21 @@ export function BookingForm() {
     const planFromParam = planParam ? BOOKING_PLANS.find((plan) => plan.id === planParam) : undefined
     const canPreselectPlan = !!planFromParam && planFromParam.status !== "coming_soon"
 
-    if (planParam || dateParam) {
-      setBookingData((prev) => ({
-        ...prev,
-        ...(canPreselectPlan && planParam !== prev.selectedPlan
+    const restoredDraft = loadBookingDraft() ?? {}
+    setBookingData((prev) => {
+      const restored = { ...prev, ...restoredDraft, couponDiscount: 0 }
+      return {
+        ...restored,
+        ...(canPreselectPlan && planParam !== restored.selectedPlan
           ? { selectedTime: "", nightTime: "" }
           : {}),
         ...(canPreselectPlan && planParam ? { selectedPlan: planParam } : {}),
         ...(isValidCalendarDate(dateParam) && { selectedDate: dateParam }),
-      }))
+      }
+    })
+    setHasRestoredDraft(true)
+
+    if (planParam || dateParam) {
 
       // URLやCTA経由の初期選択も、フォーム表示後に1回だけ記録する（入力開始とは別扱い）
       if (canPreselectPlan && planParam) {
@@ -359,11 +364,11 @@ export function BookingForm() {
 
   // 入力内容を随時sessionStorageへ退避（LINEログインのリダイレクトを跨いで復元するため）
   useEffect(() => {
-    if (isSubmitted) return
+    if (isSubmitted || !hasRestoredDraft) return
     saveBookingDraft(bookingData)
     // 復元判定用に「埋まっている項目数」も併せて控える（値は保存しない）
     saveRestoreProbe(bookingData)
-  }, [bookingData, isSubmitted])
+  }, [bookingData, isSubmitted, hasRestoredDraft])
 
   // プロフィールは表示専用。予約APIにはサーバー検証用のID tokenだけを送る。
   const { lineUserId: liffUserId, lineDisplayName: liffDisplayName, lineIdToken, isLiffReady, isLiffLoggedIn, isInClient, liffError, loginLiff, retryLiff, closeWindow, getFreshLineIdToken, invalidateLineSession, consumeLineLoginReturn } = useLiff()
@@ -893,6 +898,7 @@ export function BookingForm() {
         couponDiscount: bookingData.couponDiscount,
         // 流入元（どのリンク経由か）。管理者メール・カレンダーの備考に [流入元] として載る
         attribution: getAttribution(),
+        acquisitionToken: getBookingSourceToken(),
         // 同意済みの場合だけ、予約前の閲覧履歴と予約を結合する識別子を送る。
         customerAnalytics: getBookingCustomerAnalytics(),
       }

@@ -6,8 +6,8 @@
  * 予約受信の doPost や既存の編集トリガーには依存しません。
  */
 
-var ADMIN_APP_VERSION = '2026.09.08-1';
-var ADMIN_SCHEMA_VERSION = '2026.08.24-1';
+var ADMIN_APP_VERSION = '2026.09.25-1';
+var ADMIN_SCHEMA_VERSION = '2026.09.25-1';
 var ADMIN_SCHEMA_VERSION_PROPERTY = 'ADMIN_BOOKING_SCHEMA_VERSION';
 var ADMIN_SCHEMA_VERIFIED_AT_PROPERTY = 'ADMIN_BOOKING_SCHEMA_VERIFIED_AT';
 var ADMIN_SCHEMA_VERIFY_INTERVAL_MS = 6 * 60 * 60 * 1000;
@@ -76,7 +76,10 @@ var ADMIN_COLUMNS = {
   REFERRAL_CODE: 46,
   REFERRAL_NAME: 47,
   REFERRAL_ACQUIRED_AT: 48,
-  REFERRAL_CAMPAIGN: 49
+  REFERRAL_CAMPAIGN: 49,
+  ACQUISITION_SOURCE: 50,
+  ACQUISITION_ENTRY: 51,
+  ACQUISITION_ACQUIRED_AT: 52
 };
 
 var ADMIN_CANONICAL_HEADERS = [
@@ -91,7 +94,8 @@ var ADMIN_CANONICAL_HEADERS = [
   'UTM Campaign', '予約送信ページ', 'デバイス', 'ブラウザ', 'OS',
   '参加者年齢', '参加者身長', '参加者体重', '参加者足サイズ',
   '特別なご要望・アレルギー等', '管理プランID',
-  '紹介コード', '紹介者名', '紹介取得日時', '紹介キャンペーン'
+  '紹介コード', '紹介者名', '紹介取得日時', '紹介キャンペーン',
+  '集客経由', '集客入口', '集客経由取得日時'
 ];
 
 var ADMIN_REFERRAL_OUTCOME_HEADERS = [
@@ -1145,7 +1149,7 @@ function appendBookingCells_(sheet, rows) {
   var spreadsheetId = spreadsheet.getId();
   var timezone = spreadsheet.getSpreadsheetTimeZone();
   var template = Sheets.Spreadsheets.get(spreadsheetId, {
-    ranges: ["'" + sheet.getName().replace(/'/g, "''") + "'!A2:AW2"],
+    ranges: ["'" + sheet.getName().replace(/'/g, "''") + "'!A2:AZ2"],
     fields: 'sheets(data(rowData(values(dataValidation,userEnteredFormat(numberFormat)))))'
   });
   var grid = template.sheets && template.sheets[0] && template.sheets[0].data;
@@ -1273,7 +1277,7 @@ function adminChangeReservation(request) {
       targetRowNumbers.forEach(function(rowNumber, index) {
         adminAssertRowOwner_(sheet, rowNumber, beforeBooking.bookingNumber, false);
         sheet
-          .getRange(rowNumber, 1, 1, ADMIN_COLUMNS.REFERRAL_CAMPAIGN)
+          .getRange(rowNumber, 1, 1, ADMIN_COLUMNS.ACQUISITION_ACQUIRED_AT)
           .setValues([newRows[index]]);
       });
 
@@ -1282,7 +1286,7 @@ function adminChangeReservation(request) {
         .forEach(function(rowNumber) {
           adminAssertRowOwner_(sheet, rowNumber, beforeBooking.bookingNumber, false);
           sheet
-            .getRange(rowNumber, 1, 1, ADMIN_COLUMNS.REFERRAL_CAMPAIGN)
+            .getRange(rowNumber, 1, 1, ADMIN_COLUMNS.ACQUISITION_ACQUIRED_AT)
             .clearContent();
         });
 
@@ -1334,7 +1338,7 @@ function adminChangeReservation(request) {
         try {
           adminAssertRowOwner_(sheet, rowNumber, beforeBooking.bookingNumber, false);
           sheet
-            .getRange(rowNumber, 1, 1, ADMIN_COLUMNS.REFERRAL_CAMPAIGN)
+            .getRange(rowNumber, 1, 1, ADMIN_COLUMNS.ACQUISITION_ACQUIRED_AT)
             .clearContent();
         } catch (error) {
           rollbackErrors.push('追加行' + rowNumber + 'の取消: ' + error.message);
@@ -1582,7 +1586,7 @@ function adminFindOldComponentForRole_(booking, role) {
 
 function adminBuildChangedRows_(sheet, beforeBooking, plan, normalized, rowNumbers) {
   var sourceValues = sheet
-    .getRange(beforeBooking.rowNumbers[0], 1, 1, ADMIN_COLUMNS.REFERRAL_CAMPAIGN)
+    .getRange(beforeBooking.rowNumbers[0], 1, 1, ADMIN_COLUMNS.ACQUISITION_ACQUIRED_AT)
     .getValues()[0];
   var prices = adminSplitAmountByComponents_(
     normalized.totalPrice,
@@ -1601,7 +1605,7 @@ function adminBuildChangedRows_(sheet, beforeBooking, plan, normalized, rowNumbe
       definition.role
     );
 
-    while (values.length < ADMIN_COLUMNS.REFERRAL_CAMPAIGN) values.push('');
+    while (values.length < ADMIN_COLUMNS.ACQUISITION_ACQUIRED_AT) values.push('');
 
     values[ADMIN_COLUMNS.BOOKING_NUM - 1] = beforeBooking.bookingNumber;
     values[ADMIN_COLUMNS.DATE - 1] = schedule.date;
@@ -1649,7 +1653,7 @@ function adminCreateChangedCalendarEvent_(
   var isPrivate = String(plan.name || '').indexOf('貸切') !== -1;
   var eventPrefix = isPrivate ? 'WEB VIP' : 'WEB予約';
   var eventEmoji = component.role === 'night'
-    ? '🦀'
+    ? (beforeBooking.acquisitionSource === 'souichiro' ? '🥥' : '🦀')
     : (component.role === 'sup' ? '🏄' : '🐢');
   var eventColor = component.role === 'night'
     ? '8'
@@ -1658,6 +1662,7 @@ function adminCreateChangedCalendarEvent_(
     normalized.customerName + ' / ' + normalized.headcount;
   var description = [
     '予約番号: ' + beforeBooking.bookingNumber,
+    '集客経由: ' + adminAcquisitionLabel_(beforeBooking.acquisitionSource),
     '名前: ' + normalized.customerName,
     '電話: ' + normalized.phone,
     'メール: ' + normalized.email,
@@ -1861,7 +1866,7 @@ function adminDeleteBooking(request) {
     try {
       booking.rowNumbers.forEach(function(rowNumber) {
         sheet
-          .getRange(rowNumber, 1, 1, ADMIN_COLUMNS.REFERRAL_CAMPAIGN)
+          .getRange(rowNumber, 1, 1, ADMIN_COLUMNS.ACQUISITION_ACQUIRED_AT)
           .clearContent();
       });
 
@@ -2259,6 +2264,22 @@ function adminGetBookingSheet_() {
 // 予約受付GASと管理Webアプリで列順を共通化する。
 // 2026-08-13の衝突版（T=メール、U=Visitor ID）だけを検出して、
 // T/UをLINE管理列へ戻し、顧客・行動データをV列以降へ移す。
+function adminCheckAcquisitionColumns_(sheet, knownHeaders) {
+  if (knownHeaders && knownHeaders.length >= 52 && knownHeaders.slice(49, 52).every(function(value, i) { return value === ADMIN_CANONICAL_HEADERS[49 + i]; })) return;
+  var width = Math.min(sheet.getMaxColumns(), 52) - 49;
+  if (width <= 0) return;
+  var currentHeaders = sheet.getRange(1, 50, 1, width).getValues()[0];
+  if (currentHeaders.every(function(value, i) { return value === ADMIN_CANONICAL_HEADERS[49 + i]; })) return;
+  var values = sheet.getRange(1, 50, sheet.getMaxRows(), width).getValues();
+  for (var col = 0; col < width; col++) {
+    var header = String(values[0][col] || '');
+    if (header === ADMIN_CANONICAL_HEADERS[49 + col]) continue;
+    if (header || values.slice(1).some(function(row) { return row[col] !== '' && row[col] != null; })) {
+      throw new Error('集客経由の追加先AX〜AZ列に既存データがあります。列の対応を確認してください。');
+    }
+  }
+}
+
 function adminEnsureBookingSchema_(sheet) {
   var properties = PropertiesService.getScriptProperties();
   var verifiedAt = Number(
@@ -2297,6 +2318,7 @@ function adminEnsureBookingSchema_(sheet) {
     }
   }
 
+  adminCheckAcquisitionColumns_(sheet, existing);
   var missingColumns = ADMIN_CANONICAL_HEADERS.length - maxColumns;
   if (missingColumns > 0) {
     sheet.insertColumnsAfter(maxColumns, missingColumns);
@@ -2488,7 +2510,7 @@ function adminReadBookings_(sheet) {
   if (lastRow < 2) return [];
 
   var values = sheet
-    .getRange(2, 1, lastRow - 1, ADMIN_COLUMNS.REFERRAL_CAMPAIGN)
+    .getRange(2, 1, lastRow - 1, Math.min(sheet.getMaxColumns(), ADMIN_COLUMNS.ACQUISITION_ACQUIRED_AT))
     .getDisplayValues();
   var groups = {};
 
@@ -2528,6 +2550,11 @@ function adminIsEmptyBookingRow_(row) {
     !String(row[ADMIN_COLUMNS.PLAN - 1] || '').trim();
 }
 
+function adminAcquisitionLabel_(source) {
+  var labels = { souichiro: '🥥 そういちろうさん', yamachan: '山ちゃん', umigame: '海亀兄弟公式' };
+  return Object.prototype.hasOwnProperty.call(labels, source) ? labels[source] : '不明・通常入口';
+}
+
 function adminMapRow_(values, rowNumber) {
   return {
     rowNumber: rowNumber,
@@ -2564,7 +2591,10 @@ function adminMapRow_(values, rowNumber) {
     referralCode: String(values[ADMIN_COLUMNS.REFERRAL_CODE - 1] || '').trim(),
     referralName: String(values[ADMIN_COLUMNS.REFERRAL_NAME - 1] || '').trim(),
     referralAcquiredAt: String(values[ADMIN_COLUMNS.REFERRAL_ACQUIRED_AT - 1] || '').trim(),
-    referralCampaign: String(values[ADMIN_COLUMNS.REFERRAL_CAMPAIGN - 1] || '').trim()
+    referralCampaign: String(values[ADMIN_COLUMNS.REFERRAL_CAMPAIGN - 1] || '').trim(),
+    acquisitionSource: String(values[ADMIN_COLUMNS.ACQUISITION_SOURCE - 1] || '').trim(),
+    acquisitionEntry: String(values[ADMIN_COLUMNS.ACQUISITION_ENTRY - 1] || '').trim(),
+    acquisitionAcquiredAt: String(values[ADMIN_COLUMNS.ACQUISITION_ACQUIRED_AT - 1] || '').trim()
   };
 }
 
@@ -2619,6 +2649,9 @@ function adminBuildBooking_(key, rows) {
     referralName: first.referralName,
     referralAcquiredAt: first.referralAcquiredAt,
     referralCampaign: first.referralCampaign,
+    acquisitionSource: first.acquisitionSource,
+    acquisitionEntry: first.acquisitionEntry,
+    acquisitionAcquiredAt: first.acquisitionAcquiredAt,
     bookingStatus: statuses.length === 0
       ? '未対応'
       : (statuses.length === 1 ? statuses[0] : '混在'),
@@ -2665,6 +2698,9 @@ function adminBuildBooking_(key, rows) {
       row.referralName,
       row.referralAcquiredAt,
       row.referralCampaign,
+      row.acquisitionSource,
+      row.acquisitionEntry,
+      row.acquisitionAcquiredAt,
       row.bookingStatus,
       row.location,
       row.staff,
@@ -2758,6 +2794,10 @@ function adminToPublicBooking_(booking) {
     referralName: booking.referralName,
     referralAcquiredAt: booking.referralAcquiredAt,
     referralCampaign: booking.referralCampaign,
+    acquisitionSource: booking.acquisitionSource,
+    acquisitionLabel: adminAcquisitionLabel_(booking.acquisitionSource),
+    acquisitionEntry: booking.acquisitionEntry,
+    acquisitionAcquiredAt: booking.acquisitionAcquiredAt,
     bookingStatus: booking.bookingStatus,
     location: booking.location,
     staff: booking.staff,
@@ -3619,7 +3659,7 @@ function adminUpdateCalendarScheduleDescription_(operation, operations) {
       // 内訳の時刻を更新した後、既知の生成書式だけ受取担当を全構成の日時順に合わせる。
       var componentMarker = item.component.plan + '（';
       var markerIndex = line.indexOf(componentMarker);
-      if (markerIndex !== -1 && /^(?:受取担当\s*[:：]\s*)?\s*(?:🐢|🛸|🦀)\s*$/.test(line.slice(0, markerIndex))) {
+      if (markerIndex !== -1 && /^(?:受取担当\s*[:：]\s*)?\s*(?:🐢|🛸|🦀|🥥)\s*$/.test(line.slice(0, markerIndex))) {
         var timeIndex = markerIndex + componentMarker.length;
         return line.slice(0, timeIndex) + line.slice(timeIndex).replace(
           /^\d{1,2}:\d{2}〜）/,
@@ -3661,7 +3701,7 @@ function adminUpdateCalendarCollectionInstructions_(description, operation, oper
     // 旧書式の受取済み表現は再解釈しない。最初の構成と明記された担当が変わらなければ日時だけ更新できる。
     if (operations.some(function(item) { return !isFinite(item.oldStart.getTime()); })) return review();
     var oldOrdered = operations.slice().sort(function(a, b) { return a.oldStart.getTime() - b.oldStart.getTime(); });
-    var savedCollector = collectorLines.length === 1 && collectorLines[0].match(/^受取担当: (?:🐢|🛸|🦀) (.+)（\d{1,2}:\d{2}〜） の開始時に全額$/);
+    var savedCollector = collectorLines.length === 1 && collectorLines[0].match(/^受取担当: (?:🐢|🛸|🦀|🥥) (.+)（\d{1,2}:\d{2}〜） の開始時に全額$/);
     if (oldOrdered[0].oldStart.getTime() === oldOrdered[1].oldStart.getTime() ||
         oldOrdered[0].component.rowNumber !== first.component.rowNumber ||
         !savedCollector || savedCollector[1] !== first.component.plan) return review();
@@ -3786,7 +3826,7 @@ function adminReadFullBookingRows_(sheet, rowNumbers) {
     return {
       rowNumber: rowNumber,
       values: sheet
-        .getRange(rowNumber, 1, 1, ADMIN_COLUMNS.REFERRAL_CAMPAIGN)
+        .getRange(rowNumber, 1, 1, ADMIN_COLUMNS.ACQUISITION_ACQUIRED_AT)
         .getValues()[0]
     };
   });
@@ -3804,7 +3844,7 @@ function adminArchiveDeletedBooking_(sourceSheet, booking, originalRows, actor) 
     'アプリ版'
   ];
   var sourceHeaders = sourceSheet
-    .getRange(1, 1, 1, ADMIN_COLUMNS.REFERRAL_CAMPAIGN)
+    .getRange(1, 1, 1, ADMIN_COLUMNS.ACQUISITION_ACQUIRED_AT)
     .getValues()[0];
   var headers = metadataHeaders.concat(sourceHeaders);
 
@@ -4036,7 +4076,7 @@ function adminRestoreFullBookingRows_(sheet, originalRows) {
         return;
       }
       sheet
-        .getRange(item.rowNumber, 1, 1, ADMIN_COLUMNS.REFERRAL_CAMPAIGN)
+        .getRange(item.rowNumber, 1, 1, ADMIN_COLUMNS.ACQUISITION_ACQUIRED_AT)
         .setValues([item.values]);
     } catch (error) {
       Logger.log('削除した予約一覧行の復旧失敗: ' + error.message);

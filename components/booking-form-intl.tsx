@@ -41,6 +41,7 @@ import {
   type FirstInteractionType,
 } from "@/lib/booking-funnel"
 import { sendDetailedEvent } from "@/lib/detailed-analytics"
+import { getBookingSourceToken } from "@/lib/booking-source-client"
 import { getAttribution, getAttributionSourceLabel } from "@/lib/attribution"
 import {
   TRACKING_CONSENT_EVENT,
@@ -588,6 +589,7 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
         agreedToTerms: agreed,
         // 流入元（どのリンク経由か）。管理者メール・カレンダーの備考に [流入元] として載る
         attribution: getAttribution(),
+        acquisitionToken: getBookingSourceToken(),
         customerAnalytics: getBookingCustomerAnalytics(),
       }
       const submissionId = await getOrCreateBookingSubmissionId(locale, {

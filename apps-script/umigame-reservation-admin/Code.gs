@@ -27,8 +27,8 @@ var NOTIFY_SECRET = ''; // Script Properties の NOTIFY_SECRET を優先して�
 var SHEET_NAME = '予約一覧';
 var CALENDAR_ID = 'genkidama2439@gmail.com';
 var ADMIN_EMAIL = 'genkidama2439@gmail.com';
-var BOOKING_APP_VERSION = '2026.09.08-1';
-var BOOKING_SCHEMA_VERSION = '2026.08.24-1';
+var BOOKING_APP_VERSION = '2026.09.25-1';
+var BOOKING_SCHEMA_VERSION = '2026.09.25-1';
 var BOOKING_SCHEMA_VERSION_PROPERTY = 'BOOKING_SCHEMA_VERSION';
 
 var COMBO_PLAN_NAME = 'ウミガメシュノーケル＆ヤシガニ探検 昼夜セット';
@@ -111,7 +111,10 @@ var COLUMNS = {
   REFERRAL_CODE: 46,
   REFERRAL_NAME: 47,
   REFERRAL_ACQUIRED_AT: 48,
-  REFERRAL_CAMPAIGN: 49
+  REFERRAL_CAMPAIGN: 49,
+  ACQUISITION_SOURCE: 50,
+  ACQUISITION_ENTRY: 51,
+  ACQUISITION_ACQUIRED_AT: 52
 };
 
 var HEADERS = [
@@ -163,7 +166,10 @@ var HEADERS = [
   '紹介コード',
   '紹介者名',
   '紹介取得日時',
-  '紹介キャンペーン'
+  '紹介キャンペーン',
+  '集客経由',
+  '集客入口',
+  '集客経由取得日時'
 ];
 
 var LOCATION_OPTIONS = [
@@ -924,7 +930,24 @@ function getOrCreateSheet() {
 
 // 既存の予約行を消さずに、新しい顧客・行動分析列だけを末尾へ追加する。
 // A〜Uの21列は予約管理・LINE安全送信が参照するため変更しない。
+function bookingCheckAcquisitionColumns_(sheet, knownHeaders) {
+  if (knownHeaders && knownHeaders.length >= 52 && knownHeaders.slice(49, 52).every(function(value, i) { return value === HEADERS[49 + i]; })) return;
+  var width = Math.min(sheet.getMaxColumns(), 52) - 49;
+  if (width <= 0) return;
+  var currentHeaders = sheet.getRange(1, 50, 1, width).getValues()[0];
+  if (currentHeaders.every(function(value, i) { return value === HEADERS[49 + i]; })) return;
+  var values = sheet.getRange(1, 50, sheet.getMaxRows(), width).getValues();
+  for (var col = 0; col < width; col++) {
+    var header = String(values[0][col] || '');
+    if (header === HEADERS[49 + col]) continue;
+    if (header || values.slice(1).some(function(row) { return row[col] !== '' && row[col] != null; })) {
+      throw new Error('集客経由の追加先AX〜AZ列に既存データがあります。列の対応を確認してください。');
+    }
+  }
+}
+
 function ensureBookingSchema_(sheet) {
+  bookingCheckAcquisitionColumns_(sheet);
   var schemaChanged = migrateCollidingCustomerColumns_(sheet);
 
   var missingColumns = HEADERS.length - sheet.getMaxColumns();
@@ -1331,6 +1354,7 @@ function sendBookingEmail(data, headcount, participantsDetail) {
       formatReceiveTotalLines_(data) +
       'クーポン　：' + couponInfo + '\n' +
       'スタッフ指名：' + staffInfo + '\n' +
+      '集客経由：' + bookingAcquisitionLabel_(data.acquisition) + '\n' +
       planOperationBlock + '\n' +
       '【参加者詳細】\n' +
       participantsDetail + '\n\n' +
@@ -1351,6 +1375,34 @@ function sendBookingEmail(data, headcount, participantsDetail) {
 // ============================================================
 // 予約データ受信 Next.js → GAS
 // ============================================================
+
+// 集客経由は紹介報酬・担当ガイドから独立して扱う。
+function bookingAcquisitionLabel_(acquisition) {
+  var labels = { souichiro: 'そういちろうさん', yamachan: '山ちゃん', umigame: '海亀兄弟公式' };
+  var source = acquisition && acquisition.source;
+  return Object.prototype.hasOwnProperty.call(labels, source) ? labels[source] + '（Instagram専用リンク）' : '不明・通常入口';
+}
+function bookingNightEmoji_(data) {
+  return data && data.acquisition && data.acquisition.source === 'souichiro' ? '🥥' : '🦀';
+}
+// Webと同じ鍵をScript PropertiesのBOOKING_SOURCE_SECRETに設定する。
+// 設定不足・改変トークンを通常経由として保存せず、書き込み前に明示的に拒否する。
+function verifyBookingAcquisition_(token) {
+  if (token === null || typeof token === 'undefined' || token === '') return null;
+  if (typeof token !== 'string' || token.length > 512 || !/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]{43}$/.test(token)) throw new Error('集客経由の形式が不正です');
+  var properties = PropertiesService.getScriptProperties();
+  var secret = String(properties.getProperty('BOOKING_SOURCE_SECRET') || properties.getProperty('REFERRAL_COOKIE_SECRET') || '').trim();
+  if (secret.length < 32) throw new Error('集客経由の検証設定がありません');
+  var parts = token.split('.');
+  var expected = Utilities.base64EncodeWebSafe(Utilities.computeHmacSha256Signature('uk-booking-source:v1:' + parts[0], secret)).replace(/=+$/, '');
+  if (expected !== parts[1]) throw new Error('集客経由の署名が不正です');
+  var payload = JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(parts[0])).getDataAsString('UTF-8'));
+  var source = payload && payload.source;
+  var acquiredAt = payload && payload.acquiredAt;
+  var age = Date.now() - Date.parse(acquiredAt);
+  if (['souichiro', 'yamachan', 'umigame'].indexOf(source) < 0 || payload.entry !== 'instagram' || typeof acquiredAt !== 'string' || !isFinite(age) || age < -300000 || age >= 30 * 86400000) throw new Error('集客経由が無効または期限切れです');
+  return { source: source, entry: 'instagram', acquiredAt: new Date(acquiredAt).toISOString() };
+}
 
 function buildBookingRow_(timestamp, data, headcount, participantsDetail, options) {
   options = options || {};
@@ -1419,7 +1471,10 @@ function buildBookingRow_(timestamp, data, headcount, participantsDetail, option
     '',
     '',
     '',
-    ''
+    '',
+    data.acquisition && data.acquisition.source || '',
+    data.acquisition && data.acquisition.entry || '',
+    data.acquisition && data.acquisition.acquiredAt || ''
   ];
 }
 
@@ -1442,7 +1497,7 @@ function findExistingBookingRows_(sheet, bookingNumber) {
   return rows;
 }
 
-function bookingRowsMatch_(sheet, existingRows, expectedRows) {
+function bookingRowsMatch_(sheet, existingRows, expectedRows, verifyAcquisition) {
   if (existingRows.length !== expectedRows.length) return false;
 
   var actualSignatures = existingRows.map(function(rowNumber) {
@@ -1455,7 +1510,11 @@ function bookingRowsMatch_(sheet, existingRows, expectedRows) {
       formatTime(values[COLUMNS.TIME - 1]),
       String(values[COLUMNS.PLAN - 1] || ''),
       toNumber_(values[COLUMNS.TOTAL_PRICE - 1])
-    ].join('\u0001');
+    ].concat(verifyAcquisition ? [
+      String(values[COLUMNS.ACQUISITION_SOURCE - 1] || ''),
+      String(values[COLUMNS.ACQUISITION_ENTRY - 1] || ''),
+      String(values[COLUMNS.ACQUISITION_ACQUIRED_AT - 1] || '')
+    ] : []).join('\u0001');
   }).sort();
 
   var expectedSignatures = expectedRows.map(function(values) {
@@ -1464,7 +1523,11 @@ function bookingRowsMatch_(sheet, existingRows, expectedRows) {
       formatTime(values[COLUMNS.TIME - 1]),
       String(values[COLUMNS.PLAN - 1] || ''),
       toNumber_(values[COLUMNS.TOTAL_PRICE - 1])
-    ].join('\u0001');
+    ].concat(verifyAcquisition ? [
+      String(values[COLUMNS.ACQUISITION_SOURCE - 1] || ''),
+      String(values[COLUMNS.ACQUISITION_ENTRY - 1] || ''),
+      String(values[COLUMNS.ACQUISITION_ACQUIRED_AT - 1] || '')
+    ] : []).join('\u0001');
   }).sort();
 
   return actualSignatures.join('\u0002') ===
@@ -1484,7 +1547,7 @@ function appendBookingCells_(sheet, rows) {
   var spreadsheetId = spreadsheet.getId();
   var timezone = spreadsheet.getSpreadsheetTimeZone();
   var template = Sheets.Spreadsheets.get(spreadsheetId, {
-    ranges: ["'" + sheet.getName().replace(/'/g, "''") + "'!A2:AW2"],
+    ranges: ["'" + sheet.getName().replace(/'/g, "''") + "'!A2:AZ2"],
     fields: 'sheets(data(rowData(values(dataValidation,userEnteredFormat(numberFormat)))))'
   });
   var grid = template.sheets && template.sheets[0] && template.sheets[0].data;
@@ -1577,7 +1640,7 @@ function writeBookingRows_(sheet, rows) {
     appendBookingCells_(sheet, rows);
     SpreadsheetApp.flush();
     var writtenRows = findExistingBookingRows_(sheet, bookingNumber);
-    if (!bookingRowsMatch_(sheet, writtenRows, rows)) {
+    if (!bookingRowsMatch_(sheet, writtenRows, rows, true)) {
       // 保存先を推測して消すと、別GASが追記した予約を消す危険がある。
       // 内容を保持して管理者の確認に回し、成功扱いにはしない。
       throw new Error(
@@ -1932,6 +1995,7 @@ function buildCalendarDescription_(data, headcount, options) {
 
   return (
     '予約番号: ' + (data.bookingNumber || '') +
+    '\n集客経由: ' + bookingAcquisitionLabel_(data.acquisition) +
     '\n受付日時: ' + new Date().toLocaleString('ja-JP') +
     '\n\n【お客様情報】' +
     '\n名前: ' + (data.customerName || '') +
@@ -2168,7 +2232,7 @@ function addToCalendar(data, headcount) {
         dateParts,
         nightTime,
         90,
-        'WEB 🦀 ' +
+        'WEB ' + bookingNightEmoji_(data) + ' ' +
           COMBO_NIGHT_PLAN_NAME +
           ' / ' +
           customerName +
@@ -2220,7 +2284,7 @@ function addToCalendar(data, headcount) {
   // 以前は else-if で繋がっていたため、貸切のSUPプラン（【貸切】ドローンSUP・
   // 【貸切】サンセットSUP）がSUPの枝で止まり WEB VIP が付かなかった。
   if (isNightTour) {
-    emoji = '🦀';
+    emoji = bookingNightEmoji_(data);
     color = '8';
 
   } else if (planName.indexOf('SUP') !== -1) {
@@ -3277,7 +3341,8 @@ sendBookingEmail = function(data, headcount, participantsDetail) {
       '人数　　　：' + headcount + '\n' +
       formatReceiveTotalLines_(data) +
       'クーポン　：' + formatCouponInfo(data.couponCode, data.couponDiscount) + '\n' +
-      'スタッフ指名：' + (data.staffName || '指名なし') + '\n\n' +
+      'スタッフ指名：' + (data.staffName || '指名なし') + '\n' +
+      '集客経由：' + bookingAcquisitionLabel_(data.acquisition) + '\n\n' +
       '【まるごと1日セット売上内訳】※各金額はクーポン適用後\n' +
       labels.turtle + '：' + turtleTime + '〜 約1.5時間 / ' +
       formatYen(amounts.turtle) +
@@ -3554,7 +3619,7 @@ addToCalendar = function(data, headcount) {
         dateParts,
         nightTime,
         C5C6_NIGHT_DURATION_MINUTES,
-        prefix + ' 🦀 ' + labels.night +
+        prefix + ' ' + bookingNightEmoji_(data) + ' ' + labels.night +
           ' / ' + customerName +
           ' / ' + headcount,
         buildCalendarDescription_(data, headcount, {
@@ -5314,7 +5379,20 @@ doPost = function(e) {
     })).setMimeType(ContentService.MimeType.JSON);
   }
 
-  var response = REFERRAL_ORIGINAL_DO_POST(e);
+  try {
+    // クライアント指定のacquisitionオブジェクトは採用しない。
+    data.acquisition = verifyBookingAcquisition_(data.acquisitionToken);
+  } catch (acquisitionError) {
+    return ContentService.createTextOutput(JSON.stringify({
+      success: false, code: 'acquisition_verification_failed',
+      error: '予約経由を確認できませんでした。管理者へお問い合わせください。'
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+  // 内側の受付もJSONを読み直すので、検証済みの値で引き継ぐ。
+  var verifiedEvent = Object.assign({}, e, {
+    postData: Object.assign({}, e.postData, { contents: JSON.stringify(data) })
+  });
+  var response = REFERRAL_ORIGINAL_DO_POST(verifiedEvent);
 
   if (data) referralProcessBookingSafely_(data);
 

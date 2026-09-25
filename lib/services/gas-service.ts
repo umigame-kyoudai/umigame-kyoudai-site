@@ -80,6 +80,7 @@ export interface BookingPayload {
     landingPage?: string;
   } | null;
   referral?: ReferralCookiePayload | null;
+  acquisitionToken?: string | null;
 }
 
 // GAS URLを取得

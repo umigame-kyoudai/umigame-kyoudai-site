@@ -1,5 +1,7 @@
 "use client"
 
+import { bookingSourceLoginReturnUrl, captureBookingSource } from "@/lib/booking-source-client"
+
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react"
 import type { Liff } from "@line/liff"
 
@@ -318,6 +320,7 @@ export function LiffProvider({ children }: { children: ReactNode }) {
 
     // 旧実装で永続化していた本人情報は復元せず、起動時に削除する。
     clearLegacyLiffStorage()
+    captureBookingSource()
     initLiff()
   }, [initLiff])
 
@@ -329,7 +332,7 @@ export function LiffProvider({ children }: { children: ReactNode }) {
     // 遷移前にフラグを立てる。この直後の pagehide を「離脱」と数えないため。
     trackLineLoginRedirectStarted({ redirectMethod: detectRedirectMethod(liffInstance) })
 
-    liffInstance.login({ redirectUri: window.location.href })
+    liffInstance.login({ redirectUri: bookingSourceLoginReturnUrl(window.location.href) })
   }
 
   const retryLiff = () => {

@@ -641,6 +641,8 @@
             booking.phone,
             booking.lineName,
             booking.displayPlan,
+            booking.acquisitionLabel,
+            booking.acquisitionSource,
             booking.headcount,
             booking.components.map(function(component) { return component.plan; }).join(' ')
           ].join(' '));
@@ -790,6 +792,7 @@
           infoCard('電話番号', booking.phone || '未登録') +
           infoCard('LINE名', booking.lineName || '未登録') +
           infoCard('人数', customerAgeLabel(booking.headcount) || '未登録') +
+          infoCard('集客経由', booking.acquisitionLabel || '不明・通常入口') +
           infoCard('合計金額', formatMoney(booking.totalPrice) + (booking.couponDiscount ? ' / 割引 ' + formatMoney(booking.couponDiscount) : '')) +
         '</div>' +
 

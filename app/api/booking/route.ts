@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server'
+import { NIGHT_GUIDE } from '@/lib/staff'
+import { resolveBookingSource } from '@/lib/booking-source-server'
 import { generateBookingNumber, sendToGAS, createAPIResponse, createAPIError } from '@/lib/services/gas-service'
 import { isValidCalendarDate, validateEmail, validatePhoneNumber, validateRequired } from '@/lib/utils/validation'
 import { PLANS, getStaffFee } from '@/lib/data'
@@ -50,6 +52,7 @@ interface BookingParticipant {
 }
 
 interface BookingRequest {
+  acquisitionToken?: string | null
   selectedPlan: string
   selectedDate: string
   customerName: string
@@ -103,7 +106,7 @@ const STAFF_NAMES: Record<string, string> = {
   staff1: 'やまちゃん',
   staff2: 'ひかる',
   staff5: 'そうたろう',
-  staff3: 'そういちろう',
+  [NIGHT_GUIDE.bookingId]: NIGHT_GUIDE.name,
   staff4: '凪',
 }
 
@@ -462,6 +465,7 @@ const buildGASPayload = (
   serverTotalPrice: number,
   lineProfile: VerifiedLineProfile,
   referral: ReferralCookiePayload | null,
+  acquisitionToken: string | null,
 ) => {
   const { adultCount, childCount, under3Count } = countParticipantsByCategory(bookingData.participants)
 
@@ -493,6 +497,7 @@ const buildGASPayload = (
     customerAnalytics: normalizeCustomerAnalytics(bookingData.customerAnalytics),
     attribution: bookingData.attribution || null,
     referral,
+    acquisitionToken,
   }
 }
 
@@ -592,6 +597,8 @@ export async function POST(request: Request) {
       )
     }
 
+    const acquisition = resolveBookingSource(request.headers.get('cookie'), bookingData.acquisitionToken)
+
     const gasPayload = buildGASPayload(
       bookingData,
       plan,
@@ -600,6 +607,7 @@ export async function POST(request: Request) {
       serverTotalPrice,
       lineProfile,
       referral,
+      acquisition?.token || null,
     )
 
     try {

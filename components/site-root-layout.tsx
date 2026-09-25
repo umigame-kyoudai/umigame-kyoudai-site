@@ -1,3 +1,4 @@
+import { BookingSourceTracker } from "@/components/booking-source-tracker"
 import type { ReactNode } from "react"
 import { Suspense } from "react"
 import { Inter } from "next/font/google"
@@ -45,6 +46,7 @@ export function SiteRootLayout({
         <OrganizationJsonLd />
         <Suspense fallback={null}>
           <RouteScrollManager />
+          <BookingSourceTracker />
         </Suspense>
         <LiffLoginRelay />
         {children}
