@@ -131,6 +131,23 @@
   }
 }
 
+/* iOSのネイティブ日付欄もカード内の幅に収め、文字を左に揃える。 */
+.booking-date-input {
+  box-sizing: border-box;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+
+.booking-date-input::-webkit-date-and-time-value {
+  min-height: 1.5em;
+  text-align: left;
+}
+
+.booking-date-input::-webkit-datetime-edit {
+  display: block;
+  padding: 0;
+}
+
 /* Consolidated animation and utility classes, removed redundant definitions */
 .ios-scroll-fix {
   -webkit-overflow-scrolling: touch;

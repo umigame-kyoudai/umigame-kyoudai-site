@@ -26,3 +26,5 @@ Team ID: `team_AVkVeJGhky3xEi61HxtzJ2IX`。
 予約経由・Calendarの🥥表示は [公開作業記録](booking-source-release-2026-09-25.md) を参照。2026-09-26に受付GAS v36・管理GAS v23を既存URLのまま公開済み。所有アカウントは `info@umigamekyoudaimiyakojima.com`。予約Spreadsheet・Calendar・公開デプロイとの対応は上記記録に集約し、隔離検証8件を確認した。Webと受付GASで同一の `BOOKING_SOURCE_SECRET` を管理する。
 
 専用入口 `https://www.umigamekyoudaimiyakojima.com/from/souichiro` はWeb本番へ反映済み。HTTPSでの署名・Cookie、スマホの詳細ページから予約フォームへの経由引き継ぎを確認した。
+
+2026-09-26の仮予約フォーム改善（希望日の幅調整、代表者情報の順序変更、参加者1人目への氏名反映）は [変更・検証記録](booking-form-release-2026-09-26.md) を参照。

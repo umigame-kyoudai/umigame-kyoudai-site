@@ -55,6 +55,7 @@ export function ParticipantForm({ participants, minAge, selectedPlan, onUpdate }
       </CardHeader>
       <CardContent className="space-y-6">
         {participants.map((participant, index) => {
+          const isRepresentative = index === 0 && participant.category === "adult"
           const categoryLabel =
             participant.category === "adult" ? "大人" : participant.category === "child" ? "子ども" : "3歳以下"
           const isOverSixty =
@@ -63,18 +64,24 @@ export function ParticipantForm({ participants, minAge, selectedPlan, onUpdate }
           return (
             <div key={participant.id} className="bg-gray-50 rounded-2xl p-6">
               <h3 className="font-semibold text-emerald-800 mb-4">
-                参加者 {index + 1} ({categoryLabel})
+                参加者 {index + 1} ({isRepresentative ? "代表者様・" : ""}{categoryLabel})
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                 <div>
-                  <Label htmlFor={`participant-${participant.id}-name`} className="text-sm font-medium text-gray-700 mb-2 block">氏名 (任意)</Label>
+                  <Label htmlFor={`participant-${participant.id}-name`} className="text-sm font-medium text-gray-700 mb-2 block">{isRepresentative ? "氏名（代表者様）" : "氏名 (任意)"}</Label>
                   <Input
                     id={`participant-${participant.id}-name`}
                     value={participant.name}
                     onChange={(e) => onUpdate(participant.id, "name", e.target.value)}
                     placeholder="山田 太郎"
+                    aria-describedby={isRepresentative ? `participant-${participant.id}-name-hint` : undefined}
                     className="rounded-xl border-emerald-200 focus:border-emerald-500"
                   />
+                  {isRepresentative && (
+                    <p id={`participant-${participant.id}-name-hint`} className="mt-2 text-xs leading-relaxed text-emerald-700">
+                      代表者様のお名前を反映しています。ここで変更すると、上の代表者様情報にも反映されます。
+                    </p>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor={`participant-${participant.id}-age`} className="text-sm font-medium text-gray-700 mb-2 block">年齢 *</Label>

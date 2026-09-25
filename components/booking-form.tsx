@@ -61,6 +61,7 @@ import { getStaffFee } from "@/lib/data"
 import { getPlanPriceDisplay, getPlanCode } from "@/lib/plan-price-display"
 import { getPlanMaxParticipants } from "@/lib/booking-rules"
 import { replaceBookingSelectionQuery } from "@/lib/booking-url"
+import { syncRepresentativeName } from "@/lib/booking-participants"
 import { isValidCalendarDate } from "@/lib/utils/validation"
 import {
   clearBookingSubmissionId,
@@ -526,23 +527,15 @@ export function BookingForm() {
   )
 
   useEffect(() => {
-    const totalParticipants = bookingData.adultCount + bookingData.childCount + bookingData.under3Count
-    const currentParticipants = bookingData.participants.length
-
-    if (totalParticipants !== currentParticipants) {
-      const newParticipants = createParticipants(
-        bookingData.adultCount,
-        bookingData.childCount,
-        bookingData.under3Count,
-        bookingData.participants,
-      )
-
-      setBookingData((prev) => ({
-        ...prev,
-        participants: newParticipants,
-      }))
-    }
-  }, [bookingData.adultCount, bookingData.childCount, bookingData.under3Count, bookingData.participants, createParticipants])
+    setBookingData((prev) => {
+      const totalParticipants = prev.adultCount + prev.childCount + prev.under3Count
+      const participants = totalParticipants === prev.participants.length
+        ? prev.participants
+        : createParticipants(prev.adultCount, prev.childCount, prev.under3Count, prev.participants)
+      const synced = syncRepresentativeName(participants, prev.customerName)
+      return synced === prev.participants ? prev : { ...prev, participants: synced }
+    })
+  }, [bookingData.adultCount, bookingData.childCount, bookingData.under3Count, bookingData.participants, bookingData.customerName, createParticipants])
 
   const isNightHunterPlan = bookingData.selectedPlan === "S3" || bookingData.selectedPlan === "S4" || bookingData.selectedPlan === "S5" || bookingData.selectedPlan === "S6" || bookingData.selectedPlan === "S7" || bookingData.selectedPlan === "S8" || bookingData.selectedPlan === "slide-boat"
   const isUnder3FreePlan = bookingData.selectedPlan === "S3" || bookingData.selectedPlan === "S5"
@@ -748,6 +741,10 @@ export function BookingForm() {
 
     setBookingData((prev) => ({
       ...prev,
+      // 1人目のお名前を直した場合も、代表者欄と食い違わないようにする。
+      customerName: field === "name" && prev.participants[0]?.id === participantId && prev.participants[0]?.category === "adult"
+        ? String(value)
+        : prev.customerName,
       participants: prev.participants.map((participant) =>
         participant.id === participantId ? { ...participant, [field]: value } : participant,
       ),
@@ -1914,8 +1911,8 @@ export function BookingForm() {
             日時選択
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div>
+        <CardContent className="min-w-0 space-y-6">
+          <div className="min-w-0 max-w-full">
             <Label htmlFor="date" className="text-sm font-medium text-gray-700 mb-2 block">
               希望日
             </Label>
@@ -1927,7 +1924,7 @@ export function BookingForm() {
                 handleInputChange("selectedDate", e.target.value)
               }}
               min={todayStr()}
-              className="rounded-xl border-emerald-200 focus:border-emerald-500"
+              className="booking-date-input block h-12 w-full min-w-0 max-w-full appearance-none rounded-xl border-emerald-200 bg-white text-left focus:border-emerald-500"
             />
             {bookingData.selectedDate && (
               <p className="text-xs text-emerald-600 mt-1">選択中: {bookingData.selectedDate}</p>
@@ -2021,6 +2018,81 @@ export function BookingForm() {
                 )}
               </>
             )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Representative Information */}
+      <Card className="glass-card bg-white/70 backdrop-blur-xl rounded-3xl ring-1 ring-emerald-100 shadow-lg">
+        <CardHeader>
+          <CardTitle as="h2" className="flex items-center gap-2 text-emerald-800">
+            <UserCheck className="w-5 h-5" />
+            代表者様情報
+          </CardTitle>
+          <p className="mt-2 text-sm leading-relaxed text-gray-600">
+            代表者様も参加人数に含めてください。お名前は参加者1人目に自動で反映されます。
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label htmlFor="name" className="text-sm font-medium text-gray-700 mb-2 block">
+              代表者氏名 *
+            </Label>
+            <Input
+              id="name"
+              value={bookingData.customerName}
+              onChange={(e) => handleInputChange("customerName", e.target.value)}
+              placeholder="山田 太郎"
+              autoComplete="name"
+              className="rounded-xl border-emerald-200 focus:border-emerald-500"
+              required
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="phone" className="text-sm font-medium text-gray-700 mb-2 block">
+              電話番号 *
+            </Label>
+            <Input
+              id="phone"
+              type="tel"
+              value={bookingData.customerPhone}
+              onChange={(e) => handleInputChange("customerPhone", e.target.value)}
+              placeholder="090-1234-5678"
+              autoComplete="tel"
+              className="rounded-xl border-emerald-200 focus:border-emerald-500"
+              required
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="email" className="text-sm font-medium text-gray-700 mb-2 block">
+              メールアドレス *
+            </Label>
+            <Input
+              id="email"
+              type="email"
+              value={bookingData.customerEmail}
+              onChange={(e) => handleInputChange("customerEmail", e.target.value)}
+              placeholder="example@email.com"
+              autoComplete="email"
+              className="rounded-xl border-emerald-200 focus:border-emerald-500"
+              required
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="requests" className="text-sm font-medium text-gray-700 mb-2 block">
+              特別なご要望・アレルギー等
+            </Label>
+            <Textarea
+              id="requests"
+              value={bookingData.specialRequests}
+              onChange={(e) => handleInputChange("specialRequests", e.target.value)}
+              placeholder="何かご要望がございましたらお書きください"
+              className="rounded-xl border-emerald-200 focus:border-emerald-500"
+              rows={3}
+            />
           </div>
         </CardContent>
       </Card>
@@ -2287,75 +2359,6 @@ export function BookingForm() {
 
       {/* Participant Details */}
       <ParticipantForm participants={bookingData.participants} minAge={minAge} selectedPlan={bookingData.selectedPlan} onUpdate={handleParticipantChange} />
-
-      {/* Customer Information */}
-      <Card className="glass-card bg-white/70 backdrop-blur-xl rounded-3xl ring-1 ring-emerald-100 shadow-lg">
-        <CardHeader>
-          <CardTitle as="h2" className="text-emerald-800">お客様情報</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label htmlFor="name" className="text-sm font-medium text-gray-700 mb-2 block">
-              代表者氏名 *
-            </Label>
-            <Input
-              id="name"
-              value={bookingData.customerName}
-              onChange={(e) => handleInputChange("customerName", e.target.value)}
-              placeholder="山田 太郎"
-              autoComplete="name"
-              className="rounded-xl border-emerald-200 focus:border-emerald-500"
-              required
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="phone" className="text-sm font-medium text-gray-700 mb-2 block">
-              電話番号 *
-            </Label>
-            <Input
-              id="phone"
-              type="tel"
-              value={bookingData.customerPhone}
-              onChange={(e) => handleInputChange("customerPhone", e.target.value)}
-              placeholder="090-1234-5678"
-              autoComplete="tel"
-              className="rounded-xl border-emerald-200 focus:border-emerald-500"
-              required
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="email" className="text-sm font-medium text-gray-700 mb-2 block">
-              メールアドレス *
-            </Label>
-            <Input
-              id="email"
-              type="email"
-              value={bookingData.customerEmail}
-              onChange={(e) => handleInputChange("customerEmail", e.target.value)}
-              placeholder="example@email.com"
-              autoComplete="email"
-              className="rounded-xl border-emerald-200 focus:border-emerald-500"
-              required
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="requests" className="text-sm font-medium text-gray-700 mb-2 block">
-              特別なご要望・アレルギー等
-            </Label>
-            <Textarea
-              id="requests"
-              value={bookingData.specialRequests}
-              onChange={(e) => handleInputChange("specialRequests", e.target.value)}
-              placeholder="何かご要望がございましたらお書きください"
-              className="rounded-xl border-emerald-200 focus:border-emerald-500"
-              rows={3}
-            />
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Staff Selection */}
       {staffSelectable && (
