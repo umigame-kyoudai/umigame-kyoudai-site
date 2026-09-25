@@ -23,4 +23,4 @@ Team ID: `team_AVkVeJGhky3xEi61HxtzJ2IX`。
 
 今回の公開対象・未反映機能は [ナイトページ公開記録](night-tour-release-2026-09-25.md) に記載する。
 
-予約経由・Calendarの🥥表示は [公開作業記録](booking-source-release-2026-09-25.md) を参照。2026-09-25にGoogle接続と管理GASの公開v22を確認済み。受付GASの編集URLとの照合待ちで、経由機能の本番切替は未実施。
+予約経由・Calendarの🥥表示は [公開作業記録](booking-source-release-2026-09-25.md) を参照。2026-09-25にGoogle接続と管理GASの公開v22を確認済み。2026-09-26に受付の編集URL・本番公開v34・シートとの対応も照合済み。Google側のApps Script APIが無効のため有効化待ちで、経由機能の本番切替は未実施。

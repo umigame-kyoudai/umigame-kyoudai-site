@@ -4,14 +4,16 @@
 
 ## 現在の状態
 
-**実装・検証済み、本番の切替は未実施。予約受付GASのScript ID／編集URLの確認待ち。**
+**2026-09-26: 実装・検証済み、本番の切替は未実施。受付Script IDの照合は完了。Google側のApps Script API有効化待ち。**
 
 - 本番Webはナイトページ公開コミット `907fc0c`。`/from/souichiro` はまだ本番で案内しない。
 - Vercelの既存Production環境に `BOOKING_SOURCE_SECRET` を機密値として追加済み。旧コードには影響しない。まだ受付GASに設定していない。
 - Google Apps Script更新用の接続はユーザーが完了。アカウントは `info@umigamekyoudaimiyakojima.com`。
 - 管理GASの実際の公開版は **v22（2026-09-13）**。過去の台帳のv21は古い情報だった。HEADもv22と一致。コード・HTML・公開設定をバックアップし、Repository側に既存版を同期した（`554d0f5`）。
 - 管理GASの既存機能をそのまま維持し、集客経由の保存・表示・変更時の引き継ぎだけを加えた。
-- 受付GASの候補差分はRepositoryの既存版から抽出済み。**実際の公開版との比較はまだできていないため、そのまま上書きしない。**
+- ユーザー提供の受付Script IDを確認。本番環境変数の公開デプロイと一致し、公開版はv34。HEADと公開版も一致し、Repositoryの既存受付コードと同一だった。双方をバックアップ済み。
+- 更新APIが「User has not enabled the Apps Script API」で拒否されたため停止。失敗後にHEADと公開v34が変わっていないことを再確認した。ユーザーへ `https://script.google.com/home/usersettings` のGoogle Apps Script APIをオンにするよう依頼済み。
+- 設定・隔離検証用の一時コードはローカルで準備・認証拒否テスト済みだが、Googleへの書き込みも一時デプロイの作成もまだ行われていない。
 - 本番シート、カレンダー、GASのソース・デプロイは未変更。顧客への通知も送信していない。
 
 ## 対応関係
@@ -21,12 +23,12 @@
 | Web | Vercel `umigame-kyoudai/umigame-kyoudai-site` |
 | 本番URL | `https://www.umigamekyoudaimiyakojima.com` |
 | 受付の公開デプロイ | `AKfycbzXS_oPYVNBOr1uGZXgQ3rALb6BFn-in_Jzy5xruve5RptuuHQk1zLkqYhyKsU5NWPe`（本番環境変数で確認） |
-| 受付Script ID | **未確認。ユーザーに編集画面URLを確認中** |
+| 受付Script ID | `1GqvKTvucfFzmawSbu3koxzOQFdlf4tiOCA21fraD04jXFyVKxmrQNWRc`。所有者 `info@umigamekyoudaimiyakojima.com` |
 | 管理Script ID | `11P8KtsmwzyeLdvWYOk6f01x1PE74MXCIKNUTQlozv_WXd0sxa3LLGfcH` |
 | 管理の公開デプロイ | `AKfycby17YRSdptCSLdKmL9WqGuZLipEbnWJuTl8ezBU6uDauZEG5LlILFeke836oCeFtRPgrw` / v22 |
 | 管理の実行・アクセス設定 | `USER_ACCESSING` / `ANYONE`。変更しない |
-| 予約Spreadsheet | `1bPYur4Dfg3LxTCIiYzZvyZRT8bgLoYizG1B6LIkETKk`（既存文書に記載。受付実環境との最終照合は未実施） |
-| Calendar | `genkidama2439@gmail.com`（既存コードの設定。実環境との最終照合は未実施） |
+| 予約Spreadsheet | `1bPYur4Dfg3LxTCIiYzZvyZRT8bgLoYizG1B6LIkETKk`（Google APIの受付parentIdと一致） |
+| Calendar | `genkidama2439@gmail.com`（実際の受付公開v34の設定と一致。サービスへのアクセス検証は未実施） |
 
 Googleのスクリプト一覧APIはシートに紐づく受付スクリプトを列挙しない。予約シートの「拡張機能 → Apps Script」で開く編集URLからScript IDを取得し、公開デプロイIDと照合する。
 
@@ -43,8 +45,8 @@ Googleのスクリプト一覧APIはシートに紐づく受付スクリプト�
 
 ## 次の公開手順
 
-1. 受付編集URLからScript IDを取得。現在の公開デプロイ、シート、Calendarを照合し、HEADと公開版をバックアップする。
-2. 受付の実際の公開版に今回の経由差分だけを重ね、既存の変更を失わないことを確認する。
+1. GoogleのApps Script API有効化後に作業を再開。Script ID・公開デプロイ・シート・Calendarの照合とバックアップは完了済み。更新直前に変更がないことを確認する。
+2. 受付の実際の公開v34への経由差分の適用・既存内容の保持は確認済み。管理は公開v22を保持。両方の更新用アプリ版は `2026.09.26-1`。
 3. Webと受付Script Propertiesに同一の `BOOKING_SOURCE_SECRET` を設定する。コード・Git・台帳には秘密値を記録しない。
 4. AX〜AZが空または所定の経由列であることを確認し、追加する。`setupSheet()` や紹介制度の初期化は実行しない。
 5. 管理・受付を既存デプロイURLのまま更新。顧客通知を送らない隔離環境で実サービスの保存・Calendar表示を確認する。

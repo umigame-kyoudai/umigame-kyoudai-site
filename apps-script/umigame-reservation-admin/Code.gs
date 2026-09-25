@@ -27,7 +27,7 @@ var NOTIFY_SECRET = ''; // Script Properties の NOTIFY_SECRET を優先して�
 var SHEET_NAME = '予約一覧';
 var CALENDAR_ID = 'genkidama2439@gmail.com';
 var ADMIN_EMAIL = 'genkidama2439@gmail.com';
-var BOOKING_APP_VERSION = '2026.09.25-1';
+var BOOKING_APP_VERSION = '2026.09.26-1';
 var BOOKING_SCHEMA_VERSION = '2026.09.25-1';
 var BOOKING_SCHEMA_VERSION_PROPERTY = 'BOOKING_SCHEMA_VERSION';
 
