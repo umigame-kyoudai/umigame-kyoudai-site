@@ -1,6 +1,6 @@
 # 海亀兄弟 Webサイト管理台帳
 
-確認日: 2026-09-25。秘密値は記録しない。
+確認日: 2026-09-26。秘密値は記録しない。
 
 | 項目 | 確認済みの構成 |
 | --- | --- |
@@ -21,6 +21,8 @@ Team ID: `team_AVkVeJGhky3xEi61HxtzJ2IX`。
 
 本番環境変数は既存Vercel Projectで管理する。READMEの変数一覧を参照。実環境ファイルや秘密値はコミットしない。
 
-今回の公開対象・未反映機能は [ナイトページ公開記録](night-tour-release-2026-09-25.md) に記載する。
+ナイト専用デザインと書籍案内は [ナイトページ公開記録](night-tour-release-2026-09-25.md) に記載する。
 
-予約経由・Calendarの🥥表示は [公開作業記録](booking-source-release-2026-09-25.md) を参照。2026-09-25にGoogle接続と管理GASの公開v22を確認済み。2026-09-26に受付の編集URL・本番公開v34・シートとの対応も照合済み。Google側のApps Script APIが無効のため有効化待ちで、経由機能の本番切替は未実施。
+予約経由・Calendarの🥥表示は [公開作業記録](booking-source-release-2026-09-25.md) を参照。2026-09-26に受付GAS v36・管理GAS v23を既存URLのまま公開済み。所有アカウントは `info@umigamekyoudaimiyakojima.com`。予約Spreadsheet・Calendar・公開デプロイとの対応は上記記録に集約し、隔離検証8件を確認した。Webと受付GASで同一の `BOOKING_SOURCE_SECRET` を管理する。
+
+専用入口 `https://www.umigamekyoudaimiyakojima.com/from/souichiro` はWeb本番へ反映済み。HTTPSでの署名・Cookie、スマホの詳細ページから予約フォームへの経由引き継ぎを確認した。
