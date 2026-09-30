@@ -460,6 +460,9 @@ const ZH_FORM: IntlFormCopy = {
   guideFeeLine: (fee) => `指定嚮導：+¥${fee}`,
   estimatedTotalLabel: "預估總額：",
   cashOnDay: "當天現金支付",
+  photoConsentHeading: "照片刊登及宣傳素材使用同意（選填）",
+  photoConsentLabel: "我同意海亀兄弟將行程中拍攝的照片刊登於官方網站、社群媒體等網路平台，並作為宣傳及介紹素材使用。",
+  photoConsentHelp: "請先確認所有參加者（兒童須由家長或監護人同意）均已同意，再勾選。不同意也可預約及參加；未勾選將視為不同意刊登及作為宣傳素材使用。",
   agreeText: {
     before: "我同意",
     termsLabel: "服務條款・取消政策",

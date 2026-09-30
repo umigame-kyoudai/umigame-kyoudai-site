@@ -495,6 +495,9 @@ export const EN_FORM: IntlFormCopy = {
   guideFeeLine: (fee) => `Guide request: +¥${fee}`,
   estimatedTotalLabel: "Estimated total:",
   cashOnDay: "cash on the day",
+  photoConsentHeading: "Photo publication and promotional use (optional)",
+  photoConsentLabel: "I agree that photos taken during the tour may be published online, including on the 海亀兄弟 (Umigame Kyoudai) website and social media, and used as promotional materials.",
+  photoConsentHelp: "Please check only after confirming consent from every participant (a parent or guardian for children). You can book and join without agreeing. Leaving this unchecked means no consent to publication or promotional use.",
   agreeText: {
     before: "I agree to the ",
     termsLabel: "Terms of Service & Cancellation Policy",

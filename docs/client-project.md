@@ -28,3 +28,5 @@ Team ID: `team_AVkVeJGhky3xEi61HxtzJ2IX`。
 専用入口 `https://www.umigamekyoudaimiyakojima.com/from/souichiro` はWeb本番へ反映済み。HTTPSでの署名・Cookie、スマホの詳細ページから予約フォームへの経由引き継ぎを確認した。
 
 2026-09-26の仮予約フォーム改善（希望日の幅調整、代表者情報の順序変更、参加者1人目への氏名反映）は [変更・検証記録](booking-form-release-2026-09-26.md) を参照。
+
+2026-09-30の写真掲載・素材利用の任意同意欄と、管理者メール・Calendar・台帳への引き継ぎは [変更・検証記録](photo-consent-release-2026-09-30.md) を参照。既存GASの備考連携を使用し、Google側の再デプロイや列追加は不要。

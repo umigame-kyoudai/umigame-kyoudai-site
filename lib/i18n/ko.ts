@@ -460,6 +460,9 @@ const KO_FORM: IntlFormCopy = {
   guideFeeLine: (fee) => `가이드 지명: +¥${fee}`,
   estimatedTotalLabel: "예상 합계:",
   cashOnDay: "당일 현금 결제",
+  photoConsentHeading: "사진 게시 및 홍보 자료 사용 동의 (선택)",
+  photoConsentLabel: "투어 중 촬영한 사진을 海亀兄弟(우미가메 교다이)의 홈페이지·SNS 등 인터넷에 게시하고 홍보·소개 자료로 사용하는 데 동의합니다.",
+  photoConsentHelp: "모든 참가자(어린이는 보호자)의 동의를 확인한 후 체크해 주세요. 동의하지 않아도 예약 및 참가할 수 있습니다. 체크하지 않으면 사진 게시 및 홍보 자료 사용에 동의하지 않은 것으로 접수됩니다.",
   agreeText: {
     before: "",
     termsLabel: "이용약관·취소 정책",

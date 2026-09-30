@@ -121,6 +121,7 @@ interface BookingData {
   customerPhone: string
   specialRequests: string
   agreedToTerms: boolean
+  photoPublicationConsent: boolean
   couponCode: string
   couponDiscount: number
 }
@@ -291,6 +292,7 @@ export function BookingForm() {
       customerPhone: "",
       specialRequests: "",
       agreedToTerms: false,
+      photoPublicationConsent: false,
       couponCode: "",
       // 人数・プランと紐づく割引額は保存値を信用せず、必ず再検証する。
       couponDiscount: 0,
@@ -337,7 +339,7 @@ export function BookingForm() {
 
     const restoredDraft = loadBookingDraft() ?? {}
     setBookingData((prev) => {
-      const restored = { ...prev, ...restoredDraft, couponDiscount: 0 }
+      const restored = { ...prev, ...restoredDraft, photoPublicationConsent: restoredDraft.photoPublicationConsent === true, couponDiscount: 0 }
       return {
         ...restored,
         ...(canPreselectPlan && planParam !== restored.selectedPlan
@@ -911,6 +913,7 @@ export function BookingForm() {
         participants: participantsForSubmit,
         specialRequests: finalSpecialRequests,
         agreedToTerms: bookingData.agreedToTerms,
+        photoPublicationConsent: bookingData.photoPublicationConsent,
         couponCode: bookingData.couponCode.trim(),
       })
 
@@ -2415,6 +2418,25 @@ export function BookingForm() {
       <Card className="glass-card bg-white/70 backdrop-blur-xl rounded-3xl ring-1 ring-emerald-100 shadow-lg">
         {/* data属性は計測専用。送信できない状態でこの領域が押されたことの判定にだけ使う */}
         <CardContent className="p-6" data-booking-submit-area="">
+          <div className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4">
+            <p className="mb-3 font-bold text-gray-900">写真の掲載・素材利用について（任意）</p>
+            <div className="flex items-start gap-3">
+              <Checkbox
+                id="photo-publication-consent"
+                checked={bookingData.photoPublicationConsent}
+                onCheckedChange={(checked) => handleInputChange("photoPublicationConsent", checked === true)}
+                aria-describedby="photo-publication-help"
+                className="mt-1 shrink-0"
+              />
+              <Label htmlFor="photo-publication-consent" className="text-sm leading-relaxed text-gray-800 cursor-pointer">
+                ツアー中に撮影した写真を、海亀兄弟のホームページ・SNSなどのインターネット上に掲載し、宣伝・紹介用の素材として使用することに同意します。
+              </Label>
+            </div>
+            <p id="photo-publication-help" className="mt-3 text-xs leading-relaxed text-gray-600">
+              参加者全員（お子様は保護者）の同意を確認のうえ、チェックしてください。同意されない場合もご予約・ご参加いただけます。未チェックの場合は掲載・素材利用への同意なしとして受け付けます。
+            </p>
+          </div>
+
           <div className="flex items-start space-x-3 mb-6">
             <Checkbox
               id="terms"
@@ -2422,7 +2444,7 @@ export function BookingForm() {
               onCheckedChange={(checked) => handleInputChange("agreedToTerms", checked === true)}
               className="mt-1"
             />
-            <Label htmlFor="terms" className="text-sm text-gray-600 leading-relaxed">
+            <Label htmlFor="terms" className="block text-sm text-gray-600 leading-relaxed">
               <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-emerald-700 underline">
                 利用規約・キャンセルポリシー
               </a>

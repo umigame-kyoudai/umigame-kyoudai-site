@@ -70,6 +70,7 @@ interface BookingRequest {
   lineIdToken?: string | null
   couponCode?: string
   couponDiscount?: number
+  photoPublicationConsent?: boolean
   agreedToTerms?: boolean
   attribution?: {
     source?: string
@@ -279,6 +280,9 @@ const validateBookingRequest = (data: BookingRequest): { valid: boolean; error?:
   if (!data || typeof data !== 'object' || Array.isArray(data)) {
     return { valid: false, error: 'リクエストの形式が正しくありません' }
   }
+  if (data.photoPublicationConsent !== undefined && typeof data.photoPublicationConsent !== 'boolean') {
+    return { valid: false, error: '写真の掲載・素材利用への同意を確認してください' }
+  }
   const { selectedDate, selectedTime, selectedStaff, customerName, customerEmail, customerPhone, participants, selectedPlan } = data
 
   if (!validateRequired(selectedPlan).valid) return { valid: false, error: 'プランが必須です' }
@@ -456,6 +460,17 @@ const buildAttributionNote = (bookingData: BookingRequest): string => {
   return '[流入元] 不明（直接アクセス・ブックマーク等）'
 }
 
+// 既存GASがメール・Calendar・予約台帳へ引き継ぐ備考に、サーバーで回答を明記する。
+// 古いフォームの欠落値を同意扱いにしない。Cookieの解析同意とは独立した任意項目。
+const buildPhotoPublicationNote = (consent: boolean | undefined): string => {
+  const status = consent === true
+    ? 'SNS掲載OK・素材利用OK（同意あり）'
+    : consent === false
+      ? 'SNS掲載不可・素材利用不可（同意なし）'
+      : '未確認（同意記録なし・掲載／素材利用不可）'
+  return `[写真掲載・素材利用] ${status}\n対象：ツアー中の写真を海亀兄弟のホームページ・SNS等に掲載、宣伝・紹介用素材として利用`
+}
+
 // GAS用ペイロードを構築
 const buildGASPayload = (
   bookingData: BookingRequest,
@@ -487,7 +502,7 @@ const buildGASPayload = (
     under3Count,
     totalPrice: serverTotalPrice,
     staffName: getStaffName(bookingData.selectedStaff),
-    specialRequests: [buildSpecialRequests(bookingData, plan), buildAttributionNote(bookingData)]
+    specialRequests: [buildSpecialRequests(bookingData, plan), buildPhotoPublicationNote(bookingData.photoPublicationConsent), buildAttributionNote(bookingData)]
       .filter(Boolean)
       .join('\n───\n'),
     lineUserId: lineProfile.userId,

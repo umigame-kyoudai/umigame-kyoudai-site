@@ -213,6 +213,9 @@ export interface IntlFormCopy {
   guideFeeLine: (fee: string) => string
   estimatedTotalLabel: string
   cashOnDay: string
+  photoConsentHeading: string
+  photoConsentLabel: string
+  photoConsentHelp: string
   agreeText: { before: string; termsLabel: string; between: string; privacyLabel: string; after: string }
   cancellationSmallPrint: string
   lineLoginHeading: string

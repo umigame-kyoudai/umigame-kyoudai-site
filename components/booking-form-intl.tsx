@@ -101,6 +101,7 @@ interface IntlBookingDraft {
   specialRequests?: string
   couponCode?: string
   couponDiscount?: number
+  photoPublicationConsent?: boolean
   agreed?: boolean
 }
 
@@ -168,6 +169,12 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
   const [couponCode, setCouponCode] = useState(draft?.couponCode ?? "")
   // 割引額は人数・プランと紐づくため、保存値を復元せずサーバーで再検証する。
   const [couponDiscount, setCouponDiscount] = useState(0)
+  const [photoPublicationConsent, setPhotoPublicationConsent] = useState(false)
+  const [hasRestoredPhotoConsent, setHasRestoredPhotoConsent] = useState(false)
+  useEffect(() => {
+    setPhotoPublicationConsent(draft?.photoPublicationConsent === true)
+    setHasRestoredPhotoConsent(true)
+  }, [draft])
   const [agreed, setAgreed] = useState(draft?.agreed ?? false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false)
@@ -221,6 +228,7 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
   useEffect(() => {
     if (isSubmitted) return
     try {
+      if (!hasRestoredPhotoConsent) return
       const draftToSave: IntlBookingDraft = {
         planId,
         date,
@@ -234,10 +242,11 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
         couponCode,
         couponDiscount,
         agreed,
+        photoPublicationConsent,
       }
       window.sessionStorage.setItem(draftKey(locale), JSON.stringify(draftToSave))
     } catch {}
-  }, [planId, date, time, participants, staffId, customerName, customerEmail, customerPhone, specialRequests, couponCode, couponDiscount, agreed, isSubmitted, locale])
+  }, [planId, date, time, participants, staffId, customerName, customerEmail, customerPhone, specialRequests, couponCode, couponDiscount, agreed, photoPublicationConsent, hasRestoredPhotoConsent, isSubmitted, locale])
 
   const plan = bookablePlans.find((p) => p.id === planId)
   const t = planId ? planById[planId] : undefined
@@ -587,6 +596,7 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
         couponCode,
         couponDiscount,
         agreedToTerms: agreed,
+        photoPublicationConsent,
         // 流入元（どのリンク経由か）。管理者メール・カレンダーの備考に [流入元] として載る
         attribution: getAttribution(),
         acquisitionToken: getBookingSourceToken(),
@@ -603,6 +613,7 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
         participants: participantsForSubmit,
         specialRequests: finalSpecialRequests,
         couponCode: couponCode.trim(),
+        photoPublicationConsent,
       })
 
       const response = await fetch("/api/booking", {
@@ -1102,9 +1113,26 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
             </div>
           )}
 
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4">
+            <p className="mb-3 font-bold text-gray-900">{copy.photoConsentHeading}</p>
+            <div className="flex items-start gap-3">
+              <Checkbox
+                id="intl-photo-publication-consent"
+                checked={photoPublicationConsent}
+                onCheckedChange={(checked) => setPhotoPublicationConsent(checked === true)}
+                aria-describedby="intl-photo-publication-help"
+                className="mt-1 shrink-0"
+              />
+              <Label htmlFor="intl-photo-publication-consent" className="text-sm leading-relaxed text-gray-800 cursor-pointer">
+                {copy.photoConsentLabel}
+              </Label>
+            </div>
+            <p id="intl-photo-publication-help" className="mt-3 text-xs leading-relaxed text-gray-600">{copy.photoConsentHelp}</p>
+          </div>
+
           <div className="flex items-start space-x-3">
             <Checkbox id="intl-terms" checked={agreed} onCheckedChange={(checked) => setAgreed(checked === true)} className="mt-1" />
-            <Label htmlFor="intl-terms" className="text-sm text-gray-600 leading-relaxed">
+            <Label htmlFor="intl-terms" className="block text-sm text-gray-600 leading-relaxed">
               {copy.agreeText.before}
               <a href={localePath(locale, "/terms")} target="_blank" rel="noopener noreferrer" className="text-emerald-700 underline">
                 {copy.agreeText.termsLabel}
