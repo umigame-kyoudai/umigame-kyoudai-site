@@ -1,10 +1,14 @@
-import Image from "next/image"
-
 const STORAGE_KEY = "umk-intro-seen"
+
+// ロゴは白一色＋透過なので16色PNG（約18KB）に軽量化した専用ファイルを使う。
+// <img loading="lazy"> だと読み込み開始が遅れてオープニングに間に合わないため、
+// 再生が決まった時点でスクリプトから先読みし、表示は CSS 背景で行う（再生しない訪問では読み込まない）。
+const LOGO_SRC = "/images/intro-logo-white.png"
 
 // オープニングを流すかどうかを、HTMLの解析中（最初の描画より前）に決める。
 // - タブごとに1回だけ（sessionStorage）。?intro=1 を付けると何度でも再生できる（確認用）
 // - 「視差効果を減らす」設定の人、#付きURLで特定セクションに飛んできた人には出さない
+// - 再生するときだけロゴを最優先で先読みする
 // - 幕をタップするとスキップ。3.2秒後には必ず data-intro="done" になり、幕は消える
 const introScript = `(function(){try{
 var d=document.documentElement;
@@ -16,6 +20,7 @@ if(sessionStorage.getItem("${STORAGE_KEY}"))return;
 }
 sessionStorage.setItem("${STORAGE_KEY}","1");
 d.setAttribute("data-intro","play");
+var logo=new Image();logo.fetchPriority="high";logo.src="${LOGO_SRC}";
 var t0=Date.now();
 function skip(e){var t=e.target;if(d.getAttribute("data-intro")==="play"&&t&&t.closest&&t.closest(".motion-intro")&&Date.now()-t0<1400)d.setAttribute("data-intro","skip");}
 document.addEventListener("pointerdown",skip,true);
@@ -88,14 +93,7 @@ export function OpeningIntro() {
         </div>
 
         <div className="motion-intro__brand">
-          <Image
-            src="/images/sea-turtle-brothers-logo-white.png"
-            alt=""
-            width={1276}
-            height={903}
-            sizes="(max-width: 640px) 240px, 320px"
-            className="motion-intro__logo"
-          />
+          <div className="motion-intro__logo" style={{ backgroundImage: `url(${LOGO_SRC})` }} />
           <p className="motion-intro__place">MIYAKOJIMA · OKINAWA</p>
         </div>
 
