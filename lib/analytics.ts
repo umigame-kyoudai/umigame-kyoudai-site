@@ -69,6 +69,40 @@ const GA_PARAM_KEY: Record<string, string> = {
   errorCategory: "error_category",
 }
 
+// Vercel Web Analytics のカスタムイベントは、Proプラン（Web Analytics Plus なし）だと
+// 1イベントあたりプロパティ2つまで、値は255文字まで。超えると送信ごと 400 で拒否される
+// （2026-07-23 に共通の文脈項目を足して以降、詳細計測経由のイベントが Vercel に1件も記録されていなかった）。
+// GA4・分析シートには従来どおり全項目を送り、Vercel には下の優先順で最大2つだけ渡す。
+const VERCEL_MAX_PROPERTIES = 2
+const VERCEL_MAX_VALUE_LENGTH = 255
+
+const VERCEL_PROPERTY_PRIORITY = [
+  "plan",
+  "location",
+  "errorCategory",
+  "source",
+  "last_stage",
+  "stage",
+  "selection_source",
+  "booking_timing",
+  "time_slot",
+  "participant_count_bucket",
+  "group_size_bucket",
+  "coupon_applied",
+  "missing_field_categories",
+  "action_type",
+  "return_path",
+  "linkType",
+  "ctaType",
+  "line_ready",
+  "line_logged_in",
+  "maxScrollPercent",
+] as const
+
+// ページビューは Vercel が自動で数えているので重複になる。Web Vitals は1ページで何件も出て、
+// 2項目では値を活かせない。どちらも GA4・分析シートには送り、Vercel のカスタムイベントにだけ送らない。
+const VERCEL_SKIPPED_EVENTS = new Set<TrackEventName>(["page_view", "web_vital"])
+
 export function sanitizeAnalyticsProperties(
   props?: TrackEventProps,
 ): TrackEventProps {
@@ -125,6 +159,29 @@ export function buildGAEvent(
   return { name: gaEventName, params }
 }
 
+/** Vercel のカスタムイベントに渡すプロパティ。送らないイベントは null。 */
+export function buildVercelEventProperties(
+  name: TrackEventName,
+  props?: TrackEventProps,
+): TrackEventProps | null {
+  if (VERCEL_SKIPPED_EVENTS.has(name)) return null
+
+  const safeProps = sanitizeAnalyticsProperties(props)
+  const vercelProps: TrackEventProps = {}
+  let count = 0
+
+  for (const key of VERCEL_PROPERTY_PRIORITY) {
+    if (count >= VERCEL_MAX_PROPERTIES) break
+    const value = safeProps[key]
+    // 空の値で貴重な2枠を埋めない
+    if (value === undefined || value === null || value === "") continue
+    vercelProps[key] = typeof value === "string" ? value.slice(0, VERCEL_MAX_VALUE_LENGTH) : value
+    count++
+  }
+
+  return vercelProps
+}
+
 export function categorizeBookingFailure(status?: number): string {
   if (status === undefined) return "network"
   if (status === 400 || status === 422) return "validation"
@@ -150,7 +207,8 @@ export function trackEvent(name: TrackEventName, props?: TrackEventProps): void 
   const safeProps = sanitizeAnalyticsProperties(props)
 
   try {
-    track(name, safeProps)
+    const vercelProps = buildVercelEventProperties(name, safeProps)
+    if (vercelProps) track(name, vercelProps)
   } catch {
     // Analytics must never interrupt the booking flow.
   }
