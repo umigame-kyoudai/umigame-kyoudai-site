@@ -1,8 +1,13 @@
+import type { CSSProperties } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { CalendarCheck, Camera, ChevronDown, MapPin, MessageCircle, Shield, Star } from "lucide-react"
 import { BLUR_DATA_URLS } from "@/lib/image-placeholders"
 import { TrackedCta } from "@/components/tracked-cta"
+
+// 表示時のふわっと出る演出（順番 i で少しずつ遅らせる）。
+// 実際に動くのは lib/site-motion.ts が ON のときだけ（components/motion/site-motion.css）。
+const rise = (i: number) => ({ "data-hero-rise": "", style: { "--i": i } as CSSProperties })
 
 export function HeroSection() {
   const proofItems = [
@@ -20,7 +25,7 @@ export function HeroSection() {
 
   return (
     <section className="relative min-h-[calc(100svh-4rem)] sm:min-h-[88svh] flex flex-col overflow-hidden">
-      <div className="absolute inset-0">
+      <div className="absolute inset-0" data-hero-bg="">
         <Image
           src="/images/gemini-generated-image-rq969urq969urq96.jpeg"
           alt="宮古島の海亀兄弟 - 2匹のウミガメが一緒に泳ぐ様子"
@@ -38,12 +43,12 @@ export function HeroSection() {
 
       <div className="relative z-10 flex-1 flex flex-col justify-end sm:justify-center px-5 pt-16 pb-28 sm:pt-20 sm:pb-16">
         <div className="max-w-6xl mx-auto w-full">
-          <div className="inline-flex items-center gap-2 bg-white/92 backdrop-blur-sm rounded-full px-3 py-1.5 sm:px-3.5 sm:py-2 mb-4 sm:mb-5 shadow-lg">
+          <div {...rise(0)} className="inline-flex items-center gap-2 bg-white/92 backdrop-blur-sm rounded-full px-3 py-1.5 sm:px-3.5 sm:py-2 mb-4 sm:mb-5 shadow-lg">
             <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
             <span className="text-gray-900 font-bold text-xs sm:text-sm">宮古島の家族向けマリン体験</span>
           </div>
 
-          <h1 className="max-w-[22rem] sm:max-w-4xl text-[2.65rem] min-[380px]:text-[3rem] sm:text-5xl md:text-7xl font-black text-white mb-4 tracking-normal drop-shadow-2xl leading-[1.05] sm:tracking-tight sm:leading-tight">
+          <h1 {...rise(1)} className="max-w-[22rem] sm:max-w-4xl text-[2.65rem] min-[380px]:text-[3rem] sm:text-5xl md:text-7xl font-black text-white mb-4 tracking-normal drop-shadow-2xl leading-[1.05] sm:tracking-tight sm:leading-tight">
             <span className="block">宮古島で</span>
             <span className="block">ウミガメと泳ぐ</span>
             <span className="block text-[1.25rem] min-[380px]:text-[1.45rem] sm:text-3xl md:text-5xl mt-3 text-emerald-100 leading-tight">
@@ -51,11 +56,11 @@ export function HeroSection() {
             </span>
           </h1>
 
-          <p className="max-w-[21rem] sm:max-w-2xl text-[15px] sm:text-xl text-white/90 mb-4 sm:mb-6 drop-shadow-md leading-7 sm:leading-relaxed">
+          <p {...rise(2)} className="max-w-[21rem] sm:max-w-2xl text-[15px] sm:text-xl text-white/90 mb-4 sm:mb-6 drop-shadow-md leading-7 sm:leading-relaxed">
             初心者・お子様連れでも迷わず選べる少人数制ツアー。写真・動画無料、前日までキャンセル無料。
           </p>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 max-w-[22rem] sm:max-w-2xl mb-0 sm:mb-6">
+          <div {...rise(3)} className="grid grid-cols-2 sm:grid-cols-4 gap-2 max-w-[22rem] sm:max-w-2xl mb-0 sm:mb-6">
             {proofItems.map((item) => (
               <div key={item.label} className="bg-white/92 backdrop-blur-sm rounded-2xl px-3 py-2.5 sm:rounded-xl sm:py-3 shadow-lg ring-1 ring-white/50">
                 <p className="text-[10px] sm:text-[11px] font-semibold text-gray-500 leading-none mb-1">{item.label}</p>
@@ -65,7 +70,7 @@ export function HeroSection() {
           </div>
 
           {/* モバイル専用：ウミガメガイドへのサブ導線（ヒーロー内） */}
-          <div className="sm:hidden mt-4">
+          <div {...rise(4)} className="sm:hidden mt-4">
             <Link
               href="/miyakojima-sea-turtle"
               className="inline-flex w-full items-center justify-center gap-2 bg-white/15 backdrop-blur-sm hover:bg-white/25 text-white font-bold text-[15px] px-6 py-3 rounded-full border border-white/40 transition-all active:scale-95"
@@ -75,7 +80,7 @@ export function HeroSection() {
             </Link>
           </div>
 
-          <div className="hidden sm:flex flex-col sm:flex-row sm:flex-wrap gap-3 mb-5">
+          <div {...rise(4)} className="hidden sm:flex flex-col sm:flex-row sm:flex-wrap gap-3 mb-5">
             <div>
               <TrackedCta
                 event="book_cta_click"
@@ -110,7 +115,7 @@ export function HeroSection() {
             </div>
           </div>
 
-          <div className="hidden md:flex flex-wrap gap-2 text-white/90 text-xs sm:text-sm font-medium">
+          <div {...rise(5)} className="hidden md:flex flex-wrap gap-2 text-white/90 text-xs sm:text-sm font-medium">
             {trustItems.map((item) => (
               <span
                 key={item.text}

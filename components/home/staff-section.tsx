@@ -17,7 +17,7 @@ export function StaffSection() {
   return (
     <section className="py-12 sm:py-16 md:py-28 bg-white relative overflow-hidden">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
+        <div data-reveal="" className="text-center mb-16">
           <p className="text-emerald-700 font-semibold text-sm tracking-widest uppercase mb-3">Our Team</p>
           <h2 className="text-3xl md:text-5xl font-bold text-gray-900 mb-4">
             頼れる<span className="text-emerald-600">スタッフ</span>
@@ -29,6 +29,7 @@ export function StaffSection() {
           {staffMembers.map((staff) => (
             <div
               key={staff.name}
+              data-reveal=""
               className="group text-center"
             >
               <div className="relative w-32 h-32 md:w-40 md:h-40 mx-auto mb-4 rounded-full overflow-hidden ring-4 ring-emerald-100 group-hover:ring-emerald-300 transition-all duration-300 group-hover:scale-105">
@@ -54,7 +55,7 @@ export function StaffSection() {
           ))}
         </div>
 
-        <div className="text-center mt-12">
+        <div data-reveal="" className="text-center mt-12">
           <Link
             href="/staff"
             className="inline-flex items-center text-emerald-700 hover:text-emerald-800 font-semibold transition-colors"

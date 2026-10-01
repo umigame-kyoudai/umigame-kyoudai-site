@@ -10,7 +10,7 @@ export function GallerySection() {
   return (
     <section className="py-20 md:py-28 bg-white relative overflow-hidden">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
+        <div data-reveal="" className="text-center mb-12">
           <p className="text-emerald-700 font-semibold text-sm tracking-widest uppercase mb-3">Gallery</p>
           <h2 className="text-3xl md:text-5xl font-bold text-gray-900 mb-4">
             こんな<span className="text-emerald-600">写真</span>が撮れます
@@ -22,6 +22,7 @@ export function GallerySection() {
           {galleryImages.map((img, i) => (
             <div
               key={i}
+              data-reveal=""
               className={`relative aspect-[4/3] rounded-xl overflow-hidden group cursor-pointer`}
             >
               <Image
@@ -39,7 +40,7 @@ export function GallerySection() {
           ))}
         </div>
 
-        <div className="text-center mt-10">
+        <div data-reveal="" className="text-center mt-10">
           <Link
             href="/gallery"
             className="inline-flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white font-semibold px-8 py-3.5 rounded-full transition-all hover:scale-105 shadow-lg"
