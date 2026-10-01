@@ -6,7 +6,7 @@ export function TurtleGuideSection() {
   return (
     <section className="py-12 sm:py-16 bg-white">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-600 to-teal-600 px-6 py-8 sm:px-10 sm:py-10 shadow-lg">
+        <div data-reveal="" className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-600 to-teal-600 px-6 py-8 sm:px-10 sm:py-10 shadow-lg">
           <div className="relative z-10 sm:flex sm:items-center sm:justify-between sm:gap-8">
             <div className="text-white">
               <p className="inline-flex items-center gap-1.5 bg-white/15 backdrop-blur-sm rounded-full px-3 py-1 text-xs sm:text-sm font-semibold mb-3">

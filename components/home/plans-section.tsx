@@ -637,7 +637,7 @@ export function PlansSection() {
   return (
     <section id="plans" className="py-12 sm:py-16 md:py-24 bg-gray-50 relative overflow-hidden scroll-mt-16">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-8 sm:mb-12 px-5 sm:px-6 lg:px-8">
+        <div data-reveal="" className="text-center mb-8 sm:mb-12 px-5 sm:px-6 lg:px-8">
           <p className="text-emerald-700 font-semibold text-xs sm:text-sm tracking-widest uppercase mb-2">Tour Plans</p>
           <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold text-gray-900 mb-3">
             料金・対象年齢で<span className="text-emerald-600">すぐ比較</span>
@@ -647,7 +647,7 @@ export function PlansSection() {
           </p>
         </div>
 
-        <div className="px-5 sm:px-6 lg:px-8 mb-8">
+        <div data-reveal="" className="px-5 sm:px-6 lg:px-8 mb-8">
           {/* モバイルもPCと同じ4列の比較表で表示（2026-07-12 オーナー要望でカード表示を廃止）。
               狭い画面では表内を横スクロールできるようにし、縦に間延びしないようにする。 */}
           <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-sm">
@@ -694,7 +694,7 @@ export function PlansSection() {
         </div>
 
         {/* Carousel */}
-        <div className="relative">
+        <div data-reveal="" className="relative">
           <div
             ref={scrollRef}
             className="flex gap-3 sm:gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide px-5 sm:px-6 lg:px-8 pb-2"
@@ -754,7 +754,7 @@ export function PlansSection() {
         </div>
 
         {/* Common info */}
-        <div className="mt-10 sm:mt-16 mx-5 sm:mx-6 lg:mx-8 bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8 border border-gray-100">
+        <div data-reveal="" className="mt-10 sm:mt-16 mx-5 sm:mx-6 lg:mx-8 bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8 border border-gray-100">
           <h3 className="text-sm sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4 text-center">全プラン共通</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
             {[

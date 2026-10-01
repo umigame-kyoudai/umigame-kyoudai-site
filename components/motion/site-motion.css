@@ -1,0 +1,329 @@
+/*
+ * トップページのアニメーション（lib/site-motion.ts で ON/OFF）。
+ * 軽さのために動かすのは transform と opacity だけ。ループし続ける動きは入れていない。
+ */
+
+/* ---------- オープニング ---------- */
+
+.motion-intro {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  color: rgba(204, 251, 241, 0.2);
+  background:
+    radial-gradient(120% 65% at 50% -8%, rgba(94, 234, 212, 0.32), transparent 62%),
+    linear-gradient(180deg, #0b5867 0%, #0a4753 48%, #073640 100%);
+  -webkit-tap-highlight-color: transparent;
+}
+
+html[data-intro="play"] .motion-intro {
+  display: block;
+  animation: motion-curtain 2.2s both;
+}
+
+html[data-intro="skip"] .motion-intro {
+  display: block;
+  pointer-events: none;
+  animation: motion-curtain-skip 0.35s ease-out both;
+}
+
+.motion-intro__stage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.motion-intro__rays {
+  position: absolute;
+  inset: -10% -20% 30% -20%;
+  background: repeating-linear-gradient(
+    105deg,
+    transparent 0 7%,
+    rgba(255, 255, 255, 0.07) 7% 10%,
+    transparent 10% 17%
+  );
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, transparent 85%);
+  mask-image: linear-gradient(to bottom, #000 0%, transparent 85%);
+  animation: motion-rays 2.2s ease-in-out both;
+}
+
+.motion-intro__swim {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.motion-intro__swim--big {
+  width: clamp(150px, 34vw, 300px);
+  animation: motion-swim-big 2.3s cubic-bezier(0.35, 0.15, 0.55, 0.95) both;
+}
+
+.motion-intro__swim--small {
+  width: clamp(100px, 22vw, 190px);
+  color: rgba(204, 251, 241, 0.14);
+  animation: motion-swim-small 2.2s cubic-bezier(0.35, 0.15, 0.55, 0.95) 0.15s both;
+}
+
+.motion-turtle {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.motion-turtle__scutes {
+  stroke: #0a4753;
+}
+
+.motion-turtle .fl {
+  transform-box: fill-box;
+  animation-duration: 0.5s;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: 4;
+  animation-direction: alternate;
+  animation-fill-mode: both;
+}
+
+.motion-turtle .fl-front-top,
+.motion-turtle .fl-back-top {
+  transform-origin: 100% 100%;
+  animation-name: motion-flipper-top;
+}
+
+.motion-turtle .fl-front-bottom,
+.motion-turtle .fl-back-bottom {
+  transform-origin: 100% 0%;
+  animation-name: motion-flipper-bottom;
+}
+
+.motion-turtle .fl-back-top,
+.motion-turtle .fl-back-bottom {
+  animation-delay: 0.12s;
+}
+
+.motion-intro__bubbles span {
+  position: absolute;
+  bottom: -20px;
+  border-radius: 9999px;
+  border: 1.5px solid rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.08);
+  animation-name: motion-bubble;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.6, 1);
+  animation-fill-mode: both;
+}
+
+.motion-intro__brand {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: min(64vw, 320px);
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.motion-intro__logo {
+  display: block;
+  width: 100%;
+  height: auto;
+  animation: motion-logo-in 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both;
+}
+
+.motion-intro__place {
+  margin-top: 0.75rem;
+  padding-left: 0.42em;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.42em;
+  color: rgba(204, 251, 241, 0.85);
+  animation: motion-fade-up 0.7s ease-out 0.55s both;
+}
+
+.motion-intro__wave {
+  position: absolute;
+  left: 0;
+  top: calc(100% - 1px);
+  display: block;
+  width: 100%;
+  height: 96px;
+}
+
+.motion-intro__wave-back {
+  fill: rgba(45, 212, 191, 0.35);
+}
+
+.motion-intro__wave-front {
+  fill: #073640;
+}
+
+@keyframes motion-curtain {
+  0%,
+  64% {
+    transform: translate3d(0, 0, 0);
+    animation-timing-function: cubic-bezier(0.7, 0, 0.25, 1);
+  }
+  100% {
+    transform: translate3d(0, calc(-100% - 96px), 0);
+    visibility: hidden;
+  }
+}
+
+@keyframes motion-curtain-skip {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+@keyframes motion-rays {
+  from {
+    opacity: 0.4;
+    transform: translate3d(-3%, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(3%, 0, 0);
+  }
+}
+
+@keyframes motion-swim-big {
+  from {
+    transform: translate3d(-30vw, 80vh, 0) rotate(-16deg);
+  }
+  to {
+    transform: translate3d(100vw, 36vh, 0) rotate(-16deg);
+  }
+}
+
+@keyframes motion-swim-small {
+  from {
+    transform: translate3d(-24vw, 94vh, 0) rotate(-12deg);
+  }
+  to {
+    transform: translate3d(104vw, 58vh, 0) rotate(-12deg);
+  }
+}
+
+@keyframes motion-flipper-top {
+  from {
+    transform: rotate(10deg);
+  }
+  to {
+    transform: rotate(-24deg);
+  }
+}
+
+@keyframes motion-flipper-bottom {
+  from {
+    transform: rotate(-10deg);
+  }
+  to {
+    transform: rotate(24deg);
+  }
+}
+
+@keyframes motion-bubble {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0);
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(8px, -70vh, 0);
+  }
+}
+
+@keyframes motion-logo-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes motion-fade-up {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---------- ヒーロー（ページ表示時に1回だけ） ---------- */
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-motion] [data-hero-rise] {
+    animation: motion-rise 0.75s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: calc(0.05s + var(--i, 0) * 0.07s);
+  }
+
+  /* オープニング中は、幕が上がるタイミングに合わせて出す */
+  html[data-intro="play"] [data-motion] [data-hero-rise] {
+    animation-delay: calc(1.6s + var(--i, 0) * 0.08s);
+  }
+
+  html[data-intro="play"] [data-motion] [data-hero-bg] {
+    animation: motion-settle 2s cubic-bezier(0.22, 1, 0.36, 1) 1.2s both;
+  }
+}
+
+@keyframes motion-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 22px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes motion-settle {
+  from {
+    transform: scale(1.08);
+  }
+  to {
+    transform: none;
+  }
+}
+
+/* ---------- スクロール表示（scroll-reveal.tsx が状態を付け外しする） ---------- */
+
+[data-reveal-state="pending"] {
+  opacity: 0;
+  transform: translate3d(0, 26px, 0);
+}
+
+[data-reveal-state="shown"] {
+  transition:
+    opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ---------- 念のための安全策 ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .motion-intro {
+    display: none !important;
+  }
+
+  [data-reveal-state] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+@media print {
+  .motion-intro {
+    display: none !important;
+  }
+}

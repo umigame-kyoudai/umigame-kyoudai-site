@@ -20,16 +20,16 @@ export function CTASection() {
       </div>
 
       <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold text-white mb-5">
+        <h2 data-reveal="" className="text-2xl sm:text-3xl md:text-5xl font-bold text-white mb-5">
           宮古島で、忘れられない<br className="hidden sm:block" />思い出を作りませんか？
         </h2>
 
-        <p className="text-lg text-emerald-100 mb-10 max-w-2xl mx-auto">
+        <p data-reveal="" className="text-lg text-emerald-100 mb-10 max-w-2xl mx-auto">
           ウミガメとの感動的な出会いが、あなたを待っています。
           前日までキャンセル無料だから、気軽にご予約ください。
         </p>
 
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        <div data-reveal="" className="flex flex-col sm:flex-row gap-4 justify-center">
           <div>
             <TrackedCta
               event="book_cta_click"

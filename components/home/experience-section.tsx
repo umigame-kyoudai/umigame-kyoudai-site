@@ -36,7 +36,7 @@ const experiences = experienceIds.map((id) => {
 
 function ExperienceCard({ exp }: { exp: typeof experiences[0] }) {
   return (
-    <Link href={exp.href} className="block">
+    <Link href={exp.href} data-reveal="" className="block">
       <div className="group relative aspect-[3/4] sm:aspect-[3/4] rounded-xl sm:rounded-2xl overflow-hidden cursor-pointer">
         <div className="absolute inset-0">
           <Image
@@ -68,7 +68,7 @@ export function ExperienceSection() {
   return (
     <section className="py-12 sm:py-16 md:py-28 bg-gray-950 relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-8 sm:mb-16">
+        <div data-reveal="" className="text-center mb-8 sm:mb-16">
           <p className="text-emerald-400 font-semibold text-xs sm:text-sm tracking-widest uppercase mb-2">Experiences</p>
           <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold text-white mb-3">
             {experiences.length}つの<span className="text-emerald-400">感動体験</span>

@@ -12,10 +12,16 @@ import { GallerySection } from "@/components/home/gallery-section"
 import { StaffSection } from "@/components/home/staff-section"
 import { FAQSection } from "@/components/home/faq-section"
 import { CTASection } from "@/components/home/cta-section"
+import { OpeningIntro } from "@/components/motion/opening-intro"
+import { ScrollReveal } from "@/components/motion/scroll-reveal"
+import { SITE_MOTION } from "@/lib/site-motion"
+import "@/components/motion/site-motion.css"
 
 export default function Page() {
   return (
-    <div className="min-h-screen-ios main-container ios-scroll-fix">
+    <div className="min-h-screen-ios main-container ios-scroll-fix" data-motion={SITE_MOTION.enabled ? "" : undefined}>
+      {SITE_MOTION.enabled && SITE_MOTION.opening && <OpeningIntro />}
+      {SITE_MOTION.enabled && <ScrollReveal />}
       <LocalBusinessJsonLd />
       <Navbar />
 

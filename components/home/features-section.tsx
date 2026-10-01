@@ -38,7 +38,7 @@ export function FeaturesSection() {
       <div className="absolute bottom-0 right-0 w-96 h-96 bg-cyan-50 rounded-full translate-x-1/3 translate-y-1/3 blur-3xl" />
 
       <div className="max-w-6xl mx-auto px-5 sm:px-6 lg:px-8 relative">
-        <div className="text-center mb-8 sm:mb-16">
+        <div data-reveal="" className="text-center mb-8 sm:mb-16">
           <p className="text-emerald-700 font-semibold text-xs sm:text-sm tracking-widest uppercase mb-2">Why Choose Us</p>
           <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold text-gray-900 mb-3">
             海亀兄弟が<span className="text-emerald-600">選ばれる理由</span>
@@ -52,6 +52,7 @@ export function FeaturesSection() {
           {features.map((feature) => (
             <div
               key={feature.title}
+              data-reveal=""
               className="group relative bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 shadow-sm hover:-translate-y-1 hover:shadow-xl transition-all duration-300 border border-gray-100"
             >
               <div className={`inline-flex items-center justify-center w-10 h-10 sm:w-14 sm:h-14 rounded-lg sm:rounded-xl ${feature.bg} mb-3 sm:mb-6 transition-transform duration-300 group-hover:scale-110`}>
