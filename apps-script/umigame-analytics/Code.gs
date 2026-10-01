@@ -291,6 +291,9 @@ function generateAnalyticsSharedSecret() {
   return secret;
 }
 
+// 1回の書き込みにまとめるイベント数の上限（サイトの /api/analytics/events と揃える）。
+const MAX_EVENTS_PER_REQUEST = 25;
+
 /** @param {GoogleAppsScript.Events.DoPost} request */
 function doPost(request) {
   try {
@@ -303,26 +306,37 @@ function doPost(request) {
       return jsonResponse_({ ok: false, error: 'unauthorized' });
     }
 
-    const event = normalizeEvent_(body.event);
-    const spreadsheet = openRequiredSpreadsheet_();
-    let sheet = spreadsheet.getSheetByName(ANALYTICS_CONFIG.eventsSheet);
-    // 初回のヘッダー作成だけを排他する。通常のイベント保存を
-    // ScriptLockで直列化すると、同時送信時に10秒でbusyになり欠測する。
-    if (!sheet || sheet.getLastRow() === 0) {
-      const lock = LockService.getScriptLock();
-      if (!lock.tryLock(10000)) {
-        return jsonResponse_({ ok: false, error: 'busy' });
-      }
-      try {
-        sheet = ensureSheet_(spreadsheet, ANALYTICS_CONFIG.eventsSheet);
-        if (sheet.getLastRow() === 0) configureEventsSheet_(sheet);
-        SpreadsheetApp.flush();
-      } finally {
-        lock.releaseLock();
-      }
-    }
+    // 1ページで同時に出る複数イベントを1回の追記で保存する。イベントごとに保存すると、
+    // 数式の多い大きなシートへの書き込みが並んで1件25〜110秒かかり、応答が404/503で途切れていた。
+    // 1件でも不正なら何も書かずに拒否する（一部だけ保存されて再送で重複するのを防ぐ）。
+    const events = normalizeEvents_(body);
 
-    appendAnalyticsEvent_(spreadsheet, sheet, event);
+    // ここから先の失敗は「書き込めたか不明」になりうるので invalid_request と区別する。
+    // サイト側は invalid_request（何も書いていない）のときだけ1件ずつの再送に切り替える。
+    try {
+      const spreadsheet = openRequiredSpreadsheet_();
+      let sheet = spreadsheet.getSheetByName(ANALYTICS_CONFIG.eventsSheet);
+      // 初回のヘッダー作成だけを排他する。通常のイベント保存を
+      // ScriptLockで直列化すると、同時送信時に10秒でbusyになり欠測する。
+      if (!sheet || sheet.getLastRow() === 0) {
+        const lock = LockService.getScriptLock();
+        if (!lock.tryLock(10000)) {
+          return jsonResponse_({ ok: false, error: 'busy' });
+        }
+        try {
+          sheet = ensureSheet_(spreadsheet, ANALYTICS_CONFIG.eventsSheet);
+          if (sheet.getLastRow() === 0) configureEventsSheet_(sheet);
+          SpreadsheetApp.flush();
+        } finally {
+          lock.releaseLock();
+        }
+      }
+
+      appendAnalyticsEvents_(spreadsheet, sheet, events);
+    } catch (error) {
+      console.error(error);
+      return jsonResponse_({ ok: false, error: 'write_failed' });
+    }
     return jsonResponse_({ ok: true });
   } catch (error) {
     console.error(error);
@@ -330,14 +344,33 @@ function doPost(request) {
   }
 }
 
+// 従来の { event } と、まとめ送信の { events: [...] } の両方を受け付ける。
+function normalizeEvents_(body) {
+  if (body.events === undefined) return [normalizeEvent_(body.event)];
+  if (!Array.isArray(body.events) || body.events.length === 0 || body.events.length > MAX_EVENTS_PER_REQUEST) {
+    throw new Error('Invalid event batch.');
+  }
+  return body.events.map(normalizeEvent_);
+}
+
 // 行番号の取得と書き込みを分けず、Sheets側で末尾への追加を一括実行する。
 // 数値・真偽値・日時の型を保ち、文字列を数式として評価しない。
-function appendAnalyticsEvent_(spreadsheet, sheet, event) {
+function appendAnalyticsEvents_(spreadsheet, sheet, events) {
   if (typeof Sheets === 'undefined') {
     throw new Error('Google Sheets API service is required.');
   }
   const timezone = spreadsheet.getSpreadsheetTimeZone();
-  const cells = eventToRow_(event).map(function(value) {
+  Sheets.Spreadsheets.batchUpdate({
+    requests: [{ appendCells: {
+      sheetId: sheet.getSheetId(),
+      rows: events.map(function(event) { return { values: eventToCells_(event, timezone) }; }),
+      fields: 'userEnteredValue,userEnteredFormat.numberFormat',
+    } }],
+  }, spreadsheet.getId());
+}
+
+function eventToCells_(event, timezone) {
+  return eventToRow_(event).map(function(value) {
     if (value instanceof Date) {
       const local = Utilities.formatDate(value, timezone, "yyyy-MM-dd'T'HH:mm:ss");
       return {
@@ -353,13 +386,6 @@ function appendAnalyticsEvent_(spreadsheet, sheet, event) {
     if (value === '' || value == null) return {};
     return { userEnteredValue: { stringValue: String(value) } };
   });
-  Sheets.Spreadsheets.batchUpdate({
-    requests: [{ appendCells: {
-      sheetId: sheet.getSheetId(),
-      rows: [{ values: cells }],
-      fields: 'userEnteredValue,userEnteredFormat.numberFormat',
-    } }],
-  }, spreadsheet.getId());
 }
 
 function doGet() {
@@ -368,7 +394,7 @@ function doGet() {
       ANALYTICS_CONFIG.spreadsheetProperty
     )
   );
-  return jsonResponse_({ ok: true, configured: configured, version: '2026-09-08-atomic-append' });
+  return jsonResponse_({ ok: true, configured: configured, version: '2026-10-01-batch-append' });
 }
 
 function openConfiguredSpreadsheet_(properties) {
