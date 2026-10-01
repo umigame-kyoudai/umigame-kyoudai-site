@@ -125,7 +125,10 @@ html[data-intro="skip"] .motion-intro {
 .motion-intro__logo {
   display: block;
   width: 100%;
-  height: auto;
+  aspect-ratio: 480 / 340;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
   animation: motion-logo-in 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both;
 }
 
