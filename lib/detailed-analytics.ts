@@ -130,15 +130,61 @@ function forwardToAnalyticsClients(event: DetailedAnalyticsEvent): void {
   })
 }
 
-// スプレッドシートへ送る。計測は予約操作を妨げてはいけないため、失敗しても投げない。
+// スプレッドシートへは、近いタイミングのイベントをまとめて1回で送る。
+// 1ページを開くと page_view・Web Vitals などが3〜5件同時に出る。1件ずつ送ると保存先のGASが
+// 同時に何本も動いて1件25〜110秒かかり、2026-09-30夜には6割が保存に失敗した。
+const SHEET_ENDPOINT = "/api/analytics/events"
+const FLUSH_DELAY_MS = 1500
+// /api/analytics/events・解析GASの上限（25件）より少なくし、sendBeacon の64KBにも収める
+const MAX_BATCH_SIZE = 20
+
+let pendingEvents: { event: DetailedAnalyticsEvent; queuedAt: number }[] = []
+let flushTimer: ReturnType<typeof setTimeout> | null = null
+let pageHideListening = false
+
 function deliverToSheet(event: DetailedAnalyticsEvent, preferBeacon: boolean): void {
-  const body = JSON.stringify(event)
+  pendingEvents.push({ event, queuedAt: Date.now() })
+  listenForPageHide()
+
+  // 直後にページを離れるイベントは待たずに送る（待っている分もまとめて）
+  if (preferBeacon || pendingEvents.length >= MAX_BATCH_SIZE) {
+    flushDetailedEvents(preferBeacon)
+    return
+  }
+  if (!flushTimer) flushTimer = setTimeout(() => flushDetailedEvents(false), FLUSH_DELAY_MS)
+}
+
+// ページを閉じる・別アプリへ切り替えるときに、待っているイベントを取りこぼさない
+function listenForPageHide(): void {
+  if (pageHideListening || typeof document === "undefined" || typeof window.addEventListener !== "function") return
+  pageHideListening = true
+  window.addEventListener("pagehide", () => flushDetailedEvents(true))
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") flushDetailedEvents(true)
+  })
+}
+
+/** 待っているイベントをすぐ送る。計測は予約操作を妨げてはいけないため、失敗しても投げない。 */
+export function flushDetailedEvents(preferBeacon = false): void {
+  if (flushTimer) {
+    clearTimeout(flushTimer)
+    flushTimer = null
+  }
+  if (pendingEvents.length === 0) return
+
+  const now = Date.now()
+  // 発生時刻はサーバーの受信時刻で記録するため、ブラウザで待った時間を添えて補正してもらう
+  const events = pendingEvents.splice(0).map(({ event, queuedAt }) => ({
+    ...event,
+    client_delay_ms: now - queuedAt,
+  }))
+  const body = JSON.stringify({ events })
 
   if (preferBeacon) {
     try {
       if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
         const blob = new Blob([body], { type: "application/json" })
-        if (navigator.sendBeacon("/api/analytics/events", blob)) return
+        if (navigator.sendBeacon(SHEET_ENDPOINT, blob)) return
       }
     } catch {
       // sendBeacon が使えない・拒否された場合は下の fetch へフォールバックする
@@ -146,7 +192,7 @@ function deliverToSheet(event: DetailedAnalyticsEvent, preferBeacon: boolean): v
   }
 
   try {
-    void fetch("/api/analytics/events", {
+    void fetch(SHEET_ENDPOINT, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body,
