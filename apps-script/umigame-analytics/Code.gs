@@ -1962,49 +1962,101 @@ function writeSimpleReport_(sheet, report, updatedAt, timezone) {
   add('note', ['・「—」は、その月はまだ記録していなかった項目です（来た人の数・予約フォームの段階は2026年8月から記録しています）。']);
   add('note', ['・もっと細かく見たいときは、右側の「ダッシュボード」などのシートを見てください。']);
 
+  // 前回の結合・固定を外してから書き直す（結合が残ると次の書き込みで失敗する）
+  const used = sheet.getRange(1, 1, Math.max(sheet.getMaxRows(), 1), Math.max(sheet.getMaxColumns(), width));
+  used.breakApart();
+  sheet.setFrozenRows(0);
+  sheet.setFrozenColumns(0);
   sheet.clear();
   const values = blocks.map(function(block) {
     const line = block.values.slice(0, width);
     while (line.length < width) line.push('');
     return line;
   });
-  sheet.getRange(1, 1, values.length, width).setValues(values);
+  const all = sheet.getRange(1, 1, values.length, width);
+  all.setValues(values);
 
-  sheet.setHiddenGridlines(true);
-  sheet.setFrozenRows(2);
-  sheet.setFrozenColumns(1);
-  sheet.setColumnWidth(1, 250);
-  sheet.setColumnWidth(2, 330);
-  for (let column = 3; column <= width; column++) sheet.setColumnWidth(column, 120);
-  sheet.getRange(1, 1, values.length, width)
-    .setFontFamily('Noto Sans JP').setFontSize(11).setVerticalAlignment('middle').setFontColor('#1f2937');
+  // 見た目はマスごとに配列で作り、まとめて1回ずつ設定する（1マスずつ設定すると遅い）
+  const fill = function(value) { return values.map(function() { return new Array(width).fill(value); }); };
+  const backgrounds = fill(null);
+  const fontColors = fill('#1f2937');
+  const fontWeights = fill('normal');
+  const fontSizes = fill(11);
+  const aligns = fill('left');
+  const wraps = fill(false);
+  const merges = [];
+  const tables = [];
+  let tableStart = -1;
+  const set = function(grid, r, from, to, value) { for (let c = from; c < to; c++) grid[r][c] = value; };
 
-  blocks.forEach(function(block, index) {
-    const r = index + 1;
-    const line = sheet.getRange(r, 1, 1, width);
+  blocks.forEach(function(block, r) {
+    if (block.type === 'header') tableStart = r;
+    if (tableStart >= 0 && block.type !== 'header' && block.type !== 'row') {
+      tables.push([tableStart, r - 1]);
+      tableStart = -1;
+    }
     if (block.type === 'title') {
-      line.merge().setBackground('#064e3b').setFontColor('#ffffff').setFontSize(16).setFontWeight('bold');
-      sheet.setRowHeight(r, 40);
+      set(backgrounds, r, 0, width, '#064e3b');
+      set(fontColors, r, 0, width, '#ffffff');
+      set(fontWeights, r, 0, width, 'bold');
+      set(fontSizes, r, 0, width, 16);
+      merges.push(sheet.getRange(r + 1, 1, 1, width));
     } else if (block.type === 'subtitle') {
-      line.merge().setBackground('#d1fae5').setFontColor('#065f46').setFontSize(10);
+      set(backgrounds, r, 0, width, '#d1fae5');
+      set(fontColors, r, 0, width, '#065f46');
+      set(fontSizes, r, 0, width, 10);
+      merges.push(sheet.getRange(r + 1, 1, 1, width));
     } else if (block.type === 'section') {
-      sheet.getRange(r, 1).setFontSize(13).setFontWeight('bold').setFontColor('#064e3b');
-      sheet.getRange(r, 2, 1, width - 1).merge().setFontColor('#6b7280').setFontSize(10).setWrap(true);
-      sheet.setRowHeight(r, 30);
+      fontSizes[r][0] = 13;
+      fontWeights[r][0] = 'bold';
+      fontColors[r][0] = '#064e3b';
+      set(fontColors, r, 1, width, '#6b7280');
+      set(fontSizes, r, 1, width, 10);
+      set(wraps, r, 1, width, true);
+      merges.push(sheet.getRange(r + 1, 2, 1, width - 1));
     } else if (block.type === 'header') {
-      line.setBackground('#0f766e').setFontColor('#ffffff').setFontWeight('bold');
-      sheet.getRange(r, 3, 1, monthCount).setHorizontalAlignment('right');
+      set(backgrounds, r, 0, width, '#0f766e');
+      set(fontColors, r, 0, width, '#ffffff');
+      set(fontWeights, r, 0, width, 'bold');
+      set(aligns, r, 2, width, 'right');
     } else if (block.type === 'note') {
-      line.merge().setWrap(true).setFontColor('#374151');
+      set(fontColors, r, 0, width, '#374151');
+      set(wraps, r, 0, width, true);
+      merges.push(sheet.getRange(r + 1, 1, 1, width));
     } else if (block.type === 'row') {
-      line.setBorder(null, null, true, null, false, false, '#e5e7eb', SpreadsheetApp.BorderStyle.SOLID);
-      sheet.getRange(r, 2).setFontColor('#6b7280').setFontSize(10).setWrap(true);
-      sheet.getRange(r, 3, 1, monthCount).setHorizontalAlignment('right');
+      fontColors[r][1] = '#6b7280';
+      fontSizes[r][1] = 10;
+      wraps[r][1] = true;
+      set(aligns, r, 2, width, 'right');
       // 最新月（途中のことが多い）は少し薄い背景で区別する
-      sheet.getRange(r, width).setBackground('#f0fdfa');
-      if (block.style === 'group') sheet.getRange(r, 1).setFontWeight('bold');
-      if (block.style === 'detail') sheet.getRange(r, 1, 1, width).setFontColor('#4b5563').setFontSize(10);
-      if (block.style === 'alert') line.setFontColor('#b91c1c').setFontWeight('bold');
+      backgrounds[r][width - 1] = '#f0fdfa';
+      if (block.style === 'group') fontWeights[r][0] = 'bold';
+      if (block.style === 'detail') {
+        set(fontColors, r, 0, width, '#4b5563');
+        set(fontSizes, r, 0, width, 10);
+      }
+      if (block.style === 'alert') {
+        set(fontColors, r, 0, width, '#b91c1c');
+        set(fontWeights, r, 0, width, 'bold');
+      }
     }
   });
+  if (tableStart >= 0) tables.push([tableStart, blocks.length - 1]);
+
+  all.setFontFamily('Noto Sans JP').setVerticalAlignment('middle')
+    .setBackgrounds(backgrounds).setFontColors(fontColors).setFontWeights(fontWeights)
+    .setFontSizes(fontSizes).setHorizontalAlignments(aligns).setWraps(wraps);
+  merges.forEach(function(range) { range.merge(); });
+  tables.forEach(function(table) {
+    sheet.getRange(table[0] + 1, 1, table[1] - table[0] + 1, width)
+      .setBorder(null, null, true, null, null, true, '#e5e7eb', SpreadsheetApp.BorderStyle.SOLID);
+  });
+
+  sheet.setHiddenGridlines(true);
+  // 列は固定しない（固定列をまたぐ結合はスプレッドシートが受け付けない）
+  sheet.setFrozenRows(2);
+  sheet.setColumnWidth(1, 250);
+  sheet.setColumnWidth(2, 330);
+  if (width > 2) sheet.setColumnWidths(3, width - 2, 120);
+  sheet.setRowHeight(1, 40);
 }
