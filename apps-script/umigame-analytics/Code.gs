@@ -1504,7 +1504,6 @@ function refreshSimpleReport() {
   const yesterday = new Date(today.getTime() - 1);
   const yesterdayMonth = Utilities.formatDate(yesterday, timezone, 'yyyy-MM');
   const months = recentMonthKeys_(yesterdayMonth, SIMPLE_REPORT.months);
-  const firstMonthStart = Utilities.parseDate(months[0] + '-01 00:00:00', timezone, 'yyyy-MM-dd HH:mm:ss');
   const options = {
     months: months,
     end: today,
@@ -1513,9 +1512,73 @@ function refreshSimpleReport() {
     monthOf: function(date) { return Utilities.formatDate(date, timezone, 'yyyy-MM'); },
     dayOf: function(date) { return Number(Utilities.formatDate(date, timezone, 'd')); },
   };
+
+  // 終わった月の集計は保存しておき、毎朝は「先月の初め」から（保存がない月があればその月から）だけ読む。
+  // 記録が何年分たまっても、読む量はおよそ2か月分で一定になる
+  const properties = PropertiesService.getScriptProperties();
+  const cached = loadSimpleReportCache_(properties, months);
+  options.readFromMonth = simpleReportReadFrom_(months, cached);
+  options.cachedSummaries = cached;
+  const readFrom = Utilities.parseDate(options.readFromMonth + '-01 00:00:00', timezone, 'yyyy-MM-dd HH:mm:ss');
   const eventsSheet = spreadsheet.getSheetByName(ANALYTICS_CONFIG.eventsSheet);
-  const rows = eventsSheet ? readEventRowsSince_(eventsSheet, firstMonthStart) : [];
-  writeSimpleReport_(ensureSimpleReportSheet_(spreadsheet), buildSimpleReport_(rows, options), now, timezone);
+  const rows = eventsSheet ? readEventRowsSince_(eventsSheet, readFrom) : [];
+
+  const summarized = summarizeEventMonths_(rows, options);
+  saveSimpleReportCache_(properties, summarized.summaries, months, options.lastMonthComplete, options.readFromMonth);
+  const summaries = Object.assign({}, cached, summarized.summaries);
+  writeSimpleReport_(
+    ensureSimpleReportSheet_(spreadsheet),
+    assembleSimpleReport_(summaries, summarized.samePeriod, options),
+    now,
+    timezone
+  );
+}
+
+// 保存した月ごとの集計（集計のやり方を変えたら版を上げ、古い保存は使わない）
+const SIMPLE_REPORT_CACHE_VERSION = '2026-10-05';
+const SIMPLE_REPORT_CACHE_PREFIX = 'SIMPLE_REPORT_MONTH_';
+
+function loadSimpleReportCache_(properties, months) {
+  const cached = {};
+  months.forEach(function(month) {
+    const raw = properties.getProperty(SIMPLE_REPORT_CACHE_PREFIX + month);
+    if (!raw) return;
+    try {
+      const entry = JSON.parse(raw);
+      if (entry && entry.version === SIMPLE_REPORT_CACHE_VERSION && entry.summary) cached[month] = entry.summary;
+    } catch (error) {
+      // 壊れた保存は使わずに読み直す
+    }
+  });
+  return cached;
+}
+
+/** 読み始める月：最新月の1つ前、または保存がない一番古い月（どちらか早い方） */
+function simpleReportReadFrom_(months, cached) {
+  const previous = months.length >= 2 ? months[months.length - 2] : months[0];
+  const missing = months.filter(function(month) { return month < previous && !cached[month]; });
+  return missing.length ? missing[0] : previous;
+}
+
+/**
+ * 今回読み直した月のうち、最後まで終わった月を保存する（途中の月は毎朝変わるので保存しない）。
+ * 記録のない月も「空」として保存し、毎朝読み直さないようにする。表に出さない古い月は消す。
+ */
+function saveSimpleReportCache_(properties, summaries, months, lastMonthComplete, readFromMonth) {
+  const latest = months[months.length - 1];
+  months.forEach(function(month) {
+    if (readFromMonth && month < readFromMonth) return;
+    const complete = month < latest || (month === latest && lastMonthComplete);
+    if (!complete) return;
+    const value = JSON.stringify({ version: SIMPLE_REPORT_CACHE_VERSION, summary: summaries[month] || emptyMonthSummary_() });
+    // 1つの保存は9KBまで。収まらない月は保存せず、次回も読み直す
+    if (value.length <= 8500) properties.setProperty(SIMPLE_REPORT_CACHE_PREFIX + month, value);
+  });
+  Object.keys(properties.getProperties()).forEach(function(key) {
+    if (key.indexOf(SIMPLE_REPORT_CACHE_PREFIX) === 0 && key.slice(SIMPLE_REPORT_CACHE_PREFIX.length) < months[0]) {
+      properties.deleteProperty(key);
+    }
+  });
 }
 
 function ensureSimpleReportSheet_(spreadsheet) {
@@ -1559,10 +1622,19 @@ function readEventRowsSince_(sheet, since) {
   if (count <= 0) return [];
   const rows = [];
   for (let i = 0; i < count; i++) rows.push(new Array(EVENT_HEADERS.length));
-  SIMPLE_REPORT_COLUMNS.forEach(function(header) {
-    const column = EVENT_HEADERS.indexOf(header);
-    sheet.getRange(first + 2, column + 1, count, 1).getValues().forEach(function(value, i) {
-      rows[i][column] = value[0];
+  // となり合う列はまとめて1回で読む（読む回数が多いと遅い）
+  const columns = SIMPLE_REPORT_COLUMNS.map(function(header) { return EVENT_HEADERS.indexOf(header); })
+    .sort(function(a, b) { return a - b; });
+  const blocks = [];
+  columns.forEach(function(column) {
+    const last = blocks[blocks.length - 1];
+    if (last && last.end === column - 1) last.end = column;
+    else blocks.push({ start: column, end: column });
+  });
+  blocks.forEach(function(block) {
+    const width = block.end - block.start + 1;
+    sheet.getRange(first + 2, block.start + 1, count, width).getValues().forEach(function(values, i) {
+      for (let k = 0; k < width; k++) rows[i][block.start + k] = values[k];
     });
   });
   return rows;
@@ -1622,134 +1694,167 @@ function classifySource_(utmSource, utmMedium, referrerHost) {
   return ['その他のサイト', host];
 }
 
-function newMonthStats_() {
-  return { visitors: {}, pageViews: 0, identifiedPageViews: 0, started: {}, bookings: 0, revenue: 0, guests: 0, funnel: {} };
-}
-
-function newSourceStats_() {
-  return { visitors: {}, bookings: 0 };
-}
-
 function countKeys_(object) {
   return Object.keys(object || {}).length;
 }
 
+function emptyMonthSummary_() {
+  return { pageViews: 0, identifiedPageViews: 0, visitors: 0, started: 0, bookings: 0, revenue: 0, guests: 0, funnel: {}, sources: {}, plans: {} };
+}
+
 /**
- * イベント行（イベントデータの1行＝配列）を月ごとにまとめる。シートには触らない。
- * options: months（古い順の'yyyy-MM'）, end（集計の終わり＝今日0時）, lastDay（最新月の何日まで）,
- *          lastMonthComplete（最新月が月末まであるか）, monthOf(date), dayOf(date)
+ * イベント行（イベントデータの1行＝配列）を、月ごとの「数だけの集計」にまとめる。シートには触らない。
+ * 集計は保存できる形（数字だけ）で返す。options.readFromMonth があれば、それより前の月は作らない。
  */
-function buildSimpleReport_(rows, options) {
+function summarizeEventMonths_(rows, options) {
   const col = {};
   SIMPLE_REPORT_COLUMNS.forEach(function(header) { col[header] = EVENT_HEADERS.indexOf(header); });
-  const latest = options.months[options.months.length - 1];
-  const previousOfLatest = options.months[options.months.length - 2];
-  const stats = {};
-  const sourceStats = {};
-  const planStats = {};
-  const samePeriod = { visitors: {}, bookings: 0 };
+  const months = options.months;
+  const previousOfLatest = months[months.length - 2];
   const funnelEvents = SIMPLE_FUNNEL_STEPS.map(function(step) { return step[0]; });
-  options.months.forEach(function(month) { stats[month] = newMonthStats_(); });
+  const work = {};
+  const samePeriod = { visitors: {}, bookings: 0 };
 
   rows.forEach(function(row, index) {
     const at = toReportDate_(row[col['日時']]);
     if (!at || at >= options.end) return;
     const month = options.monthOf(at);
-    const period = stats[month];
-    if (!period) return;
+    if (months.indexOf(month) === -1) return;
+    if (options.readFromMonth && month < options.readFromMonth) return;
 
     const utm = String(row[col['UTM Source']] || '').trim().toLowerCase();
     if (SIMPLE_REPORT.ignoredUtmSources.indexOf(utm) !== -1) return;
     if (String(row[col['ページ']] || '').indexOf('/__') === 0) return;
 
+    const m = work[month] = work[month] || {
+      visitors: {}, pageViews: 0, identifiedPageViews: 0, started: {}, bookings: 0, revenue: 0, guests: 0,
+      funnel: {}, sources: {}, plans: {},
+    };
     const name = String(row[col['イベント']] || '');
     const source = classifySource_(utm, row[col['UTM Medium']], row[col['参照元ホスト']]);
     const visitor = String(row[col['Visitor ID']] || row[col['Visit ID']] || '');
     const person = String(row[col['予約ファネルID']] || row[col['Visit ID']] || row[col['Visitor ID']] || 'row-' + index);
     // 最新月が途中のとき、前の月の「同じ日まで」と比べる
     const inSamePeriod = month === previousOfLatest && options.dayOf(at) <= options.lastDay;
-
-    const group = sourceStats[source[0]] = sourceStats[source[0]] || { months: {}, details: {} };
-    const detail = group.details[source[1]] = group.details[source[1]] || {};
-    group.months[month] = group.months[month] || newSourceStats_();
-    detail[month] = detail[month] || newSourceStats_();
+    const group = m.sources[source[0]] = m.sources[source[0]] || { visitors: {}, bookings: 0, details: {} };
+    const detail = group.details[source[1]] = group.details[source[1]] || { visitors: {}, bookings: 0 };
 
     if (name === 'page_view') {
-      period.pageViews++;
+      m.pageViews++;
       if (visitor) {
-        period.identifiedPageViews++;
-        period.visitors[visitor] = true;
-        group.months[month].visitors[visitor] = true;
-        detail[month].visitors[visitor] = true;
+        m.identifiedPageViews++;
+        m.visitors[visitor] = true;
+        group.visitors[visitor] = true;
+        detail.visitors[visitor] = true;
         if (inSamePeriod) samePeriod.visitors[visitor] = true;
       }
     }
-    if (name === 'booking_started') period.started[person] = true;
+    if (name === 'booking_started') m.started[person] = true;
     if (funnelEvents.indexOf(name) !== -1) {
-      period.funnel[name] = period.funnel[name] || {};
-      period.funnel[name][person] = true;
+      m.funnel[name] = m.funnel[name] || {};
+      m.funnel[name][person] = true;
     }
     if (name === 'booking_submitted') {
       const amount = reportNumber_(row[col['金額']]);
-      const guests = reportNumber_(row[col['人数合計']]);
-      period.bookings++;
-      period.revenue += amount;
-      period.guests += guests;
-      group.months[month].bookings++;
-      detail[month].bookings++;
+      m.bookings++;
+      m.revenue += amount;
+      m.guests += reportNumber_(row[col['人数合計']]);
+      group.bookings++;
+      detail.bookings++;
       if (inSamePeriod) samePeriod.bookings++;
       const plan = String(row[col['プラン名']] || row[col['プランID']] || '（プラン不明）');
-      planStats[plan] = planStats[plan] || {};
-      planStats[plan][month] = (planStats[plan][month] || 0) + 1;
+      m.plans[plan] = (m.plans[plan] || 0) + 1;
     }
   });
 
+  // 「同じ人」の一覧は保存せず、人数だけにする
+  const summaries = {};
+  Object.keys(work).forEach(function(month) {
+    const m = work[month];
+    const funnel = {};
+    Object.keys(m.funnel).forEach(function(event) { funnel[event] = countKeys_(m.funnel[event]); });
+    const sources = {};
+    Object.keys(m.sources).forEach(function(label) {
+      const group = m.sources[label];
+      const details = {};
+      Object.keys(group.details).map(function(name) {
+        return { name: name, visitors: countKeys_(group.details[name].visitors), bookings: group.details[name].bookings };
+      }).sort(function(a, b) {
+        return b.visitors - a.visitors || b.bookings - a.bookings;
+      }).slice(0, 10).forEach(function(detail) {
+        details[detail.name] = { visitors: detail.visitors, bookings: detail.bookings };
+      });
+      sources[label] = { visitors: countKeys_(group.visitors), bookings: group.bookings, details: details };
+    });
+    summaries[month] = {
+      pageViews: m.pageViews, identifiedPageViews: m.identifiedPageViews, visitors: countKeys_(m.visitors),
+      started: countKeys_(m.started), bookings: m.bookings, revenue: m.revenue, guests: m.guests,
+      funnel: funnel, sources: sources, plans: m.plans,
+    };
+  });
+  return { summaries: summaries, samePeriod: { visitors: countKeys_(samePeriod.visitors), bookings: samePeriod.bookings } };
+}
+
+/** 記録から直接かんたんレポートの中身を作る（集計 → 組み立て） */
+function buildSimpleReport_(rows, options) {
+  const summarized = summarizeEventMonths_(rows, options);
+  return assembleSimpleReport_(
+    Object.assign({}, options.cachedSummaries || {}, summarized.summaries), summarized.samePeriod, options
+  );
+}
+
+/**
+ * 月ごとの集計から、かんたんレポートの中身を組み立てる。
+ * options: months（古い順の'yyyy-MM'）, lastDay（最新月の何日まで）, lastMonthComplete（最新月が月末まであるか）
+ */
+function assembleSimpleReport_(summaries, samePeriod, options) {
+  const stats = {};
+  options.months.forEach(function(month) { stats[month] = summaries[month] || emptyMonthSummary_(); });
+
   // 記録が始まる前の空っぽの月は表に出さない
-  const allMonths = options.months;
-  const hasData = function(month) {
+  const firstActive = options.months.findIndex(function(month) {
     const period = stats[month];
-    return period.pageViews > 0 || period.bookings > 0 || countKeys_(period.started) > 0;
-  };
-  const firstActive = allMonths.findIndex(hasData);
-  const months = firstActive > 0 ? allMonths.slice(firstActive) : allMonths;
+    return period.pageViews > 0 || period.bookings > 0 || period.started > 0;
+  });
+  const months = firstActive > 0 ? options.months.slice(firstActive) : options.months;
   // 「誰が来たか」を記録していなかった月（ページ表示はあるのにIDが1件もない）は、人数を出せない
   const visitorsUnknown = {};
   const funnelUnknown = {};
   months.forEach(function(month) {
     const period = stats[month];
     visitorsUnknown[month] = period.pageViews > 0 && period.identifiedPageViews === 0;
-    const stepsRecorded = SIMPLE_FUNNEL_STEPS.slice(0, -1).some(function(step) { return countKeys_(period.funnel[step[0]]) > 0; });
+    const stepsRecorded = SIMPLE_FUNNEL_STEPS.slice(0, -1).some(function(step) { return (period.funnel[step[0]] || 0) > 0; });
     funnelUnknown[month] = !stepsRecorded && period.bookings > 0;
   });
   const perMonth = function(fn) { return months.map(function(month) { return fn(stats[month], month); }); };
-  const conversion = perMonth(function(period) {
-    const started = countKeys_(period.started);
-    return started ? period.bookings / started : null;
-  });
+  const conversion = perMonth(function(period) { return period.started ? period.bookings / period.started : null; });
 
-  const totalVisitors = function(monthsMap) {
-    return months.reduce(function(sum, month) { return sum + countKeys_(monthsMap[month] && monthsMap[month].visitors); }, 0);
-  };
-  const sourceRow = function(monthsMap) {
-    return {
-      visitors: months.map(function(month) {
-        return visitorsUnknown[month] ? null : countKeys_(monthsMap[month] && monthsMap[month].visitors);
-      }),
-      bookings: months.map(function(month) { return monthsMap[month] ? monthsMap[month].bookings : 0; }),
-    };
-  };
-  const sources = Object.keys(sourceStats).map(function(label) {
-    const group = sourceStats[label];
-    const row = sourceRow(group.months);
-    const details = Object.keys(group.details).map(function(name) {
-      const detail = sourceRow(group.details[name]);
-      return { label: name, visitors: detail.visitors, bookings: detail.bookings, total: totalVisitors(group.details[name]) };
+  const labels = {};
+  months.forEach(function(month) {
+    Object.keys(stats[month].sources).forEach(function(label) {
+      labels[label] = labels[label] || {};
+      Object.keys(stats[month].sources[label].details).forEach(function(name) { labels[label][name] = true; });
+    });
+  });
+  const sources = Object.keys(labels).map(function(label) {
+    const groupAt = function(month) { return stats[month].sources[label]; };
+    const visitors = months.map(function(month) { return visitorsUnknown[month] ? null : (groupAt(month) ? groupAt(month).visitors : 0); });
+    const bookings = months.map(function(month) { return groupAt(month) ? groupAt(month).bookings : 0; });
+    const details = Object.keys(labels[label]).map(function(name) {
+      const detailAt = function(month) { return groupAt(month) && groupAt(month).details[name]; };
+      const detailVisitors = months.map(function(month) { return visitorsUnknown[month] ? null : (detailAt(month) ? detailAt(month).visitors : 0); });
+      return {
+        label: name,
+        visitors: detailVisitors,
+        bookings: months.map(function(month) { return detailAt(month) ? detailAt(month).bookings : 0; }),
+        total: detailVisitors.reduce(function(sum, n) { return sum + (n || 0); }, 0),
+      };
     }).filter(function(detail) {
       return detail.label !== label && detail.total > 0;
     }).sort(function(a, b) { return b.total - a.total; }).slice(0, SIMPLE_REPORT.maxDetailsPerSource);
     return {
-      label: label, note: SOURCE_GROUP_NOTES[label] || '', visitors: row.visitors, bookings: row.bookings,
-      total: totalVisitors(group.months), details: details,
+      label: label, note: SOURCE_GROUP_NOTES[label] || '', visitors: visitors, bookings: bookings,
+      total: visitors.reduce(function(sum, n) { return sum + (n || 0); }, 0), details: details,
     };
   }).filter(function(source) {
     return source.total > 0 || source.bookings.some(function(n) { return n > 0; });
@@ -1766,7 +1871,7 @@ function buildSimpleReport_(rows, options) {
       note: step[2],
       people: perMonth(function(period, month) {
         if (step[0] === 'booking_submitted') return period.bookings;
-        return funnelUnknown[month] ? null : countKeys_(period.funnel[step[0]]);
+        return funnelUnknown[month] ? null : (period.funnel[step[0]] || 0);
       }),
     };
   });
@@ -1785,8 +1890,10 @@ function buildSimpleReport_(rows, options) {
     });
   }
 
-  const plans = Object.keys(planStats).map(function(name) {
-    const counts = months.map(function(month) { return planStats[name][month] || 0; });
+  const planNames = {};
+  months.forEach(function(month) { Object.keys(stats[month].plans).forEach(function(name) { planNames[name] = true; }); });
+  const plans = Object.keys(planNames).map(function(name) {
+    const counts = months.map(function(month) { return stats[month].plans[name] || 0; });
     return { name: name, bookings: counts, total: counts.reduce(function(a, b) { return a + b; }, 0) };
   }).filter(function(plan) { return plan.total > 0; })
     .sort(function(a, b) { return b.total - a.total; })
@@ -1797,15 +1904,15 @@ function buildSimpleReport_(rows, options) {
     lastDay: options.lastDay,
     lastMonthComplete: options.lastMonthComplete,
     metrics: [
-      { label: 'サイトに来た人', unit: '人', note: '同じ人が何回来ても1人と数えます', values: perMonth(function(p, month) { return visitorsUnknown[month] ? null : countKeys_(p.visitors); }) },
+      { label: 'サイトに来た人', unit: '人', note: '同じ人が何回来ても1人と数えます', values: perMonth(function(p, month) { return visitorsUnknown[month] ? null : p.visitors; }) },
       { label: 'ページが見られた回数', unit: '回', note: '1人が3ページ見たら3回', values: perMonth(function(p) { return p.pageViews; }) },
-      { label: '予約の入力を始めた人', unit: '人', note: '予約フォームで入力を始めた人', values: perMonth(function(p) { return countKeys_(p.started); }) },
+      { label: '予約の入力を始めた人', unit: '人', note: '予約フォームで入力を始めた人', values: perMonth(function(p) { return p.started; }) },
       { label: '予約が入った', unit: '件', note: 'サイトから送信された予約（後のキャンセルは引いていません）', values: perMonth(function(p) { return p.bookings; }) },
       { label: '参加人数', unit: '人', note: '予約に入っている人数の合計', values: perMonth(function(p) { return p.guests; }) },
       { label: '売上（予約時の金額）', unit: '円', note: '予約時の合計金額（キャンセルは引いていません）', values: perMonth(function(p) { return p.revenue; }) },
     ],
     conversion: conversion,
-    samePeriod: { visitors: countKeys_(samePeriod.visitors), bookings: samePeriod.bookings },
+    samePeriod: samePeriod,
     sources: sources,
     funnel: funnel,
     funnelMonthIndex: funnelMonthIndex,
