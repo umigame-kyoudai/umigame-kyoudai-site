@@ -146,8 +146,14 @@ function deliverToSheet(event: DetailedAnalyticsEvent, preferBeacon: boolean): v
   pendingEvents.push({ event, queuedAt: Date.now() })
   listenForPageHide()
 
-  // 直後にページを離れるイベントは待たずに送る（待っている分もまとめて）
-  if (preferBeacon || pendingEvents.length >= MAX_BATCH_SIZE) {
+  // 直後にページを離れるイベントと、画面が隠れた後（タブを閉じる・アプリ切替）に出たイベント
+  // （滞在時間・スクロール）は待たずに送る。待つと送る前にページが閉じて消える
+  const hidden = typeof document !== "undefined" && document.visibilityState === "hidden"
+  if (preferBeacon || hidden) {
+    flushDetailedEvents(true)
+    return
+  }
+  if (pendingEvents.length >= MAX_BATCH_SIZE) {
     flushDetailedEvents(preferBeacon)
     return
   }
