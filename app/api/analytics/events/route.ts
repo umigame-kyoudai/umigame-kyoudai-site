@@ -8,7 +8,12 @@ import {
 
 export const runtime = "nodejs"
 
-const MAX_BODY_BYTES = 16_384
+// ブラウザは1ページ分のイベントをまとめて送る（lib/detailed-analytics.ts）。sendBeacon の上限64KBに合わせる。
+const MAX_BODY_BYTES = 65_536
+// 解析GASの MAX_EVENTS_PER_REQUEST と揃える
+const MAX_EVENTS_PER_REQUEST = 25
+// まとめ送信までブラウザで待った時間の上限。発生時刻は受信時刻からこの分だけ戻す
+const MAX_CLIENT_DELAY_MS = 60_000
 const eventNames = new Set<string>(ANALYTICS_EVENT_NAMES)
 const propertyKeys = new Set<string>(ANALYTICS_PROPERTY_KEYS)
 const CURRENT_TRACKING_CONSENT_VERSION = "2026-08-13"
@@ -53,29 +58,48 @@ function safeProperties(value: unknown): AnalyticsEventProperties {
   return result
 }
 
-export async function POST(request: Request) {
-  const body = await request.text()
-  if (body.length > MAX_BODY_BYTES) {
-    return NextResponse.json({ accepted: false }, { status: 413 })
-  }
+type SheetEvent = {
+  occurred_at: string
+  event_name: AnalyticsEventName
+  visitor_id: string
+  visit_id: string
+  booking_funnel_id: string
+  consent_version: string
+  consented_at: string
+  page_path: string
+  locale: string
+  device_type: string
+  viewport_width: number
+  viewport_height: number
+  referrer_host: string
+  landing_page: string
+  utm_source: string
+  utm_medium: string
+  utm_campaign: string
+  utm_content: string
+  utm_term: string
+  browser: string
+  os: string
+  screen_width: number
+  screen_height: number
+  connection_type: string
+  properties: AnalyticsEventProperties
+}
 
-  let raw: Record<string, unknown>
-  try {
-    raw = JSON.parse(body) as Record<string, unknown>
-  } catch {
-    return NextResponse.json({ accepted: false }, { status: 400 })
-  }
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
-    return NextResponse.json({ accepted: false }, { status: 400 })
-  }
+type Rejection = "invalid" | "tracking_consent_required"
+
+function toSheetEvent(value: unknown, receivedAt: number): SheetEvent | Rejection {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return "invalid"
+  const raw = value as Record<string, unknown>
 
   const eventName = text(raw.event_name, 64)
-  if (!eventNames.has(eventName)) {
-    return NextResponse.json({ accepted: false }, { status: 400 })
-  }
+  if (!eventNames.has(eventName)) return "invalid"
 
-  const event = {
-    occurred_at: new Date().toISOString(),
+  // 端末の時計は信用せず、受信時刻から「ブラウザでまとめて送るまで待った時間」だけ戻す
+  const clientDelayMs = number(raw.client_delay_ms, 0, MAX_CLIENT_DELAY_MS)
+
+  const event: SheetEvent = {
+    occurred_at: new Date(receivedAt - clientDelayMs).toISOString(),
     event_name: eventName as AnalyticsEventName,
     visitor_id: trackingId(raw.visitor_id),
     visit_id: trackingId(raw.visit_id),
@@ -108,7 +132,93 @@ export async function POST(request: Request) {
     event.consent_version !== CURRENT_TRACKING_CONSENT_VERSION ||
     !event.consented_at
   ) {
-    return NextResponse.json({ accepted: false, reason: "tracking_consent_required" }, { status: 400 })
+    return "tracking_consent_required"
+  }
+  return event
+}
+
+type Delivery =
+  | { ok: true }
+  | { ok: false, reason: string, upstreamStatus?: number, upstreamError?: string, durationMs: number }
+
+const LOGGED_UPSTREAM_ERRORS = ["unauthorized", "busy", "invalid_request", "write_failed"]
+
+async function deliver(webhookUrl: string, payload: Record<string, unknown>): Promise<Delivery> {
+  const startedAt = Date.now()
+  let reason = "analytics_webhook_network_error"
+  let upstreamStatus: number | undefined
+  let upstreamError: string | undefined
+  try {
+    const response = await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(payload),
+      cache: "no-store",
+    })
+    upstreamStatus = response.status
+    if (!response.ok) {
+      reason = "analytics_webhook_failed"
+      throw new Error(reason)
+    }
+
+    // Apps Scriptは共有シークレット不一致や不正イベントでもHTTP 200で
+    // { ok: false } を返す。本文を確認しないと「送れているのにシートへ
+    // 1行も入らない」状態に気づけないため、ok を明示的に検証する。
+    const result = (await response.json().catch(() => null)) as { ok?: unknown; error?: unknown } | null
+    if (!result || result.ok !== true) {
+      reason = "analytics_webhook_rejected"
+      // 応答本文や例外の全文には秘密情報が含まれる可能性があるため、
+      // GASで定義したエラーコードだけを運用ログへ記録する。
+      upstreamError = typeof result?.error === "string" && LOGGED_UPSTREAM_ERRORS.includes(result.error)
+        ? result.error
+        : "invalid_response"
+      throw new Error(reason)
+    }
+    return { ok: true }
+  } catch {
+    return { ok: false, reason, upstreamStatus, upstreamError, durationMs: Date.now() - startedAt }
+  }
+}
+
+function logFailure(failure: Exclude<Delivery, { ok: true }>, events: number): void {
+  console.error("[analytics] Sheetsへの記録に失敗:", JSON.stringify({
+    reason: failure.reason,
+    upstreamStatus: failure.upstreamStatus,
+    upstreamError: failure.upstreamError,
+    durationMs: failure.durationMs,
+    events,
+  }))
+}
+
+export async function POST(request: Request) {
+  const body = await request.text()
+  if (body.length > MAX_BODY_BYTES) {
+    return NextResponse.json({ accepted: false }, { status: 413 })
+  }
+
+  let raw: unknown
+  try {
+    raw = JSON.parse(body)
+  } catch {
+    return NextResponse.json({ accepted: false }, { status: 400 })
+  }
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return NextResponse.json({ accepted: false }, { status: 400 })
+  }
+
+  // 新しいブラウザは { events: [...] }、更新前のページを開いたままの人は1件ずつ送ってくる
+  const batch = (raw as { events?: unknown }).events
+  const inputs = Array.isArray(batch) ? batch.slice(0, MAX_EVENTS_PER_REQUEST) : [raw]
+  const receivedAt = Date.now()
+  const results = inputs.map((input) => toSheetEvent(input, receivedAt))
+  const events = results.filter((result): result is SheetEvent => typeof result === "object")
+
+  if (events.length === 0) {
+    const consentMissing = results.includes("tracking_consent_required")
+    return NextResponse.json(
+      consentMissing ? { accepted: false, reason: "tracking_consent_required" } : { accepted: false },
+      { status: 400 },
+    )
   }
 
   const webhookUrl = process.env.ANALYTICS_SHEETS_WEBHOOK_URL
@@ -117,48 +227,32 @@ export async function POST(request: Request) {
     return NextResponse.json({ accepted: false, reason: "not_configured" }, { status: 202 })
   }
 
-  const startedAt = Date.now()
-  let failureReason = "analytics_webhook_network_error"
-  let upstreamStatus: number | undefined
-  let upstreamError: string | undefined
-  try {
-    const response = await fetch(webhookUrl, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ secret, event }),
-      cache: "no-store",
-    })
-    upstreamStatus = response.status
-    if (!response.ok) {
-      failureReason = "analytics_webhook_failed"
-      throw new Error(failureReason)
-    }
-
-    // Apps Scriptは共有シークレット不一致や不正イベントでもHTTP 200で
-    // { ok: false } を返す。本文を確認しないと「送れているのにシートへ
-    // 1行も入らない」状態に気づけないため、ok を明示的に検証する。
-    const result = (await response.json().catch(() => null)) as { ok?: unknown; error?: unknown } | null
-    if (!result || result.ok !== true) {
-      failureReason = "analytics_webhook_rejected"
-      // 応答本文や例外の全文には秘密情報が含まれる可能性があるため、
-      // GASで定義したエラーコードだけを運用ログへ記録する。
-      upstreamError = typeof result?.error === "string" &&
-        ["unauthorized", "busy", "invalid_request"].includes(result.error)
-        ? result.error
-        : "invalid_response"
-      throw new Error(failureReason)
-    }
-
-    return NextResponse.json({ accepted: true })
-  } catch {
-    // 計測はユーザー操作を妨げない。クライアントは結果を見ないため、
-    // ここでの502は運用ログ用のシグナルとして残す。
-    console.error("[analytics] Sheetsへの記録に失敗:", JSON.stringify({
-      reason: failureReason,
-      upstreamStatus,
-      upstreamError,
-      durationMs: Date.now() - startedAt,
-    }))
+  if (events.length === 1) {
+    const result = await deliver(webhookUrl, { secret, event: events[0] })
+    if (result.ok) return NextResponse.json({ accepted: true })
+    logFailure(result, 1)
     return NextResponse.json({ accepted: false, reason: "delivery_failed" }, { status: 502 })
   }
+
+  // 複数件は1回の追記で保存する（GASへの同時実行が重なると1件数十秒〜かかり、応答が途切れていた）
+  const result = await deliver(webhookUrl, { secret, events })
+  if (result.ok) return NextResponse.json({ accepted: true })
+
+  // invalid_request は「GASが何も書いていない」ことが確実な応答（まとめ送信に未対応の旧版GASもこれを返す）。
+  // そのときだけ1件ずつ順番に送り直す。通信エラーや write_failed は書けたか不明なので再送しない。
+  if (result.upstreamError !== "invalid_request") {
+    logFailure(result, events.length)
+    return NextResponse.json({ accepted: false, reason: "delivery_failed" }, { status: 502 })
+  }
+
+  let failed = 0
+  for (const event of events) {
+    const single = await deliver(webhookUrl, { secret, event })
+    if (!single.ok) {
+      failed++
+      logFailure(single, 1)
+    }
+  }
+  if (failed === 0) return NextResponse.json({ accepted: true })
+  return NextResponse.json({ accepted: false, reason: "delivery_failed" }, { status: 502 })
 }

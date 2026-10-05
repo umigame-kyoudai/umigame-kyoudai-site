@@ -2,7 +2,9 @@
 
 同意後にサイトから届くイベントを固定列に保存し、Visitor ID・Visit ID・予約ファネルID・予約番号で閲覧履歴と予約データを結合できるようにします。併せて日別集計・予約ファネル・プラン別売上・流入元別売上等を自動表示します。
 
-本番反映状況: **2026-09-08・版8へ更新済み**。同時送信時に書き込みロックの10秒待機制限で`busy`となる問題を、Sheets APIの`appendCells`による追記へ変更して修正しました。既存の公開URL・保存先・共有秘密を維持しています。[復旧記録](../../docs/analytics-recovery-2026-09-08.md)
+本番反映状況: **2026-10-02・版9へ更新済み**。まとめ保存（`events`配列）に対応しました。1ページ分のイベントを1回の`appendCells`で保存し、同時実行の重なりで1件25〜110秒かかって404/503になる問題を減らします。サイト側は、まとめ保存に未対応のGAS（版8以前）には1件ずつ順番に送り直します。[記録](../../docs/analytics-batch-delivery-2026-10-01.md)
+
+2026-09-08・版8：同時送信時に書き込みロックの10秒待機制限で`busy`となる問題を、Sheets APIの`appendCells`による追記へ変更して修正しました。既存の公開URL・保存先・共有秘密を維持しています。[復旧記録](../../docs/analytics-recovery-2026-09-08.md)
 
 通常の保存ではScriptLockを取得しません。初回の空シートへのヘッダー作成だけを排他し、保存済みか不明な失敗を自動再送して重複を作ることも避けています。日時はシートのタイムゾーンとミリ秒精度を保つ数値、他の列は数値・真偽値・文字列として保存します。
 
@@ -44,9 +46,9 @@ Production / Preview / Development の必要な環境へ登録後、Production�
 
 ## 動作確認
 
-`/exec`へのGETで`{"ok":true,"configured":true,"version":"2026-09-08-atomic-append"}`を返します。`configured`は保存先IDの設定有無のみで、実際の保存成功はサイトの`/api/analytics/events`の`accepted: true`とシートへの行追加の両方で確認してください。
+`/exec`へのGETで`{"ok":true,"configured":true,"version":"2026-10-01-batch-append"}`（版8は`2026-09-08-atomic-append`）を返します。`configured`は保存先IDの設定有無のみで、実際の保存成功はサイトの`/api/analytics/events`の`accepted: true`とシートへの行追加の両方で確認してください。
 
-保存失敗時はVercelのログに許可したエラーコード（`unauthorized`、`busy`、`invalid_request`）、HTTPステータス、所要時間を記録します。共有秘密・イベント本文・任意の上流エラーメッセージは記録しません。
+保存失敗時はVercelのログに許可したエラーコード（`unauthorized`、`busy`、`invalid_request`、`write_failed`）、HTTPステータス、所要時間、件数を記録します。`invalid_request`は何も書き込んでいない応答（入力不正・まとめ保存に未対応の旧版）で、サイトはこのときだけ1件ずつ送り直します。`write_failed`や通信エラーは書けたか不明なため再送しません。共有秘密・イベント本文・任意の上流エラーメッセージは記録しません。
 
 1. 本番サイトを開きます。
 2. ページを移動し、テスト予約を1件送信します。
