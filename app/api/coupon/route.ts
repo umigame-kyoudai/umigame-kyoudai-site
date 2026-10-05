@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { calculateCouponDiscount, isCouponEligiblePlan } from '@/lib/constants/coupons'
+import { calculateCouponDiscount, getCouponPlanLimitLabel, isCouponEligiblePlan } from '@/lib/constants/coupons'
 
 // クーポンコードの検証はサーバー側でのみ行う。
 // クライアントバンドルにコード一覧（COUPON_LIST）を含めないためのエンドポイント。
@@ -58,6 +58,12 @@ export async function POST(request: Request) {
     const planId = typeof body.planId === 'string' ? body.planId : undefined
     if (!isCouponEligiblePlan(planId)) {
       return NextResponse.json({ valid: false, discount: 0, error: 'このプランはクーポン対象外です' })
+    }
+
+    // プラン限定クーポン（例: ナイトツアー専用）を別のプランで使おうとした場合は、対象を案内する
+    const limitLabel = getCouponPlanLimitLabel(body.couponCode, planId)
+    if (limitLabel) {
+      return NextResponse.json({ valid: false, discount: 0, error: `このクーポンは${limitLabel}専用です` })
     }
 
     const participants = [

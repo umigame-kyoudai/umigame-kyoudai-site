@@ -3,6 +3,23 @@
 export const COUPON_LIST: Record<string, number> = {
   UMIGAME500: 500,
   カメハメハ: 1000,
+  // ナイトツアー限定（2026-10-05 オーナー要望）。使えるプランは COUPON_PLAN_LIMITS で指定
+  YASHIGANI500: 500,
+}
+
+// 特定のプランでだけ使えるクーポン。ここに無いクーポンは、対象外プラン以外ならどのプランでも使える。
+// label はプラン違いで使えないときの案内（「このクーポンは◯◯専用です」）に使う。
+export const COUPON_PLAN_LIMITS: Record<string, { planIds: ReadonlySet<string>; label: string }> = {
+  // ナイトツアー：通常（S3）・貸切（S5）。ナイトを含むセット（C1/C2/C5/C6）はクーポン対象外のまま
+  YASHIGANI500: { planIds: new Set(['S3', 'S5']), label: 'ナイトツアー' },
+}
+
+/** プラン限定クーポンを対象外のプランで使おうとしているとき、そのクーポンの対象（例: ナイトツアー）を返す */
+export function getCouponPlanLimitLabel(couponCode: unknown, planId: string | undefined | null): string | null {
+  const code = typeof couponCode === 'string' ? couponCode.trim() : ''
+  if (!Object.prototype.hasOwnProperty.call(COUPON_PLAN_LIMITS, code)) return null
+  const limit = COUPON_PLAN_LIMITS[code]
+  return planId && limit.planIds.has(planId) ? null : limit.label
 }
 
 // クーポン対象外のプラン。
@@ -24,8 +41,9 @@ export function calculateCouponDiscount(
   if (!code || !Object.prototype.hasOwnProperty.call(COUPON_LIST, code)) {
     return { discount: 0, code: '' }
   }
-  // 対象外プランはコードが有効でも割引0
+  // 対象外プラン・プラン限定クーポンの対象外プランは、コードが有効でも割引0
   if (!isCouponEligiblePlan(planId)) return { discount: 0, code: '' }
+  if (getCouponPlanLimitLabel(code, planId)) return { discount: 0, code: '' }
   const discountPerPerson = COUPON_LIST[code]
   if (!Number.isFinite(discountPerPerson) || discountPerPerson <= 0) {
     return { discount: 0, code: '' }
