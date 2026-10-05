@@ -25,7 +25,7 @@ import { PLANS, getStaffFee } from "@/lib/data"
 import type { IntlDict } from "@/lib/i18n/types"
 import { type IntlLocale, LOCALE_BOOKING_TAGS, localePath } from "@/lib/i18n/locales"
 import { getEnPrice } from "@/lib/i18n/en-prices"
-import { SENIOR_RESTRICTED_PLAN_IDS, PRIVATE_COUNTERPART, TIME_OPTIONAL_PLAN_IDS, isParticipantAgeValid, getAdultAgeMax } from "@/lib/plan-flags"
+import { SENIOR_RESTRICTED_PLAN_IDS, PRIVATE_COUNTERPART, TIME_OPTIONAL_PLAN_IDS, isParticipantAgeValid, getAdultAgeMax, isStaffRequestAvailable } from "@/lib/plan-flags"
 import { getSunsetSupGuide } from "@/lib/beach-info"
 import { categorizeBookingFailure, trackEvent } from "@/lib/analytics"
 import {
@@ -65,7 +65,6 @@ import {
 
 const NIGHT_PLAN_IDS = new Set(["S3", "S5"])
 const FREE_UNDER3_PLAN_IDS = NIGHT_PLAN_IDS
-const STAFF_AVAILABLE_PLAN_IDS = new Set(["S1", "S2"])
 // スタッフ選択肢の表示順（"" = 指名なし）。名前の表記は辞書側。
 const STAFF_ORDER = ["", "staff1", "staff2", "staff5", "staff3", "staff4"] as const
 
@@ -253,7 +252,8 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
   const isNight = NIGHT_PLAN_IDS.has(planId)
   const timeOptional = TIME_OPTIONAL_PLAN_IDS.has(planId)
   const isDaySup = planId === "S6" || planId === "S7"
-  const staffAvailable = STAFF_AVAILABLE_PLAN_IDS.has(planId)
+  // 指名できるプランは lib/plan-flags.ts の isStaffRequestAvailable が単一ソース（プラン未選択では出さない）
+  const staffAvailable = !!plan && isStaffRequestAvailable(planId)
   const timeOptions = plan ? plan.timeTags.filter((tag) => /^\d{2}:\d{2}$/.test(tag)) : []
   const maxParticipants = getPlanMaxParticipants(planId)
   const isOverParticipantLimit = maxParticipants !== undefined && participants.length > maxParticipants
@@ -319,7 +319,7 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
     setPlanId(id)
     setTime("")
     setCouponDiscount(0)
-    if (!STAFF_AVAILABLE_PLAN_IDS.has(id)) setStaffId("")
+    if (!isStaffRequestAvailable(id)) setStaffId("")
     if (!NIGHT_PLAN_IDS.has(id)) {
       setParticipants((prev) => prev.filter((p) => p.category !== "under3"))
     } else {

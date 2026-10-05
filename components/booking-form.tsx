@@ -87,6 +87,7 @@ import {
   isParticipantAgeValid,
   isOverParticipantAgeLimit,
   getAdultAgeMax,
+  isStaffRequestAvailable,
 } from "@/lib/plan-flags"
 
 // 予約確定の連絡はLINE公式アカウントからのプッシュ通知で届く。
@@ -539,11 +540,10 @@ export function BookingForm() {
     })
   }, [bookingData.adultCount, bookingData.childCount, bookingData.under3Count, bookingData.participants, bookingData.customerName, createParticipants])
 
-  const isNightHunterPlan = bookingData.selectedPlan === "S3" || bookingData.selectedPlan === "S4" || bookingData.selectedPlan === "S5" || bookingData.selectedPlan === "S6" || bookingData.selectedPlan === "S7" || bookingData.selectedPlan === "S8" || bookingData.selectedPlan === "slide-boat"
   const isUnder3FreePlan = bookingData.selectedPlan === "S3" || bookingData.selectedPlan === "S5"
-  // 昼夜セットはスタッフ指名不可。夜系プランも従来どおり指名不可。
   const isComboPlan = isComboPlanId(bookingData.selectedPlan)
-  const staffSelectable = !isNightHunterPlan && !isComboPlan
+  // 指名できるプランは lib/plan-flags.ts の isStaffRequestAvailable が単一ソース
+  const staffSelectable = isStaffRequestAvailable(bookingData.selectedPlan)
   const rentalCounts = getRentalCounts(bookingData.participants)
   const rentalUnitPrice = getRentalUnitPrice(bookingData.selectedPlan)
   const rentalTotal = calculateRentalTotal(bookingData.selectedPlan, bookingData.participants)
@@ -588,7 +588,6 @@ export function BookingForm() {
     selectedPlanData,
     adultPrice,
     childPrice,
-    isNightHunterPlan,
     isUnder3FreePlan,
     staffSelectable,
     rentalTotal,

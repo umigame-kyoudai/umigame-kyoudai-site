@@ -20,9 +20,14 @@ export const DAY_COMBO_PLAN_IDS = new Set(["C3", "C4"])
 export const TRIPLE_COMBO_PLAN_IDS = new Set(["C5", "C6"])
 
 // スタッフ指名を利用できないプラン
+// 2026-10-05 オーナー要望: サンセットSUP（S8・貸切S4）もウミガメ（S1/S2）と同じく指名可にした。
 export const STAFF_UNAVAILABLE_PLAN_IDS = new Set([
-  "S3", "S4", "S5", "S6", "S7", "S8", "slide-boat", "C1", "C2", "C3", "C4", "C5", "C6",
+  "S3", "S5", "S6", "S7", "slide-boat", "C1", "C2", "C3", "C4", "C5", "C6",
 ])
+// スタッフ指名を選べるか。予約フォーム（日本語・外国語）と予約APIはすべてこれで判定する
+// （以前は各ファイルに別々の一覧があり、サンセットSUPだけ食い違いの修正漏れが起きやすかった）。
+export const isStaffRequestAvailable = (planId: string): boolean =>
+  !STAFF_UNAVAILABLE_PLAN_IDS.has(planId)
 // 開始時刻が固定でない（確定時にLINEで案内する）プラン
 // ※ S6/S7（ドローンSUP単品）は 2026-07 から希望時間を選択制に変更（DAY_SUP_TIMES）
 export const TIME_OPTIONAL_PLAN_IDS = new Set(["S4", "S8"])

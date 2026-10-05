@@ -21,7 +21,7 @@ import {
 } from '@/lib/services/line-login-service'
 import {
   COMBO_PLAN_IDS,
-  STAFF_UNAVAILABLE_PLAN_IDS,
+  isStaffRequestAvailable,
   TIME_OPTIONAL_PLAN_IDS,
   SENIOR_RESTRICTED_PLAN_IDS,
   getPrivateCounterpartName,
@@ -369,7 +369,7 @@ const validateBookingRequest = (data: BookingRequest): { valid: boolean; error?:
     if (!VALID_STAFF_IDS.has(selectedStaff)) {
       return { valid: false, error: '無効なスタッフ指名です' }
     }
-    if (STAFF_UNAVAILABLE_PLAN_IDS.has(plan.id)) {
+    if (!isStaffRequestAvailable(plan.id)) {
       return { valid: false, error: 'このプランではスタッフ指名を利用できません' }
     }
   }
@@ -403,7 +403,7 @@ const calculateServerSidePrice = (
 
   const baseTotal = adultCount * adultPrice + childCount * childPrice + under3Count * under3Price
   const vipSurcharge = plan.vipSurcharge ?? 0
-  const staffFee = selectedStaff && !STAFF_UNAVAILABLE_PLAN_IDS.has(plan.id) ? getStaffFee(selectedStaff) : 0
+  const staffFee = selectedStaff && isStaffRequestAvailable(plan.id) ? getStaffFee(selectedStaff) : 0
   const rentalTotal = calculateRentalTotal(plan.id, participants)
 
   return Math.max(0, baseTotal + vipSurcharge + staffFee + rentalTotal - couponDiscount)
