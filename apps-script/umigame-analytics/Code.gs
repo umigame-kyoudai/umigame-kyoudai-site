@@ -1623,7 +1623,7 @@ function classifySource_(utmSource, utmMedium, referrerHost) {
 }
 
 function newMonthStats_() {
-  return { visitors: {}, pageViews: 0, started: {}, bookings: 0, revenue: 0, guests: 0, funnel: {} };
+  return { visitors: {}, pageViews: 0, identifiedPageViews: 0, started: {}, bookings: 0, revenue: 0, guests: 0, funnel: {} };
 }
 
 function newSourceStats_() {
@@ -1642,15 +1642,14 @@ function countKeys_(object) {
 function buildSimpleReport_(rows, options) {
   const col = {};
   SIMPLE_REPORT_COLUMNS.forEach(function(header) { col[header] = EVENT_HEADERS.indexOf(header); });
-  const months = options.months;
-  const latest = months[months.length - 1];
-  const previousOfLatest = months[months.length - 2];
+  const latest = options.months[options.months.length - 1];
+  const previousOfLatest = options.months[options.months.length - 2];
   const stats = {};
   const sourceStats = {};
   const planStats = {};
   const samePeriod = { visitors: {}, bookings: 0 };
   const funnelEvents = SIMPLE_FUNNEL_STEPS.map(function(step) { return step[0]; });
-  months.forEach(function(month) { stats[month] = newMonthStats_(); });
+  options.months.forEach(function(month) { stats[month] = newMonthStats_(); });
 
   rows.forEach(function(row, index) {
     const at = toReportDate_(row[col['日時']]);
@@ -1678,6 +1677,7 @@ function buildSimpleReport_(rows, options) {
     if (name === 'page_view') {
       period.pageViews++;
       if (visitor) {
+        period.identifiedPageViews++;
         period.visitors[visitor] = true;
         group.months[month].visitors[visitor] = true;
         detail[month].visitors[visitor] = true;
@@ -1704,6 +1704,23 @@ function buildSimpleReport_(rows, options) {
     }
   });
 
+  // 記録が始まる前の空っぽの月は表に出さない
+  const allMonths = options.months;
+  const hasData = function(month) {
+    const period = stats[month];
+    return period.pageViews > 0 || period.bookings > 0 || countKeys_(period.started) > 0;
+  };
+  const firstActive = allMonths.findIndex(hasData);
+  const months = firstActive > 0 ? allMonths.slice(firstActive) : allMonths;
+  // 「誰が来たか」を記録していなかった月（ページ表示はあるのにIDが1件もない）は、人数を出せない
+  const visitorsUnknown = {};
+  const funnelUnknown = {};
+  months.forEach(function(month) {
+    const period = stats[month];
+    visitorsUnknown[month] = period.pageViews > 0 && period.identifiedPageViews === 0;
+    const stepsRecorded = SIMPLE_FUNNEL_STEPS.slice(0, -1).some(function(step) { return countKeys_(period.funnel[step[0]]) > 0; });
+    funnelUnknown[month] = !stepsRecorded && period.bookings > 0;
+  });
   const perMonth = function(fn) { return months.map(function(month) { return fn(stats[month], month); }); };
   const conversion = perMonth(function(period) {
     const started = countKeys_(period.started);
@@ -1715,7 +1732,9 @@ function buildSimpleReport_(rows, options) {
   };
   const sourceRow = function(monthsMap) {
     return {
-      visitors: months.map(function(month) { return countKeys_(monthsMap[month] && monthsMap[month].visitors); }),
+      visitors: months.map(function(month) {
+        return visitorsUnknown[month] ? null : countKeys_(monthsMap[month] && monthsMap[month].visitors);
+      }),
       bookings: months.map(function(month) { return monthsMap[month] ? monthsMap[month].bookings : 0; }),
     };
   };
@@ -1745,19 +1764,23 @@ function buildSimpleReport_(rows, options) {
     return {
       label: step[1],
       note: step[2],
-      people: perMonth(function(period) {
-        return step[0] === 'booking_submitted' ? period.bookings : countKeys_(period.funnel[step[0]]);
+      people: perMonth(function(period, month) {
+        if (step[0] === 'booking_submitted') return period.bookings;
+        return funnelUnknown[month] ? null : countKeys_(period.funnel[step[0]]);
       }),
     };
   });
 
   // いちばん多くやめている段階は、最後まである月（最新月が途中なら1つ前）で見る
-  const funnelMonthIndex = options.lastMonthComplete ? months.length - 1 : months.length - 2;
+  const funnelMonthIndex = options.lastMonthComplete || months.length < 2 ? months.length - 1 : months.length - 2;
   let biggestDrop = { index: -1, people: 0 };
   if (funnelMonthIndex >= 0) {
     funnel.forEach(function(step, index) {
       if (index === 0) return;
-      const dropped = funnel[index - 1].people[funnelMonthIndex] - step.people[funnelMonthIndex];
+      const before = funnel[index - 1].people[funnelMonthIndex];
+      const after = step.people[funnelMonthIndex];
+      if (before === null || after === null) return;
+      const dropped = before - after;
       if (dropped > biggestDrop.people) biggestDrop = { index: index, people: dropped };
     });
   }
@@ -1774,7 +1797,7 @@ function buildSimpleReport_(rows, options) {
     lastDay: options.lastDay,
     lastMonthComplete: options.lastMonthComplete,
     metrics: [
-      { label: 'サイトに来た人', unit: '人', note: '同じ人が何回来ても1人と数えます', values: perMonth(function(p) { return countKeys_(p.visitors); }) },
+      { label: 'サイトに来た人', unit: '人', note: '同じ人が何回来ても1人と数えます', values: perMonth(function(p, month) { return visitorsUnknown[month] ? null : countKeys_(p.visitors); }) },
       { label: 'ページが見られた回数', unit: '回', note: '1人が3ページ見たら3回', values: perMonth(function(p) { return p.pageViews; }) },
       { label: '予約の入力を始めた人', unit: '人', note: '予約フォームで入力を始めた人', values: perMonth(function(p) { return countKeys_(p.started); }) },
       { label: '予約が入った', unit: '件', note: 'サイトから送信された予約（後のキャンセルは引いていません）', values: perMonth(function(p) { return p.bookings; }) },
@@ -1811,51 +1834,55 @@ function buildSimpleInsights_(report) {
   const latestLabel = monthLabel_(report.months[last]);
   const previousLabel = last > 0 ? monthLabel_(report.months[last - 1]) : '';
 
-  if (!report.lastMonthComplete && last > 0) {
+  if (!report.lastMonthComplete && last > 0 && visitors[last - 1] !== null) {
     insights.push(latestLabel + 'は' + report.lastDay + '日までで、来た人' + visitors[last] + '人・予約' + bookings[last] +
       '件です（' + previousLabel + 'の同じ時期は' + report.samePeriod.visitors + '人・' + report.samePeriod.bookings + '件）。');
   }
 
-  // 最後まである月どうしの比べ
+  // 最後まである月（最新月が途中なら1つ前）について
   const done = report.funnelMonthIndex;
+  if (done < 0) return insights;
+  const doneLabel = monthLabel_(report.months[done]);
+  const beforeLabel = done > 0 ? monthLabel_(report.months[done - 1]) : '';
   if (done > 0) {
-    const doneLabel = monthLabel_(report.months[done]);
-    const beforeLabel = monthLabel_(report.months[done - 1]);
     const diff = bookings[done] - bookings[done - 1];
     insights.push(doneLabel + 'の予約は' + bookings[done] + '件で、' + beforeLabel +
       (diff === 0 ? 'と同じでした。' : 'より' + Math.abs(diff) + '件' + (diff > 0 ? '増えました。' : '減りました。')));
+  }
 
-    if (report.biggestDropIndex > 0 && report.funnel[0].people[done] >= 10) {
-      const step = report.funnel[report.biggestDropIndex];
-      const dropped = report.funnel[report.biggestDropIndex - 1].people[done] - step.people[done];
-      const share = Math.round(dropped / report.funnel[0].people[done] * 100);
-      insights.push(doneLabel + 'に予約ページを開いた人のうち、いちばん多くやめているのは「' +
-        step.label.replace(/^[①-⑤]\s*/, '') + '」の手前です（' + dropped + '人・約' + share + '%）。');
-    }
+  if (report.biggestDropIndex > 0 && report.funnel[0].people[done] !== null && report.funnel[0].people[done] >= 10) {
+    const step = report.funnel[report.biggestDropIndex];
+    const dropped = report.funnel[report.biggestDropIndex - 1].people[done] - step.people[done];
+    const share = Math.round(dropped / report.funnel[0].people[done] * 100);
+    insights.push(doneLabel + 'に予約ページを開いた人のうち、いちばん多くやめているのは「' +
+      step.label.replace(/^[①-⑤]\s*/, '') + '」の手前です（' + dropped + '人・約' + share + '%）。');
+  }
 
-    const named = report.sources.filter(function(source) { return source.label !== SOURCE_DIRECT; });
-    const topBooking = named.slice().sort(function(a, b) { return b.bookings[done] - a.bookings[done]; })[0];
-    if (topBooking && topBooking.bookings[done] > 0) {
-      insights.push(doneLabel + 'に予約がいちばん多かった来た場所は「' + topBooking.label + '」（' + topBooking.bookings[done] + '件）です（「直接・不明」を除く）。');
-    }
+  const named = report.sources.filter(function(source) { return source.label !== SOURCE_DIRECT; });
+  const topBooking = named.slice().sort(function(a, b) { return b.bookings[done] - a.bookings[done]; })[0];
+  if (topBooking && topBooking.bookings[done] > 0) {
+    insights.push(doneLabel + 'に予約がいちばん多かった来た場所は「' + topBooking.label + '」（' + topBooking.bookings[done] + '件）です（「直接・不明」を除く）。');
+  }
+  if (done > 0) {
     named.forEach(function(source) {
       const now = source.visitors[done];
       const before = source.visitors[done - 1];
-      if (now >= 20 && before > 0 && now >= before * 1.5) {
+      if (now !== null && before !== null && now >= 20 && before > 0 && now >= before * 1.5) {
         insights.push('「' + source.label + '」から来た人が' + beforeLabel + 'の' + before + '人から' + now + '人に増えました。');
       }
     });
-    const overall = visitors[done] ? bookings[done] / visitors[done] : 0;
-    named.forEach(function(source) {
-      if (source.visitors[done] >= 50 && overall > 0 && source.bookings[done] / source.visitors[done] < overall / 2) {
-        insights.push('「' + source.label + '」から来る人は多い（' + doneLabel + 'は' + source.visitors[done] + '人）けど、予約につながりにくいです。');
-      }
-    });
   }
+  const overall = visitors[done] ? bookings[done] / visitors[done] : 0;
+  named.forEach(function(source) {
+    if (source.visitors[done] !== null && source.visitors[done] >= 50 && overall > 0 && source.bookings[done] / source.visitors[done] < overall / 2) {
+      insights.push('「' + source.label + '」から来る人は多い（' + doneLabel + 'は' + source.visitors[done] + '人）けど、予約につながりにくいです。');
+    }
+  });
   return insights.slice(0, 6);
 }
 
 function formatReportValue_(value, unit) {
+  if (value === null || value === undefined) return '—';
   const rounded = Math.round(value);
   return unit === '円' ? '¥' + rounded.toLocaleString('ja-JP') : rounded.toLocaleString('ja-JP') + unit;
 }
@@ -1932,6 +1959,7 @@ function writeSimpleReport_(sheet, report, updatedAt, timezone) {
 
   add('section', ['このシートについて']);
   add('note', ['・数字は、サイトで分析に同意してくれた人の分だけです（同意しない人は数えていません）。']);
+  add('note', ['・「—」は、その月はまだ記録していなかった項目です（来た人の数・予約フォームの段階は2026年8月から記録しています）。']);
   add('note', ['・もっと細かく見たいときは、右側の「ダッシュボード」などのシートを見てください。']);
 
   sheet.clear();
