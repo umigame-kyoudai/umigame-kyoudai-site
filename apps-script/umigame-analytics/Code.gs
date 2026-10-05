@@ -13,6 +13,7 @@ const ANALYTICS_CONFIG = Object.freeze({
   funnelSheet: '予約ファネル分析',
   funnelMonthlySheet: '予約ファネル月別',
   ctaSheet: '記事CTA分析',
+  simpleReportSheet: 'かんたんレポート',
   retentionDays: 395,
 });
 
@@ -210,6 +211,7 @@ function setupAnalyticsWorkbook() {
     ANALYTICS_CONFIG.funnelMonthlySheet
   );
   const cta = ensureSheet_(spreadsheet, ANALYTICS_CONFIG.ctaSheet);
+  ensureSimpleReportSheet_(spreadsheet);
 
   configureEventsSheet_(events);
   configureDailySheet_(daily);
@@ -437,6 +439,7 @@ function requiredSheetNames_() {
     ANALYTICS_CONFIG.funnelSheet,
     ANALYTICS_CONFIG.funnelMonthlySheet,
     ANALYTICS_CONFIG.ctaSheet,
+    ANALYTICS_CONFIG.simpleReportSheet,
   ];
 }
 
@@ -1437,4 +1440,543 @@ function safeBoolean_(input) {
 function jsonResponse_(payload) {
   return ContentService.createTextOutput(JSON.stringify(payload))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+// ============================================================
+// かんたんレポート（オーナー向けのやさしい要約シート）
+// ------------------------------------------------------------
+// 毎朝6時ごろ、イベントデータを月ごとに集計し、言葉と数字だけを書き込む（昨日までの分）。
+// 数式でイベントデータ全体を参照しないので、記録の書き込み（doPost）を遅くしない。
+// 初回だけ setupSimpleReport をエディタから実行する（毎朝の自動更新を登録し、すぐ1回作る）。
+// ============================================================
+const SIMPLE_REPORT = Object.freeze({
+  months: 6,
+  triggerHour: 6,
+  maxPlans: 12,
+  maxDetailsPerSource: 4,
+  // 動作確認用の流入は集計しない
+  ignoredUtmSources: ['deployment-check'],
+});
+
+// 来た場所の種類。表示の説明（どんな人？）もここで持つ
+const SOURCE_DIRECT = '直接・不明';
+const SOURCE_GROUP_NOTES = Object.freeze({
+  '検索': 'Google・Yahoo!などで検索して来た人',
+  'Googleマップ': 'Googleマップのお店情報から来た人',
+  'SNS': 'Instagram・TikTok・YouTubeなどから来た人',
+  'LINE': 'LINEのリッチメニューやトークのリンクから来た人',
+  'AI（ChatGPTなど）': 'ChatGPTなどのAIに紹介されて来た人',
+  'ブログ記事': '海亀兄弟のブログ記事から来た人',
+  'チラシ・紹介': 'チラシのQRコードや、提携先の紹介から来た人',
+  'その他のサイト': '上のどれでもないサイトのリンクから来た人',
+  '直接・不明': 'ブックマーク・URLの直接入力・アプリ内のリンクなど、来た場所が分からない人',
+});
+
+// 予約フォームの17段階を、オーナーが追いやすい5段階にまとめる
+const SIMPLE_FUNNEL_STEPS = Object.freeze([
+  ['booking_form_view', '① 予約ページを開いた', '予約ページを開いた人'],
+  ['booking_date_selected', '② 日付を選んだ', 'カレンダーで日付を選んだ人'],
+  ['booking_price_confirmed', '③ 人数・料金を確認した', '人数を入れて料金を見た人'],
+  ['booking_representative_completed', '④ 連絡先を入力した', '代表者の名前・連絡先まで入れた人'],
+  ['booking_submitted', '⑤ 予約完了', '予約を送信できた件数'],
+]);
+
+/** 初回だけエディタから実行：毎朝の自動更新を登録し、かんたんレポートをすぐ作る */
+function setupSimpleReport() {
+  const handler = 'refreshSimpleReport';
+  const exists = ScriptApp.getProjectTriggers().some(function(trigger) {
+    return trigger.getHandlerFunction() === handler;
+  });
+  if (!exists) {
+    ScriptApp.newTrigger(handler).timeBased().everyDays(1).atHour(SIMPLE_REPORT.triggerHour).create();
+  }
+  refreshSimpleReport();
+}
+
+/** 毎朝の自動更新から呼ばれる。昨日までのデータを月ごとにまとめる */
+function refreshSimpleReport() {
+  const spreadsheet = openRequiredSpreadsheet_();
+  const timezone = spreadsheet.getSpreadsheetTimeZone();
+  const now = new Date();
+  const today = Utilities.parseDate(
+    Utilities.formatDate(now, timezone, 'yyyy-MM-dd') + ' 00:00:00', timezone, 'yyyy-MM-dd HH:mm:ss'
+  );
+  const yesterday = new Date(today.getTime() - 1);
+  const yesterdayMonth = Utilities.formatDate(yesterday, timezone, 'yyyy-MM');
+  const months = recentMonthKeys_(yesterdayMonth, SIMPLE_REPORT.months);
+  const firstMonthStart = Utilities.parseDate(months[0] + '-01 00:00:00', timezone, 'yyyy-MM-dd HH:mm:ss');
+  const options = {
+    months: months,
+    end: today,
+    lastDay: Number(Utilities.formatDate(yesterday, timezone, 'd')),
+    lastMonthComplete: Utilities.formatDate(today, timezone, 'd') === '1',
+    monthOf: function(date) { return Utilities.formatDate(date, timezone, 'yyyy-MM'); },
+    dayOf: function(date) { return Number(Utilities.formatDate(date, timezone, 'd')); },
+  };
+  const eventsSheet = spreadsheet.getSheetByName(ANALYTICS_CONFIG.eventsSheet);
+  const rows = eventsSheet ? readEventRowsSince_(eventsSheet, firstMonthStart) : [];
+  writeSimpleReport_(ensureSimpleReportSheet_(spreadsheet), buildSimpleReport_(rows, options), now, timezone);
+}
+
+function ensureSimpleReportSheet_(spreadsheet) {
+  // 新しく作るときは一番左に置く。既存のシートは後ろにそのまま残る
+  return spreadsheet.getSheetByName(ANALYTICS_CONFIG.simpleReportSheet) ||
+    spreadsheet.insertSheet(ANALYTICS_CONFIG.simpleReportSheet, 0);
+}
+
+/** 'yyyy-MM' から、古い順に count か月分のキーを返す */
+function recentMonthKeys_(latestMonth, count) {
+  const parts = latestMonth.split('-');
+  let year = Number(parts[0]);
+  let month = Number(parts[1]);
+  const keys = [];
+  for (let i = 0; i < count; i++) {
+    keys.unshift(year + '-' + (month < 10 ? '0' : '') + month);
+    month--;
+    if (month === 0) { month = 12; year--; }
+  }
+  return keys;
+}
+
+// 必要な列だけを読む（70列すべてを読むより速い）。行は列の並び（EVENT_HEADERS）と同じ位置に置く
+const SIMPLE_REPORT_COLUMNS = Object.freeze([
+  '日時', 'イベント', 'ページ', '参照元ホスト', 'UTM Source', 'UTM Medium',
+  'プランID', 'プラン名', '人数合計', '金額', 'Visitor ID', 'Visit ID', '予約ファネルID',
+]);
+
+// 追記順＝ほぼ時刻順なので、後ろから見て since より前の行に当たったら止め、そこから下だけ読む
+function readEventRowsSince_(sheet, since) {
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return [];
+  const dates = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
+  let first = dates.length;
+  for (let index = dates.length - 1; index >= 0; index--) {
+    const date = toReportDate_(dates[index][0]);
+    if (date && date < since) break;
+    first = index;
+  }
+  const count = dates.length - first;
+  if (count <= 0) return [];
+  const rows = [];
+  for (let i = 0; i < count; i++) rows.push(new Array(EVENT_HEADERS.length));
+  SIMPLE_REPORT_COLUMNS.forEach(function(header) {
+    const column = EVENT_HEADERS.indexOf(header);
+    sheet.getRange(first + 2, column + 1, count, 1).getValues().forEach(function(value, i) {
+      rows[i][column] = value[0];
+    });
+  });
+  return rows;
+}
+
+function toReportDate_(value) {
+  if (value instanceof Date) return isNaN(value.getTime()) ? null : value;
+  if (value === '' || value == null) return null;
+  const date = new Date(value);
+  return isNaN(date.getTime()) ? null : date;
+}
+
+function reportNumber_(value) {
+  return typeof value === 'number' && isFinite(value) ? value : 0;
+}
+
+/** 来た場所を [種類, 中身] に分ける。例: ['検索', 'Google検索']、['SNS', 'Instagram（ストーリー）'] */
+function classifySource_(utmSource, utmMedium, referrerHost) {
+  const utm = String(utmSource || '').trim().toLowerCase();
+  const medium = String(utmMedium || '').trim().toLowerCase();
+  const withMedium = function(name, labels) { return labels[medium] ? name + '（' + labels[medium] + '）' : name; };
+  if (utm) {
+    if (utm === 'instagram') return ['SNS', withMedium('Instagram', { profile: 'プロフィール', story: 'ストーリー', post: '投稿', reel: 'リール' })];
+    if (utm === 'youtube') return ['SNS', withMedium('YouTube', { description: '概要欄' })];
+    if (utm === 'threads') return ['SNS', 'Threads'];
+    if (utm === 'tiktok') return ['SNS', 'TikTok'];
+    if (utm === 'facebook') return ['SNS', 'Facebook'];
+    if (utm === 'x' || utm === 'twitter') return ['SNS', 'X（旧Twitter）'];
+    if (utm === 'line') return ['LINE', withMedium('LINE', { richmenu: 'リッチメニュー', message: 'メッセージ', profile: 'プロフィール' })];
+    if (utm === 'gbp') return ['Googleマップ', 'Googleマップ（お店の情報）'];
+    if (utm === 'chatgpt.com' || utm === 'openai') return ['AI（ChatGPTなど）', 'ChatGPT'];
+    if (utm === 'copilot.com') return ['AI（ChatGPTなど）', 'Copilot'];
+    if (utm === 'perplexity') return ['AI（ChatGPTなど）', 'Perplexity'];
+    if (utm === 'blog') return ['ブログ記事', 'ブログ記事'];
+    if (utm === 'flyer') return ['チラシ・紹介', 'チラシのQRコード'];
+    if (utm === 'partner' || utm === 'affiliate') return ['チラシ・紹介', '提携先の紹介'];
+    return ['その他のサイト', utm];
+  }
+  const host = String(referrerHost || '').trim().toLowerCase().replace(/^www\./, '');
+  if (!host) return [SOURCE_DIRECT, SOURCE_DIRECT];
+  // LINEログインからの戻り・自分のサイト内の移動は「来た場所」ではない
+  if (host === 'access.line.me' || /(^|\.)umigamekyoudaimiyakojima\.com$/.test(host)) return [SOURCE_DIRECT, SOURCE_DIRECT];
+  if (/(^|\.)google\./.test(host)) return ['検索', 'Google検索'];
+  if (/(^|\.)yahoo\./.test(host)) return ['検索', 'Yahoo!検索'];
+  if (/(^|\.)bing\.com$/.test(host)) return ['検索', 'Bing検索'];
+  if (/(^|\.)instagram\.com$/.test(host)) return ['SNS', 'Instagram'];
+  if (/(^|\.)facebook\.com$/.test(host)) return ['SNS', 'Facebook'];
+  if (/(^|\.)threads\.(net|com)$/.test(host)) return ['SNS', 'Threads'];
+  if (/(^|\.)tiktok\.com$/.test(host)) return ['SNS', 'TikTok'];
+  if (/(^|\.)youtube\.com$/.test(host)) return ['SNS', 'YouTube'];
+  if (/^(t\.co|x\.com|twitter\.com)$/.test(host)) return ['SNS', 'X（旧Twitter）'];
+  if (/(^|\.)(chatgpt\.com|openai\.com)$/.test(host)) return ['AI（ChatGPTなど）', 'ChatGPT'];
+  if (/(^|\.)perplexity\.ai$/.test(host)) return ['AI（ChatGPTなど）', 'Perplexity'];
+  if (/copilot/.test(host)) return ['AI（ChatGPTなど）', 'Copilot'];
+  if (/(^|\.)line\.me$|naver\.line/.test(host)) return ['LINE', 'LINE（トーク・その他）'];
+  if (/search\.|duckduckgo|rakuten/.test(host)) return ['検索', 'その他の検索'];
+  return ['その他のサイト', host];
+}
+
+function newMonthStats_() {
+  return { visitors: {}, pageViews: 0, started: {}, bookings: 0, revenue: 0, guests: 0, funnel: {} };
+}
+
+function newSourceStats_() {
+  return { visitors: {}, bookings: 0 };
+}
+
+function countKeys_(object) {
+  return Object.keys(object || {}).length;
+}
+
+/**
+ * イベント行（イベントデータの1行＝配列）を月ごとにまとめる。シートには触らない。
+ * options: months（古い順の'yyyy-MM'）, end（集計の終わり＝今日0時）, lastDay（最新月の何日まで）,
+ *          lastMonthComplete（最新月が月末まであるか）, monthOf(date), dayOf(date)
+ */
+function buildSimpleReport_(rows, options) {
+  const col = {};
+  SIMPLE_REPORT_COLUMNS.forEach(function(header) { col[header] = EVENT_HEADERS.indexOf(header); });
+  const months = options.months;
+  const latest = months[months.length - 1];
+  const previousOfLatest = months[months.length - 2];
+  const stats = {};
+  const sourceStats = {};
+  const planStats = {};
+  const samePeriod = { visitors: {}, bookings: 0 };
+  const funnelEvents = SIMPLE_FUNNEL_STEPS.map(function(step) { return step[0]; });
+  months.forEach(function(month) { stats[month] = newMonthStats_(); });
+
+  rows.forEach(function(row, index) {
+    const at = toReportDate_(row[col['日時']]);
+    if (!at || at >= options.end) return;
+    const month = options.monthOf(at);
+    const period = stats[month];
+    if (!period) return;
+
+    const utm = String(row[col['UTM Source']] || '').trim().toLowerCase();
+    if (SIMPLE_REPORT.ignoredUtmSources.indexOf(utm) !== -1) return;
+    if (String(row[col['ページ']] || '').indexOf('/__') === 0) return;
+
+    const name = String(row[col['イベント']] || '');
+    const source = classifySource_(utm, row[col['UTM Medium']], row[col['参照元ホスト']]);
+    const visitor = String(row[col['Visitor ID']] || row[col['Visit ID']] || '');
+    const person = String(row[col['予約ファネルID']] || row[col['Visit ID']] || row[col['Visitor ID']] || 'row-' + index);
+    // 最新月が途中のとき、前の月の「同じ日まで」と比べる
+    const inSamePeriod = month === previousOfLatest && options.dayOf(at) <= options.lastDay;
+
+    const group = sourceStats[source[0]] = sourceStats[source[0]] || { months: {}, details: {} };
+    const detail = group.details[source[1]] = group.details[source[1]] || {};
+    group.months[month] = group.months[month] || newSourceStats_();
+    detail[month] = detail[month] || newSourceStats_();
+
+    if (name === 'page_view') {
+      period.pageViews++;
+      if (visitor) {
+        period.visitors[visitor] = true;
+        group.months[month].visitors[visitor] = true;
+        detail[month].visitors[visitor] = true;
+        if (inSamePeriod) samePeriod.visitors[visitor] = true;
+      }
+    }
+    if (name === 'booking_started') period.started[person] = true;
+    if (funnelEvents.indexOf(name) !== -1) {
+      period.funnel[name] = period.funnel[name] || {};
+      period.funnel[name][person] = true;
+    }
+    if (name === 'booking_submitted') {
+      const amount = reportNumber_(row[col['金額']]);
+      const guests = reportNumber_(row[col['人数合計']]);
+      period.bookings++;
+      period.revenue += amount;
+      period.guests += guests;
+      group.months[month].bookings++;
+      detail[month].bookings++;
+      if (inSamePeriod) samePeriod.bookings++;
+      const plan = String(row[col['プラン名']] || row[col['プランID']] || '（プラン不明）');
+      planStats[plan] = planStats[plan] || {};
+      planStats[plan][month] = (planStats[plan][month] || 0) + 1;
+    }
+  });
+
+  const perMonth = function(fn) { return months.map(function(month) { return fn(stats[month], month); }); };
+  const conversion = perMonth(function(period) {
+    const started = countKeys_(period.started);
+    return started ? period.bookings / started : null;
+  });
+
+  const totalVisitors = function(monthsMap) {
+    return months.reduce(function(sum, month) { return sum + countKeys_(monthsMap[month] && monthsMap[month].visitors); }, 0);
+  };
+  const sourceRow = function(monthsMap) {
+    return {
+      visitors: months.map(function(month) { return countKeys_(monthsMap[month] && monthsMap[month].visitors); }),
+      bookings: months.map(function(month) { return monthsMap[month] ? monthsMap[month].bookings : 0; }),
+    };
+  };
+  const sources = Object.keys(sourceStats).map(function(label) {
+    const group = sourceStats[label];
+    const row = sourceRow(group.months);
+    const details = Object.keys(group.details).map(function(name) {
+      const detail = sourceRow(group.details[name]);
+      return { label: name, visitors: detail.visitors, bookings: detail.bookings, total: totalVisitors(group.details[name]) };
+    }).filter(function(detail) {
+      return detail.label !== label && detail.total > 0;
+    }).sort(function(a, b) { return b.total - a.total; }).slice(0, SIMPLE_REPORT.maxDetailsPerSource);
+    return {
+      label: label, note: SOURCE_GROUP_NOTES[label] || '', visitors: row.visitors, bookings: row.bookings,
+      total: totalVisitors(group.months), details: details,
+    };
+  }).filter(function(source) {
+    return source.total > 0 || source.bookings.some(function(n) { return n > 0; });
+  }).sort(function(a, b) {
+    // 「直接・不明」は最後。ほかは来た人の多い順
+    if (a.label === SOURCE_DIRECT) return 1;
+    if (b.label === SOURCE_DIRECT) return -1;
+    return b.total - a.total;
+  });
+
+  const funnel = SIMPLE_FUNNEL_STEPS.map(function(step) {
+    return {
+      label: step[1],
+      note: step[2],
+      people: perMonth(function(period) {
+        return step[0] === 'booking_submitted' ? period.bookings : countKeys_(period.funnel[step[0]]);
+      }),
+    };
+  });
+
+  // いちばん多くやめている段階は、最後まである月（最新月が途中なら1つ前）で見る
+  const funnelMonthIndex = options.lastMonthComplete ? months.length - 1 : months.length - 2;
+  let biggestDrop = { index: -1, people: 0 };
+  if (funnelMonthIndex >= 0) {
+    funnel.forEach(function(step, index) {
+      if (index === 0) return;
+      const dropped = funnel[index - 1].people[funnelMonthIndex] - step.people[funnelMonthIndex];
+      if (dropped > biggestDrop.people) biggestDrop = { index: index, people: dropped };
+    });
+  }
+
+  const plans = Object.keys(planStats).map(function(name) {
+    const counts = months.map(function(month) { return planStats[name][month] || 0; });
+    return { name: name, bookings: counts, total: counts.reduce(function(a, b) { return a + b; }, 0) };
+  }).filter(function(plan) { return plan.total > 0; })
+    .sort(function(a, b) { return b.total - a.total; })
+    .slice(0, SIMPLE_REPORT.maxPlans);
+
+  const report = {
+    months: months,
+    lastDay: options.lastDay,
+    lastMonthComplete: options.lastMonthComplete,
+    metrics: [
+      { label: 'サイトに来た人', unit: '人', note: '同じ人が何回来ても1人と数えます', values: perMonth(function(p) { return countKeys_(p.visitors); }) },
+      { label: 'ページが見られた回数', unit: '回', note: '1人が3ページ見たら3回', values: perMonth(function(p) { return p.pageViews; }) },
+      { label: '予約の入力を始めた人', unit: '人', note: '予約フォームで入力を始めた人', values: perMonth(function(p) { return countKeys_(p.started); }) },
+      { label: '予約が入った', unit: '件', note: 'サイトから送信された予約（後のキャンセルは引いていません）', values: perMonth(function(p) { return p.bookings; }) },
+      { label: '参加人数', unit: '人', note: '予約に入っている人数の合計', values: perMonth(function(p) { return p.guests; }) },
+      { label: '売上（予約時の金額）', unit: '円', note: '予約時の合計金額（キャンセルは引いていません）', values: perMonth(function(p) { return p.revenue; }) },
+    ],
+    conversion: conversion,
+    samePeriod: { visitors: countKeys_(samePeriod.visitors), bookings: samePeriod.bookings },
+    sources: sources,
+    funnel: funnel,
+    funnelMonthIndex: funnelMonthIndex,
+    biggestDropIndex: biggestDrop.index,
+    plans: plans,
+  };
+  report.insights = buildSimpleInsights_(report);
+  return report;
+}
+
+function monthLabel_(monthKey) {
+  return Number(monthKey.split('-')[1]) + '月';
+}
+
+function reportMonthHeader_(report, index) {
+  const label = monthLabel_(report.months[index]);
+  const isLatest = index === report.months.length - 1;
+  return isLatest && !report.lastMonthComplete ? label + '（' + report.lastDay + '日まで）' : label;
+}
+
+function buildSimpleInsights_(report) {
+  const insights = [];
+  const last = report.months.length - 1;
+  const bookings = report.metrics[3].values;
+  const visitors = report.metrics[0].values;
+  const latestLabel = monthLabel_(report.months[last]);
+  const previousLabel = last > 0 ? monthLabel_(report.months[last - 1]) : '';
+
+  if (!report.lastMonthComplete && last > 0) {
+    insights.push(latestLabel + 'は' + report.lastDay + '日までで、来た人' + visitors[last] + '人・予約' + bookings[last] +
+      '件です（' + previousLabel + 'の同じ時期は' + report.samePeriod.visitors + '人・' + report.samePeriod.bookings + '件）。');
+  }
+
+  // 最後まである月どうしの比べ
+  const done = report.funnelMonthIndex;
+  if (done > 0) {
+    const doneLabel = monthLabel_(report.months[done]);
+    const beforeLabel = monthLabel_(report.months[done - 1]);
+    const diff = bookings[done] - bookings[done - 1];
+    insights.push(doneLabel + 'の予約は' + bookings[done] + '件で、' + beforeLabel +
+      (diff === 0 ? 'と同じでした。' : 'より' + Math.abs(diff) + '件' + (diff > 0 ? '増えました。' : '減りました。')));
+
+    if (report.biggestDropIndex > 0 && report.funnel[0].people[done] >= 10) {
+      const step = report.funnel[report.biggestDropIndex];
+      const dropped = report.funnel[report.biggestDropIndex - 1].people[done] - step.people[done];
+      const share = Math.round(dropped / report.funnel[0].people[done] * 100);
+      insights.push(doneLabel + 'に予約ページを開いた人のうち、いちばん多くやめているのは「' +
+        step.label.replace(/^[①-⑤]\s*/, '') + '」の手前です（' + dropped + '人・約' + share + '%）。');
+    }
+
+    const named = report.sources.filter(function(source) { return source.label !== SOURCE_DIRECT; });
+    const topBooking = named.slice().sort(function(a, b) { return b.bookings[done] - a.bookings[done]; })[0];
+    if (topBooking && topBooking.bookings[done] > 0) {
+      insights.push(doneLabel + 'に予約がいちばん多かった来た場所は「' + topBooking.label + '」（' + topBooking.bookings[done] + '件）です（「直接・不明」を除く）。');
+    }
+    named.forEach(function(source) {
+      const now = source.visitors[done];
+      const before = source.visitors[done - 1];
+      if (now >= 20 && before > 0 && now >= before * 1.5) {
+        insights.push('「' + source.label + '」から来た人が' + beforeLabel + 'の' + before + '人から' + now + '人に増えました。');
+      }
+    });
+    const overall = visitors[done] ? bookings[done] / visitors[done] : 0;
+    named.forEach(function(source) {
+      if (source.visitors[done] >= 50 && overall > 0 && source.bookings[done] / source.visitors[done] < overall / 2) {
+        insights.push('「' + source.label + '」から来る人は多い（' + doneLabel + 'は' + source.visitors[done] + '人）けど、予約につながりにくいです。');
+      }
+    });
+  }
+  return insights.slice(0, 6);
+}
+
+function formatReportValue_(value, unit) {
+  const rounded = Math.round(value);
+  return unit === '円' ? '¥' + rounded.toLocaleString('ja-JP') : rounded.toLocaleString('ja-JP') + unit;
+}
+
+function formatReportRate_(rate) {
+  return rate === null || rate === undefined ? '—' : (Math.round(rate * 1000) / 10).toFixed(1) + '%';
+}
+
+function writeSimpleReport_(sheet, report, updatedAt, timezone) {
+  const monthCount = report.months.length;
+  const width = 2 + monthCount;
+  const monthHeaders = report.months.map(function(_, index) { return reportMonthHeader_(report, index); });
+  const blocks = [];
+  const add = function(type, values, style) { blocks.push({ type: type, values: values || [], style: style || '' }); };
+
+  add('title', ['海亀兄弟 かんたんレポート（月ごと）']);
+  add('subtitle', ['月ごとの数字です。今月は昨日までの分｜毎朝6時ごろ自動で更新｜最終更新 ' + Utilities.formatDate(updatedAt, timezone, 'yyyy/MM/dd HH:mm')]);
+  add('blank');
+
+  add('section', ['月ごとのようす']);
+  add('header', ['項目', 'ひとこと'].concat(monthHeaders));
+  report.metrics.forEach(function(metric) {
+    add('row', [metric.label, metric.note].concat(metric.values.map(function(v) { return formatReportValue_(v, metric.unit); })));
+  });
+  add('row', ['予約できた割合', '入力を始めた人のうち、予約まで進んだ割合'].concat(report.conversion.map(formatReportRate_)));
+  add('blank');
+
+  add('section', ['気づき（自動で一言）']);
+  (report.insights.length ? report.insights : ['まだデータが少ないため、気づきはありません。']).forEach(function(text) {
+    add('note', ['・' + text]);
+  });
+  add('blank');
+
+  add('section', ['お客さんはどこから来た？（来た人の数）', '同じ人は1人と数えます。「└」はその中の内訳です。']);
+  add('header', ['来た場所', 'どんな人？'].concat(monthHeaders));
+  report.sources.forEach(function(source) {
+    add('row', [source.label, source.note].concat(source.visitors.map(function(v) { return formatReportValue_(v, '人'); })), 'group');
+    source.details.forEach(function(detail) {
+      add('row', ['　└ ' + detail.label, ''].concat(detail.visitors.map(function(v) { return formatReportValue_(v, '人'); })), 'detail');
+    });
+  });
+  if (!report.sources.length) add('note', ['データがありません']);
+  add('blank');
+
+  add('section', ['お客さんはどこから来た？（予約が入った件数）', '予約した人が、最初にどこから来たかです。']);
+  add('header', ['来た場所', 'どんな人？'].concat(monthHeaders));
+  report.sources.forEach(function(source) {
+    add('row', [source.label, source.note].concat(source.bookings.map(function(v) { return formatReportValue_(v, '件'); })), 'group');
+    source.details.forEach(function(detail) {
+      if (!detail.bookings.some(function(v) { return v > 0; })) return;
+      add('row', ['　└ ' + detail.label, ''].concat(detail.bookings.map(function(v) { return formatReportValue_(v, '件'); })), 'detail');
+    });
+  });
+  add('blank');
+
+  add('section', ['予約フォームのどこでやめている？', report.biggestDropIndex > 0
+    ? '赤い行の手前で、いちばん多くの人がやめています（' + monthLabel_(report.months[report.funnelMonthIndex]) + '）。'
+    : '予約ページを開いた人が、どこまで進んだかです。']);
+  add('header', ['段階', '説明'].concat(monthHeaders));
+  report.funnel.forEach(function(step, index) {
+    const unit = index === report.funnel.length - 1 ? '件' : '人';
+    add('row', [step.label, step.note].concat(step.people.map(function(v) { return formatReportValue_(v, unit); })),
+      index === report.biggestDropIndex ? 'alert' : '');
+  });
+  add('blank');
+
+  add('section', ['人気のプラン（予約が入った件数）']);
+  add('header', ['プラン', ''].concat(monthHeaders));
+  report.plans.forEach(function(plan) {
+    add('row', [plan.name, ''].concat(plan.bookings.map(function(v) { return formatReportValue_(v, '件'); })));
+  });
+  if (!report.plans.length) add('note', ['この期間の予約はまだありません']);
+  add('blank');
+
+  add('section', ['このシートについて']);
+  add('note', ['・数字は、サイトで分析に同意してくれた人の分だけです（同意しない人は数えていません）。']);
+  add('note', ['・もっと細かく見たいときは、右側の「ダッシュボード」などのシートを見てください。']);
+
+  sheet.clear();
+  const values = blocks.map(function(block) {
+    const line = block.values.slice(0, width);
+    while (line.length < width) line.push('');
+    return line;
+  });
+  sheet.getRange(1, 1, values.length, width).setValues(values);
+
+  sheet.setHiddenGridlines(true);
+  sheet.setFrozenRows(2);
+  sheet.setFrozenColumns(1);
+  sheet.setColumnWidth(1, 250);
+  sheet.setColumnWidth(2, 330);
+  for (let column = 3; column <= width; column++) sheet.setColumnWidth(column, 120);
+  sheet.getRange(1, 1, values.length, width)
+    .setFontFamily('Noto Sans JP').setFontSize(11).setVerticalAlignment('middle').setFontColor('#1f2937');
+
+  blocks.forEach(function(block, index) {
+    const r = index + 1;
+    const line = sheet.getRange(r, 1, 1, width);
+    if (block.type === 'title') {
+      line.merge().setBackground('#064e3b').setFontColor('#ffffff').setFontSize(16).setFontWeight('bold');
+      sheet.setRowHeight(r, 40);
+    } else if (block.type === 'subtitle') {
+      line.merge().setBackground('#d1fae5').setFontColor('#065f46').setFontSize(10);
+    } else if (block.type === 'section') {
+      sheet.getRange(r, 1).setFontSize(13).setFontWeight('bold').setFontColor('#064e3b');
+      sheet.getRange(r, 2, 1, width - 1).merge().setFontColor('#6b7280').setFontSize(10).setWrap(true);
+      sheet.setRowHeight(r, 30);
+    } else if (block.type === 'header') {
+      line.setBackground('#0f766e').setFontColor('#ffffff').setFontWeight('bold');
+      sheet.getRange(r, 3, 1, monthCount).setHorizontalAlignment('right');
+    } else if (block.type === 'note') {
+      line.merge().setWrap(true).setFontColor('#374151');
+    } else if (block.type === 'row') {
+      line.setBorder(null, null, true, null, false, false, '#e5e7eb', SpreadsheetApp.BorderStyle.SOLID);
+      sheet.getRange(r, 2).setFontColor('#6b7280').setFontSize(10).setWrap(true);
+      sheet.getRange(r, 3, 1, monthCount).setHorizontalAlignment('right');
+      // 最新月（途中のことが多い）は少し薄い背景で区別する
+      sheet.getRange(r, width).setBackground('#f0fdfa');
+      if (block.style === 'group') sheet.getRange(r, 1).setFontWeight('bold');
+      if (block.style === 'detail') sheet.getRange(r, 1, 1, width).setFontColor('#4b5563').setFontSize(10);
+      if (block.style === 'alert') line.setFontColor('#b91c1c').setFontWeight('bold');
+    }
+  });
 }
