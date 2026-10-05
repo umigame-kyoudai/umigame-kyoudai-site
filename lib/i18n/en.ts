@@ -422,7 +422,7 @@ export const EN_COMMON: IntlCommonCopy = {
 
 export const EN_FORM: IntlFormCopy = {
   staffNoPreference: "No preference",
-  staffNames: { staff1: "Yama-chan", staff2: "Hikaru", staff5: "Sotaro", staff3: NIGHT_GUIDE.latinName, staff4: "Nagi" },
+  staffNames: { staff1: "Yama-chan", staff2: "Hikaru", staff5: "Sotaro", staff3: NIGHT_GUIDE.latinName, staff4: "Nagi", staff6: "Mana-chan" },
   limitToast: (max) => `Online booking is limited to ${max} guests. Please contact us on LINE for 11 or more.`,
   groupLimitInfo: (max, current) =>
     `Online booking is limited to ${max} guests. Current group: ${current}. Contact us on LINE for 11 or more.`,

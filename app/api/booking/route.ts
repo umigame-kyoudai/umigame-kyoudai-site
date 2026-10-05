@@ -102,13 +102,14 @@ const LINE_AUTHENTICATION_FAILED_MESSAGE =
   'LINE認証を確認できませんでした。LINEで再度ログインしてからお試しください。'
 const LINE_AUTHENTICATION_UNAVAILABLE_MESSAGE =
   'LINE認証を一時的に確認できません。時間をおいてもう一度お試しください。'
-const VALID_STAFF_IDS = new Set(['staff1', 'staff2', 'staff3', 'staff4', 'staff5'])
+const VALID_STAFF_IDS = new Set(['staff1', 'staff2', 'staff3', 'staff4', 'staff5', 'staff6'])
 const STAFF_NAMES: Record<string, string> = {
   staff1: 'やまちゃん',
   staff2: 'ひかる',
   staff5: 'そうたろう',
   [NIGHT_GUIDE.bookingId]: NIGHT_GUIDE.name,
   staff4: '凪',
+  staff6: 'まなちゃん',
 }
 
 // 簡易レートリミット（インスタンス内メモリ）。Vercelはインスタンスを再利用するため

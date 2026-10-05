@@ -66,7 +66,7 @@ import {
 const NIGHT_PLAN_IDS = new Set(["S3", "S5"])
 const FREE_UNDER3_PLAN_IDS = NIGHT_PLAN_IDS
 // スタッフ選択肢の表示順（"" = 指名なし）。名前の表記は辞書側。
-const STAFF_ORDER = ["", "staff1", "staff2", "staff5", "staff3", "staff4"] as const
+const STAFF_ORDER = ["", "staff1", "staff2", "staff5", "staff3", "staff4", "staff6"] as const
 
 type Category = "adult" | "child" | "under3"
 

@@ -233,6 +233,7 @@ const STAFF_LIST = [
   { id: "staff5", name: "そうたろう" },
   { id: "staff3", name: "そういちろう" },
   { id: "staff4", name: "凪" },
+  { id: "staff6", name: "まなちゃん" },
 ]
 
 function getPlanTone(planId: string): "emerald" | "purple" | "cyan" {

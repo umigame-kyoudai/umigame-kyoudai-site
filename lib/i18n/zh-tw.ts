@@ -394,7 +394,7 @@ const ZH_COMMON: IntlCommonCopy = {
 
 const ZH_FORM: IntlFormCopy = {
   staffNoPreference: "不指定",
-  staffNames: { staff1: "山醬", staff2: "Hikaru", staff5: "Sotaro", staff3: NIGHT_GUIDE.latinName, staff4: "Nagi" },
+  staffNames: { staff1: "山醬", staff2: "Hikaru", staff5: "Sotaro", staff3: NIGHT_GUIDE.latinName, staff4: "Nagi", staff6: "Mana" },
   limitToast: (max) => `線上預約最多${max}位。11位以上請透過LINE洽詢。`,
   groupLimitInfo: (max, current) => `線上預約最多${max}位。目前人數：${current}位。11位以上請透過LINE洽詢。`,
   sectionChooseTour: "選擇行程",
