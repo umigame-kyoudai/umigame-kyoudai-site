@@ -20,6 +20,7 @@ UTMなしだと全て「不明（直接アクセス）」になる。
 | YouTube 概要欄 | `https://www.umigamekyoudaimiyakojima.com/?utm_source=youtube&utm_medium=description` |
 | Instagram プロフィール（直接サイトに飛ばす場合） | `https://www.umigamekyoudaimiyakojima.com/?utm_source=instagram&utm_medium=profile` |
 | Instagram ストーリー/投稿のリンク | `https://www.umigamekyoudaimiyakojima.com/?utm_source=instagram&utm_medium=story` |
+| Threads 投稿のリンク | `https://www.umigamekyoudaimiyakojima.com/?utm_source=threads&utm_medium=post` |
 | チラシ・名刺のQRコード | `https://www.umigamekyoudaimiyakojima.com/?utm_source=flyer&utm_medium=qr` |
 | 提携サイト・紹介ブログ | `https://www.umigamekyoudaimiyakojima.com/?utm_source=partner&utm_medium=referral&utm_campaign=相手の名前をローマ字で` |
 
