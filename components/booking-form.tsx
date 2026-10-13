@@ -302,6 +302,7 @@ export function BookingForm() {
   })
 
   const [hasRestoredDraft, setHasRestoredDraft] = useState(false)
+  const [isPlanPickerOpen, setIsPlanPickerOpen] = useState(false)
   const [totalPrice, setTotalPrice] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -426,6 +427,7 @@ export function BookingForm() {
 
   const selectedPlanData = BOOKING_PLANS.find((plan) => plan.id === bookingData.selectedPlan)
   const selectedPlanIsComingSoon = selectedPlanData?.status === "coming_soon"
+  const showPlanChoices = !selectedPlanData || selectedPlanIsComingSoon || isPlanPickerOpen
   const maxParticipants = getPlanMaxParticipants(bookingData.selectedPlan)
   const totalParticipantCount = bookingData.adultCount + bookingData.childCount + bookingData.under3Count
   const isOverParticipantLimit = maxParticipants !== undefined && totalParticipantCount > maxParticipants
@@ -600,6 +602,7 @@ export function BookingForm() {
     }
     // 計測のみ。既存の状態更新ロジックには手を入れない。
     if (field === "selectedPlan" && value) {
+      setIsPlanPickerOpen(true)
       trackBookingStarted("plan")
       trackPlanSelected({ planId: String(value), locale: "ja", selectionSource: "manual" })
     } else if (field === "selectedDate" && value) {
@@ -1487,9 +1490,43 @@ export function BookingForm() {
             <CheckCircle className="w-5 h-5" />
             プラン選択
           </CardTitle>
-          <p className="text-sm text-gray-600 mt-2">ご希望のプランを選択してください</p>
+          <p className="text-sm text-gray-600 mt-2">{selectedPlanData && !selectedPlanIsComingSoon ? "選択したプランを確認して、日時の入力へ進んでください。" : "ご希望のプランを選択してください"}</p>
         </CardHeader>
         <CardContent>
+          {selectedPlanData && !selectedPlanIsComingSoon && (
+            <div className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+              <p className="text-xs font-semibold text-emerald-700">選択中のプラン</p>
+              <h3 className="mt-1 font-bold text-gray-900" aria-live="polite">{selectedPlanData.name}</h3>
+              <p className="mt-2 text-sm text-gray-600">対象年齢：{selectedPlanData.ageRange}</p>
+              {SENIOR_RESTRICTED_PLAN_IDS.has(selectedPlanData.id) && (
+                <p className="mt-1 text-xs leading-relaxed text-amber-800">60歳以上の方は{getPrivateCounterpartName(selectedPlanData.id)}をお選びください。</p>
+              )}
+              <BookingPlanPrice planId={selectedPlanData.id} className="mt-3 max-w-sm" />
+              <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                <Button
+                  type="button"
+                  onClick={() => {
+                    setIsPlanPickerOpen(false)
+                    requestAnimationFrame(() => document.getElementById("date")?.focus())
+                  }}
+                  className="min-h-11 bg-emerald-700 text-white hover:bg-emerald-800"
+                >
+                  このプランで日時を選ぶ
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  aria-expanded={showPlanChoices}
+                  aria-controls="booking-plan-choices"
+                  onClick={() => setIsPlanPickerOpen(!isPlanPickerOpen)}
+                  className="min-h-11 border-emerald-300 bg-white text-emerald-800"
+                >
+                  {isPlanPickerOpen ? "プラン一覧を閉じる" : "プランを変更する"}
+                </Button>
+              </div>
+            </div>
+          )}
+          <div id="booking-plan-choices" hidden={!showPlanChoices}>
           <div className="space-y-4">
             {/* ウミガメシュノーケル */}
             {(() => {
@@ -1870,7 +1907,9 @@ export function BookingForm() {
             })()}
           </div>
 
-          {selectedPlanData && (
+          </div>
+
+          {showPlanChoices && selectedPlanData && (
             <div className="mt-4 p-4 bg-emerald-50 rounded-2xl border border-emerald-200">
               <h3 className="font-semibold text-emerald-800 mb-2 text-sm">プラン詳細</h3>
               <p className="text-sm text-gray-700 mb-3 leading-relaxed">{selectedPlanData.description}</p>
@@ -2314,7 +2353,7 @@ export function BookingForm() {
                 </p>
                 {isComboPlan ? (
                   <p className="text-xs text-gray-500 rounded-xl bg-gray-50 p-3">
-                    このプランは既にセット割引（1名¥1,000お得）が適用されているため、クーポンはご利用いただけません。
+                    このプランはセット割引が含まれた料金です。クーポンとの併用はできません。
                   </p>
                 ) : (
                   <>

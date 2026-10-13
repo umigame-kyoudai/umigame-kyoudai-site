@@ -10,7 +10,7 @@ import {
   Bug, Compass, Heart, Sun, Baby, LifeBuoy, Sparkles, ArrowRight
 } from "lucide-react"
 import { BLUR_DATA_URLS } from "@/lib/image-placeholders"
-import { trackEvent } from "@/lib/analytics"
+import { sendDetailedEvent } from "@/lib/detailed-analytics"
 import type { PlanDetail } from "@/lib/plan-details"
 import { PLAN_DETAILS } from "@/lib/plan-details"
 import { ComingSoonBadge, ComingSoonBanner } from "@/components/coming-soon"
@@ -111,6 +111,18 @@ function PlanHero({ plan }: { plan: PlanDetail }) {
             </div>
           ))}
         </motion.div>
+        {!isComingSoon && (
+          <div className="mt-5 sm:mt-7">
+            <Link
+              href={`/book?plan=${plan.id}`}
+              onClick={() => sendDetailedEvent("book_cta_click", { location: "plan_hero", plan: plan.id })}
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-bold text-emerald-800 shadow-lg transition-colors hover:bg-emerald-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
+            >
+              このプランで日付を選ぶ <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </Link>
+            <p className="mt-3 max-w-xl text-xs leading-relaxed text-white/90">WEBで仮予約 → スタッフからLINEで連絡 → 予約確定。お支払いは当日現地で現金です。</p>
+          </div>
+        )}
       </div>
     </section>
   )
@@ -733,7 +745,7 @@ function PlanCTA({ plan }: { plan: PlanDetail }) {
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}>
               <Link
                 href={`/book?plan=${plan.id}`}
-                onClick={() => trackEvent("book_cta_click", { location: "plan_detail", plan: plan.id })}
+                onClick={() => sendDetailedEvent("book_cta_click", { location: "plan_detail", plan: plan.id })}
                 className="block bg-white text-emerald-700 font-bold text-base px-8 py-3.5 rounded-full shadow-xl transition-colors hover:bg-emerald-50"
               >
                 日付を選んで予約する
@@ -744,7 +756,7 @@ function PlanCTA({ plan }: { plan: PlanDetail }) {
                 href="https://lin.ee/jfp4laz"
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={() => trackEvent("line_click", { location: "plan_detail", plan: plan.id })}
+                onClick={() => sendDetailedEvent("line_click", { location: "plan_detail", plan: plan.id })}
                 className="block bg-[#06C755] text-white font-bold text-base px-8 py-3.5 rounded-full shadow-xl transition-colors hover:bg-[#05b34d]"
               >
                 LINEで質問・相談する
@@ -925,7 +937,7 @@ function FloatingPlanNav({ currentId }: { currentId: string }) {
             ) : (
               <Link
                 href={`/book?plan=${currentId}`}
-                onClick={() => trackEvent("book_cta_click", { location: "plan_floating_nav", plan: currentId })}
+                onClick={() => sendDetailedEvent("book_cta_click", { location: "plan_floating_nav", plan: currentId })}
                 className="flex-shrink-0 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold px-5 py-2 rounded-full transition-colors ml-3"
               >
                 予約する
