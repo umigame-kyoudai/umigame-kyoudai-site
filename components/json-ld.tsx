@@ -1,5 +1,4 @@
 import { TOUR_MASTER } from "@/lib/tour-master"
-
 import { SITE_CONFIG, SITE_URL, SITE_NAME } from "@/lib/site-config"
 
 // SNS等の公式プロフィールURL（ナレッジグラフ強化用）。
