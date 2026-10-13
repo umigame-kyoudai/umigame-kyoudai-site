@@ -2,12 +2,12 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { useRef, useState, useEffect } from "react"
+import { useRef, useState, useEffect, useCallback } from "react"
 import { Clock, Users, Camera, Shield, Check, ChevronLeft, ChevronRight } from "lucide-react"
 import { BLUR_DATA_URLS } from "@/lib/image-placeholders"
 import { PLAN_COVER_IMAGE, TOUR_IMAGE_PATHS } from "@/lib/tour-assets"
 import { ComingSoonBadge } from "@/components/coming-soon"
-import { trackEvent } from "@/lib/analytics"
+import { sendDetailedEvent } from "@/lib/detailed-analytics"
 import { getPlanPriceDisplay, getPlanCode } from "@/lib/plan-price-display"
 
 interface PlanVariant {
@@ -314,7 +314,9 @@ const tours: Tour[] = [
 // 名称は語尾に「ツアー」「セットプラン」等を必ず付け、何の商品か一目で分かるようにする（2026-07-12 オーナー要望）
 const quickCompare = [
   { id: "S1", name: "海亀ツアー", age: "5〜65歳", time: "約2時間", bestFor: "初めて・家族・友人" },
+  { id: "S2", name: "貸切海亀ツアー", age: "5〜65歳", time: "約2時間", bestFor: "専属ガイド・家族・友人" },
   { id: "S3", name: "ナイトツアー", age: "0〜75歳", time: "約1.5時間", bestFor: "小さな子連れ・三世代" },
+  { id: "S5", name: "貸切ナイトツアー", age: "0〜75歳", time: "約1.5時間", bestFor: "子どものペースで探検" },
   { id: "S8", name: "サンセットSUPツアー", age: "5〜65歳", time: "約2時間", bestFor: "夕日の空撮・カップル" },
   { id: "S4", name: "貸切サンセットSUPツアー", age: "5〜65歳", time: "約2時間", bestFor: "1組貸切で夕日撮影" },
   { id: "S6", name: "ドローンSUPツアー", age: "5〜65歳", time: "約2時間", bestFor: "日中の海・空撮写真" },
@@ -327,6 +329,15 @@ const quickCompare = [
   { id: "C6", name: "貸切まるごと1日セットプラン", age: "5〜65歳", time: "朝〜夜", bestFor: "1日まるごと完全貸切" },
   { id: "slide-boat", name: "スライダーボートツアー", age: "5〜65歳予定", time: "約3時間", bestFor: "家族・グループ・アクティブ", status: "coming_soon" },
 ]
+
+// 比較表と写真カードは同じ対象プランで絞り込む。未公開プランは「すべて」にのみ表示。
+const planFilters = [
+  { label: "すべて", ids: null },
+  { label: "ウミガメと泳ぐ", ids: ["S1", "S2"] },
+  { label: "夜の生き物探検", ids: ["S3", "S5"] },
+  { label: "SUP・夕日", ids: ["S8", "S4", "S6", "S7"] },
+  { label: "セットで楽しむ", ids: ["C1", "C2", "C3", "C4", "C5", "C6"] },
+] as const
 
 function priceToneClass(tone: "emerald" | "purple" | "cyan") {
   if (tone === "purple") return "text-purple-700"
@@ -583,7 +594,7 @@ function TourCard({ tour }: { tour: Tour }) {
             <div className="flex gap-2 mt-auto">
               <Link
                 href={`/book?plan=${variant.id}`}
-                onClick={() => trackEvent("book_cta_click", { location: "plan_card", plan: variant.id })}
+                onClick={() => sendDetailedEvent("book_cta_click", { location: "plan_card", plan: variant.id })}
                 className="flex-1 text-center bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-sm py-2.5 sm:py-3 rounded-xl transition-all active:scale-95 shadow-md"
               >
                 予約する
@@ -605,34 +616,44 @@ function TourCard({ tour }: { tour: Tour }) {
 export function PlansSection() {
   const scrollRef = useRef<HTMLDivElement>(null)
   const [activeIndex, setActiveIndex] = useState(0)
+  const [filterIndex, setFilterIndex] = useState(0)
+  const filterIds: readonly string[] | null = planFilters[filterIndex].ids
+  const visibleTours = tours.filter((tour) => !filterIds || tour.variants.some((variant) => filterIds.includes(variant.id)))
+  const visibleComparison = quickCompare.filter((item) => !filterIds || filterIds.includes(item.id))
   const [canScrollLeft, setCanScrollLeft] = useState(false)
   const [canScrollRight, setCanScrollRight] = useState(true)
 
-  const updateScrollState = () => {
+  const updateScrollState = useCallback(() => {
     const el = scrollRef.current
     if (!el) return
     setCanScrollLeft(el.scrollLeft > 10)
     setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 10)
     const cardWidth = el.firstElementChild?.clientWidth || 300
-    const gap = 12
+    const gap = parseFloat(getComputedStyle(el).columnGap) || 12
     const index = Math.round(el.scrollLeft / (cardWidth + gap))
-    setActiveIndex(Math.min(index, tours.length - 1))
-  }
+    setActiveIndex(Math.min(index, visibleTours.length - 1))
+  }, [visibleTours.length])
 
   const scrollTo = (direction: "left" | "right") => {
     const el = scrollRef.current
     if (!el) return
     const cardWidth = el.firstElementChild?.clientWidth || 300
-    el.scrollBy({ left: direction === "left" ? -cardWidth - 12 : cardWidth + 12, behavior: "smooth" })
+    const gap = parseFloat(getComputedStyle(el).columnGap) || 12
+    el.scrollBy({ left: direction === "left" ? -cardWidth - gap : cardWidth + gap, behavior: "smooth" })
   }
 
   useEffect(() => {
     const el = scrollRef.current
     if (!el) return
+    el.scrollTo({ left: 0, behavior: "instant" })
     el.addEventListener("scroll", updateScrollState, { passive: true })
+    window.addEventListener("resize", updateScrollState)
     updateScrollState()
-    return () => el.removeEventListener("scroll", updateScrollState)
-  }, [])
+    return () => {
+      el.removeEventListener("scroll", updateScrollState)
+      window.removeEventListener("resize", updateScrollState)
+    }
+  }, [filterIndex, updateScrollState])
 
   return (
     <section id="plans" className="py-12 sm:py-16 md:py-24 bg-gray-50 relative overflow-hidden scroll-mt-16">
@@ -647,6 +668,24 @@ export function PlansSection() {
           </p>
         </div>
 
+        <div className="px-5 sm:px-6 lg:px-8 mb-5">
+          <p className="mb-3 text-sm font-bold text-gray-800">宮古島で、何を楽しみたいですか？</p>
+          <div role="group" aria-label="体験からプランを絞り込む" className="flex flex-wrap gap-2">
+            {planFilters.map((filter, index) => (
+              <button
+                key={filter.label}
+                type="button"
+                aria-pressed={filterIndex === index}
+                onClick={() => setFilterIndex(index)}
+                className={`min-h-11 rounded-full border px-4 py-2 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 ${filterIndex === index ? "border-emerald-800 bg-emerald-800 text-white" : "border-gray-300 bg-white text-gray-700 hover:border-emerald-600"}`}
+              >
+                {filter.label}
+              </button>
+            ))}
+          </div>
+          <p role="status" className="mt-3 text-xs text-gray-600">{filterIndex === 0 ? "全プランを表示" : `${planFilters[filterIndex].label}：${visibleComparison.length}プランを表示`}。通常・貸切の料金を比較できます。</p>
+        </div>
+
         <div data-reveal="" className="px-5 sm:px-6 lg:px-8 mb-8">
           {/* モバイルもPCと同じ4列の比較表で表示（2026-07-12 オーナー要望でカード表示を廃止）。
               狭い画面では表内を横スクロールできるようにし、縦に間延びしないようにする。 */}
@@ -658,14 +697,14 @@ export function PlansSection() {
                 <div className="p-3 sm:p-4">対象・所要</div>
                 <div className="p-3 sm:p-4">おすすめ</div>
               </div>
-              {quickCompare.map((item) => {
+              {visibleComparison.map((item) => {
                 const priceDisplay = getPlanPriceDisplay(item.id)
 
                 return (
                   <div key={item.name} className="grid grid-cols-4 border-t border-gray-100 text-[11px] sm:text-sm">
                     <div className="p-3 sm:p-4 font-bold text-gray-900">
                       <span className="mr-1 inline-block rounded bg-gray-100 px-1 py-0.5 align-middle text-[9px] font-bold tracking-wider text-gray-600">{getPlanCode(item.id)}</span>
-                      <span className="align-middle">{item.name}</span>
+                      <Link href={`/plans/${item.id}`} className="align-middle underline decoration-emerald-300 underline-offset-4 hover:text-emerald-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-700">{item.name}<span className="mt-1 block text-[10px] font-medium text-emerald-700">詳細を見る →</span></Link>
                       {item.status === "coming_soon" && <ComingSoonBadge className="mt-1 px-2 py-0.5 text-[10px]" />}
                     </div>
                     <div className="p-3 sm:p-4 font-bold leading-snug text-emerald-700">
@@ -700,7 +739,7 @@ export function PlansSection() {
             className="flex gap-3 sm:gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide px-5 sm:px-6 lg:px-8 pb-2"
             style={{ WebkitOverflowScrolling: "touch" }}
           >
-            {tours.map((tour) => (
+            {visibleTours.map((tour) => (
               <TourCard key={tour.name} tour={tour} />
             ))}
           </div>
@@ -729,7 +768,7 @@ export function PlansSection() {
 
         {/* Dots — 見た目は小さいまま、ボタン自体は24px四方以上を確保する（WCAG 2.2 target size） */}
         <div className="flex justify-center mt-4">
-          {tours.map((_, i) => (
+          {visibleTours.map((_, i) => (
             <button
               type="button"
               key={i}
@@ -739,7 +778,8 @@ export function PlansSection() {
                 const el = scrollRef.current
                 if (!el) return
                 const cardWidth = el.firstElementChild?.clientWidth || 300
-                el.scrollTo({ left: i * (cardWidth + 12), behavior: "smooth" })
+                const gap = parseFloat(getComputedStyle(el).columnGap) || 12
+                el.scrollTo({ left: i * (cardWidth + gap), behavior: "smooth" })
               }}
               className="flex h-7 w-7 items-center justify-center"
             >
