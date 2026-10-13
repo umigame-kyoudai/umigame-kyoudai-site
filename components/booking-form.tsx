@@ -1498,6 +1498,9 @@ export function BookingForm() {
               <p className="text-xs font-semibold text-emerald-700">選択中のプラン</p>
               <h3 className="mt-1 font-bold text-gray-900" aria-live="polite">{selectedPlanData.name}</h3>
               <p className="mt-2 text-sm text-gray-600">対象年齢：{selectedPlanData.ageRange}</p>
+              {SENIOR_RESTRICTED_PLAN_IDS.has(selectedPlanData.id) && (
+                <p className="mt-1 text-xs leading-relaxed text-amber-800">60歳以上の方は{getPrivateCounterpartName(selectedPlanData.id)}をお選びください。</p>
+              )}
               <BookingPlanPrice planId={selectedPlanData.id} className="mt-3 max-w-sm" />
               <div className="mt-4 flex flex-col gap-2 sm:flex-row">
                 <Button
@@ -2350,7 +2353,7 @@ export function BookingForm() {
                 </p>
                 {isComboPlan ? (
                   <p className="text-xs text-gray-500 rounded-xl bg-gray-50 p-3">
-                    このプランは既にセット割引（1名¥1,000お得）が適用されているため、クーポンはご利用いただけません。
+                    このプランはセット割引が含まれた料金です。クーポンとの併用はできません。
                   </p>
                 ) : (
                   <>
