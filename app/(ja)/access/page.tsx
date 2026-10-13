@@ -10,9 +10,9 @@ import { createMetadata, SITE_URL } from "@/lib/seo"
 import { SNORKEL_BEACHES, SUNSET_SUP_SPOTS, SUNSET_SUP_MEETING_TIMES } from "@/lib/beach-info"
 
 export const metadata: Metadata = createMetadata({
-  title: "集合場所・アクセス｜前日案内の理由と各ビーチの設備",
+  title: "集合場所・アクセス｜海は前日・ナイトは当日LINE案内",
   description:
-    "海亀兄弟ツアーの集合場所のご案内。集合場所が前日案内になる理由、候補ビーチ（新城海岸・シギラビーチ等）の駐車場・トイレ・シャワー設備、プラン別の集合時間、レンタカーでのアクセスをまとめました。",
+    "宮古島・海亀兄弟のツアーは現地集合・現地解散。海のツアーは前日、ナイトツアーは当日にLINEで集合場所をご案内します。事務所での受付・集合や送迎はありません。候補ビーチの駐車場・設備、プラン別の集合時間を確認できます。",
   path: "/access",
   locale: "ja",
 })
@@ -52,21 +52,21 @@ export default function AccessPage() {
         <p className="text-cyan-600 font-semibold text-xs tracking-widest uppercase mb-2">Access</p>
         <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">集合場所・アクセス</h1>
         <p className="text-gray-600 leading-relaxed mb-10">
-          海亀兄弟のツアーは現地集合・現地解散です。「集合場所がまだ分からないけど大丈夫？」という質問をよくいただくので、前日案内になる理由と、候補ビーチの設備をまとめました。
+          海亀兄弟のツアーは現地集合・現地解散です。海のツアーは前日、ナイトツアーは当日に、集合場所・地図・駐車場情報をLINEでご案内します。事務所での来店受付・集合や送迎は行っていません。ご予約のプランに合わせた集合案内をご確認ください。
         </p>
 
-        {/* なぜ前日案内か */}
+        {/* 海のツアーの集合場所を前日に案内する理由 */}
         <section className="rounded-2xl bg-white border border-cyan-100 shadow-sm p-5 sm:p-6 mb-8">
           <h2 className="flex items-start gap-3 text-lg sm:text-xl font-bold text-gray-900 mb-3">
             <MapPin className="w-6 h-6 text-cyan-600 flex-shrink-0 mt-0.5" aria-hidden="true" />
-            集合場所が「前日案内」なのはなぜ？
+            海のツアーの集合場所が「前日案内」なのはなぜ？
           </h2>
           <div className="text-gray-700 leading-relaxed text-[15px] space-y-2">
             <p>
               宮古島の海は、同じ日でも風向きによってビーチごとのコンディションが大きく変わります。当店は特定のビーチに固定せず、<strong>当日の風向き・波・潮位を見て、その日いちばん穏やかで透明度の高いビーチを選んで</strong>ご案内しています。集合場所の確定が前日になるのは、この安全判断のためです。
             </p>
             <p>
-              確定した集合場所は、地図リンク・駐車場の場所とあわせて<strong>LINEでご案内</strong>します。ご不明な点はそのままLINEで質問できるのでご安心ください。
+              海のツアーは前日、ナイトツアーは当日に、地図リンク・駐車場の場所とあわせて<strong>LINEでご案内</strong>します。天候・海況により変更がある場合は最新の案内をご確認ください。ご不明な点はそのままLINEで質問できます。
             </p>
           </div>
         </section>
@@ -167,7 +167,7 @@ export default function AccessPage() {
           </h2>
           <div className="text-gray-700 leading-relaxed text-[15px] space-y-2">
             <p>
-              ツアーは現地集合・現地解散で、送迎は行っていません。宮古島は路線バスの本数が少なくタクシーもつかまりにくいため、レンタカーでのお越しをおすすめしています。集合場所の駐車場情報は前日のLINE案内に含めてお送りします。
+              ツアーは現地集合・現地解散で、送迎は行っていません。宮古島は路線バスの本数が少なくタクシーもつかまりにくいため、レンタカーでのお越しをおすすめしています。集合場所の駐車場情報は、海のツアーは前日、ナイトツアーは当日のLINE案内に含めてお送りします。
             </p>
             <p className="text-sm text-gray-500">
               レンタカーが初めての方は

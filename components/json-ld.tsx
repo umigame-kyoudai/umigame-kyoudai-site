@@ -1,7 +1,5 @@
 import { TOUR_MASTER } from "@/lib/tour-master"
-
-const SITE_URL = "https://www.umigamekyoudaimiyakojima.com"
-const SITE_NAME = "海亀兄弟"
+import { SITE_CONFIG, SITE_URL, SITE_NAME } from "@/lib/site-config"
 
 // SNS等の公式プロフィールURL（ナレッジグラフ強化用）。
 // ここに追加すると Organization / LocalBusiness の sameAs に反映される。
@@ -39,7 +37,7 @@ export function OrganizationJsonLd() {
     url: SITE_URL,
     logo: { "@type": "ImageObject", url: `${SITE_URL}/icon.png` },
     image: `${SITE_URL}/images/gemini-generated-image-rq969urq969urq96.jpeg`,
-    telephone: "+81-80-5344-2439",
+    telephone: SITE_CONFIG.phoneDisplayIntl,
     areaServed: ["宮古島", "沖縄県宮古島市"],
     ...(SITE_SAME_AS.length ? { sameAs: SITE_SAME_AS } : {}),
   }
@@ -84,27 +82,23 @@ export function StaffPersonJsonLd({
 export function LocalBusinessJsonLd() {
   const schema = {
     "@context": "https://schema.org",
-    "@type": ["LocalBusiness", "SportsActivityLocation", "TouristAttraction"],
+    // ツアー運営事務所を観光名所や来店型のスポーツ施設として扱わない。
+    "@type": "LocalBusiness",
     "@id": `${SITE_URL}/#business`,
     name: SITE_NAME,
-    description: "宮古島で家族向け少人数制マリン体験。ウミガメシュノーケル、貸切ツアー、ヤシガニ探検、サンセットSUP、ドローンSUP、昼夜セット。",
+    description: "宮古島で家族向け少人数制マリン体験。ウミガメシュノーケル、貸切ツアー、ヤシガニ探検、サンセットSUP、ドローンSUP、昼夜セット。ツアーは現地集合・現地解散で、事務所では来店受付・集合を行っていません。",
     url: SITE_URL,
-    telephone: "+81-80-5344-2439",
+    telephone: SITE_CONFIG.phoneDisplayIntl,
     address: {
       "@type": "PostalAddress",
-      postalCode: "906-0014",
-      streetAddress: "平良松原107-1",
-      addressLocality: "宮古島市",
-      addressRegion: "沖縄県",
-      addressCountry: "JP",
+      postalCode: SITE_CONFIG.address.postalCode,
+      streetAddress: SITE_CONFIG.address.streetAddress,
+      addressLocality: SITE_CONFIG.address.locality,
+      addressRegion: SITE_CONFIG.address.region,
+      addressCountry: SITE_CONFIG.address.country,
     },
-    hasMap: "https://maps.app.goo.gl/j3nA2ug4iijmbR6j7",
+    // 住所はフッターに明示した事務所所在地。集合地点ではないため地図・推測座標は付けない。
     areaServed: ["宮古島", "沖縄県宮古島市"],
-    geo: {
-      "@type": "GeoCoordinates",
-      latitude: 24.79,
-      longitude: 125.28,
-    },
     image: `${SITE_URL}/images/gemini-generated-image-rq969urq969urq96.jpeg`,
     priceRange: `¥${Math.min(...TOUR_MASTER.map((tour) => tour.pricing.adult)).toLocaleString()}〜¥${Math.max(...TOUR_MASTER.map((tour) => tour.pricing.adult)).toLocaleString()}`,
     // 掲載プラン・料金・URLは lib/tour-master.ts（= PLAN_PRICE_DATA / PLAN_DETAILS）から生成する。
@@ -123,8 +117,8 @@ export function LocalBusinessJsonLd() {
     openingHoursSpecification: {
       "@type": "OpeningHoursSpecification",
       dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
-      opens: "07:00",
-      closes: "18:00",
+      opens: SITE_CONFIG.businessHours.opens,
+      closes: SITE_CONFIG.businessHours.closes,
     },
     ...(SITE_SAME_AS.length ? { sameAs: SITE_SAME_AS } : {}),
     // 検証可能な口コミ・評価データと紐づかないため aggregateRating は出力しない。

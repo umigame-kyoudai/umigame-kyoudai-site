@@ -1430,7 +1430,7 @@ export function BookingForm() {
           送信後すぐに確定ではありません。スタッフが内容を確認し、LINEで集合場所や時間をご案内します。
         </p>
         <p className="mt-1.5 text-sm text-gray-600">
-          集合場所は当日の海況で選ぶため前日のご案内です。
+          集合場所は海のツアーは前日、ナイトツアーは当日にLINEでご案内します。
           <a href="/access" target="_blank" rel="noopener" className="text-cyan-700 underline underline-offset-2 font-medium">候補ビーチの駐車場・設備はこちら</a>
         </p>
         <p className="mt-2 text-sm font-medium text-amber-700">

@@ -60,6 +60,8 @@ export interface IntlHomeCopy {
 
 export interface IntlUiCopy {
   footer: {
+    officeLabel: string
+    meetingNote: string
     tagline: string
     quickLinksHeading: string
     businessHoursHeading: string

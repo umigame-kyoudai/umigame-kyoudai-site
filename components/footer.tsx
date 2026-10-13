@@ -4,15 +4,7 @@ import { Phone, MessageSquare, MapPin, Clock } from "lucide-react"
 import { getDict } from "@/lib/i18n/dict"
 import type { Locale } from "@/lib/i18n/locales"
 import { TrackedCta, TrackedTel } from "@/components/tracked-cta"
-
-const CONTACT_INFO = {
-  phone: "08053442439",
-  phoneDisplay: "080-5344-2439",
-  phoneDisplayEn: "+81-80-5344-2439",
-  lineUrl: "https://lin.ee/jfp4laz",
-  address: "〒906-0014 沖縄県宮古島市平良松原107-1",
-  addressEn: "107-1 Hirara Matsubara, Miyakojima City, Okinawa 906-0014, Japan",
-} as const
+import { SITE_CONFIG, formatBusinessHours } from "@/lib/site-config"
 
 const QUICK_LINKS_JA = [
   { href: "/", label: "ホーム" },
@@ -38,21 +30,23 @@ const JA = {
     "家族向け少人数制マリン体験で、安心・誠実・やわらかな高揚感をお届けします。透明度抜群の海で海亀との感動的な出会いを。",
   quickLinksHeading: "クイックリンク",
   businessHoursHeading: "営業時間",
-  hours: "7:00 - 18:00",
   openYearRound: "年中無休",
   hoursNote: "※天候により変更の場合があります",
   lineLabel: "LINE公式アカウント",
+  officeLabel: "事務所所在地（来店受付・集合場所ではありません）",
+  meetingNote: "ツアーは現地集合・現地解散です。海のツアーは前日、ナイトツアーは当日に、集合場所をLINEでご案内します。送迎は行っていません。",
   logoAlt: "海亀兄弟 SEA TURTLE BROTHERS EST. 2024",
   copyright: "海亀兄弟. All rights reserved.",
 } as const
 
 export function Footer({ locale = "ja" }: { locale?: Locale }) {
-  // 日本語以外は各ロケールの辞書から。住所・電話の英語表記は非日本語ロケール共通
+  // 案内文は各ロケールの辞書、連絡先と営業時間は SITE_CONFIG を参照する。
   const dictFooter = locale !== "ja" ? getDict(locale).ui.footer : null
   const intl = dictFooter !== null
   const t = dictFooter ?? JA
   const quickLinks = dictFooter ? dictFooter.quickLinks : QUICK_LINKS_JA
   const legalLinks = dictFooter ? dictFooter.legalLinks : LEGAL_LINKS_JA
+  const address = { ja: SITE_CONFIG.address.formattedJa, en: SITE_CONFIG.address.formattedEn, ko: SITE_CONFIG.address.formattedKo, "zh-tw": SITE_CONFIG.address.formattedZhTw }[locale]
 
   return (
     <footer className="bg-emerald-900 text-white py-12">
@@ -71,19 +65,23 @@ export function Footer({ locale = "ja" }: { locale?: Locale }) {
             <div className="space-y-2 text-sm text-emerald-200">
               <div className="flex items-center">
                 <Phone className="w-4 h-4 mr-2 flex-shrink-0" />
-                <TrackedTel href={`tel:${CONTACT_INFO.phone}`} location="footer" className="hover:text-white transition-colors">
-                  {intl ? CONTACT_INFO.phoneDisplayEn : CONTACT_INFO.phoneDisplay}
+                <TrackedTel href={`tel:${SITE_CONFIG.phone}`} location="footer" className="hover:text-white transition-colors">
+                  {intl ? SITE_CONFIG.phoneDisplayIntl : SITE_CONFIG.phoneDisplayJa}
                 </TrackedTel>
               </div>
               <div className="flex items-center">
                 <MessageSquare className="w-4 h-4 mr-2 flex-shrink-0" />
-                <TrackedCta event="line_click" eventProps={{ location: "footer" }} href={CONTACT_INFO.lineUrl} external className="hover:text-white transition-colors">
+                <TrackedCta event="line_click" eventProps={{ location: "footer" }} href={SITE_CONFIG.lineUrl} external className="hover:text-white transition-colors">
                   {t.lineLabel}
                 </TrackedCta>
               </div>
-              <div className="flex items-center">
-                <MapPin className="w-4 h-4 mr-2 flex-shrink-0" />
-                <span>{intl ? CONTACT_INFO.addressEn : CONTACT_INFO.address}</span>
+              <div className="flex items-start">
+                <MapPin className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" aria-hidden="true" />
+                <div>
+                  <p className="font-medium">{t.officeLabel}</p>
+                  <p>{address}</p>
+                  <p className="mt-2 max-w-md leading-relaxed">{t.meetingNote}</p>
+                </div>
               </div>
             </div>
           </div>
@@ -108,7 +106,7 @@ export function Footer({ locale = "ja" }: { locale?: Locale }) {
             <div className="space-y-2 text-emerald-200">
               <div className="flex items-center">
                 <Clock className="w-4 h-4 mr-2 flex-shrink-0" />
-                <span className="text-sm">{t.hours}</span>
+                <span className="text-sm">{formatBusinessHours(locale)}</span>
               </div>
               <p className="text-sm">{t.openYearRound}</p>
               <p className="text-xs text-emerald-300">{t.hoursNote}</p>
