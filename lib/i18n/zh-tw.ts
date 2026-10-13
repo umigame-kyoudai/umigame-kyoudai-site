@@ -266,6 +266,8 @@ const ZH_PRIVACY: IntlSectionsContent = {
 
 const ZH_UI: IntlUiCopy = {
   footer: {
+    officeLabel: "辦公室地址（不提供現場接待，亦非行程集合地點）",
+    meetingNote: "行程皆於活動現場集合及解散。海上行程於前一天、夜間行程於當天透過LINE通知集合地點，不提供接送服務。",
     tagline: "以安全、真誠與溫柔的感動，提供親子友善的包場海洋體驗。在透明度絕佳的大海中，與海龜近距離相遇。",
     quickLinksHeading: "快速連結",
     businessHoursHeading: "營業時間",

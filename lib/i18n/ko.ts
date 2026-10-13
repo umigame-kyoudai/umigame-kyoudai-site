@@ -266,6 +266,8 @@ const KO_PRIVACY: IntlSectionsContent = {
 
 const KO_UI: IntlUiCopy = {
   footer: {
+    officeLabel: "사무실 주소 — 방문 접수 및 투어 집결 장소가 아닙니다",
+    meetingNote: "투어는 현지 집결·현지 해산입니다. 바다 투어는 전날, 나이트 투어는 당일에 LINE으로 집결 장소를 안내합니다. 픽업·샌딩은 제공하지 않습니다.",
     tagline: "안전과 진심, 그리고 잔잔한 설렘을 담은 가족 친화 프라이빗 바다 체험. 눈부시게 투명한 바다에서 바다거북을 가까이 만나 보세요.",
     quickLinksHeading: "바로가기",
     businessHoursHeading: "영업시간",

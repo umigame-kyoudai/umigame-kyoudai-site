@@ -22,7 +22,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     : CONTENT_LAST_UPDATED
 
   const staticPages: MetadataRoute.Sitemap = [
-    { url: SITE_URL, lastModified: CONTENT_LAST_UPDATED, changeFrequency: "weekly", priority: 1.0 },
+    { url: SITE_URL, lastModified: new Date("2026-10-13"), changeFrequency: "weekly", priority: 1.0 },
     // 非指名「宮古島 ウミガメ」系の受け皿となるピラーページ
     { url: `${SITE_URL}/miyakojima-sea-turtle`, lastModified: CONTENT_LAST_UPDATED, changeFrequency: "monthly", priority: 0.9 },
     // プラン一覧ハブ（各 /plans/[id] への内部リンク集約点）
@@ -33,7 +33,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${SITE_URL}/faq`, lastModified: CONTENT_LAST_UPDATED, changeFrequency: "monthly", priority: 0.6 },
     // 予約前の不安解消ページ（安全対策・集合場所）。2026-07-06追加
     { url: `${SITE_URL}/safety`, lastModified: new Date("2026-07-06"), changeFrequency: "monthly", priority: 0.6 },
-    { url: `${SITE_URL}/access`, lastModified: new Date("2026-07-06"), changeFrequency: "monthly", priority: 0.6 },
+    { url: `${SITE_URL}/access`, lastModified: new Date("2026-10-13"), changeFrequency: "monthly", priority: 0.6 },
     { url: `${SITE_URL}/blog`, lastModified: blogIndexUpdated, changeFrequency: "weekly", priority: 0.7 },
     // 法的ページ（信頼性シグナル。検索流入は想定しないため低priority）
     { url: `${SITE_URL}/terms`, lastModified: CONTENT_LAST_UPDATED, changeFrequency: "yearly", priority: 0.3 },

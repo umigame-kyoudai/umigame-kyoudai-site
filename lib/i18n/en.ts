@@ -302,6 +302,8 @@ export const EN_PRIVACY: EnSectionsContent = {
 
 export const EN_UI = {
   footer: {
+    officeLabel: "Office address — no reception or tour meeting point",
+    meetingNote: "Tours start and finish at the tour location. We send the meeting point via LINE the day before ocean tours and on the day of night tours. Pick-up and drop-off are not available.",
     tagline: "Private ocean experiences for families, built on safety, sincerity, and a gentle sense of wonder. Meet sea turtles up close in beautifully clear waters.",
     quickLinksHeading: "Quick Links",
     businessHoursHeading: "Business Hours",
