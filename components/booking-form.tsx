@@ -60,6 +60,8 @@ import { ADULT_PRICE, BOOKING_PLANS, CHILD_PRICE } from "@/lib/booking-plans"
 import { getStaffFee } from "@/lib/data"
 import { getPlanPriceDisplay, getPlanCode } from "@/lib/plan-price-display"
 import { getPlanMaxParticipants } from "@/lib/booking-rules"
+import { bookingClosedMessage, isBookingDateClosed } from "@/lib/booking-closures"
+import { BookingDatePicker } from "@/components/booking-date-picker"
 import { replaceBookingSelectionQuery } from "@/lib/booking-url"
 import { syncRepresentativeName } from "@/lib/booking-participants"
 import { isValidCalendarDate } from "@/lib/utils/validation"
@@ -1025,6 +1027,7 @@ export function BookingForm() {
   const isFormValid =
     bookingData.selectedPlan &&
     bookingData.selectedDate &&
+    !isBookingDateClosed(bookingData.selectedDate) &&
     (getPlanType(bookingData.selectedPlan) === "sunset-sup" || bookingData.selectedTime) &&
     comboTimesSelected &&
     bookingData.adultCount > 0 &&
@@ -1055,6 +1058,7 @@ export function BookingForm() {
   if (!bookingData.selectedPlan) missingItems.push("プランの選択")
   else if (selectedPlanIsComingSoon) missingItems.push("プランの変更（選択中のプランは近日公開のため、まだ予約できません）")
   if (!bookingData.selectedDate) missingItems.push("参加日の選択")
+  else if (isBookingDateClosed(bookingData.selectedDate)) missingItems.push(bookingClosedMessage())
   if (bookingData.selectedPlan && getPlanType(bookingData.selectedPlan) !== "sunset-sup" && !bookingData.selectedTime) {
     missingItems.push(isComboPlan ? "ウミガメツアーの開始時間の選択" : "開始時間の選択")
   }
@@ -1958,24 +1962,21 @@ export function BookingForm() {
             <Label htmlFor="date" className="text-sm font-medium text-gray-700 mb-2 block">
               希望日
             </Label>
-            <Input
+            <BookingDatePicker
               id="date"
-              type="date"
               value={bookingData.selectedDate}
-              onChange={(e) => {
-                handleInputChange("selectedDate", e.target.value)
+              onChange={(date) => {
+                handleInputChange("selectedDate", date)
               }}
-              min={todayStr()}
-              className="booking-date-input block h-12 w-full min-w-0 max-w-full appearance-none rounded-xl border-emerald-200 bg-white text-left focus:border-emerald-500"
             />
-            {bookingData.selectedDate && (
+            {bookingData.selectedDate && !isBookingDateClosed(bookingData.selectedDate) && (
               <p className="text-xs text-emerald-600 mt-1">選択中: {bookingData.selectedDate}</p>
             )}
           </div>
 
           <div>
             <Label className="text-sm font-medium text-gray-700 mb-3 block">開始時間</Label>
-            {!bookingData.selectedDate || !bookingData.selectedPlan ? (
+            {!bookingData.selectedDate || isBookingDateClosed(bookingData.selectedDate) || !bookingData.selectedPlan ? (
               <div className="text-sm text-gray-500 p-4 bg-gray-50 rounded-xl">プランと日付を選択してください</div>
             ) : isComboPlan ? (
               <div className="space-y-5">

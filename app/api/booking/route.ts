@@ -8,6 +8,7 @@ import { calculateCouponDiscount } from '@/lib/constants/coupons'
 import { getEnPrice } from '@/lib/i18n/en-prices'
 import { isIntlLocale, isPlanAllowedForLocale } from '@/lib/i18n/locales'
 import { validateBookingRules } from '@/lib/booking-rules'
+import { bookingClosedMessage, isBookingDateClosed } from '@/lib/booking-closures'
 import { calculateRentalTotal, planOffersRentals } from '@/lib/rental-options'
 import {
   getReferralCookieSecret,
@@ -302,6 +303,9 @@ const validateBookingRequest = (data: BookingRequest): { valid: boolean; error?:
   if (!validateRequired(selectedDate).valid) return { valid: false, error: '予約日が必須です' }
   if (!isValidCalendarDate(selectedDate)) {
     return { valid: false, error: '実在する予約日を選択してください' }
+  }
+  if (isBookingDateClosed(selectedDate)) {
+    return { valid: false, error: bookingClosedMessage(data.locale) }
   }
   if (selectedDate < getTodayInJapan()) {
     return { valid: false, error: '過去の日付は予約できません' }
