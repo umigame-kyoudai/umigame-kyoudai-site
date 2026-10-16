@@ -20,7 +20,8 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "sonner"
 import { CheckCircle, MessageCircle, Plus, Trash2 } from "lucide-react"
 import { useLiff } from "@/components/liff-provider"
-import { todayStr } from "@/lib/date-utils"
+import { BookingDatePicker } from "@/components/booking-date-picker"
+import { bookingClosedMessage, isBookingDateClosed } from "@/lib/booking-closures"
 import { PLANS, getStaffFee } from "@/lib/data"
 import type { IntlDict } from "@/lib/i18n/types"
 import { type IntlLocale, LOCALE_BOOKING_TAGS, localePath } from "@/lib/i18n/locales"
@@ -441,6 +442,7 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
   const isFormValid =
     !!plan &&
     !!date &&
+    !isBookingDateClosed(date) &&
     (timeOptional || !!time) &&
     counts.adult > 0 &&
     participants.length > 0 &&
@@ -459,6 +461,7 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
   const missingItems: string[] = []
   if (!plan) missingItems.push(copy.missingChooseTour)
   if (!date) missingItems.push(copy.missingDate)
+  else if (isBookingDateClosed(date)) missingItems.push(bookingClosedMessage(locale))
   if (!timeOptional && !time) missingItems.push(copy.missingTime)
   if (participants.length === 0) missingItems.push(copy.missingAddGuest)
   else if (counts.adult === 0) missingItems.push(copy.missingAdult)
@@ -799,17 +802,14 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
             <Label htmlFor="intl-date" className="text-sm font-medium text-gray-700 mb-2 block">
               {copy.dateLabel}
             </Label>
-            <Input
+            <BookingDatePicker
               id="intl-date"
-              type="date"
-              required
-              min={todayStr()}
+              locale={locale}
               value={date}
-              onChange={(e) => {
-                replaceBookingSelectionQuery("date", e.target.value)
-                setDate(e.target.value)
+              onChange={(date) => {
+                replaceBookingSelectionQuery("date", date)
+                setDate(date)
               }}
-              className="rounded-xl border-emerald-200"
             />
           </div>
           <div>
