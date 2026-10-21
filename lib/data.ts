@@ -3,7 +3,7 @@ import { STAFF_MEMBERS } from "@/lib/staff"
 import { PLAN_DETAILS } from "@/lib/plan-details"
 import { PLAN_PRICE_DATA } from "@/lib/plan-price-display"
 import { getPlanMaxParticipants } from "@/lib/booking-rules"
-import { NIGHT_TOUR_TIMES } from "@/lib/plan-flags"
+import { COMBO_TURTLE_TIMES, NIGHT_TOUR_TIMES } from "@/lib/plan-flags"
 
 export { PLAN_COVER_IMAGE, TOUR_IMAGE_PATHS } from "@/lib/tour-assets"
 
@@ -599,7 +599,7 @@ SUPの漕ぎ方や乗り方を陸上で丁寧にレクチャーします。
 ・写真・動画データはどちらも無料プレゼント。
 
 〜1日の流れ〜
-①昼：ウミガメシュノーケル（9:00 / 11:00 / 14:00 / 16:00 から選択）
+①昼：ウミガメシュノーケル（7:00 / 9:00 / 11:00 / 14:00 / 16:00 から選択）
 透き通る海でウミガメと一緒に泳ぎます。
 ②夜：ヤシガニ探検（19:20 / 21:10 / 23:20 から選択）
 懐中電灯を持って夜の亜熱帯ジャングルへ。巨大ヤシガニや夜行性の生き物を探します。
@@ -621,8 +621,8 @@ SUPの漕ぎ方や乗り方を陸上で丁寧にレクチャーします。
     priceNote: "大人¥9,500 / 子供¥9,000（通常¥10,500・1,000円お得）",
     image: PLAN_COVER_IMAGE.combo,
     images: TOUR_IMAGE_PATHS.combo,
-    timeTags: ["09:00", "11:00", "14:00", "16:00"],
-    provisionalTimes: ["09:00", "11:00", "14:00", "16:00"],
+    timeTags: COMBO_TURTLE_TIMES,
+    provisionalTimes: COMBO_TURTLE_TIMES,
     durationHours: 3.5,
     features: ["昼:ウミガメシュノーケル", "夜:ヤシガニ探検", "海と夜を1日で", "通常より1,000円お得"],
     rank: 7,
@@ -659,7 +659,7 @@ SUPの漕ぎ方や乗り方を陸上で丁寧にレクチャーします。
 ・写真・動画データはどちらも無料プレゼント。ウェットスーツ・度付きマスクも無料です（度付きマスクは大人用のみ）。
 
 〜1日の流れ〜
-①昼：貸切ウミガメシュノーケル（9:00 / 11:00 / 14:00 / 16:00 から選択）
+①昼：貸切ウミガメシュノーケル（7:00 / 9:00 / 11:00 / 14:00 / 16:00 から選択）
 他のお客様を気にせず、専属ガイドと自分たちのペースでウミガメシュノーケルを楽しめます。
 ②夜：貸切ヤシガニ探検（19:20 / 21:10 / 23:20 から選択）
 お客様だけのペースで夜の亜熱帯を探検。巨大ヤシガニや夜行性の生き物を探します。
@@ -683,8 +683,8 @@ SUPの漕ぎ方や乗り方を陸上で丁寧にレクチャーします。
     priceNote: "大人・子供¥16,000（通常¥17,000・1,000円お得）",
     image: PLAN_COVER_IMAGE.combo,
     images: TOUR_IMAGE_PATHS.combo,
-    timeTags: ["09:00", "11:00", "14:00", "16:00"],
-    provisionalTimes: ["09:00", "11:00", "14:00", "16:00"],
+    timeTags: COMBO_TURTLE_TIMES,
+    provisionalTimes: COMBO_TURTLE_TIMES,
     durationHours: 3.5,
     features: ["昼も夜も完全貸切", "専属ガイド", "夜:ヤシガニ探検", "通常より1,000円お得"],
     rank: 8,
@@ -712,7 +712,7 @@ SUPの漕ぎ方や乗り方を陸上で丁寧にレクチャーします。
 ・写真・動画データ、ドローン撮影データはすべて無料プレゼント。
 
 〜当日の流れ〜
-①受付・集合（9:00 / 11:00 / 14:00 / 16:00 から選択）
+①受付・集合（7:00 / 9:00 / 11:00 / 14:00 / 16:00 から選択）
 ②ウミガメシュノーケル（約1.5時間）：透き通る海でウミガメと一緒に泳ぎます。
 ③そのまま同じビーチでドローンSUP（約1.5時間）：宮古ブルーの海上をSUPでクルージング。ドローンで海上＆空からの絶景を撮影します。
 
@@ -735,8 +735,8 @@ SUPの漕ぎ方や乗り方を陸上で丁寧にレクチャーします。
     priceNote: "大人¥13,000 / 子供¥11,500（通常¥14,000・1,000円お得）",
     image: PLAN_COVER_IMAGE.comboSeaSky,
     images: TOUR_IMAGE_PATHS.comboSeaSky,
-    timeTags: ["09:00", "11:00", "14:00", "16:00"],
-    provisionalTimes: ["09:00", "11:00", "14:00", "16:00"],
+    timeTags: COMBO_TURTLE_TIMES,
+    provisionalTimes: COMBO_TURTLE_TIMES,
     durationHours: 3,
     features: ["昼:ウミガメシュノーケル", "昼:ドローンSUP空撮", "同じビーチで連続開催", "通常より1,000円お得"],
     rank: 9,
@@ -774,7 +774,7 @@ SUPの漕ぎ方や乗り方を陸上で丁寧にレクチャーします。
 ・写真・動画データ、ドローン撮影データはすべて無料プレゼント。
 
 〜当日の流れ〜
-①受付・集合（9:00 / 11:00 / 14:00 / 16:00 から選択）
+①受付・集合（7:00 / 9:00 / 11:00 / 14:00 / 16:00 から選択）
 ②貸切ウミガメシュノーケル（約1.5時間）：他のお客様を気にせず、自分たちのペースでウミガメと泳ぎます。
 ③そのまま同じビーチで貸切ドローンSUP（約1.5時間）：宮古ブルーの海上をクルージング。ドローンで海上＆空からの絶景を撮影します。
 
@@ -799,8 +799,8 @@ SUPの漕ぎ方や乗り方を陸上で丁寧にレクチャーします。
     priceNote: "大人¥17,500 / 子供¥16,500（通常¥18,500・1,000円お得）",
     image: PLAN_COVER_IMAGE.comboSeaSky,
     images: TOUR_IMAGE_PATHS.comboSeaSky,
-    timeTags: ["09:00", "11:00", "14:00", "16:00"],
-    provisionalTimes: ["09:00", "11:00", "14:00", "16:00"],
+    timeTags: COMBO_TURTLE_TIMES,
+    provisionalTimes: COMBO_TURTLE_TIMES,
     durationHours: 3,
     features: ["昼も昼も完全貸切", "専属ガイド", "ドローン撮影付き", "通常より1,000円お得"],
     rank: 10,
@@ -836,7 +836,7 @@ SUPの漕ぎ方や乗り方を陸上で丁寧にレクチャーします。
 ・写真・動画データ、ドローン撮影データはすべて無料プレゼント。
 
 〜1日の流れ〜
-①朝：ウミガメシュノーケル（9:00 / 11:00 / 14:00 / 16:00 から選択・約1.5時間）
+①朝：ウミガメシュノーケル（7:00 / 9:00 / 11:00 / 14:00 / 16:00 から選択・約1.5時間）
 ②昼：ドローンSUP（シュノーケルから連続・約1.5時間）
 ③夜：ナイトツアー（19:20 / 21:10 / 23:20 から選択・約1.5時間）
 ※夕方に一旦解散し、自由時間（夕食・休憩）をはさんで夜のナイトツアーへ。
@@ -856,8 +856,8 @@ SUPの漕ぎ方や乗り方を陸上で丁寧にレクチャーします。
     priceNote: "大人¥16,000 / 子供¥14,500（通常¥18,000・2,000円お得）",
     image: PLAN_COVER_IMAGE.comboFullDay,
     images: TOUR_IMAGE_PATHS.comboFullDay,
-    timeTags: ["09:00", "11:00", "14:00", "16:00"],
-    provisionalTimes: ["09:00", "11:00", "14:00", "16:00"],
+    timeTags: COMBO_TURTLE_TIMES,
+    provisionalTimes: COMBO_TURTLE_TIMES,
     durationHours: 4.5,
     features: ["朝:ウミガメシュノーケル", "昼:ドローンSUP", "夜:ナイトツアー", "通常より2,000円お得"],
     rank: 11,
@@ -894,7 +894,7 @@ SUPの漕ぎ方や乗り方を陸上で丁寧にレクチャーします。
 ・写真・動画データ、ドローン撮影データはすべて無料プレゼント。ウェットスーツ・度付きマスクも無料です（度付きマスクは大人用のみ）。
 
 〜1日の流れ〜
-①朝：貸切ウミガメシュノーケル（9:00 / 11:00 / 14:00 / 16:00 から選択・約1.5時間）
+①朝：貸切ウミガメシュノーケル（7:00 / 9:00 / 11:00 / 14:00 / 16:00 から選択・約1.5時間）
 ②昼：貸切ドローンSUP（シュノーケルから連続・約1.5時間）
 ③夜：貸切ナイトツアー（19:20 / 21:10 / 23:20 から選択・約1.5時間）
 ※夕方に一旦解散し、自由時間（夕食・休憩）をはさんで夜のナイトツアーへ。
@@ -916,8 +916,8 @@ SUPの漕ぎ方や乗り方を陸上で丁寧にレクチャーします。
     priceNote: "大人¥24,500 / 子供¥23,500（通常¥26,500・2,000円お得）",
     image: PLAN_COVER_IMAGE.comboFullDay,
     images: TOUR_IMAGE_PATHS.comboFullDay,
-    timeTags: ["09:00", "11:00", "14:00", "16:00"],
-    provisionalTimes: ["09:00", "11:00", "14:00", "16:00"],
+    timeTags: COMBO_TURTLE_TIMES,
+    provisionalTimes: COMBO_TURTLE_TIMES,
     durationHours: 4.5,
     features: ["朝も昼も夜も完全貸切", "専属ガイド", "海・空・夜を1日で", "通常より2,000円お得"],
     rank: 12,
