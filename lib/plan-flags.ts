@@ -66,7 +66,7 @@ export const NIGHT_TOUR_TIMES = ["19:20", "21:10", "23:20"]
 // 既存のセットプラン用参照名は互換性のため維持する。
 export const COMBO_NIGHT_TIMES = NIGHT_TOUR_TIMES
 // セットの海亀（シュノーケル）開始時刻の候補
-export const COMBO_TURTLE_TIMES = ["09:00", "11:00", "14:00", "16:00"]
+export const COMBO_TURTLE_TIMES = ["07:00", "09:00", "11:00", "14:00", "16:00"]
 // ドローンSUP単品（S6/S7）の開始時刻の候補（7:00〜16:00の1時間おき）
 // ※海況・水位により前後する場合がある旨をフォーム・プランページで併記する
 export const DAY_SUP_TIMES = [
