@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button"
 import { Clock, Info } from "lucide-react"
 import { DAY_SUP_TIMES, NIGHT_TOUR_TIMES } from "@/lib/plan-flags"
 import { getSunsetSupGuide } from "@/lib/beach-info"
+import { dateToYMD } from "@/lib/date-utils"
+import { getBookingDeadlineCopy, isBookingTimeOpen } from "@/lib/booking-deadline"
 
 type PlanId = "night-hunter" | "sunset-sup" | "day-sup" | "slide-boat" | "other"
 
@@ -16,6 +18,7 @@ type Props = {
   selectedDate: Date
   selectedTime: string
   onPick: (time: string) => void
+  now: number | null
 }
 
 // 宮古島の座標（市街地基準）
@@ -69,8 +72,10 @@ function getTimeSlots(plan: PlanId, date: Date): string[] {
   }
 }
 
-export default function BookingTimeSlots({ selectedPlan, selectedDate, selectedTime, onPick }: Props) {
+export default function BookingTimeSlots({ selectedPlan, selectedDate, selectedTime, onPick, now }: Props) {
   const slots = useMemo(() => getTimeSlots(selectedPlan, selectedDate), [selectedPlan, selectedDate])
+  const date = Number.isNaN(selectedDate.getTime()) ? "" : dateToYMD(selectedDate)
+  const deadlineCopy = getBookingDeadlineCopy()
 
   if (selectedPlan === "sunset-sup") {
     // 日付が選択されていれば、その日の日没（SunCalc）とその月の集合・解散目安を表示する
@@ -122,24 +127,33 @@ export default function BookingTimeSlots({ selectedPlan, selectedDate, selectedT
 
   return (
     <div>
-      <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
-        {slots.map((time) => (
-          <Button
-            key={time}
-            type="button"
-            variant={selectedTime === time ? "default" : "outline"}
-            size="sm"
-            onClick={() => onPick(time)}
-            className={`rounded-xl ${
-              selectedTime === time
-                ? "bg-emerald-600 hover:bg-emerald-700 text-white"
-                : "border-emerald-200 text-emerald-700 hover:bg-emerald-50"
-            }`}
-          >
-            {time}
-          </Button>
-        ))}
+      <div role="group" aria-label="開始時間" className="grid grid-cols-3 md:grid-cols-5 gap-3">
+        {slots.map((time) => {
+          const closed = now !== null && !isBookingTimeOpen(date, time, now)
+          return (
+            <Button
+              key={time}
+              type="button"
+              variant={selectedTime === time ? "default" : "outline"}
+              aria-pressed={selectedTime === time}
+              disabled={now === null || closed}
+              size="sm"
+              onClick={() => onPick(time)}
+              className={`min-h-11 flex-col gap-0 rounded-xl disabled:opacity-100 disabled:bg-gray-100 disabled:text-gray-600 disabled:border-gray-200 ${
+                selectedTime === time
+                  ? "bg-emerald-700 hover:bg-emerald-800 text-white"
+                  : "border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+              }`}
+            >
+              <span>{time}</span>
+              {closed && <span className="text-xs">{deadlineCopy.slotClosed}</span>}
+            </Button>
+          )
+        })}
       </div>
+      {now !== null && slots.every((time) => !isBookingTimeOpen(date, time, now)) && (
+        <p role="status" className="mt-3 text-sm text-rose-800">{deadlineCopy.allClosed}</p>
+      )}
       {selectedPlan === "day-sup" && (
         <p className="text-xs text-gray-500 mt-2">
           ※開始時間は当日の海況・水位により前後する場合があります（確定時間はLINEでご案内します）

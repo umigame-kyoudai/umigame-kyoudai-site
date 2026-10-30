@@ -484,10 +484,11 @@ export const EN_FORM: IntlFormCopy = {
   couponChecking: "Checking...",
   couponAppliedToast: "Coupon applied!",
   couponAppliedLine: (amount) => `Coupon applied: −¥${amount}`,
-  couponInvalid: "That coupon code is not valid.",
+  couponInvalid: "This coupon cannot be used for this booking. Please check the code and eligible tour.",
   couponNetworkError: "Could not verify the coupon. Please check your connection.",
   couponChangedInvalid: "This coupon is not available after changing the booking details.",
   couponRecalcError: "Could not recalculate the coupon. Please apply it again.",
+  rateLimitError: "Too many attempts. Please wait a while before trying again.",
   partySummary: (counts) => {
     const parts = [`${counts.adult} adult${counts.adult !== 1 ? "s" : ""}`]
     if (counts.child > 0) parts.push(`${counts.child} child${counts.child !== 1 ? "ren" : ""}`)
@@ -508,7 +509,7 @@ export const EN_FORM: IntlFormCopy = {
     after: ".",
   },
   cancellationSmallPrint:
-    "Free cancellation until the day before. Same-day cancellations and no-shows are charged 100% of the tour fee. Full refund if we cancel due to weather.",
+    "Free cancellation until the day before. Same-day cancellations and no-shows are charged 100% of the tour fee. No charge if we cancel due to weather.",
   lineLoginHeading: "One last step: log in with LINE",
   lineLoginBody: {
     before:
@@ -518,6 +519,8 @@ export const EN_FORM: IntlFormCopy = {
   lineLoginButton: "Log in with LINE",
   lineConnecting: "Connecting to LINE...",
   lineErrorPrefix: "LINE connection error: ",
+  lineConnectionError: "Could not connect to LINE. Check your connection, then retry. Your entries are saved.",
+  lineRetry: "Retry LINE connection",
   missingHeading: (count) => `Almost there — ${count} ${count === 1 ? "item" : "items"} left:`,
   missingChooseTour: "Choose a tour",
   missingDate: "Pick a date",
@@ -528,13 +531,15 @@ export const EN_FORM: IntlFormCopy = {
   missingAgeFor: (index) => `Age/category for guest ${index}`,
   missingShoeFor: (index) => `Shoe size for guest ${index}`,
   missingFullName: "Your full name",
-  missingPhone: "Phone number (at least 10 digits, with country code)",
+  missingPhone: "Enter a valid phone number. International numbers can start with + and the country code.",
   missingAgree: "Agree to the cancellation policy",
   missingLineLogin: "Log in with LINE",
   lineExpiredError: "Your LINE login has expired. Please log in with LINE again and resend — your entries are saved.",
   submitFailedError:
     "We couldn't send your booking request. Please try again in a little while, or message us on LINE.",
   genericError: "Something went wrong. Please try again.",
+  submitValidationError: "Please check the tour, date, time and guest details before trying again. Your entries are saved.",
+  submitNetworkError: "We could not confirm whether your request was received. Check your connection and retry with the same details. Your entries are saved.",
   submitSending: "Sending...",
   submitLabel: "Send booking request",
   requestNote: "This sends a booking request — your booking is confirmed only after our staff replies on LINE.",

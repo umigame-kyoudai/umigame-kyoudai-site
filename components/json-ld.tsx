@@ -111,7 +111,7 @@ export function LocalBusinessJsonLd() {
       url: tour.seo.url,
       availability:
         tour.status === "coming_soon"
-          ? "https://schema.org/PreOrder"
+          ? "https://schema.org/OutOfStock"
           : "https://schema.org/InStock",
     })),
     openingHoursSpecification: {
@@ -150,7 +150,8 @@ export function PlanJsonLd({ plan }: {
       "@type": "Offer",
       price: priceNum,
       priceCurrency: "JPY",
-      availability: isComingSoon ? "https://schema.org/PreOrder" : "https://schema.org/InStock",
+      // 受付前は先行予約も受け付けていないため、PreOrder として公開しない。
+      availability: isComingSoon ? "https://schema.org/OutOfStock" : "https://schema.org/InStock",
       url: isComingSoon ? `${SITE_URL}/plans/${plan.id}#coming-soon` : `${SITE_URL}/book?plan=${plan.id}`,
     },
     // 検証可能な口コミ・評価データと紐づかないため aggregateRating は出力しない。

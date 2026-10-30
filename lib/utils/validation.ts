@@ -8,10 +8,16 @@ export const isValidCalendarDate = (value: unknown): value is string => {
   return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
 };
 
-// 電話番号のバリデーション
+// 全角数字・記号を整える。先頭の+や0は保持し、海外番号も受け付ける。
+export const normalizePhoneNumber = (phone: string): string =>
+  phone.normalize('NFKC').trim().replace(/[‐‑‒–—―−ー]/g, '-');
+
+// 区切り記号を桁数に含めない。+付きは短い海外番号も許す。
 export const validatePhoneNumber = (phone: string): { valid: boolean; error?: string } => {
-  const phoneRegex = /^[0-9\-()+ ]{10,}$/;
-  if (!phone || !phoneRegex.test(phone)) {
+  const normalized = typeof phone === 'string' ? normalizePhoneNumber(phone) : '';
+  const digits = normalized.replace(/\D/g, '');
+  const minDigits = normalized.startsWith('+') ? 7 : 10;
+  if (!/^\+?[0-9() -]+$/.test(normalized) || digits.length < minDigits || digits.length > 15) {
     return { valid: false, error: ERROR_MESSAGES.INVALID_PHONE };
   }
   return { valid: true };

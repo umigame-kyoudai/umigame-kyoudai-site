@@ -149,7 +149,7 @@ export default function Navbar({
               <MessageSquare className="w-4 h-4 mr-2" />
               {t.line}
             </Button>
-            <Button asChild className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl px-4 2xl:px-6">
+            <Button asChild className="bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl px-4 2xl:px-6">
               <Link href={t.bookHref} onClick={handleBookClick}>{t.book}</Link>
             </Button>
           </div>
@@ -195,7 +195,7 @@ export default function Navbar({
                   <MessageSquare className="w-4 h-4 mr-2" />
                   {t.line}
                 </Button>
-                <Button asChild className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl">
+                <Button asChild className="w-full bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl">
                   <Link href={t.bookHref} onClick={handleBookClick}>{t.book}</Link>
                 </Button>
               </div>
