@@ -46,7 +46,7 @@ export function CTASection() {
               eventProps={{ location: "home_final_cta" }}
               href="https://lin.ee/jfp4laz"
               external
-              className="block bg-[#06C755] hover:bg-[#05b34d] text-white font-bold text-base px-8 py-3.5 rounded-full shadow-xl transition-all active:scale-95"
+              className="block bg-[#06C755] hover:bg-[#05b34d] text-[#003b1b] font-bold text-base px-8 py-3.5 rounded-full shadow-xl transition-all active:scale-95"
             >
               LINEで気軽に相談
             </TrackedCta>

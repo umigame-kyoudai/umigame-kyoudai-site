@@ -68,8 +68,8 @@ export function createMetadata({
       images: [
         {
           url: ogImage,
-          width: 1200,
-          height: 630,
+          // 寸法が確定している共通画像だけ指定し、任意の画像へ誤った比率を付けない。
+          ...(ogImage === OG_IMAGE ? { width: 1200, height: 630 } : {}),
           alt: title,
         },
       ],

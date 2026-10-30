@@ -212,7 +212,7 @@ function FlowSection({ plan }: { plan: PlanDetail }) {
                   whileInView={{ scale: 1 }}
                   viewport={{ once: true }}
                   transition={{ type: "spring", stiffness: 200, damping: 15, delay: i * 0.12 + 0.1 }}
-                  className="flex-shrink-0 w-12 h-12 md:w-16 md:h-16 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xl md:text-2xl font-black z-10 shadow-lg"
+                  className="flex-shrink-0 w-12 h-12 md:w-16 md:h-16 rounded-full bg-emerald-700 text-white flex items-center justify-center text-xl md:text-2xl font-black z-10 shadow-lg"
                 >
                   {step.step}
                 </motion.div>
@@ -265,7 +265,7 @@ function PriceSection({ plan }: { plan: PlanDetail }) {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-2xl p-8 text-white shadow-xl"
+            className="bg-gradient-to-br from-emerald-800 to-cyan-800 rounded-2xl p-8 text-white shadow-xl"
           >
             <p className="text-emerald-100 text-sm font-medium mb-3">料金</p>
             <div className="grid grid-cols-2 gap-3">
@@ -421,7 +421,7 @@ function LocationsSection({ plan }: { plan: PlanDetail }) {
                     <div className="flex items-center gap-2">
                       <span className="font-semibold text-gray-900 text-sm">{loc.name}</span>
                       {i === 0 && (
-                        <span className="text-[10px] bg-emerald-500 text-white px-2 py-0.5 rounded-full font-bold">
+                        <span className="text-[10px] bg-emerald-700 text-white px-2 py-0.5 rounded-full font-bold">
                           おすすめ
                         </span>
                       )}
@@ -476,7 +476,7 @@ function LocationsSection({ plan }: { plan: PlanDetail }) {
                 <div className="flex items-center gap-2">
                   <h3 className="font-bold text-gray-900">{loc.name}</h3>
                   {i === 0 && (
-                    <span className="text-[10px] bg-emerald-500 text-white px-2 py-0.5 rounded-full font-bold">
+                    <span className="text-[10px] bg-emerald-700 text-white px-2 py-0.5 rounded-full font-bold">
                       おすすめ
                     </span>
                   )}
@@ -499,15 +499,15 @@ function LocationsSection({ plan }: { plan: PlanDetail }) {
 
               <div className="grid grid-cols-3 gap-3 text-center">
                 <div className="bg-white rounded-xl p-2.5 border border-gray-50">
-                  <p className="text-[10px] text-gray-400 mb-0.5">駐車場</p>
+                  <p className="text-xs text-gray-600 mb-0.5">駐車場</p>
                   <p className="text-xs font-semibold text-gray-900">{loc.parking}</p>
                 </div>
                 <div className="bg-white rounded-xl p-2.5 border border-gray-50">
-                  <p className="text-[10px] text-gray-400 mb-0.5">トイレ</p>
+                  <p className="text-xs text-gray-600 mb-0.5">トイレ</p>
                   <p className="text-xs font-semibold">{loc.toilet ? <span className="text-emerald-600">あり</span> : <span className="text-gray-400">なし</span>}</p>
                 </div>
                 <div className="bg-white rounded-xl p-2.5 border border-gray-50">
-                  <p className="text-[10px] text-gray-400 mb-0.5">シャワー</p>
+                  <p className="text-xs text-gray-600 mb-0.5">シャワー</p>
                   <p className="text-xs font-semibold">{loc.shower ? <span className="text-emerald-600">あり</span> : <span className="text-gray-400">なし</span>}</p>
                 </div>
               </div>
@@ -638,7 +638,7 @@ function MeetingPointMapSection({ plan }: { plan: PlanDetail }) {
               href={plan.meetingPoint.mapUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex flex-shrink-0 justify-center rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-emerald-700"
+              className="inline-flex flex-shrink-0 justify-center rounded-full bg-emerald-700 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-emerald-800"
             >
               Google Mapsで開く
             </a>
@@ -713,7 +713,7 @@ function PlanCTA({ plan }: { plan: PlanDetail }) {
 
   if (plan.status === "coming_soon") {
     return (
-      <section className="py-10 sm:py-16 md:py-24 bg-gradient-to-br from-cyan-600 to-emerald-600">
+      <section className="py-10 sm:py-16 md:py-24 bg-gradient-to-br from-cyan-800 to-emerald-800">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <ComingSoonBanner
             title="近日公開・予約受付開始までお待ちください"
@@ -727,7 +727,7 @@ function PlanCTA({ plan }: { plan: PlanDetail }) {
   }
 
   return (
-    <section className="py-10 sm:py-16 md:py-24 bg-gradient-to-br from-emerald-600 to-cyan-600">
+    <section className="py-10 sm:py-16 md:py-24 bg-gradient-to-br from-emerald-800 to-cyan-800">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -757,7 +757,7 @@ function PlanCTA({ plan }: { plan: PlanDetail }) {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => sendDetailedEvent("line_click", { location: "plan_detail", plan: plan.id })}
-                className="block bg-[#06C755] text-white font-bold text-base px-8 py-3.5 rounded-full shadow-xl transition-colors hover:bg-[#05b34d]"
+                className="block bg-[#06C755] text-[#003b1b] font-bold text-base px-8 py-3.5 rounded-full shadow-xl transition-colors hover:bg-[#05b34d]"
               >
                 LINEで質問・相談する
               </a>
@@ -773,17 +773,17 @@ function PlanCTA({ plan }: { plan: PlanDetail }) {
 const otherPlansMeta: Record<string, { name: string; tagline: string; price: string; badge: string; badgeColor: string; comingSoon?: boolean }> = {
   S1: { name: "ウミガメシュノーケル", tagline: "安全管理徹底の少人数制ツアー", price: "¥6,000〜", badge: "一番人気", badgeColor: "bg-yellow-400 text-yellow-900" },
   S2: { name: "【貸切】ウミガメシュノーケル", tagline: "ウミガメシュノーケルを完全貸切で", price: "¥9,000", badge: "貸切プラン", badgeColor: "bg-purple-500 text-white" },
-  S3: { name: "本格ナイトツアー", tagline: "夜の大冒険へ出かけよう", price: "¥4,000", badge: "家族人気No.1", badgeColor: "bg-emerald-500 text-white" },
+  S3: { name: "本格ナイトツアー", tagline: "夜の大冒険へ出かけよう", price: "¥4,000", badge: "家族人気No.1", badgeColor: "bg-emerald-700 text-white" },
   S4: { name: "【貸切】サンセットSUP", tagline: "1組貸切・ドローン空撮付きの夕日体験", price: "¥8,500〜", badge: "貸切", badgeColor: "bg-purple-600 text-white" },
   S8: { name: "サンセットSUP", tagline: "ドローン空撮付きの夕日SUP", price: "¥6,500〜", badge: "ドローン撮影付き", badgeColor: "bg-orange-500 text-white" },
   S5: { name: "【貸切】本格ナイトツアー", tagline: "専属ガイドとプライベート冒険", price: "¥8,000", badge: "貸切プラン", badgeColor: "bg-violet-500 text-white" },
-  S6: { name: "宮古島ドローンSUP体験", tagline: "日中の宮古ブルーを空撮で残す", price: "¥6,500〜", badge: "ドローン撮影付き", badgeColor: "bg-cyan-600 text-white" },
+  S6: { name: "宮古島ドローンSUP体験", tagline: "日中の宮古ブルーを空撮で残す", price: "¥6,500〜", badge: "ドローン撮影付き", badgeColor: "bg-cyan-700 text-white" },
   S7: { name: "【貸切】宮古島ドローンSUP体験", tagline: "1組貸切で日中のドローンSUP", price: "¥8,500〜", badge: "完全貸切", badgeColor: "bg-violet-500 text-white" },
-  C1: { name: "ウミガメシュノーケル＆ヤシガニ探検 昼夜セット", tagline: "昼はウミガメ、夜はヤシガニ探検", price: "¥9,500", badge: "セットでお得", badgeColor: "bg-emerald-600 text-white" },
+  C1: { name: "ウミガメシュノーケル＆ヤシガニ探検 昼夜セット", tagline: "昼はウミガメ、夜はヤシガニ探検", price: "¥9,500", badge: "セットでお得", badgeColor: "bg-emerald-700 text-white" },
   C2: { name: "【貸切】ウミガメシュノーケル＆ヤシガニ探検 昼夜セット", tagline: "昼も夜も貸切でゆっくり楽しむ", price: "¥16,000", badge: "貸切セット", badgeColor: "bg-purple-500 text-white" },
-  C3: { name: "ウミガメシュノーケル＆ドローンSUP 海空セット", tagline: "昼は海でウミガメ、空からドローンSUP", price: "¥11,500〜", badge: "セットでお得", badgeColor: "bg-cyan-600 text-white" },
+  C3: { name: "ウミガメシュノーケル＆ドローンSUP 海空セット", tagline: "昼は海でウミガメ、空からドローンSUP", price: "¥11,500〜", badge: "セットでお得", badgeColor: "bg-cyan-700 text-white" },
   C4: { name: "【貸切】ウミガメシュノーケル＆ドローンSUP 海空セット", tagline: "海空セットを1組貸切でゆっくり", price: "¥16,500〜", badge: "貸切セット", badgeColor: "bg-violet-500 text-white" },
-  C5: { name: "ウミガメシュノーケル＆ドローンSUP＆ナイトツアー まるごと1日セット", tagline: "海・空・夜を1日で遊び尽くす", price: "¥14,500〜", badge: "3つでお得", badgeColor: "bg-emerald-600 text-white" },
+  C5: { name: "ウミガメシュノーケル＆ドローンSUP＆ナイトツアー まるごと1日セット", tagline: "海・空・夜を1日で遊び尽くす", price: "¥14,500〜", badge: "3つでお得", badgeColor: "bg-emerald-700 text-white" },
   C6: { name: "【貸切】ウミガメシュノーケル＆ドローンSUP＆ナイトツアー まるごと1日セット", tagline: "1日まるごと完全貸切", price: "¥23,500〜", badge: "貸切セット", badgeColor: "bg-violet-500 text-white" },
   "slide-boat": { name: "スライダーボートシュノーケル", tagline: "滑り台付きボートの新プラン", price: "大人¥14,000", badge: "Coming Soon", badgeColor: "bg-cyan-100 text-cyan-800", comingSoon: true },
 }
@@ -917,7 +917,7 @@ function FloatingPlanNav({ currentId }: { currentId: string }) {
                   href={`/plans/${id}`}
                   className={`flex-shrink-0 text-xs font-semibold px-4 py-2 rounded-full transition-all ${
                     id === currentId
-                      ? "bg-emerald-500 text-white"
+                      ? "bg-emerald-700 text-white"
                       : "bg-gray-100 text-gray-600 hover:bg-emerald-50 hover:text-emerald-700"
                   }`}
                 >
@@ -930,7 +930,7 @@ function FloatingPlanNav({ currentId }: { currentId: string }) {
             {isComingSoon ? (
               <Link
                 href="#coming-soon"
-                className="flex-shrink-0 bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold px-5 py-2 rounded-full transition-colors ml-3"
+                className="flex-shrink-0 bg-cyan-700 hover:bg-cyan-800 text-white text-xs font-bold px-5 py-2 rounded-full transition-colors ml-3"
               >
                 近日公開
               </Link>
@@ -938,7 +938,7 @@ function FloatingPlanNav({ currentId }: { currentId: string }) {
               <Link
                 href={`/book?plan=${currentId}`}
                 onClick={() => sendDetailedEvent("book_cta_click", { location: "plan_floating_nav", plan: currentId })}
-                className="flex-shrink-0 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold px-5 py-2 rounded-full transition-colors ml-3"
+                className="flex-shrink-0 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold px-5 py-2 rounded-full transition-colors ml-3"
               >
                 予約する
               </Link>

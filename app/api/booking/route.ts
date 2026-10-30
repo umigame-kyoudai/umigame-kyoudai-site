@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server'
 import { NIGHT_GUIDE } from '@/lib/staff'
 import { resolveBookingSource } from '@/lib/booking-source-server'
 import { generateBookingNumber, sendToGAS, createAPIResponse, createAPIError } from '@/lib/services/gas-service'
-import { isValidCalendarDate, validateEmail, validatePhoneNumber, validateRequired } from '@/lib/utils/validation'
+import { isValidCalendarDate, normalizePhoneNumber, validateEmail, validatePhoneNumber, validateRequired } from '@/lib/utils/validation'
+import { getBookingDeadlineCopy, isBookingDeadlinePassed } from '@/lib/booking-deadline'
 import { PLANS, getStaffFee } from '@/lib/data'
 import { calculateCouponDiscount } from '@/lib/constants/coupons'
 import { getEnPrice } from '@/lib/i18n/en-prices'
@@ -278,7 +279,7 @@ const validateParticipant = (
 }
 
 // 必須フィールドと予約内容の検証
-const validateBookingRequest = (data: BookingRequest): { valid: boolean; error?: string } => {
+const validateBookingRequest = (data: BookingRequest): { valid: boolean; error?: string; code?: string } => {
   if (!data || typeof data !== 'object' || Array.isArray(data)) {
     return { valid: false, error: 'リクエストの形式が正しくありません' }
   }
@@ -329,6 +330,10 @@ const validateBookingRequest = (data: BookingRequest): { valid: boolean; error?:
     if (!COMBO_NIGHT_TIMES.includes(data.nightTime || '')) {
       return { valid: false, error: '選択されたヤシガニ探検時間がプランの時間帯と一致しません' }
     }
+  }
+
+  if (isBookingDeadlinePassed(data)) {
+    return { valid: false, error: getBookingDeadlineCopy(data.locale).closed, code: 'BOOKING_DEADLINE_PASSED' }
   }
 
   if (typeof customerName !== 'string' || !validateRequired(customerName).valid) return { valid: false, error: '氏名が必須です' }
@@ -494,7 +499,7 @@ const buildGASPayload = (
     planId: plan.id,
     customerName: bookingData.customerName,
     customerEmail: bookingData.customerEmail || '',
-    customerPhone: bookingData.customerPhone || '',
+    customerPhone: normalizePhoneNumber(bookingData.customerPhone || ''),
     planName: plan.name,
     locale: bookingData.locale || 'ja',
     selectedDate: bookingData.selectedDate,
@@ -551,7 +556,7 @@ export async function POST(request: Request) {
     const validation = validateBookingRequest(bookingData)
     if (!validation.valid) {
       return NextResponse.json(
-        { success: false, error: validation.error, timestamp: new Date().toISOString() },
+        { success: false, error: validation.error, ...(validation.code ? { code: validation.code } : {}), timestamp: new Date().toISOString() },
         { status: 400 }
       )
     }

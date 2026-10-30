@@ -52,7 +52,10 @@ import {
 } from "@/lib/customer-tracking"
 import { getPlanMaxParticipants } from "@/lib/booking-rules"
 import { replaceBookingSelectionQuery } from "@/lib/booking-url"
-import { isValidCalendarDate } from "@/lib/utils/validation"
+import { isValidCalendarDate, normalizePhoneNumber, validatePhoneNumber } from "@/lib/utils/validation"
+import { formatBookingDeadline, getBookingDeadline, getBookingDeadlineCopy, isBookingDeadlinePassed, isBookingTimeOpen } from "@/lib/booking-deadline"
+import { useBookingClock } from "@/lib/use-booking-clock"
+import { getIntlBookingError, getIntlCouponError } from "@/lib/intl-form-errors"
 import {
   clearBookingSubmissionId,
   getOrCreateBookingSubmissionId,
@@ -118,6 +121,8 @@ function loadIntlBookingDraft(locale: IntlLocale): IntlBookingDraft | null {
 }
 
 export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: IntlDict }) {
+  const now = useBookingClock()
+  const deadlineCopy = getBookingDeadlineCopy(locale)
   const copy = dict.form
   const planById = dict.planById
 
@@ -178,6 +183,8 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
   const [agreed, setAgreed] = useState(draft?.agreed ?? false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false)
+  const [couponError, setCouponError] = useState<string | null>(null)
+  const [submitError, setSubmitError] = useState<string | null>(null)
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [confirmedPricing, setConfirmedPricing] = useState<{ totalPrice: number; couponDiscount: number } | null>(null)
   const appliedCouponRef = useRef<{ code: string; signature: string } | null>(null)
@@ -256,6 +263,11 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
   // 指名できるプランは lib/plan-flags.ts の isStaffRequestAvailable が単一ソース（プラン未選択では出さない）
   const staffAvailable = !!plan && isStaffRequestAvailable(planId)
   const timeOptions = plan ? plan.timeTags.filter((tag) => /^\d{2}:\d{2}$/.test(tag)) : []
+  const bookingSelection = { selectedPlan: planId, selectedDate: date, selectedTime: time }
+  const deadline = getBookingDeadline(bookingSelection)
+  const deadlineExpired = now !== null && isBookingDeadlinePassed(bookingSelection, now)
+  const phoneValid = validatePhoneNumber(customerPhone).valid
+  const phoneInvalid = !!customerPhone && !phoneValid
   const maxParticipants = getPlanMaxParticipants(planId)
   const isOverParticipantLimit = maxParticipants !== undefined && participants.length > maxParticipants
   const isParticipantLimitReached = maxParticipants !== undefined && participants.length >= maxParticipants
@@ -335,6 +347,7 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
   }
 
   const handleCouponApply = async () => {
+    setCouponError(null)
     setIsApplyingCoupon(true)
     try {
       const response = await fetch("/api/coupon", {
@@ -342,8 +355,8 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ couponCode, adultCount: counts.adult, childCount: counts.child, planId }),
       })
-      const result = await response.json().catch(() => ({ valid: false, discount: 0 }))
-      if (response.ok && result.valid) {
+      const result = await response.json().catch(() => null)
+      if (response.ok && result?.valid) {
         const normalizedCode = couponCode.trim()
         appliedCouponRef.current = {
           code: normalizedCode,
@@ -355,11 +368,14 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
       } else {
         appliedCouponRef.current = null
         setCouponDiscount(0)
-        toast.error(copy.couponInvalid)
+        const message = getIntlCouponError(copy, result || !response.ok ? response.status : undefined)
+        setCouponError(message)
+        toast.error(message)
       }
     } catch {
       appliedCouponRef.current = null
       setCouponDiscount(0)
+      setCouponError(copy.couponNetworkError)
       toast.error(copy.couponNetworkError)
     } finally {
       setIsApplyingCoupon(false)
@@ -375,6 +391,7 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
     if (signature === appliedCoupon.signature) return
 
     setCouponDiscount(0)
+    setCouponError(null)
     let cancelled = false
     const timer = window.setTimeout(async () => {
       setIsApplyingCoupon(true)
@@ -389,21 +406,24 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
             planId,
           }),
         })
-        const result = await response.json().catch(() => ({ valid: false, discount: 0 }))
+        const result = await response.json().catch(() => null)
         if (cancelled) return
 
-        if (response.ok && result.valid) {
+        if (response.ok && result?.valid) {
           appliedCouponRef.current = { ...appliedCoupon, signature }
           setCouponDiscount(result.discount)
         } else {
           appliedCouponRef.current = null
           setCouponDiscount(0)
-          toast.error(result.error || copy.couponChangedInvalid)
+          const message = getIntlCouponError(copy, result || !response.ok ? response.status : undefined, true)
+          setCouponError(message)
+          toast.error(message)
         }
       } catch {
         if (!cancelled) {
           appliedCouponRef.current = null
           setCouponDiscount(0)
+          setCouponError(copy.couponRecalcError)
           toast.error(copy.couponRecalcError)
         }
       } finally {
@@ -420,6 +440,7 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
   }, [counts.adult, counts.child, planId])
 
   const handleCouponCodeChange = (value: string) => {
+    setCouponError(null)
     appliedCouponRef.current = null
     setCouponCode(value)
     setCouponDiscount(0)
@@ -443,6 +464,7 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
     !!plan &&
     !!date &&
     !isBookingDateClosed(date) &&
+    !deadlineExpired &&
     (timeOptional || !!time) &&
     counts.adult > 0 &&
     participants.length > 0 &&
@@ -451,32 +473,40 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
     !seniorRestricted &&
     customerName.trim().length > 0 &&
     customerEmail.trim().length > 0 &&
-    customerPhone.trim().length >= 10 &&
+    phoneValid &&
     agreed
 
   const needsLineLogin = liffRequired && !hasFreshLineSession
 
-  // Spell out why the submit button is disabled (a human-readable mirror of
-  // isFormValid). The 60+ restriction has its own red notice, so it's not listed.
-  const missingItems: string[] = []
-  if (!plan) missingItems.push(copy.missingChooseTour)
-  if (!date) missingItems.push(copy.missingDate)
-  else if (isBookingDateClosed(date)) missingItems.push(bookingClosedMessage(locale))
-  if (!timeOptional && !time) missingItems.push(copy.missingTime)
-  if (participants.length === 0) missingItems.push(copy.missingAddGuest)
-  else if (counts.adult === 0) missingItems.push(copy.missingAdult)
+  // Show what still needs attention and let guests jump to each field.
+  // The 60+ restriction has its own red notice, so it's not listed here.
+  const missingItems: { message: string; targetId: string }[] = []
+  const missing = (message: string, targetId: string) => missingItems.push({ message, targetId })
+  if (!plan) missing(copy.missingChooseTour, "intl-plan-heading")
+  if (!date) missing(copy.missingDate, "intl-date")
+  else if (isBookingDateClosed(date)) missing(bookingClosedMessage(locale), "intl-date")
+  if (deadlineExpired) missing(deadlineCopy.closed, "intl-date")
+  if (!timeOptional && !time) missing(copy.missingTime, plan ? "intl-time-label" : "intl-plan-heading")
+  if (participants.length === 0) missing(copy.missingAddGuest, "intl-participants-heading")
+  else if (counts.adult === 0) missing(copy.missingAdult, "intl-participants-heading")
   if (isOverParticipantLimit && maxParticipants !== undefined) {
-    missingItems.push(copy.missingReduceGroup(maxParticipants))
+    missing(copy.missingReduceGroup(maxParticipants), "intl-participants-heading")
   }
   participants.forEach((p, index) => {
-    if (!isParticipantAgeValid(planId, p.category, p.age)) missingItems.push(copy.missingAgeFor(index + 1))
-    if (!isNight && !(typeof p.footSize === "number" && p.footSize > 0)) missingItems.push(copy.missingShoeFor(index + 1))
+    if (!isParticipantAgeValid(planId, p.category, p.age)) missing(copy.missingAgeFor(index + 1), `intl-p-${p.id}-age`)
+    if (!isNight && !(typeof p.footSize === "number" && p.footSize > 0)) missing(copy.missingShoeFor(index + 1), `intl-p-${p.id}-foot`)
   })
-  if (customerName.trim().length === 0) missingItems.push(copy.missingFullName)
-  if (customerEmail.trim().length === 0) missingItems.push(copy.emailLabel)
-  if (customerPhone.trim().length < 10) missingItems.push(copy.missingPhone)
-  if (!agreed) missingItems.push(copy.missingAgree)
-  if (needsLineLogin) missingItems.push(copy.missingLineLogin)
+  if (customerName.trim().length === 0) missing(copy.missingFullName, "intl-name")
+  if (customerEmail.trim().length === 0) missing(copy.emailLabel, "intl-email")
+  if (!phoneValid) missing(copy.missingPhone, "intl-phone")
+  if (!agreed) missing(copy.missingAgree, "intl-terms")
+  if (needsLineLogin) missing(copy.missingLineLogin, "intl-line-heading")
+
+  const focusField = (id: string) => {
+    const field = document.getElementById(id)
+    field?.focus({ preventScroll: true })
+    field?.scrollIntoView({ block: "center", behavior: "instant" })
+  }
 
   const bookingTag = LOCALE_BOOKING_TAGS[locale]
 
@@ -526,9 +556,17 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (submissionInFlightRef.current) return
+    setSubmitError(null)
+
+    if (isBookingDeadlinePassed(bookingSelection)) {
+      toast.error(deadlineCopy.closed)
+      document.getElementById("intl-date")?.focus()
+      return
+    }
 
     if (!isFormValid || !plan || !t) {
       toast.error(copy.missingHeading(missingItems.length || 1))
+      if (missingItems[0]) focusField(missingItems[0].targetId)
       return
     }
     if (liffRequired && !isLiffReady) {
@@ -538,7 +576,7 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
     }
     if (liffRequired && !hasFreshLineSession) {
       if (liffError) {
-        toast.error(`${copy.lineErrorPrefix}${liffError}`)
+        toast.error(copy.lineConnectionError)
         retryLiff()
       } else {
         trackLineLoginClick({ location: `booking_submit_${locale}`, locale })
@@ -559,6 +597,7 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
     setIsSubmitting(true)
     let failureCategory = categorizeBookingFailure()
     let failureStage = toBookingFailureStage()
+    let failureMessage = getIntlBookingError(copy, undefined, undefined, deadlineCopy.closed)
 
     // API通信の直前。計測の完了は待たない。
     trackSubmitClicked({
@@ -588,7 +627,7 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
         selectedTime: time,
         customerName: customerName.trim(),
         customerEmail: customerEmail.trim(),
-        customerPhone: customerPhone.trim(),
+        customerPhone: normalizePhoneNumber(customerPhone),
         planName: plan.name,
         locale,
         selectedStaff: staffAvailable ? staffId || undefined : undefined,
@@ -611,7 +650,7 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
         time,
         customerName: customerName.trim(),
         customerEmail: customerEmail.trim(),
-        customerPhone: customerPhone.trim(),
+        customerPhone: normalizePhoneNumber(customerPhone),
         staffId,
         participants: participantsForSubmit,
         specialRequests: finalSpecialRequests,
@@ -631,16 +670,17 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
       failureStage = toBookingFailureStage(response.status)
       const responseData: {
         success?: boolean
+        code?: string
         data?: { bookingNumber?: unknown; totalPrice?: unknown; couponDiscount?: unknown }
       } | null = await response.json().catch(() => null)
       if (!response.ok || responseData?.success !== true) {
+        failureMessage = getIntlBookingError(copy, response.status, responseData?.code, deadlineCopy.closed)
         if (response.status === 401) {
           // The server rejected the LINE credentials → drop the stale session
           // so the form shows the LINE login prompt again.
           invalidateLineSession()
-          throw new Error(copy.lineExpiredError)
         }
-        throw new Error(copy.submitFailedError)
+        throw new Error("booking_request_failed")
       }
       const confirmedTotalPrice =
         typeof responseData.data?.totalPrice === "number" &&
@@ -675,7 +715,7 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
       } catch {}
       clearBookingSubmissionId(locale)
       setIsSubmitted(true)
-    } catch (error) {
+    } catch {
       sendDetailedEvent("booking_failed", {
         locale,
         plan: planId,
@@ -692,7 +732,9 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
         // どの段階で落ちたかを区別する（生のエラー内容は送らない）
         stage: failureStage,
       })
-      toast.error(error instanceof Error ? error.message : copy.genericError)
+      setSubmitError(failureMessage)
+      toast.error(failureMessage)
+      window.requestAnimationFrame(() => focusField("intl-submit-error"))
     } finally {
       submissionInFlightRef.current = false
       setIsSubmitting(false)
@@ -703,7 +745,7 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
     return (
       <Card className="bg-white/95 rounded-3xl ring-1 ring-emerald-100 shadow-2xl max-w-2xl mx-auto">
         <CardContent className="p-8 text-center">
-          <CheckCircle className="w-16 h-16 text-emerald-600 mx-auto mb-6" />
+          <CheckCircle className="w-16 h-16 text-emerald-700 mx-auto mb-6" />
           <h2 ref={successHeadingRef} tabIndex={-1} className="text-2xl font-bold text-emerald-800 mb-4 outline-none">{copy.successTitle}</h2>
           <p className="text-gray-600 mb-6">
             {copy.successBody.text}
@@ -738,7 +780,7 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
               href="https://lin.ee/jfp4laz"
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-3 inline-flex items-center justify-center gap-2 w-full bg-[#06C755] hover:bg-[#05b34c] text-white text-sm font-bold rounded-lg px-5 py-3 transition-colors"
+              className="mt-3 inline-flex items-center justify-center gap-2 w-full bg-[#06C755] hover:bg-[#05b34c] text-[#003b1b] text-sm font-bold rounded-lg px-5 py-3 transition-colors"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314" /></svg>
               {copy.addFriendBox.button}
@@ -767,9 +809,9 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
       {/* Plan */}
       <Card className="bg-white/80 rounded-3xl ring-1 ring-emerald-100 shadow-lg">
         <CardHeader>
-          <CardTitle as="h2" className="text-emerald-800">1. {copy.sectionChooseTour}</CardTitle>
+          <CardTitle as="h2" id="intl-plan-heading" tabIndex={-1} className="text-emerald-800">1. {copy.sectionChooseTour}</CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <CardContent role="group" aria-labelledby="intl-plan-heading" className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {bookablePlans.map((p) => {
             const pt = planById[p.id]
             const selected = planId === p.id
@@ -777,6 +819,7 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
               <button
                 type="button"
                 key={p.id}
+                aria-pressed={selected}
                 onClick={() => handlePlanChange(p.id)}
                 className={`text-left rounded-2xl border-2 p-4 transition-colors ${
                   selected ? "border-emerald-500 bg-emerald-50" : "border-gray-200 bg-white hover:border-emerald-300"
@@ -813,9 +856,12 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
             />
           </div>
           <div>
-            <Label className="text-sm font-medium text-gray-700 mb-2 block">
+            <p id="intl-time-label" tabIndex={-1} className="text-sm font-medium text-gray-700 mb-2 block">
               {copy.startTimeLabel} {timeOptional ? copy.startTimeSunset : "*"}
-            </Label>
+            </p>
+            <p className="mb-3 text-sm text-gray-700">{deadlineCopy.notice}</p>
+            {timeOptional && deadline !== null && <p className="mb-3 text-sm text-gray-700">{deadlineCopy.sunset(formatBookingDeadline(deadline))}</p>}
+            {deadlineExpired && <p role="alert" className="mb-3 text-sm font-medium text-rose-800">{deadlineCopy.closed}</p>}
             {timeOptional ? (
               <p className="text-sm text-gray-500 leading-relaxed pt-2">
                 {copy.sunsetNote}
@@ -834,21 +880,27 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
               </p>
             ) : (
               <>
-                <div className="flex flex-wrap gap-2">
+                <div role="group" aria-labelledby="intl-time-label" className="flex flex-wrap gap-2">
                   {(timeOptions.length > 0 ? timeOptions : []).map((tag) => (
                     <button
                       type="button"
                       key={tag}
+                      aria-pressed={time === tag}
+                      disabled={now === null || !isBookingTimeOpen(date, tag, now)}
                       onClick={() => setTime(tag)}
-                      className={`px-4 py-2 rounded-full border-2 text-sm font-semibold transition-colors ${
+                      className={`min-h-11 px-4 py-2 rounded-full border-2 text-sm font-semibold transition-colors disabled:opacity-100 disabled:bg-gray-100 disabled:text-gray-600 disabled:border-gray-200 disabled:cursor-not-allowed ${
                         time === tag ? "border-emerald-500 bg-emerald-50 text-emerald-800" : "border-gray-200 text-gray-600 hover:border-emerald-300"
                       }`}
                     >
                       {tag}
+                      {now !== null && !isBookingTimeOpen(date, tag, now) && <span className="ml-1 text-xs">{deadlineCopy.slotClosed}</span>}
                     </button>
                   ))}
                   {!plan && <p className="text-sm text-gray-400 pt-2">{copy.chooseTourFirst}</p>}
                 </div>
+                {date && now !== null && timeOptions.length > 0 && timeOptions.every((tag) => !isBookingTimeOpen(date, tag, now)) && (
+                  <p role="status" className="mt-3 text-sm text-rose-800">{deadlineCopy.allClosed}</p>
+                )}
                 {isDaySup && (
                   <p className="text-xs text-gray-500 mt-2">
                     {copy.daySupNote}
@@ -863,7 +915,7 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
       {/* Participants */}
       <Card className="bg-white/80 rounded-3xl ring-1 ring-emerald-100 shadow-lg">
         <CardHeader>
-          <CardTitle as="h2" className="text-emerald-800">3. {copy.sectionParticipants}</CardTitle>
+          <CardTitle as="h2" id="intl-participants-heading" tabIndex={-1} className="text-emerald-800">3. {copy.sectionParticipants}</CardTitle>
           <p className="text-sm text-gray-600">
             {copy.participantsIntroBase} {isNight ? "" : copy.participantsIntroShoe}
           </p>
@@ -1029,14 +1081,15 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
       {staffAvailable && (
         <Card className="bg-white/80 rounded-3xl ring-1 ring-emerald-100 shadow-lg">
           <CardHeader>
-            <CardTitle as="h2" className="text-emerald-800">4. {copy.sectionStaff}</CardTitle>
+            <CardTitle as="h2" id="intl-staff-heading" className="text-emerald-800">4. {copy.sectionStaff}</CardTitle>
             <p className="text-sm text-gray-600">{copy.staffIntro}</p>
           </CardHeader>
-          <CardContent className="flex flex-wrap gap-2">
+          <CardContent role="group" aria-labelledby="intl-staff-heading" className="flex flex-wrap gap-2">
             {STAFF_ORDER.map((sid) => (
               <button
                 type="button"
                 key={sid || "none"}
+                aria-pressed={staffId === sid}
                 onClick={() => setStaffId(sid)}
                 className={`px-4 py-2 rounded-full border-2 text-sm font-semibold transition-colors ${
                   staffId === sid ? "border-emerald-500 bg-emerald-50 text-emerald-800" : "border-gray-200 text-gray-600 hover:border-emerald-300"
@@ -1062,7 +1115,8 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
           </div>
           <div>
             <Label htmlFor="intl-phone" className="text-sm font-medium text-gray-700 mb-2 block">{copy.phoneLabel}</Label>
-            <Input id="intl-phone" type="tel" required autoComplete="tel" placeholder={copy.phonePlaceholder} value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} className="rounded-xl border-emerald-200" />
+            <Input id="intl-phone" type="tel" required autoComplete="tel" placeholder={copy.phonePlaceholder} value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} aria-invalid={phoneInvalid} aria-describedby={phoneInvalid ? "intl-phone-error" : undefined} className="rounded-xl border-emerald-200" />
+            {phoneInvalid && <p id="intl-phone-error" className="mt-2 text-sm text-rose-800">{copy.missingPhone}</p>}
           </div>
           <div className="sm:col-span-2">
             <Label htmlFor="intl-email" className="text-sm font-medium text-gray-700 mb-2 block">{copy.emailLabel}</Label>
@@ -1073,15 +1127,16 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
             <Textarea id="intl-requests" rows={3} value={specialRequests} onChange={(e) => setSpecialRequests(e.target.value)} className="rounded-xl border-emerald-200" />
           </div>
           <div className="sm:col-span-2">
-            <Label className="text-sm font-medium text-gray-700 mb-2 block">{copy.couponLabel}</Label>
+            <Label htmlFor="intl-coupon-code" className="text-sm font-medium text-gray-700 mb-2 block">{copy.couponLabel}</Label>
             <div className="flex gap-2">
-              <Input value={couponCode} onChange={(e) => handleCouponCodeChange(e.target.value)} className="rounded-xl border-emerald-200" />
-              <Button type="button" onClick={handleCouponApply} disabled={isApplyingCoupon} className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl px-4">
+              <Input id="intl-coupon-code" value={couponCode} onChange={(e) => handleCouponCodeChange(e.target.value)} aria-describedby={couponError ? "intl-coupon-error" : undefined} className="rounded-xl border-emerald-200" />
+              <Button type="button" onClick={handleCouponApply} disabled={isApplyingCoupon} className="bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl px-4">
                 {isApplyingCoupon ? copy.couponChecking : copy.couponApply}
               </Button>
             </div>
+            {couponError && <p id="intl-coupon-error" role="alert" className="mt-2 text-sm text-rose-800">{couponError}</p>}
             {couponDiscount > 0 && (
-              <p className="text-emerald-600 text-sm font-semibold mt-2">{copy.couponAppliedLine(couponDiscount.toLocaleString())}</p>
+              <p className="text-emerald-700 text-sm font-semibold mt-2">{copy.couponAppliedLine(couponDiscount.toLocaleString())}</p>
             )}
           </div>
         </CardContent>
@@ -1151,7 +1206,7 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
 
           {needsLineLogin && (
             <div className="bg-green-50 border border-green-200 rounded-2xl p-5">
-              <h3 className="flex items-center gap-2 font-bold text-gray-900 mb-2">
+              <h3 id="intl-line-heading" tabIndex={-1} className="flex items-center gap-2 font-bold text-gray-900 mb-2">
                 <MessageCircle className="w-5 h-5 text-green-600" />
                 {copy.lineLoginHeading}
               </h3>
@@ -1165,15 +1220,19 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
               <Button
                 type="button"
                 onClick={() => {
+                  if (liffError) {
+                    retryLiff()
+                    return
+                  }
                   trackLineLoginClick({ location: `booking_${locale}`, locale })
                   loginLiff()
                 }}
                 disabled={!isLiffReady}
-                className="w-full bg-green-500 hover:bg-green-600 text-white font-bold rounded-xl"
+                className="w-full bg-green-700 hover:bg-green-800 text-white font-bold rounded-xl"
               >
-                {isLiffReady ? copy.lineLoginButton : copy.lineConnecting}
+                {isLiffReady ? (liffError ? copy.lineRetry : copy.lineLoginButton) : copy.lineConnecting}
               </Button>
-              {liffError && <p className="text-xs text-red-600 mt-2">{copy.lineErrorPrefix}{liffError}</p>}
+              {liffError && <p role="alert" className="text-sm text-rose-800 mt-2">{copy.lineConnectionError}</p>}
             </div>
           )}
 
@@ -1183,18 +1242,23 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
               <p className="text-sm font-bold text-amber-900">
                 {copy.missingHeading(missingItems.length)}
               </p>
-              <ul className="mt-1.5 list-inside list-disc space-y-0.5 text-sm text-amber-800">
+              <ul className="mt-1.5 list-outside list-disc space-y-0.5 pl-5 text-sm text-amber-800">
                 {missingItems.map((item) => (
-                  <li key={item}>{item}</li>
+                  <li key={`${item.targetId}-${item.message}`}>
+                    <button type="button" onClick={() => focusField(item.targetId)} className="min-h-11 rounded py-2 text-left underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-900">
+                      {item.message}
+                    </button>
+                  </li>
                 ))}
               </ul>
             </div>
           )}
 
+          {submitError && <p id="intl-submit-error" tabIndex={-1} role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm leading-relaxed text-rose-800">{submitError}</p>}
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-lg py-6 rounded-2xl disabled:opacity-50"
+            className="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-lg py-6 rounded-2xl disabled:opacity-50"
           >
             {isSubmitting ? copy.submitSending : copy.submitLabel}
           </Button>

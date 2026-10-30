@@ -211,6 +211,7 @@ export interface IntlFormCopy {
   couponNetworkError: string
   couponChangedInvalid: string
   couponRecalcError: string
+  rateLimitError: string
   partySummary: (counts: { adult: number; child: number; under3: number }) => string
   guideFeeLine: (fee: string) => string
   estimatedTotalLabel: string
@@ -225,6 +226,8 @@ export interface IntlFormCopy {
   lineLoginButton: string
   lineConnecting: string
   lineErrorPrefix: string
+  lineConnectionError: string
+  lineRetry: string
   missingHeading: (count: number) => string
   missingChooseTour: string
   missingDate: string
@@ -240,6 +243,8 @@ export interface IntlFormCopy {
   missingLineLogin: string
   lineExpiredError: string
   submitFailedError: string
+  submitValidationError: string
+  submitNetworkError: string
   genericError: string
   submitSending: string
   submitLabel: string

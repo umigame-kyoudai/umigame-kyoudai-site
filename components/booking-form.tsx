@@ -64,7 +64,10 @@ import { bookingClosedMessage, isBookingDateClosed } from "@/lib/booking-closure
 import { BookingDatePicker } from "@/components/booking-date-picker"
 import { replaceBookingSelectionQuery } from "@/lib/booking-url"
 import { syncRepresentativeName } from "@/lib/booking-participants"
-import { isValidCalendarDate } from "@/lib/utils/validation"
+import { isValidCalendarDate, normalizePhoneNumber, validatePhoneNumber } from "@/lib/utils/validation"
+import { formatBookingDeadline, getBookingDeadline, getBookingDeadlineCopy, isBookingDeadlinePassed, isBookingTimeOpen } from "@/lib/booking-deadline"
+import { useBookingClock } from "@/lib/use-booking-clock"
+import { BookingPhoneHelp } from "@/components/booking-phone-help"
 import {
   clearBookingSubmissionId,
   getOrCreateBookingSubmissionId,
@@ -259,22 +262,24 @@ function BookingPlanPrice({ planId, className = "" }: { planId: string; classNam
   return (
     <div className={className}>
       <div className="mb-1 flex justify-center">
-        <span className="inline-block rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-gray-500">{getPlanCode(planId)}</span>
+        <span className="inline-block rounded bg-gray-100 px-1.5 py-0.5 text-xs font-bold tracking-wider text-gray-500">{getPlanCode(planId)}</span>
       </div>
       <div className="grid grid-cols-2 gap-1 sm:gap-1.5">
         {priceDisplay.rows.map((row) => (
           <div key={row.label} className="rounded-lg bg-white/75 px-1 py-1.5 text-center ring-1 ring-gray-100 sm:px-2">
-            <span className="block text-[10px] font-semibold leading-none text-gray-500">{row.label}</span>
+            <span className="block text-xs font-semibold leading-none text-gray-500">{row.label}</span>
             <span className={`block whitespace-nowrap text-xs font-black leading-tight tracking-tight sm:text-sm ${priceTextClass(tone)}`}>{row.price}</span>
           </div>
         ))}
       </div>
-      {priceDisplay.caption && <p className="mt-1 text-center text-[10px] font-medium text-gray-500">{priceDisplay.caption}</p>}
+      {priceDisplay.caption && <p className="mt-1 text-center text-xs font-medium text-gray-500">{priceDisplay.caption}</p>}
     </div>
   )
 }
 
 export function BookingForm() {
+  const now = useBookingClock()
+  const deadlineCopy = getBookingDeadlineCopy()
   const searchParams = useSearchParams()
   const hasInitialized = useRef(false)
 
@@ -799,6 +804,12 @@ export function BookingForm() {
     e.preventDefault()
     if (submissionInFlightRef.current) return
 
+    if (isBookingDeadlinePassed(bookingData)) {
+      toast.error(deadlineCopy.closed)
+      document.getElementById("date")?.focus()
+      return
+    }
+
     if (!isFormValid) {
       const firstMissingItem = missingItems[0]
       toast.error(
@@ -887,6 +898,7 @@ export function BookingForm() {
     try {
       const requestBody = {
         ...bookingData,
+        customerPhone: normalizePhoneNumber(bookingData.customerPhone),
         participants: participantsForSubmit,
         // 昼夜セットは備考に [COMBO booking] ブロックを付与（...bookingData の specialRequests を上書き）
         specialRequests: finalSpecialRequests,
@@ -914,7 +926,7 @@ export function BookingForm() {
         selectedStaff: bookingData.selectedStaff,
         customerName: bookingData.customerName.trim(),
         customerEmail: bookingData.customerEmail.trim(),
-        customerPhone: bookingData.customerPhone.trim(),
+        customerPhone: normalizePhoneNumber(bookingData.customerPhone),
         participants: participantsForSubmit,
         specialRequests: finalSpecialRequests,
         agreedToTerms: bookingData.agreedToTerms,
@@ -1024,17 +1036,23 @@ export function BookingForm() {
     !isComboPlan ||
     (!!bookingData.selectedTime && (!planHasNight(bookingData.selectedPlan) || !!bookingData.nightTime))
 
+  const deadline = getBookingDeadline(bookingData)
+  const deadlineExpired = now !== null && isBookingDeadlinePassed(bookingData, now)
+  const phoneValid = validatePhoneNumber(bookingData.customerPhone).valid
+  const phoneInvalid = !!bookingData.customerPhone && !phoneValid
+
   const isFormValid =
     bookingData.selectedPlan &&
     bookingData.selectedDate &&
     !isBookingDateClosed(bookingData.selectedDate) &&
+    !deadlineExpired &&
     (getPlanType(bookingData.selectedPlan) === "sunset-sup" || bookingData.selectedTime) &&
     comboTimesSelected &&
     bookingData.adultCount > 0 &&
     !isOverParticipantLimit &&
     bookingData.customerName &&
     bookingData.customerEmail &&
-    bookingData.customerPhone &&
+    phoneValid &&
     bookingData.agreedToTerms &&
     !selectedPlanIsComingSoon &&
     !hasSeniorOnRegularSnorkel &&
@@ -1059,6 +1077,7 @@ export function BookingForm() {
   else if (selectedPlanIsComingSoon) missingItems.push("プランの変更（選択中のプランは近日公開のため、まだ予約できません）")
   if (!bookingData.selectedDate) missingItems.push("参加日の選択")
   else if (isBookingDateClosed(bookingData.selectedDate)) missingItems.push(bookingClosedMessage())
+  if (deadlineExpired) missingItems.push(deadlineCopy.closed)
   if (bookingData.selectedPlan && getPlanType(bookingData.selectedPlan) !== "sunset-sup" && !bookingData.selectedTime) {
     missingItems.push(isComboPlan ? "ウミガメツアーの開始時間の選択" : "開始時間の選択")
   }
@@ -1088,7 +1107,7 @@ export function BookingForm() {
   })
   if (!bookingData.customerName) missingItems.push("代表者氏名の入力")
   if (!bookingData.customerEmail) missingItems.push("メールアドレスの入力")
-  if (!bookingData.customerPhone) missingItems.push("電話番号の入力")
+  if (!phoneValid) missingItems.push("電話番号の確認（数字を含む電話番号を入力してください。海外番号は＋国番号から）")
   if (!bookingData.agreedToTerms) missingItems.push("キャンセルポリシーへの同意チェック")
   if (!!process.env.NEXT_PUBLIC_LIFF_ID) {
     if (!isLiffReady) missingItems.push("LINE情報の取得完了")
@@ -1108,7 +1127,7 @@ export function BookingForm() {
       return isNightTourForDetails || (typeof p.footSize === "number" && p.footSize > 0)
     })
   const representativeComplete =
-    !!bookingData.customerName && !!bookingData.customerEmail && !!bookingData.customerPhone
+    !!bookingData.customerName && !!bookingData.customerEmail && phoneValid
 
   // 到達済みの最終ステージ。画面の日本語ではなく BOOKING_STAGES の値だけを使う。
   const completedStage: BookingStage = isSubmitted
@@ -1297,7 +1316,7 @@ export function BookingForm() {
       <div className="flex min-h-full items-center justify-center p-4">
       <Card className="glass-card bg-white/95 backdrop-blur-xl rounded-3xl ring-1 ring-emerald-100 shadow-2xl max-w-2xl w-full mx-auto my-4 animate-in fade-in zoom-in duration-300">
         <CardContent className="p-6 sm:p-8 text-center">
-          <CheckCircle className="w-16 h-16 text-emerald-600 mx-auto mb-6" />
+          <CheckCircle className="w-16 h-16 text-emerald-700 mx-auto mb-6" />
           <h2 ref={successHeadingRef} tabIndex={-1} id="booking-success-title" className="text-2xl font-bold text-emerald-800 mb-4 outline-none">送信完了しました！</h2>
           <p className="text-gray-600 mb-6">
             ご予約ありがとうございます。
@@ -1329,7 +1348,7 @@ export function BookingForm() {
                 {bookingData.under3Count > 0 && ` 3歳以下${bookingData.under3Count}名`}
               </p>
               {bookingData.selectedStaff && (
-                <p className="text-emerald-600">
+                <p className="text-emerald-700">
                   スタッフ指名: {STAFF_LIST.find((s) => s.id === bookingData.selectedStaff)?.name} (+¥
                   {getStaffFee(bookingData.selectedStaff).toLocaleString()})
                 </p>
@@ -1377,7 +1396,7 @@ export function BookingForm() {
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => trackEvent("line_add_friend_click", { location: "booking_success" })}
-              className="mt-3 inline-flex items-center justify-center gap-2 w-full bg-[#06C755] hover:bg-[#05b34c] text-white text-sm font-bold rounded-lg px-5 py-3 transition-colors"
+              className="mt-3 inline-flex items-center justify-center gap-2 w-full bg-[#06C755] hover:bg-[#05b34c] text-[#003b1b] text-sm font-bold rounded-lg px-5 py-3 transition-colors"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314" /></svg>
               LINEの友だち追加をする
@@ -1395,12 +1414,12 @@ export function BookingForm() {
           {isInClient ? (
             <Button
               onClick={closeWindow}
-              className="bg-[#06C755] hover:bg-[#05b34d] text-white rounded-xl w-full"
+              className="bg-[#06C755] hover:bg-[#05b34d] text-[#003b1b] rounded-xl w-full"
             >
               LINEのトークに戻る
             </Button>
           ) : (
-            <Button asChild className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl w-full">
+            <Button asChild className="bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl w-full">
               <a href="/">ホームに戻る</a>
             </Button>
           )}
@@ -1421,13 +1440,13 @@ export function BookingForm() {
       <div className="rounded-2xl border border-emerald-100 bg-white/80 p-4 sm:p-5 shadow-sm">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-emerald-600">Booking Flow</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-emerald-700">Booking Flow</p>
             <h2 className="mt-1 text-lg font-bold text-gray-900">3分で仮予約できます</h2>
           </div>
           <div className="grid grid-cols-3 gap-2 text-center text-xs sm:min-w-[360px]">
             {["プラン", "日時・人数", "連絡先"].map((label, index) => (
               <div key={label} className="rounded-xl bg-emerald-50 px-2 py-2 text-emerald-800">
-                <span className="block text-[10px] font-bold text-emerald-500">STEP {index + 1}</span>
+                <span className="block text-xs font-bold text-emerald-700">STEP {index + 1}</span>
                 <span className="font-semibold">{label}</span>
               </div>
             ))}
@@ -1443,6 +1462,7 @@ export function BookingForm() {
         <p className="mt-2 text-sm font-medium text-amber-700">
           ⚠️ 確定のご連絡はLINEに届きます。<a href={LINE_ADD_FRIEND_URL} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent("line_add_friend_click", { location: "booking_intro" })} className="underline font-bold">LINE公式アカウントの「友だち追加」</a>もお済ませください（未追加だと連絡が届きません）。
         </p>
+        <BookingPhoneHelp />
       </div>
 
       {/* LINE連携ステータス */}
@@ -1454,7 +1474,7 @@ export function BookingForm() {
             </div>
             <div>
               <p className="text-sm text-emerald-800 font-medium">LINE連携済み</p>
-              <p className="text-xs text-emerald-600">{liffDisplayName || ""}さんとして予約します</p>
+              <p className="text-xs text-emerald-700">{liffDisplayName || ""}さんとして予約します</p>
             </div>
           </div>
         ) : liffError ? (
@@ -1464,7 +1484,7 @@ export function BookingForm() {
             <button
               type="button"
               onClick={retryLiff}
-              className="mt-3 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors"
+              className="mt-3 px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-medium rounded-lg transition-colors"
             >
               再試行
             </button>
@@ -1479,7 +1499,7 @@ export function BookingForm() {
                 trackLineLoginClick({ location: "booking_top", locale: "ja" })
                 loginLiff()
               }}
-              className="mt-3 px-5 py-2.5 bg-[#06C755] hover:bg-[#05b34c] text-white text-sm font-bold rounded-lg transition-colors flex items-center gap-2"
+              className="mt-3 px-5 py-2.5 bg-[#06C755] hover:bg-[#05b34c] text-[#003b1b] text-sm font-bold rounded-lg transition-colors flex items-center gap-2"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314" /></svg>
               LINEでログイン
@@ -1547,12 +1567,12 @@ export function BookingForm() {
                       <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{s1.durationHours}時間</span>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
-                      <label className={`cursor-pointer p-2 sm:p-3 rounded-xl border-2 text-center transition-all ${isS1Selected ? "border-emerald-500 bg-emerald-50" : "border-gray-200 hover:border-emerald-300"}`}>
+                      <label className={`focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-emerald-700 cursor-pointer p-2 sm:p-3 rounded-xl border-2 text-center transition-all ${isS1Selected ? "border-emerald-500 bg-emerald-50" : "border-gray-200 hover:border-emerald-300"}`}>
                         <input type="radio" name="plan" value="S1" checked={isS1Selected} onChange={(e) => handleInputChange("selectedPlan", e.target.value)} className="sr-only" />
                         <p className="text-xs text-gray-500 mb-0.5">通常プラン</p>
                         <BookingPlanPrice planId="S1" className="mt-1" />
                       </label>
-                      <label className={`cursor-pointer p-2 sm:p-3 rounded-xl border-2 text-center transition-all ${isS2Selected ? "border-purple-500 bg-purple-50" : "border-gray-200 hover:border-purple-300"}`}>
+                      <label className={`focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-emerald-700 cursor-pointer p-2 sm:p-3 rounded-xl border-2 text-center transition-all ${isS2Selected ? "border-purple-500 bg-purple-50" : "border-gray-200 hover:border-purple-300"}`}>
                         <input type="radio" name="plan" value="S2" checked={isS2Selected} onChange={(e) => handleInputChange("selectedPlan", e.target.value)} className="sr-only" />
                         <p className="text-xs text-purple-600 font-semibold mb-0.5">貸切プラン</p>
                         <BookingPlanPrice planId="S2" className="mt-1" />
@@ -1578,13 +1598,13 @@ export function BookingForm() {
                       <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{s3.durationHours}時間</span>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
-                      <label className={`cursor-pointer p-2 sm:p-3 rounded-xl border-2 text-center transition-all ${isS3Selected ? "border-emerald-500 bg-emerald-50" : "border-gray-200 hover:border-emerald-300"}`}>
+                      <label className={`focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-emerald-700 cursor-pointer p-2 sm:p-3 rounded-xl border-2 text-center transition-all ${isS3Selected ? "border-emerald-500 bg-emerald-50" : "border-gray-200 hover:border-emerald-300"}`}>
                         <input type="radio" name="plan" value="S3" checked={isS3Selected} onChange={(e) => handleInputChange("selectedPlan", e.target.value)} className="sr-only" />
                         <p className="text-xs text-gray-500 mb-0.5">通常プラン</p>
                         <BookingPlanPrice planId="S3" className="mt-1" />
                       </label>
                       {s5 && (
-                        <label className={`cursor-pointer p-2 sm:p-3 rounded-xl border-2 text-center transition-all ${isS5Selected ? "border-purple-500 bg-purple-50" : "border-gray-200 hover:border-purple-300"}`}>
+                        <label className={`focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-emerald-700 cursor-pointer p-2 sm:p-3 rounded-xl border-2 text-center transition-all ${isS5Selected ? "border-purple-500 bg-purple-50" : "border-gray-200 hover:border-purple-300"}`}>
                           <input type="radio" name="plan" value="S5" checked={isS5Selected} onChange={(e) => handleInputChange("selectedPlan", e.target.value)} className="sr-only" />
                           <p className="text-xs text-purple-600 font-semibold mb-0.5">貸切プラン</p>
                           <BookingPlanPrice planId="S5" className="mt-1" />
@@ -1609,20 +1629,20 @@ export function BookingForm() {
                   <div className="p-4">
                     <div className="mb-1 flex flex-wrap items-center gap-2">
                       <h3 className="font-bold text-gray-900 text-base">サンセットSUP</h3>
-                      <span className="text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-bold">映え度No.1</span>
+                      <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-bold">映え度No.1</span>
                     </div>
                     <p className="text-xs text-gray-600 mb-1">夕日を浴びながらの海上散歩</p>
                     <div className="flex items-center gap-3 text-sm text-gray-500 mb-3">
                       <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{s8.durationHours}時間</span>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
-                      <label className={`cursor-pointer p-2 sm:p-3 rounded-xl border-2 text-center transition-all ${isS8Selected ? "border-orange-500 bg-orange-50" : "border-gray-200 hover:border-orange-300"}`}>
+                      <label className={`focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-emerald-700 cursor-pointer p-2 sm:p-3 rounded-xl border-2 text-center transition-all ${isS8Selected ? "border-orange-500 bg-orange-50" : "border-gray-200 hover:border-orange-300"}`}>
                         <input type="radio" name="plan" value="S8" checked={isS8Selected} onChange={(e) => handleInputChange("selectedPlan", e.target.value)} className="sr-only" />
                         <p className="text-xs text-gray-500 mb-0.5">通常プラン</p>
                         <BookingPlanPrice planId="S8" className="mt-1" />
                       </label>
                       {s4 && (
-                        <label className={`cursor-pointer p-2 sm:p-3 rounded-xl border-2 text-center transition-all ${isS4Selected ? "border-purple-500 bg-purple-50" : "border-gray-200 hover:border-purple-300"}`}>
+                        <label className={`focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-emerald-700 cursor-pointer p-2 sm:p-3 rounded-xl border-2 text-center transition-all ${isS4Selected ? "border-purple-500 bg-purple-50" : "border-gray-200 hover:border-purple-300"}`}>
                           <input type="radio" name="plan" value="S4" checked={isS4Selected} onChange={(e) => handleInputChange("selectedPlan", e.target.value)} className="sr-only" />
                           <p className="text-xs text-purple-600 font-semibold mb-0.5">貸切プラン</p>
                           <BookingPlanPrice planId="S4" className="mt-1" />
@@ -1647,20 +1667,20 @@ export function BookingForm() {
                   <div className="p-4">
                     <div className="mb-1 flex flex-wrap items-center gap-2">
                       <h3 className="font-bold text-gray-900 text-base">宮古島ドローンSUP体験</h3>
-                      <span className="text-[10px] bg-cyan-100 text-cyan-700 px-2 py-0.5 rounded-full font-bold">ドローン撮影付き</span>
+                      <span className="text-xs bg-cyan-100 text-cyan-700 px-2 py-0.5 rounded-full font-bold">ドローン撮影付き</span>
                     </div>
                     <p className="text-xs text-gray-600 mb-1">日中の宮古ブルーを海上と空から撮影</p>
                     <div className="flex items-center gap-3 text-sm text-gray-500 mb-3">
                       <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{s6.durationHours}時間</span>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
-                      <label className={`cursor-pointer p-2 sm:p-3 rounded-xl border-2 text-center transition-all ${isS6Selected ? "border-cyan-500 bg-cyan-50" : "border-gray-200 hover:border-cyan-300"}`}>
+                      <label className={`focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-emerald-700 cursor-pointer p-2 sm:p-3 rounded-xl border-2 text-center transition-all ${isS6Selected ? "border-cyan-500 bg-cyan-50" : "border-gray-200 hover:border-cyan-300"}`}>
                         <input type="radio" name="plan" value="S6" checked={isS6Selected} onChange={(e) => handleInputChange("selectedPlan", e.target.value)} className="sr-only" />
                         <p className="text-xs text-gray-500 mb-0.5">通常プラン</p>
                         <BookingPlanPrice planId="S6" className="mt-1" />
                       </label>
                       {s7 && (
-                        <label className={`cursor-pointer p-2 sm:p-3 rounded-xl border-2 text-center transition-all ${isS7Selected ? "border-purple-500 bg-purple-50" : "border-gray-200 hover:border-purple-300"}`}>
+                        <label className={`focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-emerald-700 cursor-pointer p-2 sm:p-3 rounded-xl border-2 text-center transition-all ${isS7Selected ? "border-purple-500 bg-purple-50" : "border-gray-200 hover:border-purple-300"}`}>
                           <input type="radio" name="plan" value="S7" checked={isS7Selected} onChange={(e) => handleInputChange("selectedPlan", e.target.value)} className="sr-only" />
                           <p className="text-xs text-purple-600 font-semibold mb-0.5">貸切プラン</p>
                           <BookingPlanPrice planId="S7" className="mt-1" />
@@ -1688,7 +1708,7 @@ export function BookingForm() {
                       <div>
                         <div className="mb-1 flex flex-wrap items-center gap-2">
                           <h3 className="font-bold text-gray-900 text-base">ウミガメシュノーケル＆ヤシガニ探検 昼夜セット</h3>
-                          <span className="text-[10px] bg-emerald-600 text-white px-2 py-0.5 rounded-full font-bold">セットでお得</span>
+                          <span className="text-xs bg-emerald-700 text-white px-2 py-0.5 rounded-full font-bold">セットでお得</span>
                         </div>
                         <p className="text-xs text-gray-600 mb-1">昼：ウミガメシュノーケル ＋ 夜：ヤシガニ探検</p>
                         <div className="flex items-center gap-3 text-sm text-gray-500">
@@ -1703,7 +1723,7 @@ export function BookingForm() {
                           return (
                             <label
                               key={plan.id}
-                              className={`block cursor-pointer rounded-xl border-2 p-3 transition-all ${
+                              className={`focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-emerald-700 block cursor-pointer rounded-xl border-2 p-3 transition-all ${
                                 isSelected
                                   ? isPrivate
                                     ? "border-purple-500 bg-purple-50 ring-2 ring-purple-100"
@@ -1723,7 +1743,7 @@ export function BookingForm() {
                                 <span className={`text-xs font-bold ${isSelected && isPrivate ? "text-purple-700" : "text-gray-700"}`}>
                                   {isPrivate ? "貸切セット" : "通常セット"}
                                 </span>
-                                <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                                <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${
                                   isPrivate ? "bg-purple-100 text-purple-700" : "bg-emerald-100 text-emerald-700"
                                 }`}>
                                   {isPrivate ? "完全貸切" : "1,000円お得"}
@@ -1756,7 +1776,7 @@ export function BookingForm() {
                       <div>
                         <div className="mb-1 flex flex-wrap items-center gap-2">
                           <h3 className="font-bold text-gray-900 text-base">ウミガメシュノーケル＆ドローンSUP 海空セット</h3>
-                          <span className="text-[10px] bg-cyan-600 text-white px-2 py-0.5 rounded-full font-bold">セットでお得</span>
+                          <span className="text-xs bg-cyan-700 text-white px-2 py-0.5 rounded-full font-bold">セットでお得</span>
                         </div>
                         <p className="text-xs text-gray-600 mb-1">同じ浜で連続：ウミガメシュノーケル ＋ ドローンSUP</p>
                         <div className="flex items-center gap-3 text-sm text-gray-500">
@@ -1771,7 +1791,7 @@ export function BookingForm() {
                           return (
                             <label
                               key={plan.id}
-                              className={`block cursor-pointer rounded-xl border-2 p-3 transition-all ${
+                              className={`focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-emerald-700 block cursor-pointer rounded-xl border-2 p-3 transition-all ${
                                 isSelected
                                   ? isPrivate
                                     ? "border-purple-500 bg-purple-50 ring-2 ring-purple-100"
@@ -1791,7 +1811,7 @@ export function BookingForm() {
                                 <span className={`text-xs font-bold ${isSelected && isPrivate ? "text-purple-700" : "text-gray-700"}`}>
                                   {isPrivate ? "貸切セット" : "通常セット"}
                                 </span>
-                                <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                                <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${
                                   isPrivate ? "bg-purple-100 text-purple-700" : "bg-cyan-100 text-cyan-700"
                                 }`}>
                                   {isPrivate ? "完全貸切" : "1,000円お得"}
@@ -1824,7 +1844,7 @@ export function BookingForm() {
                       <div>
                         <div className="mb-1 flex flex-wrap items-center gap-2">
                           <h3 className="font-bold text-gray-900 text-base">ウミガメシュノーケル＆ドローンSUP＆ナイトツアー まるごと1日セット</h3>
-                          <span className="text-[10px] bg-emerald-600 text-white px-2 py-0.5 rounded-full font-bold">3つでお得</span>
+                          <span className="text-xs bg-emerald-700 text-white px-2 py-0.5 rounded-full font-bold">3つでお得</span>
                         </div>
                         <p className="text-xs text-gray-600 mb-1">朝：ウミガメ ＋ 昼：ドローンSUP ＋ 夜：ナイトツアー</p>
                         <div className="flex items-center gap-3 text-sm text-gray-500">
@@ -1839,7 +1859,7 @@ export function BookingForm() {
                           return (
                             <label
                               key={plan.id}
-                              className={`block cursor-pointer rounded-xl border-2 p-3 transition-all ${
+                              className={`focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-emerald-700 block cursor-pointer rounded-xl border-2 p-3 transition-all ${
                                 isSelected
                                   ? isPrivate
                                     ? "border-purple-500 bg-purple-50 ring-2 ring-purple-100"
@@ -1859,7 +1879,7 @@ export function BookingForm() {
                                 <span className={`text-xs font-bold ${isSelected && isPrivate ? "text-purple-700" : "text-gray-700"}`}>
                                   {isPrivate ? "貸切セット" : "通常セット"}
                                 </span>
-                                <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                                <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${
                                   isPrivate ? "bg-purple-100 text-purple-700" : "bg-emerald-100 text-emerald-700"
                                 }`}>
                                   {isPrivate ? "完全貸切" : "2,000円お得"}
@@ -1970,36 +1990,47 @@ export function BookingForm() {
               }}
             />
             {bookingData.selectedDate && !isBookingDateClosed(bookingData.selectedDate) && (
-              <p className="text-xs text-emerald-600 mt-1">選択中: {bookingData.selectedDate}</p>
+              <p className="text-xs text-emerald-700 mt-1">選択中: {bookingData.selectedDate}</p>
             )}
           </div>
 
           <div>
             <Label className="text-sm font-medium text-gray-700 mb-3 block">開始時間</Label>
+            <p className="mb-3 text-sm text-gray-700">{deadlineCopy.notice}</p>
+            {getPlanType(bookingData.selectedPlan) === "sunset-sup" && deadline !== null && (
+              <p className="mb-3 text-sm text-gray-700">{deadlineCopy.sunset(formatBookingDeadline(deadline))}</p>
+            )}
+            {deadlineExpired && <p role="alert" className="mb-3 text-sm font-medium text-rose-800">{deadlineCopy.closed}</p>}
             {!bookingData.selectedDate || isBookingDateClosed(bookingData.selectedDate) || !bookingData.selectedPlan ? (
               <div className="text-sm text-gray-500 p-4 bg-gray-50 rounded-xl">プランと日付を選択してください</div>
             ) : isComboPlan ? (
               <div className="space-y-5">
                 <div>
                   <p className="text-sm font-semibold text-emerald-800 mb-2">🐢 ウミガメツアー時間 *</p>
-                  <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
+                  <div role="group" aria-label="ウミガメツアーの開始時間" className="grid grid-cols-3 md:grid-cols-4 gap-3">
                     {COMBO_TURTLE_TIMES.map((time) => (
                       <Button
                         key={time}
                         type="button"
                         variant={bookingData.selectedTime === time ? "default" : "outline"}
+                        aria-pressed={bookingData.selectedTime === time}
+                        disabled={now === null || !isBookingTimeOpen(bookingData.selectedDate, time, now)}
                         size="sm"
                         onClick={() => handleInputChange("selectedTime", time)}
-                        className={`rounded-xl ${
+                        className={`min-h-11 flex-col gap-0 rounded-xl disabled:opacity-100 disabled:bg-gray-100 disabled:text-gray-600 disabled:border-gray-200 ${
                           bookingData.selectedTime === time
-                            ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                            ? "bg-emerald-700 hover:bg-emerald-800 text-white"
                             : "border-emerald-200 text-emerald-700 hover:bg-emerald-50"
                         }`}
                       >
                         {time}
+                        {now !== null && !isBookingTimeOpen(bookingData.selectedDate, time, now) && <span className="text-xs">{deadlineCopy.slotClosed}</span>}
                       </Button>
                     ))}
                   </div>
+                  {now !== null && COMBO_TURTLE_TIMES.every((time) => !isBookingTimeOpen(bookingData.selectedDate, time, now)) && (
+                    <p role="status" className="mt-3 text-sm text-rose-800">{deadlineCopy.allClosed}</p>
+                  )}
                 </div>
                 {planHasSup(bookingData.selectedPlan) && (
                   <div>
@@ -2012,21 +2043,24 @@ export function BookingForm() {
                 {planHasNight(bookingData.selectedPlan) && (
                   <div>
                     <p className="text-sm font-semibold text-indigo-800 mb-2">🦀 ヤシガニ探検（ナイトツアー）時間 *</p>
-                    <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
+                    <div role="group" aria-label="ヤシガニ探検の開始時間" className="grid grid-cols-3 md:grid-cols-4 gap-3">
                       {COMBO_NIGHT_TIMES.map((time) => (
                         <Button
                           key={time}
                           type="button"
                           variant={bookingData.nightTime === time ? "default" : "outline"}
+                          aria-pressed={bookingData.nightTime === time}
+                          disabled={now === null || !isBookingTimeOpen(bookingData.selectedDate, time, now)}
                           size="sm"
                           onClick={() => handleInputChange("nightTime", time)}
-                          className={`rounded-xl ${
+                          className={`min-h-11 flex-col gap-0 rounded-xl disabled:opacity-100 disabled:bg-gray-100 disabled:text-gray-600 disabled:border-gray-200 ${
                             bookingData.nightTime === time
                               ? "bg-indigo-600 hover:bg-indigo-700 text-white"
                               : "border-indigo-200 text-indigo-700 hover:bg-indigo-50"
                           }`}
                         >
                           {time}
+                          {now !== null && !isBookingTimeOpen(bookingData.selectedDate, time, now) && <span className="text-xs">{deadlineCopy.slotClosed}</span>}
                         </Button>
                       ))}
                     </div>
@@ -2046,6 +2080,7 @@ export function BookingForm() {
             ) : (
               <>
                 <BookingTimeSlots
+                  now={now}
                   selectedPlan={getPlanType(bookingData.selectedPlan)}
                   selectedDate={localDateFromYMD(bookingData.selectedDate)}
                   selectedTime={bookingData.selectedTime}
@@ -2103,9 +2138,12 @@ export function BookingForm() {
               onChange={(e) => handleInputChange("customerPhone", e.target.value)}
               placeholder="090-1234-5678"
               autoComplete="tel"
+              aria-invalid={phoneInvalid}
+              aria-describedby={phoneInvalid ? "booking-phone-error" : undefined}
               className="rounded-xl border-emerald-200 focus:border-emerald-500"
               required
             />
+            {phoneInvalid && <p id="booking-phone-error" className="mt-2 text-sm text-rose-800">電話番号を確認してください。海外の番号は＋国番号から入力できます。</p>}
           </div>
 
           <div>
@@ -2172,27 +2210,31 @@ export function BookingForm() {
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-3 block">
                 大人（13歳以上）
-                <span className="text-emerald-600 ml-2">￥{adultPrice.toLocaleString()}/人</span>
+                <span className="text-emerald-700 ml-2">￥{adultPrice.toLocaleString()}/人</span>
               </Label>
               <div className="flex items-center gap-4">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
+                  aria-label="大人を1人減らす"
                   onClick={() => handleCountChange("adultCount", false)}
                   disabled={bookingData.adultCount <= 0}
-                  className="rounded-full w-10 h-10 border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                  className="rounded-full w-11 h-11 border-emerald-200 text-emerald-700 hover:bg-emerald-50"
                 >
                   -
                 </Button>
-                <span className="text-2xl font-bold text-emerald-800 w-12 text-center">{bookingData.adultCount}</span>
+                <span role="status" aria-atomic="true" className="text-2xl font-bold text-emerald-800 w-12 text-center">
+                  <span className="sr-only">大人 </span>{bookingData.adultCount}<span className="sr-only">人</span>
+                </span>
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
+                  aria-label="大人を1人増やす"
                   onClick={() => handleCountChange("adultCount", true)}
                   disabled={isParticipantLimitReached}
-                  className="rounded-full w-10 h-10 border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                  className="rounded-full w-11 h-11 border-emerald-200 text-emerald-700 hover:bg-emerald-50"
                 >
                   +
                 </Button>
@@ -2203,27 +2245,31 @@ export function BookingForm() {
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-3 block">
                 {childLabel}
-                <span className="text-emerald-600 ml-2">￥{childPrice.toLocaleString()}/人</span>
+                <span className="text-emerald-700 ml-2">￥{childPrice.toLocaleString()}/人</span>
               </Label>
               <div className="flex items-center gap-4">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
+                  aria-label="子供を1人減らす"
                   onClick={() => handleCountChange("childCount", false)}
                   disabled={bookingData.childCount <= 0}
-                  className="rounded-full w-10 h-10 border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                  className="rounded-full w-11 h-11 border-emerald-200 text-emerald-700 hover:bg-emerald-50"
                 >
                   -
                 </Button>
-                <span className="text-2xl font-bold text-emerald-800 w-12 text-center">{bookingData.childCount}</span>
+                <span role="status" aria-atomic="true" className="text-2xl font-bold text-emerald-800 w-12 text-center">
+                  <span className="sr-only">子供 </span>{bookingData.childCount}<span className="sr-only">人</span>
+                </span>
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
+                  aria-label="子供を1人増やす"
                   onClick={() => handleCountChange("childCount", true)}
                   disabled={isParticipantLimitReached}
-                  className="rounded-full w-10 h-10 border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                  className="rounded-full w-11 h-11 border-emerald-200 text-emerald-700 hover:bg-emerald-50"
                 >
                   +
                 </Button>
@@ -2235,29 +2281,31 @@ export function BookingForm() {
               <div>
                 <Label className="text-sm font-medium text-gray-700 mb-3 block">
                   3歳以下
-                  <span className="text-emerald-600 ml-2">無料</span>
+                  <span className="text-emerald-700 ml-2">無料</span>
                 </Label>
                 <div className="flex items-center gap-4">
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
+                    aria-label="3歳以下のお子様を1人減らす"
                     onClick={() => handleCountChange("under3Count", false)}
                     disabled={bookingData.under3Count <= 0}
-                    className="rounded-full w-10 h-10 border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                    className="rounded-full w-11 h-11 border-emerald-200 text-emerald-700 hover:bg-emerald-50"
                   >
                     -
                   </Button>
-                  <span className="text-2xl font-bold text-emerald-800 w-12 text-center">
-                    {bookingData.under3Count}
+                  <span role="status" aria-atomic="true" className="text-2xl font-bold text-emerald-800 w-12 text-center">
+                    <span className="sr-only">3歳以下のお子様 </span>{bookingData.under3Count}<span className="sr-only">人</span>
                   </span>
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
+                    aria-label="3歳以下のお子様を1人増やす"
                     onClick={() => handleCountChange("under3Count", true)}
                     disabled={isParticipantLimitReached}
-                    className="rounded-full w-10 h-10 border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                    className="rounded-full w-11 h-11 border-emerald-200 text-emerald-700 hover:bg-emerald-50"
                   >
                     +
                   </Button>
@@ -2269,7 +2317,7 @@ export function BookingForm() {
           {/* Price Calculation */}
           <div className="bg-emerald-50 rounded-2xl p-6">
             <div className="flex items-center gap-2 mb-4">
-              <Calculator className="w-5 h-5 text-emerald-600" />
+              <Calculator className="w-5 h-5 text-emerald-700" />
               <h3 className="font-semibold text-emerald-800">料金計算</h3>
             </div>
             <div className="space-y-2 text-sm">
@@ -2331,7 +2379,7 @@ export function BookingForm() {
                 )}
               </>
               {bookingData.selectedStaff && (
-                <div className="flex justify-between text-emerald-600">
+                <div className="flex justify-between text-emerald-700">
                   <span>スタッフ指名料</span>
                   <span>￥{getStaffFee(bookingData.selectedStaff).toLocaleString()}</span>
                 </div>
@@ -2349,7 +2397,7 @@ export function BookingForm() {
 
               {/* クーポンコード（セットプランは対象外） */}
               <div className="mt-4 pt-4 border-t border-emerald-200">
-                <p className="text-sm font-medium text-gray-700 mb-2">
+                <p id="booking-coupon-label" className="text-sm font-medium text-gray-700 mb-2">
                   クーポンコード
                 </p>
                 {isComboPlan ? (
@@ -2360,6 +2408,8 @@ export function BookingForm() {
                   <>
                     <div className="flex gap-2">
                       <Input
+                        id="booking-coupon-code"
+                        aria-labelledby="booking-coupon-label"
                         value={bookingData.couponCode}
                         onChange={(e) => handleCouponCodeChange(e.target.value)}
                         className="rounded-xl border-emerald-200 focus:border-emerald-500"
@@ -2368,13 +2418,13 @@ export function BookingForm() {
                         type="button"
                         onClick={handleCouponApply}
                         disabled={isApplyingCoupon}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl px-4"
+                        className="bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl px-4"
                       >
                         {isApplyingCoupon ? "確認中..." : "適用"}
                       </Button>
                     </div>
                     {bookingData.couponDiscount > 0 && (
-                      <p className="text-emerald-600 text-sm font-semibold mt-2">
+                      <p className="text-emerald-700 text-sm font-semibold mt-2">
                         🎉 クーポン適用済み！ -{bookingData.couponDiscount.toLocaleString()}円引き
                       </p>
                     )}
@@ -2446,7 +2496,7 @@ export function BookingForm() {
               <p className="text-sm text-emerald-800">
                 <strong>{STAFF_LIST.find((s) => s.id === bookingData.selectedStaff)?.name}</strong>を指名しました
                 <br />
-                <span className="text-emerald-600">指名料金: ¥{getStaffFee(bookingData.selectedStaff).toLocaleString()}</span>
+                <span className="text-emerald-700">指名料金: ¥{getStaffFee(bookingData.selectedStaff).toLocaleString()}</span>
               </p>
             </div>
           )}
@@ -2518,7 +2568,7 @@ export function BookingForm() {
           )}
 
           {!isLiffReady && !!process.env.NEXT_PUBLIC_LIFF_ID && (
-            <div className="flex items-center justify-center gap-2 py-3 text-sm text-emerald-600">
+            <div className="flex items-center justify-center gap-2 py-3 text-sm text-emerald-700">
               <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
               LINE情報を取得中...
             </div>
@@ -2538,13 +2588,15 @@ export function BookingForm() {
                   trackLineLoginClick({ location: "booking_bottom", locale: "ja" })
                   loginLiff()
                 }}
-                className="mt-3 w-full px-5 py-3 bg-[#06C755] hover:bg-[#05b34c] text-white text-sm font-bold rounded-lg transition-colors flex items-center justify-center gap-2"
+                className="mt-3 w-full px-5 py-3 bg-[#06C755] hover:bg-[#05b34c] text-[#003b1b] text-sm font-bold rounded-lg transition-colors flex items-center justify-center gap-2"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314" /></svg>
                 LINEでログイン
               </button>
             </div>
           )}
+
+          <BookingPhoneHelp />
 
           {/* 「なぜ送信できないのか」を送信ボタンの直前で具体的に示す */}
           {missingItems.length > 0 && (
@@ -2577,7 +2629,7 @@ export function BookingForm() {
             size="lg"
             disabled={isSubmitting}
             aria-describedby={missingItems.length > 0 ? "booking-validation-summary" : undefined}
-            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl py-4 text-lg font-semibold disabled:opacity-50"
+            className="w-full bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl py-4 text-lg font-semibold disabled:opacity-50"
           >
             {isSubmitting ? "送信中..." : "仮予約を送信する"}
           </Button>

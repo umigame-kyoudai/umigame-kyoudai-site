@@ -9,6 +9,7 @@ import { PLAN_COVER_IMAGE, TOUR_IMAGE_PATHS } from "@/lib/tour-assets"
 import { ComingSoonBadge } from "@/components/coming-soon"
 import { sendDetailedEvent } from "@/lib/detailed-analytics"
 import { getPlanPriceDisplay, getPlanCode } from "@/lib/plan-price-display"
+import { PRIVATE_COUNTERPART, SENIOR_RESTRICTED_AGE, SENIOR_RESTRICTED_PLAN_IDS } from "@/lib/plan-flags"
 
 interface PlanVariant {
   id: string
@@ -687,6 +688,10 @@ export function PlansSection() {
         </div>
 
         <div data-reveal="" className="px-5 sm:px-6 lg:px-8 mb-8">
+          <p className="mb-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-relaxed text-amber-900">
+            <strong>{SENIOR_RESTRICTED_AGE}歳以上の方を含むグループは、貸切プランをお選びください。</strong>
+            対象年齢の上限は各プランの表示をご確認ください。
+          </p>
           {/* モバイルもPCと同じ4列の比較表で表示（2026-07-12 オーナー要望でカード表示を廃止）。
               狭い画面では表内を横スクロールできるようにし、縦に間延びしないようにする。 */}
           <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-sm">
@@ -699,6 +704,7 @@ export function PlansSection() {
               </div>
               {visibleComparison.map((item) => {
                 const priceDisplay = getPlanPriceDisplay(item.id)
+                const privatePlan = SENIOR_RESTRICTED_PLAN_IDS.has(item.id) ? PRIVATE_COUNTERPART[item.id] : undefined
 
                 return (
                   <div key={item.name} className="grid grid-cols-4 border-t border-gray-100 text-[11px] sm:text-sm">
@@ -717,6 +723,11 @@ export function PlansSection() {
                     </div>
                     <div className="p-3 sm:p-4 text-gray-700">
                       {item.age}
+                      {privatePlan && (
+                        <Link href={`/plans/${privatePlan.id}`} className="mt-1 block rounded text-xs font-semibold leading-relaxed text-amber-900 underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-700">
+                          {SENIOR_RESTRICTED_AGE}歳以上を含む場合は貸切へ
+                        </Link>
+                      )}
                       <span className="block text-gray-600">{item.time}</span>
                     </div>
                     <div className="p-3 sm:p-4 text-gray-700">{item.bestFor}</div>

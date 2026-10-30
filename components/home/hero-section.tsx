@@ -86,7 +86,7 @@ export function HeroSection() {
                 event="book_cta_click"
                 eventProps={{ location: "hero" }}
                 href="/book"
-                className="inline-flex w-full sm:w-auto items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-base px-7 py-3.5 rounded-full shadow-lg transition-all active:scale-95"
+                className="inline-flex w-full sm:w-auto items-center justify-center gap-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-base px-7 py-3.5 rounded-full shadow-lg transition-all active:scale-95"
               >
                 <CalendarCheck className="w-5 h-5" />
                 空き確認・予約する

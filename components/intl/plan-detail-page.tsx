@@ -61,7 +61,7 @@ export function IntlPlanDetailPage({ locale, id }: { locale: IntlLocale; id: str
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/30" />
           <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-10 max-w-5xl mx-auto">
             {comingSoon && (
-              <span className="inline-block bg-cyan-600 text-white text-xs font-bold px-3 py-1 rounded-full mb-3">
+              <span className="inline-block bg-cyan-700 text-white text-xs font-bold px-3 py-1 rounded-full mb-3">
                 {common.comingSoonDetail}
               </span>
             )}
@@ -226,7 +226,7 @@ export function IntlPlanDetailPage({ locale, id }: { locale: IntlLocale; id: str
                 event="book_cta_click"
                 eventProps={{ location: `${locale}_plan_detail`, plan: plan.id }}
                 href={`${localePath(locale, "/book")}?plan=${plan.id}`}
-                className="inline-flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-lg px-10 py-4 rounded-full shadow-lg transition-all"
+                className="inline-flex items-center justify-center gap-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-lg px-10 py-4 rounded-full shadow-lg transition-all"
               >
                 <CalendarCheck className="w-5 h-5" />
                 {common.bookThisTour}

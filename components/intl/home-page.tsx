@@ -70,7 +70,7 @@ export function IntlHomePage({ locale }: { locale: IntlLocale }) {
                 event="book_cta_click"
                 eventProps={{ location: `${locale}_home` }}
                 href={localePath(locale, "/book")}
-                className="inline-flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-base px-7 py-3.5 rounded-full shadow-lg transition-all"
+                className="inline-flex items-center justify-center gap-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-base px-7 py-3.5 rounded-full shadow-lg transition-all"
               >
                 <CalendarCheck className="w-5 h-5" />
                 {common.checkAvailability}
@@ -147,7 +147,7 @@ export function IntlHomePage({ locale }: { locale: IntlLocale }) {
                         sizes="(max-width: 768px) 100vw, 33vw"
                       />
                       {comingSoon && (
-                        <span className="absolute top-3 left-3 bg-cyan-600 text-white text-xs font-bold px-3 py-1 rounded-full">
+                        <span className="absolute top-3 left-3 bg-cyan-700 text-white text-xs font-bold px-3 py-1 rounded-full">
                           {common.comingSoon}
                         </span>
                       )}
@@ -177,7 +177,7 @@ export function IntlHomePage({ locale }: { locale: IntlLocale }) {
             <ol className="space-y-5">
               {home.howToBook.map((step, i) => (
                 <li key={step.title} className="flex gap-4">
-                  <span className="flex-shrink-0 w-9 h-9 rounded-full bg-emerald-600 text-white font-bold flex items-center justify-center">
+                  <span className="flex-shrink-0 w-9 h-9 rounded-full bg-emerald-700 text-white font-bold flex items-center justify-center">
                     {i + 1}
                   </span>
                   <div>
@@ -231,7 +231,7 @@ export function IntlHomePage({ locale }: { locale: IntlLocale }) {
                 eventProps={{ location: `${locale}_home` }}
                 href="https://lin.ee/jfp4laz"
                 external
-                className="inline-flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-bold px-6 py-3 rounded-full transition-colors"
+                className="inline-flex items-center justify-center gap-2 bg-green-700 hover:bg-green-800 text-white font-bold px-6 py-3 rounded-full transition-colors"
               >
                 <MessageCircle className="w-5 h-5" />
                 {common.messageOnLine}
