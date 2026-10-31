@@ -27,7 +27,7 @@ var NOTIFY_SECRET = ''; // Script Properties の NOTIFY_SECRET を優先して�
 var SHEET_NAME = '予約一覧';
 var CALENDAR_ID = 'genkidama2439@gmail.com';
 var ADMIN_EMAIL = 'genkidama2439@gmail.com';
-var BOOKING_APP_VERSION = '2026.10.31-1';
+var BOOKING_APP_VERSION = '2026.09.26-1';
 var BOOKING_SCHEMA_VERSION = '2026.09.25-1';
 var BOOKING_SCHEMA_VERSION_PROPERTY = 'BOOKING_SCHEMA_VERSION';
 
@@ -1341,7 +1341,6 @@ function sendBookingEmail(data, headcount, participantsDetail) {
       '予約番号：' + (data.bookingNumber || '') + '\n' +
       '受付日時：' + new Date().toLocaleString('ja-JP') + '\n' +
       '━━━━━━━━━━━━━━━━━━━━\n\n' +
-      buildBookingTrafficEmailBlock_(data) +
       '【お客様情報】\n' +
       '名前　　：' + (data.customerName || '') + '\n' +
       '電話　　：' + (data.customerPhone || '') + '\n' +
@@ -1355,6 +1354,7 @@ function sendBookingEmail(data, headcount, participantsDetail) {
       formatReceiveTotalLines_(data) +
       'クーポン　：' + couponInfo + '\n' +
       'スタッフ指名：' + staffInfo + '\n' +
+      '集客経由：' + bookingAcquisitionLabel_(data.acquisition) + '\n' +
       planOperationBlock + '\n' +
       '【参加者詳細】\n' +
       participantsDetail + '\n\n' +
@@ -1377,58 +1377,6 @@ function sendBookingEmail(data, headcount, participantsDetail) {
 // ============================================================
 
 // 集客経由は紹介報酬・担当ガイドから独立して扱う。
-// 媒体の計測と署名付き紹介リンクは別の情報。予約通知の冒頭で区別して表示する。
-// 元のUTM/参照元は従来どおり台帳と備考に残す。情報がない理由は推測で断定しない。
-function buildBookingTrafficEmailBlock_(data) {
-  var attribution = data && data.attribution || {};
-  var clean = function(value) {
-    return typeof value === 'string' ? value.replace(/[^\w\-./ ]/g, '').trim().slice(0, 120).toLowerCase() : '';
-  };
-  var source = clean(attribution.source);
-  var medium = clean(attribution.medium);
-  var host = clean(attribution.referrer).replace(/^www\./, '');
-  var sources = {
-    instagram: 'Instagram', line: 'LINE', gbp: 'Googleマップ',
-    google: 'Google', youtube: 'YouTube', threads: 'Threads',
-    facebook: 'Facebook', tiktok: 'TikTok', x: 'X', twitter: 'X',
-    'chatgpt.com': 'ChatGPT', openai: 'ChatGPT', perplexity: 'Perplexity',
-    'copilot.com': 'Copilot', flyer: 'チラシ・名刺', partner: '提携先', affiliate: '紹介リンク',
-  };
-  var placements = {
-    profile: 'プロフィール', story: 'ストーリー', post: '投稿', reel: 'リール',
-    description: '概要欄', richmenu: 'リッチメニュー', greeting: 'あいさつメッセージ',
-    broadcast: '一斉配信', chat: '個別トーク', message: 'メッセージ', qr: 'QRコード',
-    referral: '紹介リンク', organic: '自然検索', cpc: '広告', social: 'SNS',
-  };
-  var label = '不明';
-  var evidence = '情報なし（直接アクセス・計測同意なし等。理由は判別できません）';
-  if (source) {
-    label = Object.prototype.hasOwnProperty.call(sources, source) ? sources[source] : source;
-    evidence = 'リンクの計測タグ';
-  } else if (host && !/^(access|auth|liff)\.line\.me$/.test(host) && !/(^|\.)umigamekyoudaimiyakojima\.com$/.test(host)) {
-    label = host;
-    // ホスト名だけではGoogle検索とGoogleマップを断定しない。
-    if (/(^|\.)google\.(com|co\.jp)$/.test(host)) label = 'Google（検索・マップ等）';
-    else if (/(^|\.)yahoo\.co\.jp$/.test(host)) label = 'Yahoo!';
-    else if (/(^|\.)bing\.com$/.test(host)) label = 'Bing';
-    else if (/(^|\.)instagram\.com$/.test(host)) label = 'Instagram';
-    else if (/(^|\.)facebook\.com$/.test(host)) label = 'Facebook';
-    else if (/(^|\.)youtube\.com$/.test(host)) label = 'YouTube';
-    else if (/(^|\.)chatgpt\.com$/.test(host)) label = 'ChatGPT';
-    else if (/(^|\.)line\.me$/.test(host) || /^(jp\.naver\.line|com\.linecorp\.line)/.test(host)) label = 'LINE';
-    evidence = '参照元ドメイン（' + host + '）';
-  }
-  var placement = source && medium ? (Object.prototype.hasOwnProperty.call(placements, medium) ? placements[medium] : medium) : '判別できません';
-  var acquisition = data && data.acquisition;
-  var introducer = acquisition && ['souichiro', 'yamachan', 'umigame'].indexOf(acquisition.source) >= 0
-    ? bookingAcquisitionLabel_(acquisition) : '記録なし';
-  return '【流入経路】\n' +
-    '媒体：' + label + '\n' +
-    '掲載場所：' + placement + '\n' +
-    '紹介者の専用リンク：' + introducer + '\n' +
-    '判定根拠：' + evidence + '\n\n';
-}
-
 function bookingAcquisitionLabel_(acquisition) {
   var labels = { souichiro: 'そういちろうさん', yamachan: '山ちゃん', umigame: '海亀兄弟公式' };
   var source = acquisition && acquisition.source;
@@ -3381,7 +3329,6 @@ sendBookingEmail = function(data, headcount, participantsDetail) {
       '予約番号：' + (data.bookingNumber || '') + '\n' +
       '受付日時：' + new Date().toLocaleString('ja-JP') + '\n' +
       '━━━━━━━━━━━━━━━━━━━━\n\n' +
-      buildBookingTrafficEmailBlock_(data) +
       '【お客様情報】\n' +
       '名前　　：' + (data.customerName || '') + '\n' +
       '電話　　：' + (data.customerPhone || '') + '\n' +
@@ -3395,6 +3342,7 @@ sendBookingEmail = function(data, headcount, participantsDetail) {
       formatReceiveTotalLines_(data) +
       'クーポン　：' + formatCouponInfo(data.couponCode, data.couponDiscount) + '\n' +
       'スタッフ指名：' + (data.staffName || '指名なし') + '\n' +
+      '集客経由：' + bookingAcquisitionLabel_(data.acquisition) + '\n\n' +
       '【まるごと1日セット売上内訳】※各金額はクーポン適用後\n' +
       labels.turtle + '：' + turtleTime + '〜 約1.5時間 / ' +
       formatYen(amounts.turtle) +
