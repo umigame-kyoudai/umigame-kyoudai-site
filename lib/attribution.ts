@@ -1,3 +1,4 @@
+import { captureTrafficAttribution, clearTrafficAttribution } from "@/lib/traffic-attribution"
 import { hasTrackingConsent } from "@/lib/customer-tracking"
 
 // 流入元計測：お客さんが「どのリンクを経由で来たか」を記録する。
@@ -41,6 +42,7 @@ const isLineAppHost = (host: string): boolean =>
 
 // 着地時に1回呼ぶ（AttributionTracker がマウント時に実行）
 export function captureAttribution(): void {
+  captureTrafficAttribution()
   if (!hasTrackingConsent()) return
   try {
     const params = new URLSearchParams(window.location.search)
@@ -103,6 +105,7 @@ export function getAttribution(): Attribution | null {
 }
 
 export function clearAttribution(): void {
+  clearTrafficAttribution()
   if (typeof window === "undefined") return
   try {
     window.localStorage.removeItem(STORAGE_KEY)
