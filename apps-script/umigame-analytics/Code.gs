@@ -1535,7 +1535,7 @@ function refreshSimpleReport() {
 }
 
 // 保存した月ごとの集計（集計のやり方を変えたら版を上げ、古い保存は使わない）
-const SIMPLE_REPORT_CACHE_VERSION = '2026-10-05';
+const SIMPLE_REPORT_CACHE_VERSION = '2026-10-31-ai-sources';
 const SIMPLE_REPORT_CACHE_PREFIX = 'SIMPLE_REPORT_MONTH_';
 
 function loadSimpleReportCache_(properties, months) {
@@ -1651,12 +1651,39 @@ function reportNumber_(value) {
   return typeof value === 'number' && isFinite(value) ? value : 0;
 }
 
+// 分析GASにも同一関数を置く。両方の分類一致はai-traffic-source.test.mjsで検証する。
+// ドメインは境界まで照合し、Google/Bing/Xの通常アクセスをAIだと推測しない。
+function identifyAiTrafficSource_(value, allowAliases) {
+  var input = typeof value === 'string' ? value.trim().toLowerCase().replace(/\.$/, '') : '';
+  if (!input) return '';
+  var services = [
+    { name: 'ChatGPT', aliases: ['chatgpt', 'openai'], hosts: ['chatgpt.com', 'chat.openai.com'] },
+    { name: 'Claude', aliases: ['claude', 'anthropic'], hosts: ['claude.ai'] },
+    { name: 'Gemini', aliases: ['gemini', 'google_gemini', 'bard'], hosts: ['gemini.google.com', 'bard.google.com'] },
+    { name: 'Perplexity', aliases: ['perplexity'], hosts: ['perplexity.ai'] },
+    { name: 'Copilot', aliases: ['copilot', 'microsoft_copilot', 'bing_copilot'], hosts: ['copilot.com', 'copilot.microsoft.com', 'copilot.cloud.microsoft'] },
+    { name: 'Grok', aliases: ['grok'], hosts: ['grok.com'] },
+    { name: 'DeepSeek', aliases: ['deepseek'], hosts: ['chat.deepseek.com'] },
+  ];
+  for (var i = 0; i < services.length; i++) {
+    var service = services[i];
+    if (allowAliases && service.aliases.indexOf(input) >= 0) return service.name;
+    for (var j = 0; j < service.hosts.length; j++) {
+      var host = service.hosts[j];
+      if (input === host || input.slice(-(host.length + 1)) === '.' + host) return service.name;
+    }
+  }
+  return '';
+}
+
 /** 来た場所を [種類, 中身] に分ける。例: ['検索', 'Google検索']、['SNS', 'Instagram（ストーリー）'] */
 function classifySource_(utmSource, utmMedium, referrerHost) {
   const utm = String(utmSource || '').trim().toLowerCase();
   const medium = String(utmMedium || '').trim().toLowerCase();
   const withMedium = function(name, labels) { return labels[medium] ? name + '（' + labels[medium] + '）' : name; };
   if (utm) {
+    const ai = identifyAiTrafficSource_(utm, true);
+    if (ai) return ['AI（ChatGPTなど）', ai];
     if (utm === 'instagram') return ['SNS', withMedium('Instagram', { profile: 'プロフィール', story: 'ストーリー', post: '投稿', reel: 'リール' })];
     if (utm === 'youtube') return ['SNS', withMedium('YouTube', { description: '概要欄' })];
     if (utm === 'threads') return ['SNS', 'Threads'];
@@ -1665,9 +1692,6 @@ function classifySource_(utmSource, utmMedium, referrerHost) {
     if (utm === 'x' || utm === 'twitter') return ['SNS', 'X（旧Twitter）'];
     if (utm === 'line') return ['LINE', withMedium('LINE', { richmenu: 'リッチメニュー', message: 'メッセージ', profile: 'プロフィール' })];
     if (utm === 'gbp') return ['Googleマップ', 'Googleマップ（お店の情報）'];
-    if (utm === 'chatgpt.com' || utm === 'openai') return ['AI（ChatGPTなど）', 'ChatGPT'];
-    if (utm === 'copilot.com') return ['AI（ChatGPTなど）', 'Copilot'];
-    if (utm === 'perplexity') return ['AI（ChatGPTなど）', 'Perplexity'];
     if (utm === 'blog') return ['ブログ記事', 'ブログ記事'];
     if (utm === 'flyer') return ['チラシ・紹介', 'チラシのQRコード'];
     if (utm === 'partner' || utm === 'affiliate') return ['チラシ・紹介', '提携先の紹介'];
@@ -1677,6 +1701,8 @@ function classifySource_(utmSource, utmMedium, referrerHost) {
   if (!host) return [SOURCE_DIRECT, SOURCE_DIRECT];
   // LINEログインからの戻り・自分のサイト内の移動は「来た場所」ではない
   if (host === 'access.line.me' || /(^|\.)umigamekyoudaimiyakojima\.com$/.test(host)) return [SOURCE_DIRECT, SOURCE_DIRECT];
+  const ai = identifyAiTrafficSource_(host, false);
+  if (ai) return ['AI（ChatGPTなど）', ai];
   if (/(^|\.)google\./.test(host)) return ['検索', 'Google検索'];
   if (/(^|\.)yahoo\./.test(host)) return ['検索', 'Yahoo!検索'];
   if (/(^|\.)bing\.com$/.test(host)) return ['検索', 'Bing検索'];
@@ -1686,9 +1712,6 @@ function classifySource_(utmSource, utmMedium, referrerHost) {
   if (/(^|\.)tiktok\.com$/.test(host)) return ['SNS', 'TikTok'];
   if (/(^|\.)youtube\.com$/.test(host)) return ['SNS', 'YouTube'];
   if (/^(t\.co|x\.com|twitter\.com)$/.test(host)) return ['SNS', 'X（旧Twitter）'];
-  if (/(^|\.)(chatgpt\.com|openai\.com)$/.test(host)) return ['AI（ChatGPTなど）', 'ChatGPT'];
-  if (/(^|\.)perplexity\.ai$/.test(host)) return ['AI（ChatGPTなど）', 'Perplexity'];
-  if (/copilot/.test(host)) return ['AI（ChatGPTなど）', 'Copilot'];
   if (/(^|\.)line\.me$|naver\.line/.test(host)) return ['LINE', 'LINE（トーク・その他）'];
   if (/search\.|duckduckgo|rakuten/.test(host)) return ['検索', 'その他の検索'];
   return ['その他のサイト', host];
@@ -1850,8 +1873,10 @@ function assembleSimpleReport_(summaries, samePeriod, options) {
         total: detailVisitors.reduce(function(sum, n) { return sum + (n || 0); }, 0),
       };
     }).filter(function(detail) {
-      return detail.label !== label && detail.total > 0;
-    }).sort(function(a, b) { return b.total - a.total; }).slice(0, SIMPLE_REPORT.maxDetailsPerSource);
+      return detail.label !== label && (detail.total > 0 ||
+        (label === 'AI（ChatGPTなど）' && detail.bookings.some(function(n) { return n > 0; })));
+    }).sort(function(a, b) { return b.total - a.total; })
+      .slice(0, label === 'AI（ChatGPTなど）' ? Object.keys(labels[label]).length : SIMPLE_REPORT.maxDetailsPerSource);
     return {
       label: label, note: SOURCE_GROUP_NOTES[label] || '', visitors: visitors, bookings: bookings,
       total: visitors.reduce(function(sum, n) { return sum + (n || 0); }, 0), details: details,
@@ -2034,7 +2059,7 @@ function writeSimpleReport_(sheet, report, updatedAt, timezone) {
   if (!report.sources.length) add('note', ['データがありません']);
   add('blank');
 
-  add('section', ['お客さんはどこから来た？（予約が入った件数）', '予約した人が、最初にどこから来たかです。']);
+  add('section', ['お客さんはどこから来た？（予約が入った件数）', '予約時に記録されていた流入元です。']);
   add('header', ['来た場所', 'どんな人？'].concat(monthHeaders));
   report.sources.forEach(function(source) {
     add('row', [source.label, source.note].concat(source.bookings.map(function(v) { return formatReportValue_(v, '件'); })), 'group');

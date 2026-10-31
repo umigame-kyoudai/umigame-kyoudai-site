@@ -27,7 +27,7 @@ var NOTIFY_SECRET = ''; // Script Properties の NOTIFY_SECRET を優先して�
 var SHEET_NAME = '予約一覧';
 var CALENDAR_ID = 'genkidama2439@gmail.com';
 var ADMIN_EMAIL = 'genkidama2439@gmail.com';
-var BOOKING_APP_VERSION = '2026.10.31-1';
+var BOOKING_APP_VERSION = '2026.10.31-2';
 var BOOKING_SCHEMA_VERSION = '2026.09.25-1';
 var BOOKING_SCHEMA_VERSION_PROPERTY = 'BOOKING_SCHEMA_VERSION';
 
@@ -1379,6 +1379,31 @@ function sendBookingEmail(data, headcount, participantsDetail) {
 // 集客経由は紹介報酬・担当ガイドから独立して扱う。
 // 媒体の計測と署名付き紹介リンクは別の情報。予約通知の冒頭で区別して表示する。
 // 元のUTM/参照元は従来どおり台帳と備考に残す。情報がない理由は推測で断定しない。
+// 分析GASにも同一関数を置く。両方の分類一致はai-traffic-source.test.mjsで検証する。
+// ドメインは境界まで照合し、Google/Bing/Xの通常アクセスをAIだと推測しない。
+function identifyAiTrafficSource_(value, allowAliases) {
+  var input = typeof value === 'string' ? value.trim().toLowerCase().replace(/\.$/, '') : '';
+  if (!input) return '';
+  var services = [
+    { name: 'ChatGPT', aliases: ['chatgpt', 'openai'], hosts: ['chatgpt.com', 'chat.openai.com'] },
+    { name: 'Claude', aliases: ['claude', 'anthropic'], hosts: ['claude.ai'] },
+    { name: 'Gemini', aliases: ['gemini', 'google_gemini', 'bard'], hosts: ['gemini.google.com', 'bard.google.com'] },
+    { name: 'Perplexity', aliases: ['perplexity'], hosts: ['perplexity.ai'] },
+    { name: 'Copilot', aliases: ['copilot', 'microsoft_copilot', 'bing_copilot'], hosts: ['copilot.com', 'copilot.microsoft.com', 'copilot.cloud.microsoft'] },
+    { name: 'Grok', aliases: ['grok'], hosts: ['grok.com'] },
+    { name: 'DeepSeek', aliases: ['deepseek'], hosts: ['chat.deepseek.com'] },
+  ];
+  for (var i = 0; i < services.length; i++) {
+    var service = services[i];
+    if (allowAliases && service.aliases.indexOf(input) >= 0) return service.name;
+    for (var j = 0; j < service.hosts.length; j++) {
+      var host = service.hosts[j];
+      if (input === host || input.slice(-(host.length + 1)) === '.' + host) return service.name;
+    }
+  }
+  return '';
+}
+
 function buildBookingTrafficEmailBlock_(data) {
   var attribution = data && data.attribution || {};
   var clean = function(value) {
@@ -1391,8 +1416,7 @@ function buildBookingTrafficEmailBlock_(data) {
     instagram: 'Instagram', line: 'LINE', gbp: 'Googleマップ',
     google: 'Google', youtube: 'YouTube', threads: 'Threads',
     facebook: 'Facebook', tiktok: 'TikTok', x: 'X', twitter: 'X',
-    'chatgpt.com': 'ChatGPT', openai: 'ChatGPT', perplexity: 'Perplexity',
-    'copilot.com': 'Copilot', flyer: 'チラシ・名刺', partner: '提携先', affiliate: '紹介リンク',
+    flyer: 'チラシ・名刺', partner: '提携先', affiliate: '紹介リンク',
   };
   var placements = {
     profile: 'プロフィール', story: 'ストーリー', post: '投稿', reel: 'リール',
@@ -1403,18 +1427,18 @@ function buildBookingTrafficEmailBlock_(data) {
   var label = '不明';
   var evidence = '情報なし（直接アクセス・計測同意なし等。理由は判別できません）';
   if (source) {
-    label = Object.prototype.hasOwnProperty.call(sources, source) ? sources[source] : source;
+    label = identifyAiTrafficSource_(source, true) || (Object.prototype.hasOwnProperty.call(sources, source) ? sources[source] : source);
     evidence = 'リンクの計測タグ';
   } else if (host && !/^(access|auth|liff)\.line\.me$/.test(host) && !/(^|\.)umigamekyoudaimiyakojima\.com$/.test(host)) {
     label = host;
     // ホスト名だけではGoogle検索とGoogleマップを断定しない。
-    if (/(^|\.)google\.(com|co\.jp)$/.test(host)) label = 'Google（検索・マップ等）';
+    if (identifyAiTrafficSource_(host, false)) label = identifyAiTrafficSource_(host, false);
+    else if (/(^|\.)google\.(com|co\.jp)$/.test(host)) label = 'Google（検索・マップ等）';
     else if (/(^|\.)yahoo\.co\.jp$/.test(host)) label = 'Yahoo!';
     else if (/(^|\.)bing\.com$/.test(host)) label = 'Bing';
     else if (/(^|\.)instagram\.com$/.test(host)) label = 'Instagram';
     else if (/(^|\.)facebook\.com$/.test(host)) label = 'Facebook';
     else if (/(^|\.)youtube\.com$/.test(host)) label = 'YouTube';
-    else if (/(^|\.)chatgpt\.com$/.test(host)) label = 'ChatGPT';
     else if (/(^|\.)line\.me$/.test(host) || /^(jp\.naver\.line|com\.linecorp\.line)/.test(host)) label = 'LINE';
     evidence = '参照元ドメイン（' + host + '）';
   }
