@@ -198,7 +198,7 @@ function resolveParticipants(planId: string, displayAgeRange: string): TourParti
   const adult = getParticipantAgeRange(planId, "adult")
   const child = getParticipantAgeRange(planId, "child")
   const under3 = getParticipantAgeRange(planId, "under3")
-  const counterpart = PRIVATE_COUNTERPART[planId]
+  const counterpart = SENIOR_RESTRICTED_PLAN_IDS.has(planId) ? PRIVATE_COUNTERPART[planId] : undefined
 
   return {
     adultAgeMin: adult?.min ?? 0,

@@ -689,7 +689,8 @@ export function PlansSection() {
 
         <div data-reveal="" className="px-5 sm:px-6 lg:px-8 mb-8">
           <p className="mb-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-relaxed text-amber-900">
-            <strong>{SENIOR_RESTRICTED_AGE}歳以上の方を含むグループは、貸切プランをお選びください。</strong>
+            <strong>シュノーケル・SUPを含むツアーは、{SENIOR_RESTRICTED_AGE}歳以上の方を含むグループは貸切プランをお選びください。</strong>
+            ナイトツアー単品は60歳以上の方も通常プランに参加できます。
             対象年齢の上限は各プランの表示をご確認ください。
           </p>
           {/* モバイルもPCと同じ4列の比較表で表示（2026-07-12 オーナー要望でカード表示を廃止）。

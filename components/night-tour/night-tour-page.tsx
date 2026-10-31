@@ -4,7 +4,7 @@ import { Shippori_Mincho, Barlow_Condensed } from "next/font/google"
 import { ArrowDown, ArrowRight, ArrowUpRight, BookOpen, Check, ChevronDown, Compass, Flashlight } from "lucide-react"
 import type { PlanDetail } from "@/lib/plan-details"
 import { getPlanPriceDisplay } from "@/lib/plan-price-display"
-import { NIGHT_TOUR_TIMES, SENIOR_RESTRICTED_AGE } from "@/lib/plan-flags"
+import { NIGHT_TOUR_TIMES } from "@/lib/plan-flags"
 import { getBookingPolicyCopy } from "@/lib/booking-policy-copy"
 import { SITE_CONFIG } from "@/lib/site-config"
 import { NIGHT_GUIDE } from "@/lib/staff"
@@ -53,7 +53,7 @@ export function NightTourPage({ plan }: { plan: PlanDetail }) {
         <div className={styles.quickFacts} aria-label="ツアーの概要">
           <p><span>探検の時間</span><strong>{plan.duration}</strong></p>
           <p><span>出発時刻</span><strong>{NIGHT_TOUR_TIMES.join(" / ")}</strong></p>
-          <p><span>参加できる年齢</span><strong>{plan.age}</strong>{!isPrivate && <small><Link href="/plans/S5">{SENIOR_RESTRICTED_AGE}歳以上の方は貸切へ</Link></small>}</p>
+          <p><span>参加できる年齢</span><strong>{plan.age}</strong></p>
           <p><span>冒険のスタイル</span><strong>{isPrivate ? "あなたのグループだけの貸切" : "ガイドと歩く夜の生き物探し"}</strong></p>
         </div>
 
@@ -120,7 +120,7 @@ export function NightTourPage({ plan }: { plan: PlanDetail }) {
             <div><h3>持ってくるもの</h3><ul>{plan.whatToBring.map(item => <li key={item}>{item}</li>)}</ul></div>
             <div><h3>料金に含まれるもの</h3><ul className={styles.includedList}>{plan.included.map(item => <li key={item}><Check size={16} aria-hidden="true" />{item}</li>)}</ul></div>
           </div>
-          <div className={styles.participationNotice}><h3>ご参加の前に</h3><p>対象年齢：{plan.age}</p>{!isPrivate && <p>{SENIOR_RESTRICTED_AGE}歳以上の方を含むグループは、<Link href="/plans/S5">貸切ナイトツアー</Link>をご予約ください。</p>}<ul>{plan.precautions.map(item => <li key={item}>{item}</li>)}</ul></div>
+          <div className={styles.participationNotice}><h3>ご参加の前に</h3><p>対象年齢：{plan.age}</p>{!isPrivate && <p>60歳以上の方も通常プランでご参加いただけます。</p>}<ul>{plan.precautions.map(item => <li key={item}>{item}</li>)}</ul></div>
         </section>
 
         <section className={`${styles.section} ${styles.faq}`} aria-labelledby="faq-title">
