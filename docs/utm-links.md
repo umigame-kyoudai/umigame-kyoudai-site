@@ -6,9 +6,8 @@
 
 ## 使い方
 
-現在のメイン動線は **Instagram → LINE公式（友だち追加）→ ホームページ** のため、
-最重要はLINE公式の中に貼るリンク。LINEのアプリ内ブラウザは参照元を渡さないので、
-UTMなしだと全て「不明（直接アクセス）」になる。
+LINE公式からサイトへ案内する場合も、掲載場所に合うリンクを使います。
+アプリ内ブラウザが参照元を渡さず、以前の取得済み情報もない場合は、UTMなしでは媒体を判別できません。
 
 | 貼る場所 | 使うURL |
 |---|---|
@@ -24,9 +23,18 @@ UTMなしだと全て「不明（直接アクセス）」になる。
 | チラシ・名刺のQRコード | `https://www.umigamekyoudaimiyakojima.com/?utm_source=flyer&utm_medium=qr` |
 | 提携サイト・紹介ブログ | `https://www.umigamekyoudaimiyakojima.com/?utm_source=partner&utm_medium=referral&utm_campaign=相手の名前をローマ字で` |
 
-※ Instagram→LINEの入口が今のところInstagramだけなので、`line / ...` の予約は実質
-「Instagram経由」と読める。InstagramからLINEへの友だち追加リンク（lin.ee等）はLINE側のURLの
-ためUTMは付けられない（付けるのはLINEの中からホームページへ飛ばすリンクの方）。
+`line / ...` は「LINEからサイトへ来た」ことを示します。その前にInstagram等を見たかは、この記録だけでは分かりません。
+この表のUTMは、LINEの中からホームページへ飛ばす自社サイトURLに付けます。友だち追加用の`lin.ee`リンクへ同じパラメータを付けても、自社サイトへの引継ぎは保証されません。
+
+### 誰の専用リンクを使ったか確認したい場合
+
+| Instagramの掲載者 | 使用するURL |
+|---|---|
+| そういちろう | `https://www.umigamekyoudaimiyakojima.com/from/souichiro` |
+| 山ちゃん | `https://www.umigamekyoudaimiyakojima.com/from/yamachan` |
+| 海亀兄弟公式 | `https://www.umigamekyoudaimiyakojima.com/from/umigame` |
+
+専用リンクの経由は媒体計測と別に、署名を検証して記録します。担当スタッフの指名や、任意のUTMの文字だけから紹介者を決めません。詳細は[専用入口の運用記録](booking-source-release-2026-09-25.md)を参照してください。
 
 - トップページ以外に飛ばしたい場合も同じ要領（例: `https://www.umigamekyoudaimiyakojima.com/plans/S1?utm_source=instagram&utm_medium=story`）
 - 新しい貼り先を増やすときは `utm_source=媒体名&utm_medium=場所`（**ローマ字・英数字のみ**。日本語は記録されません）
@@ -35,9 +43,9 @@ UTMなしだと全て「不明（直接アクセス）」になる。
 
 ## 結果の見方
 
-1. **予約1件ごとの流入元**：仮予約通知メール／Googleカレンダーの「特別なご要望」欄の末尾に
+1. **予約1件ごとの流入元**：2026-10-31のメール表示更新では、仮予約通知の冒頭に「媒体・掲載場所・紹介者の専用リンク・判定根拠」を表示します。[反映状況](traffic-source-email-audit-2026-10-31.md)を確認してください。旧メール／Googleカレンダーの「特別なご要望」欄の末尾には
    `[流入元] instagram / profile（着地: /）` のように載ります。
-   - `[流入元] 参照元: www.google.com` → Google検索から
+   - `[流入元] 参照元: www.google.com` → Googleから。ホスト名だけでは検索／マップを断定できません
    - `[流入元] 不明（直接アクセス・ブックマーク等）` → URL直打ち・ブックマーク・参照元を渡さないアプリ等
 2. **集計（どの流入元から何件予約が入ったか）**：Vercelダッシュボード → Analytics → Events →
    `booking_submitted` の `source` プロパティで内訳が見られます（例: `instagram/profile`, `ref:www.google.com`, `direct`）。
@@ -45,7 +53,7 @@ UTMなしだと全て「不明（直接アクセス）」になる。
 
 ## 仕組みメモ（技術）
 
-- 着地時に `lib/attribution.ts` が UTM/参照元を localStorage に保存（90日有効・ラスト・ノンダイレクト方式）
+- 計測同意後に `lib/attribution.ts` が UTM/参照元を localStorage に保存（90日有効・直近で取得できた流入元）。同意前のページ移動や別ブラウザへの移動では復元できない場合があります
 - 予約送信時にフォーム（ja/en 共通）が `attribution` を `/api/booking` に添付
 - API が備考欄末尾に `[流入元]` ブロックを追記（GAS側の変更は不要）
 - お客様向けのLINE通知には載りません（管理者メール・カレンダーのみ）
