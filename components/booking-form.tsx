@@ -1,5 +1,8 @@
 "use client"
 
+import { DiscoverySourceField } from "@/components/discovery-source-field"
+import { getTrafficAttribution, trafficEventProperties } from "@/lib/traffic-attribution"
+
 import type React from "react"
 import Link from "next/link"
 import { ParticipantForm } from "./participant-form"
@@ -126,6 +129,7 @@ interface BookingData {
   customerEmail: string
   customerPhone: string
   specialRequests: string
+  discoverySource: string
   agreedToTerms: boolean
   photoPublicationConsent: boolean
   couponCode: string
@@ -300,6 +304,7 @@ export function BookingForm() {
       customerEmail: "",
       customerPhone: "",
       specialRequests: "",
+      discoverySource: "",
       agreedToTerms: false,
       photoPublicationConsent: false,
       couponCode: "",
@@ -914,6 +919,7 @@ export function BookingForm() {
         couponDiscount: bookingData.couponDiscount,
         // 流入元（どのリンク経由か）。管理者メール・カレンダーの備考に [流入元] として載る
         attribution: getAttribution(),
+        trafficAttribution: getTrafficAttribution(bookingData.discoverySource),
         acquisitionToken: getBookingSourceToken(),
         // 同意済みの場合だけ、予約前の閲覧履歴と予約を結合する識別子を送る。
         customerAnalytics: getBookingCustomerAnalytics(),
@@ -978,6 +984,7 @@ export function BookingForm() {
           : bookingData.couponDiscount
       setConfirmedPricing({ totalPrice: confirmedTotalPrice, couponDiscount: confirmedCouponDiscount })
       sendDetailedEvent("booking_submitted", {
+        ...trafficEventProperties(requestBody.trafficAttribution),
         locale: "ja",
         plan: bookingData.selectedPlan,
         planName: selectedPlanData?.name ?? "",
@@ -2161,6 +2168,8 @@ export function BookingForm() {
               required
             />
           </div>
+
+          <DiscoverySourceField value={bookingData.discoverySource || ""} onChange={(value) => handleInputChange("discoverySource", value)} />
 
           <div>
             <Label htmlFor="requests" className="text-sm font-medium text-gray-700 mb-2 block">

@@ -1,5 +1,8 @@
 "use client"
 
+import { DiscoverySourceField } from "@/components/discovery-source-field"
+import { getTrafficAttribution, trafficEventProperties } from "@/lib/traffic-attribution"
+
 // 国際版（en/ko/zh-tw共通）の予約フォーム。日本語版（booking-form.tsx）とは独立した軽量実装で、
 // 同じ /api/booking に送信する（最終検証・料金計算はサーバー側が行う）。
 // 文言はすべて props の dict から取り、実装はこの1本だけ。
@@ -102,6 +105,7 @@ interface IntlBookingDraft {
   customerEmail?: string
   customerPhone?: string
   specialRequests?: string
+  discoverySource?: string
   couponCode?: string
   couponDiscount?: number
   photoPublicationConsent?: boolean
@@ -170,6 +174,7 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
   const [customerName, setCustomerName] = useState(draft?.customerName ?? "")
   const [customerEmail, setCustomerEmail] = useState(draft?.customerEmail ?? "")
   const [customerPhone, setCustomerPhone] = useState(draft?.customerPhone ?? "")
+  const [discoverySource, setDiscoverySource] = useState(draft?.discoverySource ?? "")
   const [specialRequests, setSpecialRequests] = useState(draft?.specialRequests ?? "")
   const [couponCode, setCouponCode] = useState(draft?.couponCode ?? "")
   // 割引額は人数・プランと紐づくため、保存値を復元せずサーバーで再検証する。
@@ -246,6 +251,7 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
         customerEmail,
         customerPhone,
         specialRequests,
+        discoverySource,
         couponCode,
         couponDiscount,
         agreed,
@@ -253,7 +259,7 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
       }
       window.sessionStorage.setItem(draftKey(locale), JSON.stringify(draftToSave))
     } catch {}
-  }, [planId, date, time, participants, staffId, customerName, customerEmail, customerPhone, specialRequests, couponCode, couponDiscount, agreed, photoPublicationConsent, hasRestoredPhotoConsent, isSubmitted, locale])
+  }, [planId, date, time, participants, staffId, customerName, customerEmail, customerPhone, specialRequests, discoverySource, couponCode, couponDiscount, agreed, photoPublicationConsent, hasRestoredPhotoConsent, isSubmitted, locale])
 
   const plan = bookablePlans.find((p) => p.id === planId)
   const t = planId ? planById[planId] : undefined
@@ -641,6 +647,7 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
         photoPublicationConsent,
         // 流入元（どのリンク経由か）。管理者メール・カレンダーの備考に [流入元] として載る
         attribution: getAttribution(),
+        trafficAttribution: getTrafficAttribution(discoverySource),
         acquisitionToken: getBookingSourceToken(),
         customerAnalytics: getBookingCustomerAnalytics(),
       }
@@ -696,6 +703,7 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
           : couponDiscount
       setConfirmedPricing({ totalPrice: confirmedTotalPrice, couponDiscount: confirmedCouponDiscount })
       sendDetailedEvent("booking_submitted", {
+        ...trafficEventProperties(requestBody.trafficAttribution),
         locale,
         plan: planId,
         planName: plan.name,
@@ -1122,6 +1130,7 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
             <Label htmlFor="intl-email" className="text-sm font-medium text-gray-700 mb-2 block">{copy.emailLabel}</Label>
             <Input id="intl-email" type="email" required autoComplete="email" value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} className="rounded-xl border-emerald-200" />
           </div>
+          <DiscoverySourceField locale={locale} value={discoverySource} onChange={setDiscoverySource} />
           <div className="sm:col-span-2">
             <Label htmlFor="intl-requests" className="text-sm font-medium text-gray-700 mb-2 block">{copy.requestsLabel}</Label>
             <Textarea id="intl-requests" rows={3} value={specialRequests} onChange={(e) => setSpecialRequests(e.target.value)} className="rounded-xl border-emerald-200" />

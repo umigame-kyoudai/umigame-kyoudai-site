@@ -27,7 +27,7 @@ var NOTIFY_SECRET = ''; // Script Properties の NOTIFY_SECRET を優先して�
 var SHEET_NAME = '予約一覧';
 var CALENDAR_ID = 'genkidama2439@gmail.com';
 var ADMIN_EMAIL = 'genkidama2439@gmail.com';
-var BOOKING_APP_VERSION = '2026.10.31-2';
+var BOOKING_APP_VERSION = '2026.10.31-3';
 var BOOKING_SCHEMA_VERSION = '2026.09.25-1';
 var BOOKING_SCHEMA_VERSION_PROPERTY = 'BOOKING_SCHEMA_VERSION';
 
@@ -1404,7 +1404,65 @@ function identifyAiTrafficSource_(value, allowAliases) {
   return '';
 }
 
+
+// Webと同じ固定分類。メール・解析で一致することをテストで確認する。
+var TRAFFIC_SOURCES = {
+  "google": "Google（検索・マップ等）",
+  "google_search": "Google検索",
+  "gbp": "Googleマップ",
+  "instagram": "Instagram",
+  "youtube": "YouTube",
+  "line": "LINE",
+  "threads": "Threads",
+  "facebook": "Facebook",
+  "tiktok": "TikTok",
+  "x": "X",
+  "yahoo": "Yahoo!",
+  "bing": "Bing",
+  "chatgpt": "ChatGPT",
+  "claude": "Claude",
+  "gemini": "Gemini",
+  "perplexity": "Perplexity",
+  "copilot": "Copilot",
+  "grok": "Grok",
+  "deepseek": "DeepSeek",
+  "flyer": "チラシ・名刺",
+  "partner": "提携先・紹介リンク",
+  "friend": "知人・家族の紹介",
+  "repeat": "以前利用した",
+  "other_web": "その他のサイト",
+  "other": "その他",
+  "direct": "直接・参照元不明",
+  "unknown": "不明"
+};
+var TRAFFIC_MEDIUMS = {"profile":"プロフィール","activity":"プラン一覧","booking":"予約リンク","story":"ストーリー","post":"投稿","reel":"リール","description":"概要欄","richmenu":"リッチメニュー","greeting":"あいさつメッセージ","broadcast":"一斉配信","chat":"個別トーク","message":"メッセージ","qr":"QRコード","referral":"紹介リンク","organic":"自然検索","cpc":"広告","social":"SNS"};
+var ORIGIN_EVIDENCE = {"reported":"お客様の回答","first_observed":"初回サイト流入（このブラウザ・90日以内）","unknown":"大元を確認できる記録なし"};
+var ROUTE_EVIDENCE = {"tag":"リンクの計測タグ","referrer":"参照元ドメイン","direct":"参照元なし","unknown":"記録なし"};
+function normalizeTrafficAttribution_(input) {
+  if (!input || typeof input !== 'object' || input.version !== 1) return null;
+  var own = function(o, k) { return typeof k === 'string' && Object.prototype.hasOwnProperty.call(o, k); };
+  var origin = own(TRAFFIC_SOURCES, input.originSource) && input.originSource !== 'direct' ? input.originSource : 'unknown';
+  var evidence = input.originEvidence === 'reported' ? 'reported' : input.originEvidence === 'first_observed' && origin !== 'unknown' && origin !== 'line' ? 'first_observed' : 'unknown';
+  var routeEvidence = ['tag', 'referrer', 'direct'].indexOf(input.routeEvidence) >= 0 ? input.routeEvidence : 'unknown';
+  return { version: 1, originSource: evidence === 'unknown' ? 'unknown' : origin, originEvidence: evidence,
+    routeSource: routeEvidence === 'unknown' ? 'unknown' : routeEvidence === 'direct' ? 'direct' : own(TRAFFIC_SOURCES, input.routeSource) ? input.routeSource : 'unknown',
+    routeEvidence: routeEvidence, routeMedium: own(TRAFFIC_MEDIUMS, input.routeMedium) ? input.routeMedium : '' };
+}
+
 function buildBookingTrafficEmailBlock_(data) {
+  var traffic = normalizeTrafficAttribution_(data && data.trafficAttribution);
+  if (traffic) {
+    var medium = traffic.routeMedium ? '／' + TRAFFIC_MEDIUMS[traffic.routeMedium] : '';
+    var acquisition = data && data.acquisition;
+    var introducer = acquisition && ['souichiro', 'yamachan', 'umigame'].indexOf(acquisition.source) >= 0 ? bookingAcquisitionLabel_(acquisition) : '記録なし';
+    return '【集客元・予約経路】\n' +
+      '大元の集客元：' + TRAFFIC_SOURCES[traffic.originSource] + '\n' +
+      '集客元の根拠：' + ORIGIN_EVIDENCE[traffic.originEvidence] + '\n' +
+      '予約経路：' + TRAFFIC_SOURCES[traffic.routeSource] + medium + ' → 公式サイト\n' +
+      '予約経路の根拠：' + ROUTE_EVIDENCE[traffic.routeEvidence] + '\n' +
+      '紹介者の専用リンク：' + introducer + '\n\n';
+  }
+
   var attribution = data && data.attribution || {};
   var clean = function(value) {
     return typeof value === 'string' ? value.replace(/[^\w\-./ ]/g, '').trim().slice(0, 120).toLowerCase() : '';
@@ -1446,7 +1504,7 @@ function buildBookingTrafficEmailBlock_(data) {
   var acquisition = data && data.acquisition;
   var introducer = acquisition && ['souichiro', 'yamachan', 'umigame'].indexOf(acquisition.source) >= 0
     ? bookingAcquisitionLabel_(acquisition) : '記録なし';
-  return '【流入経路】\n' +
+  return '【流入経路】\n大元の集客元：不明（旧フォーム・記録なし）\n以下は従来の最後の流入記録です。\n' +
     '媒体：' + label + '\n' +
     '掲載場所：' + placement + '\n' +
     '紹介者の専用リンク：' + introducer + '\n' +
@@ -5474,3 +5532,4 @@ doPost = function(e) {
 
   return response;
 };
+

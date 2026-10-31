@@ -67,6 +67,7 @@ export interface DetailedAnalyticsEvent {
 }
 
 export const ANALYTICS_PROPERTY_KEYS = [
+  "traffic_version", "origin_source", "origin_evidence", "booking_route", "route_evidence", "route_medium",
   "location",
   "plan",
   "planName",

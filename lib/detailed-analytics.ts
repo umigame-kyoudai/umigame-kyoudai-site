@@ -6,6 +6,7 @@ import type {
   DetailedAnalyticsEvent,
 } from "@/lib/analytics-schema"
 import { trackEvent } from "@/lib/analytics"
+import { getTrafficAttribution, trafficEventProperties } from "@/lib/traffic-attribution"
 import { getAttribution } from "@/lib/attribution"
 import { getCustomerTrackingIdentity, hasTrackingConsent } from "@/lib/customer-tracking"
 
@@ -102,7 +103,7 @@ export function buildDetailedEvent(
     screen_width: window.screen?.width || 0,
     screen_height: window.screen?.height || 0,
     connection_type: getConnectionType(),
-    properties,
+    properties: { ...trafficEventProperties(getTrafficAttribution()), ...properties },
   }
 }
 

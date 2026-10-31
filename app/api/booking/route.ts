@@ -1,3 +1,4 @@
+import { normalizeTrafficAttribution, trafficAttributionNote } from "@/lib/traffic-attribution"
 import { NextResponse } from 'next/server'
 import { NIGHT_GUIDE } from '@/lib/staff'
 import { resolveBookingSource } from '@/lib/booking-source-server'
@@ -74,6 +75,7 @@ interface BookingRequest {
   couponDiscount?: number
   photoPublicationConsent?: boolean
   agreedToTerms?: boolean
+  trafficAttribution?: unknown
   attribution?: {
     source?: string
     medium?: string
@@ -512,7 +514,7 @@ const buildGASPayload = (
     under3Count,
     totalPrice: serverTotalPrice,
     staffName: getStaffName(bookingData.selectedStaff),
-    specialRequests: [buildSpecialRequests(bookingData, plan), buildPhotoPublicationNote(bookingData.photoPublicationConsent), buildAttributionNote(bookingData)]
+    specialRequests: [buildSpecialRequests(bookingData, plan), buildPhotoPublicationNote(bookingData.photoPublicationConsent), buildAttributionNote(bookingData), trafficAttributionNote(bookingData.trafficAttribution)]
       .filter(Boolean)
       .join('\n───\n'),
     lineUserId: lineProfile.userId,
@@ -521,6 +523,7 @@ const buildGASPayload = (
     couponDiscount: validatedCoupon.discount,
     customerAnalytics: normalizeCustomerAnalytics(bookingData.customerAnalytics),
     attribution: bookingData.attribution || null,
+    trafficAttribution: normalizeTrafficAttribution(bookingData.trafficAttribution),
     referral,
     acquisitionToken,
   }
