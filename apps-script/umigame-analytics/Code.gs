@@ -2148,7 +2148,7 @@ function writeSimpleReport_(sheet, report, updatedAt, timezone) {
   [
     ['大元の集客元（予約件数）', 'お客様の回答を優先。未回答はこのブラウザの初回サイト流入。LINEより前が分からなければ不明。', report.origins],
     ['予約経路（予約件数）', '予約直前のサイト入口。LINEログインは予約経路に数えません。', report.routes],
-    ['大元の集客元 → 予約経路（予約件数）', '例：Instagram → LINE。各行は重複せず、合計は予約件数と一致します。', report.originRoutes],
+    ['集客元 → 予約経路', '例：Instagram → LINE。各行は重複せず、合計は予約件数と一致します。', report.originRoutes],
     ['集客元の根拠（予約件数）', '過去の最後の流入記録から、大元を推測して埋めていません。', report.originEvidence],
   ].forEach(function(section) {
     add('section', [section[0], section[1]]);
@@ -2157,7 +2157,7 @@ function writeSimpleReport_(sheet, report, updatedAt, timezone) {
     add('row', ['合計', '分析に同意した予約'].concat(report.metrics[3].values.map(function(n) { return formatReportValue_(n, '件'); })), 'group');
     add('blank');
   });
-  add('section', ['参考：従来の最後の流入記録（予約件数）', '大元の集客元・直前の予約経路とは別です。過去記録の参考用。']);
+  add('section', ['参考：従来の流入記録', '大元の集客元・直前の予約経路とは別です。過去記録の参考用。']);
   add('header', ['来た場所', 'どんな人？'].concat(monthHeaders));
   report.sources.forEach(function(source) {
     add('row', [source.label, source.note].concat(source.bookings.map(function(v) { return formatReportValue_(v, '件'); })), 'group');

@@ -54,3 +54,6 @@ Team ID: `team_AVkVeJGhky3xEi61HxtzJ2IX`。
 対象のプランカード・一般詳細CTAは既存の `sendDetailedEvent` に揃え、既存の同意条件に従ってGA4・Vercelと分析シートへ送る。仮予約送信の成功は `generate_lead` であり、スタッフ確認後の成約や入金とは別。効果改善は公開後のデータで評価する。
 
 検証：lint・本番ビルド・既存292テスト成功。HTTPSプレビューで390px幅の各カテゴリ件数（ウミガメ2・夜2・SUP4・セット6）、比較表からS1詳細・仮予約への遷移、S1→貸切ナイトへの変更、C6と日付の引き継ぎ、未公開プランが選択されず一覧が開くこと、キーボードで日付欄へ進めることを確認。実際の予約送信・通知は行っていない。
+
+
+2026-10-31、[PR #55](https://github.com/umigame-kyoudai/umigame-kyoudai-site/pull/55)で集客元と予約経路を分離。受付GAS v39、解析GAS v10、Web本番へ反映。全予約の集計タブ（予約Spreadsheet gid `1171640408`）と分析側の月別表を更新。LINEリッチメニューの3本を計測付きに変更し、GBP予約URLは設定保存済み・公開反映未確認。[詳細・制限](dual-attribution-2026-10-31.md)。

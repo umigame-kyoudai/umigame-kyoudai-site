@@ -15,6 +15,7 @@ LINE公式からサイトへ案内する場合も、掲載場所に合うリン�
 | **LINE公式：あいさつメッセージ**（友だち追加直後） | `https://www.umigamekyoudaimiyakojima.com/?utm_source=line&utm_medium=greeting` |
 | **LINE公式：一斉配信** | `https://www.umigamekyoudaimiyakojima.com/?utm_source=line&utm_medium=broadcast` |
 | **LINE公式：1対1チャットで案内するとき** | `https://www.umigamekyoudaimiyakojima.com/?utm_source=line&utm_medium=chat` |
+| Googleビジネスプロフィール：予約リンク | `https://www.umigamekyoudaimiyakojima.com/?utm_source=gbp&utm_medium=booking` |
 | Googleビジネスプロフィール（マップ） | `https://www.umigamekyoudaimiyakojima.com/?utm_source=gbp&utm_medium=profile` |
 | YouTube 概要欄 | `https://www.umigamekyoudaimiyakojima.com/?utm_source=youtube&utm_medium=description` |
 | Instagram プロフィール（直接サイトに飛ばす場合） | `https://www.umigamekyoudaimiyakojima.com/?utm_source=instagram&utm_medium=profile` |
@@ -47,17 +48,17 @@ ChatGPT・Claude・Gemini・Perplexity・Copilot・Grok・DeepSeekは、参照�
 
 ## 結果の見方
 
-1. **予約1件ごとの流入元**：2026-10-31のメール表示更新では、仮予約通知の冒頭に「媒体・掲載場所・紹介者の専用リンク・判定根拠」を表示します。[反映状況](traffic-source-email-audit-2026-10-31.md)を確認してください。旧メール／Googleカレンダーの「特別なご要望」欄の末尾には
-   `[流入元] instagram / profile（着地: /）` のように載ります。
-   - `[流入元] 参照元: www.google.com` → Googleから。ホスト名だけでは検索／マップを断定できません
-   - `[流入元] 不明（直接アクセス・ブックマーク等）` → URL直打ち・ブックマーク・参照元を渡さないアプリ等
-2. **集計（どの流入元から何件予約が入ったか）**：Vercelダッシュボード → Analytics → Events →
-   `booking_submitted` の `source` プロパティで内訳が見られます（例: `instagram/profile`, `ref:www.google.com`, `direct`）。
-3. **訪問数ベースの集計**：Vercel Analytics のページビューでも UTM（utm_source 等）でフィルタできます。
+1. **予約メール**：冒頭の「大元の集客元」「予約経路」「それぞれの根拠」を見ます。例：Instagram（お客様回答）／LINE・リッチメニュー → 公式サイト。紹介者の署名付き専用入口は別項目に残します。
+2. **全予約の集計**：[予約台帳の「集客元・予約経路集計」](https://docs.google.com/spreadsheets/d/1bPYur4Dfg3LxTCIiYzZvyZRT8bgLoYizG1B6LIkETKk/edit#gid=1171640408)。解析同意なしも含み、セット分割行は予約番号で1件。キャンセル・満席は差し引かない受付件数です。毎朝6時台更新。
+3. **行動分析**：[かんたんレポート](https://docs.google.com/spreadsheets/d/1PvNgEYQTtKSxyQgao6jPrXPv-5p9R04CWyxqSeKKPDI/edit#gid=508414902)に大元・予約経路・組み合わせ・根拠を月別表示します。こちらは分析同意したイベントだけです。
+4. 従来の`source`プロパティ・`[流入元]`は「最後に記録された流入」の参考値です。新しい大元・今回の入口と混同しないでください。
 
 ## 仕組みメモ（技術）
 
-- 計測同意後に `lib/attribution.ts` が UTM/参照元を localStorage に保存（90日有効・直近で取得できた流入元）。同意前のページ移動や別ブラウザへの移動では復元できない場合があります
-- 予約送信時にフォーム（ja/en 共通）が `attribution` を `/api/booking` に添付
-- API が備考欄末尾に `[流入元]` ブロックを追記（GAS側の変更は不要）
-- お客様向けのLINE通知には載りません（管理者メール・カレンダーのみ）
+- `lib/traffic-attribution.ts` が、同意後の初回サイト入口（90日・このブラウザ）と今回の入口を分離保存。最初の観測がLINE／直接・不明なら、それ以前の大元は不明。旧last-non-direct記録は大元へ転用しません。
+- ja/en/ko/zh-twの任意回答があれば、大元にはその回答を優先し「お客様回答」と明記。回答は同意の有無に関係なく予約情報へ保存します。
+- フォームが`trafficAttribution`を予約APIへ渡し、APIが備考へ説明と固定コードを追記。受付GAS v39のメール冒頭、台帳、Calendarへ反映。
+- 解析は`traffic_version / origin_source / origin_evidence / booking_route / route_evidence / route_medium`を別々に保存。
+- お客様向けLINE通知には掲載しません。実装・公開状況は[分離記録](dual-attribution-2026-10-31.md)を参照。
+
+2026-10-31：LINEリッチメニューのスタッフ／予約／FAQリンクはタグ付きで公開設定を確認済み。GBPの別枠予約URLはタグ付きで保存済み、Google検索での公開反映は未確認。LINEビジネスプロフィールの未公開変更は今回公開していません。
