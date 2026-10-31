@@ -32,9 +32,10 @@ export const isStaffRequestAvailable = (planId: string): boolean =>
 // ※ S6/S7（ドローンSUP単品）は 2026-07 から希望時間を選択制に変更（DAY_SUP_TIMES）
 export const TIME_OPTIONAL_PLAN_IDS = new Set(["S4", "S8"])
 // 60歳以上をお断りするプラン（通常/グループ版のみ）。60歳以上は対応する貸切版へ案内する。
-// ※ slide-boat はペアが無いため対象外。貸切版(S2/S4/S5/S7/C2/C4/C6)は60歳以上OK。
+// ※ 通常ナイト(S3)も75歳まで参加可（2026-10-31 オーナー指示）。
+// slide-boat はペアが無いため対象外。貸切版(S2/S4/S5/S7/C2/C4/C6)は60歳以上OK。
 export const SENIOR_RESTRICTED_AGE = 60
-export const SENIOR_RESTRICTED_PLAN_IDS = new Set(["S1", "S3", "S6", "S8", "C1", "C3", "C5"])
+export const SENIOR_RESTRICTED_PLAN_IDS = new Set(["S1", "S6", "S8", "C1", "C3", "C5"])
 
 // グループ版 → 貸切版の対応（60歳以上の案内先）
 export const PRIVATE_COUNTERPART: Record<string, { id: string; name: string }> = {

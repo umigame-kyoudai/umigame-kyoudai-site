@@ -140,7 +140,7 @@ export const PLAN_DETAILS: Record<string, PlanDetail> = {
     id: "S3",
     name: "本格ナイトツアー",
     tagline: "アマゾン帰りの男と行く、夜の大冒険",
-    heroDescription: "懐中電灯を持って夜のジャングルへ！巨大ヤシガニや夜行性の生き物を探す冒険ツアー。0歳から参加OK。60歳以上の方を含むグループは【貸切】本格ナイトツアーをご予約ください。",
+    heroDescription: "懐中電灯を持って夜のジャングルへ！巨大ヤシガニや夜行性の生き物を探す冒険ツアー。0〜75歳まで参加OK。60歳以上の方も通常プランでご参加いただけます。",
     image: PLAN_COVER_IMAGE.night,
     images: TOUR_IMAGE_PATHS.night,
     color: "indigo",
@@ -153,7 +153,7 @@ export const PLAN_DETAILS: Record<string, PlanDetail> = {
     highlights: [
       {
         "title": "0歳から参加OK",
-        "description": "3歳以下は無料！お子様の夏の自由研究にもぴったりです。60歳以上の方を含むグループは【貸切】本格ナイトツアーをご予約ください。",
+        "description": "3歳以下は無料！お子様の夏の自由研究にもぴったりです。60歳以上の方も75歳まで通常プランでご参加いただけます。",
         "icon": "baby"
       },
       {
@@ -518,7 +518,7 @@ export const PLAN_DETAILS: Record<string, PlanDetail> = {
       },
       {
         "q": "通常プランとどちらがおすすめ？",
-        "a": "60歳以上の方を含むグループは本貸切プランのご予約が必要です。60歳未満の方のみのグループでは、気軽に楽しむなら通常プラン、じっくり楽しむなら貸切プランをお選びいただけます。"
+        "a": "60歳以上の方も75歳まで通常プラン・貸切プランのどちらもお選びいただけます。気軽に楽しむなら通常プラン、ご自身のグループだけでじっくり楽しむなら貸切プランがおすすめです。"
       }
     ],
   },

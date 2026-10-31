@@ -23,11 +23,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     : CONTENT_LAST_UPDATED
 
   const staticPages: MetadataRoute.Sitemap = [
-    { url: SITE_URL, lastModified: new Date("2026-10-13"), changeFrequency: "weekly", priority: 1.0 },
+    { url: SITE_URL, lastModified: new Date("2026-10-31"), changeFrequency: "weekly", priority: 1.0 },
     // 非指名「宮古島 ウミガメ」系の受け皿となるピラーページ
     { url: `${SITE_URL}/miyakojima-sea-turtle`, lastModified: CONTENT_LAST_UPDATED, changeFrequency: "monthly", priority: 0.9 },
     // プラン一覧ハブ（各 /plans/[id] への内部リンク集約点）
-    { url: `${SITE_URL}/plans`, lastModified: new Date("2026-10-13"), changeFrequency: "monthly", priority: 0.8 },
+    { url: `${SITE_URL}/plans`, lastModified: new Date("2026-10-31"), changeFrequency: "monthly", priority: 0.8 },
     // /book は noindex のため検索流入対象外。サイトマップには含めない。
     { url: `${SITE_URL}/gallery`, lastModified: CONTENT_LAST_UPDATED, changeFrequency: "monthly", priority: 0.7 },
     { url: `${SITE_URL}/staff`, lastModified: CONTENT_LAST_UPDATED, changeFrequency: "monthly", priority: 0.6 },
@@ -63,9 +63,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   const planPages: MetadataRoute.Sitemap = Object.keys(PLAN_DETAILS).map((id) => ({
     url: `${SITE_URL}/plans/${id}`,
-    lastModified: !isNightTourPlan(id) && PLAN_DETAILS[id].status !== "coming_soon"
-      ? new Date("2026-10-13")
-      : CONTENT_LAST_UPDATED,
+    lastModified: isNightTourPlan(id)
+      ? new Date("2026-10-31")
+      : PLAN_DETAILS[id].status !== "coming_soon" ? new Date("2026-10-13") : CONTENT_LAST_UPDATED,
     changeFrequency: "weekly" as const,
     priority: 0.8,
   }))
