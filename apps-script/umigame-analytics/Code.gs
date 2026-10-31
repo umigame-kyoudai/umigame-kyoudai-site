@@ -1558,6 +1558,7 @@ function setupSimpleReport() {
 
 /** 毎朝の自動更新から呼ばれる。昨日までのデータを月ごとにまとめる */
 function refreshSimpleReport() {
+  refreshBookingTrafficReport();
   const spreadsheet = openRequiredSpreadsheet_();
   const timezone = spreadsheet.getSpreadsheetTimeZone();
   const now = new Date();
@@ -2300,4 +2301,57 @@ function upgradeTrafficAttributionColumns() {
   if (sheet.getMaxColumns() < EVENT_HEADERS.length) sheet.insertColumnsAfter(sheet.getMaxColumns(), EVENT_HEADERS.length - sheet.getMaxColumns());
   sheet.getRange(1, 71, 1, EVENT_HEADERS.length - 70).setValues([EVENT_HEADERS.slice(70)]);
   SpreadsheetApp.flush();
+}
+
+var BOOKING_TRAFFIC_COLUMNS = { TIMESTAMP: 1, BOOKING_NUM: 2, SPECIAL_REQUESTS: 44 };
+// 予約台帳を元に集計するため、解析同意の有無で予約を落とさない。
+// セットの分割行は同じ予約番号で1件。キャンセル・満席も含む受付件数。
+function bookingTrafficReportRows_(rows) {
+  var seen = {};
+  var groups = {};
+  rows.forEach(function(row) {
+    var number = String(row[BOOKING_TRAFFIC_COLUMNS.BOOKING_NUM - 1] || '').trim();
+    if (!number || Object.prototype.hasOwnProperty.call(seen, number)) return;
+    seen[number] = true;
+    var date = row[BOOKING_TRAFFIC_COLUMNS.TIMESTAMP - 1];
+    var month = date instanceof Date && !isNaN(date.getTime()) ? Utilities.formatDate(date, 'Asia/Tokyo', 'yyyy-MM') : '受付月不明';
+    // APIが備考末尾に付けた固定コードを読む。お客様が備考内に書いた同じ印より後を採用。
+    var note = String(row[BOOKING_TRAFFIC_COLUMNS.SPECIAL_REQUESTS - 1] || '');
+    var matches = note.match(/^\[traffic-v1\] [a-z_]+\|[a-z_]+\|[a-z_]+\|[a-z_]+\|[a-z_]+$/gm);
+    var parts = matches && matches[matches.length - 1].slice(13).split('|');
+    var traffic = parts ? normalizeTrafficAttribution_({ version: 1, originSource: parts[0], originEvidence: parts[1], routeSource: parts[2], routeEvidence: parts[3], routeMedium: parts[4] }) : null;
+    var origin = traffic ? traffic.originSource : 'unknown';
+    var route = traffic ? traffic.routeSource : 'unknown';
+    var evidence = traffic ? traffic.originEvidence : 'unknown';
+    var routeEvidence = traffic ? traffic.routeEvidence : 'unknown';
+    var medium = traffic ? traffic.routeMedium : '';
+    var key = [month, origin, route, evidence, routeEvidence, medium].join('|');
+    if (!groups[key]) groups[key] = [month, TRAFFIC_SOURCES[origin], TRAFFIC_SOURCES[route] + ' → 公式サイト',
+      ORIGIN_EVIDENCE[evidence], ROUTE_EVIDENCE[routeEvidence], TRAFFIC_MEDIUMS[medium] || '不明', 0];
+    groups[key][6]++;
+  });
+  return Object.keys(groups).sort().reverse().map(function(key) { return groups[key]; });
+}
+
+function refreshBookingTrafficReport() {
+  var ss = SpreadsheetApp.openById('1bPYur4Dfg3LxTCIiYzZvyZRT8bgLoYizG1B6LIkETKk');
+  var source = ss.getSheetByName('予約一覧');
+  if (!source) throw new Error('予約一覧がありません');
+  var data = source.getLastRow() > 1 ? source.getRange(2, 1, source.getLastRow() - 1, 52).getValues() : [];
+  var rows = bookingTrafficReportRows_(data);
+  var sheet = ss.getSheetByName('集客元・予約経路集計') || ss.insertSheet('集客元・予約経路集計');
+  if (sheet.getFilter()) sheet.getFilter().remove();
+  sheet.clearContents();
+  if (sheet.getMaxRows() < rows.length + 4) sheet.insertRowsAfter(sheet.getMaxRows(), rows.length + 4 - sheet.getMaxRows());
+  sheet.getRange(1, 1, 1, 7).setValues([['集客元・予約経路集計', '更新', new Date(), '全予約の受付件数', rows.reduce(function(sum, row) { return sum + row[6]; }, 0), '', '']]);
+  sheet.getRange(1, 3).setNumberFormat('yyyy/mm/dd hh:mm');
+  sheet.getRange(2, 1).setValue('予約一覧に保存された全予約が対象。解析同意なしも含み、セット分割行は予約番号で1件。キャンセル・満席は差し引いていません。毎朝6時台更新。');
+  sheet.getRange(3, 1).setValue('お客様回答を優先。未回答はこのブラウザの初回サイト流入。LINEより前・別ブラウザ・過去予約の大元は推測しません。');
+  sheet.getRange(4, 1, 1, 7).setValues([['受付月', '大元の集客元', '予約経路', '集客元の根拠', '予約経路の根拠', '予約リンクの場所', '受付件数']]);
+  if (rows.length) sheet.getRange(5, 1, rows.length, 7).setValues(rows);
+  sheet.getRange(4, 1, Math.max(rows.length + 1, 2), 7).createFilter();
+  sheet.getRange(4, 1, 1, 7).setFontWeight('bold').setBackground('#d1fae5');
+  sheet.setFrozenRows(4);
+  sheet.setColumnWidths(1, 7, 180);
+  sheet.setColumnWidth(4, 330);
 }
