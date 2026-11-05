@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react"
-import { BOOKING_CLOSED_DATES, bookingClosedMessage, isBookingDateClosed } from "@/lib/booking-closures"
+import { BOOKING_CLOSED_DATES, NIGHT_TOUR_CLOSURE_END, bookingUnavailableMessage, isBookingDateClosed, isBookingUnavailable, isNightTourBookingClosed, nightTourClosureMessage } from "@/lib/booking-closures"
 import { todayStr } from "@/lib/date-utils"
 import { isValidCalendarDate } from "@/lib/utils/validation"
 
@@ -20,18 +20,21 @@ function utcDate(value: string) {
 export function BookingDatePicker({
   id,
   value,
+  planId,
   onChange,
   locale = "ja",
 }: {
   id: string
   value: string
+  planId: string
   onChange: (value: string) => void
   locale?: keyof typeof COPY
 }) {
   const copy = COPY[locale]
   const today = todayStr()
   const validValue = isValidCalendarDate(value)
-  const selectedClosed = isBookingDateClosed(value)
+  const selectedClosed = isBookingUnavailable(value, planId)
+  const showNightClosure = today <= NIGHT_TOUR_CLOSURE_END && isNightTourBookingClosed(NIGHT_TOUR_CLOSURE_END, planId)
   const [open, setOpen] = useState(false)
   const [month, setMonth] = useState(() => (validValue && value >= today ? value : today).slice(0, 7))
   const containerRef = useRef<HTMLDivElement>(null)
@@ -102,7 +105,7 @@ export function BookingDatePicker({
             {Array.from({ length: daysInMonth }, (_, index) => {
               const day = index + 1
               const date = `${month}-${String(day).padStart(2, "0")}`
-              const closed = isBookingDateClosed(date)
+              const closed = isBookingUnavailable(date, planId)
               const disabled = date < today || closed
               return (
                 <button
@@ -110,7 +113,7 @@ export function BookingDatePicker({
                   type="button"
                   data-date={date}
                   disabled={disabled}
-                  aria-label={`${dateLabel(date)}${closed ? ` (${copy.closure})` : ""}`}
+                  aria-label={`${dateLabel(date)}${closed ? ` (${isBookingDateClosed(date) ? copy.closure : nightTourClosureMessage(locale)})` : ""}`}
                   aria-pressed={value === date}
                   aria-current={date === today ? "date" : undefined}
                   onClick={() => {
@@ -135,7 +138,8 @@ export function BookingDatePicker({
           {copy.closure}: {upcomingClosedDates.map(dateLabel).join(" / ")}
         </p>
       )}
-      {selectedClosed && <p id={`${id}-error`} role="alert" className="mt-2 text-sm text-rose-700">{bookingClosedMessage(locale)}</p>}
+      {showNightClosure && !selectedClosed && <p className="mt-2 text-xs leading-relaxed text-rose-700">{nightTourClosureMessage(locale)}</p>}
+      {selectedClosed && <p id={`${id}-error`} role="alert" className="mt-2 text-sm text-rose-700">{bookingUnavailableMessage(value, planId, locale)}</p>}
     </div>
   )
 }
