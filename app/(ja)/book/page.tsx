@@ -18,7 +18,7 @@ import { BubbleBackground } from "@/components/bubble-background"
 import { BookingForm } from "@/components/booking-form"
 import { BookingFormSkeleton } from "@/components/booking-form-skeleton"
 import { Footer } from "@/components/footer"
-import { LiffProvider } from "@/components/liff-provider"
+import { BookingLiffProvider } from "@/components/booking-liff-provider"
 import { Toaster } from "sonner"
 
 export default function BookPage() {
@@ -37,12 +37,12 @@ export default function BookPage() {
           </div>
 
           {/* BookingForm は useSearchParams を使うため個別の Suspense で包む */}
-          <LiffProvider>
+          <BookingLiffProvider>
             <Suspense fallback={<BookingFormSkeleton />}>
               <BookingForm />
             </Suspense>
             <Toaster position="top-center" richColors />
-          </LiffProvider>
+          </BookingLiffProvider>
         </div>
       </main>
 

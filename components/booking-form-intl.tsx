@@ -5,13 +5,13 @@ import { getTrafficAttribution, trafficEventProperties } from "@/lib/traffic-att
 
 // 国際版（en/ko/zh-tw共通）の予約フォーム。日本語版（booking-form.tsx）とは独立した軽量実装で、
 // 同じ /api/booking に送信する（最終検証・料金計算はサーバー側が行う）。
-// 文言はすべて props の dict から取り、実装はこの1本だけ。
+// フォーム文言は props の dict から取り、LINE認証案内は共通コンポーネントを使う。
 // 辞書は booking-form-en/ko/zh-tw.tsx の薄いラッパーが自ロケール分だけ import して渡す
 //（getDict をここで呼ぶと3言語全部がクライアントバンドルに入るため）。
 // プランのルール（時間帯・年齢制限・足サイズ必須など）はサーバーの検証と一致させること —
 // 予約ルールを変えるときは 日本語フォーム・このフォーム・API の3箇所を確認する。
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -23,6 +23,9 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "sonner"
 import { CheckCircle, MessageCircle, Plus, Trash2 } from "lucide-react"
 import { useLiff } from "@/components/liff-provider"
+import { LineLoginActions } from "@/components/line-login-actions"
+import { BookingFormSkeleton } from "@/components/booking-form-skeleton"
+import { hasNonPortableBookingInput, LINE_LOGIN_PREVIEW_NOTICE } from "@/lib/line-login"
 import { BookingDatePicker } from "@/components/booking-date-picker"
 import { bookingUnavailableMessage, isBookingUnavailable } from "@/lib/booking-closures"
 import { PLANS, getStaffFee } from "@/lib/data"
@@ -125,13 +128,21 @@ function loadIntlBookingDraft(locale: IntlLocale): IntlBookingDraft | null {
 }
 
 export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: IntlDict }) {
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => { setMounted(true) }, [])
+  // 予約ページは紹介Cookieの確認のため動的描画される。下書きのあるブラウザでも
+  // 初回表示をサーバーと一致させてから、従来の下書き復元を実行する。
+  return mounted ? <BookingFormIntlReady locale={locale} dict={dict} /> : <BookingFormSkeleton locale={locale} />
+}
+
+function BookingFormIntlReady({ locale, dict }: { locale: IntlLocale; dict: IntlDict }) {
   const now = useBookingClock()
   const deadlineCopy = getBookingDeadlineCopy(locale)
   const copy = dict.form
   const planById = dict.planById
 
   const searchParams = useSearchParams()
-  const { lineIdToken, isLiffReady, isLiffLoggedIn, loginLiff, retryLiff, liffError, getFreshLineIdToken, invalidateLineSession } = useLiff()
+  const { lineIdToken, isLiffReady, isLiffLoggedIn, isBookingPreview, loginLiff, retryLiff, liffError, getFreshLineIdToken, invalidateLineSession } = useLiff()
   const liffRequired = !!process.env.NEXT_PUBLIC_LIFF_ID
   const hasFreshLineSession = isLiffLoggedIn && !!lineIdToken
 
@@ -141,7 +152,7 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
   )
 
   // LINEログインのリダイレクト前に保存した下書き（マウント時に一度だけ読む）。
-  // このフォームはSuspense配下のクライアント描画のため、初期化はブラウザでのみ走る。
+  // フォーム本体はマウント後に表示するため、初期化はブラウザでのみ走る。
   const [draft] = useState<IntlBookingDraft | null>(() => loadIntlBookingDraft(locale))
 
   const initialPlan = searchParams.get("plan") || ""
@@ -236,30 +247,32 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // 入力内容を随時sessionStorageへ退避（LINEログインのリダイレクトを跨いで復元するため）
-  useEffect(() => {
-    if (isSubmitted) return
+  const currentDraft = useMemo<IntlBookingDraft>(() => ({
+    planId, date, time, participants, staffId, customerName, customerEmail, customerPhone,
+    specialRequests, discoverySource, couponCode, couponDiscount, agreed, photoPublicationConsent,
+  }), [planId, date, time, participants, staffId, customerName, customerEmail, customerPhone,
+    specialRequests, discoverySource, couponCode, couponDiscount, agreed, photoPublicationConsent])
+  const hasInputToKeep = hasNonPortableBookingInput(currentDraft)
+  const saveCurrentDraft = useCallback(() => {
     try {
-      if (!hasRestoredPhotoConsent) return
-      const draftToSave: IntlBookingDraft = {
-        planId,
-        date,
-        time,
-        participants,
-        staffId,
-        customerName,
-        customerEmail,
-        customerPhone,
-        specialRequests,
-        discoverySource,
-        couponCode,
-        couponDiscount,
-        agreed,
-        photoPublicationConsent,
-      }
-      window.sessionStorage.setItem(draftKey(locale), JSON.stringify(draftToSave))
-    } catch {}
-  }, [planId, date, time, participants, staffId, customerName, customerEmail, customerPhone, specialRequests, discoverySource, couponCode, couponDiscount, agreed, photoPublicationConsent, hasRestoredPhotoConsent, isSubmitted, locale])
+      window.sessionStorage.setItem(draftKey(locale), JSON.stringify(currentDraft))
+      return true
+    } catch { return false }
+  }, [currentDraft, locale])
+
+  // 随時保存に加え、認証ボタンを押した瞬間にも同期保存する。
+  useEffect(() => {
+    if (!isSubmitted && hasRestoredPhotoConsent) saveCurrentDraft()
+  }, [saveCurrentDraft, hasRestoredPhotoConsent, isSubmitted])
+  const prepareLineLogin = () => {
+    if (saveCurrentDraft() || !hasInputToKeep) return true
+    toast.error({
+      en: "Could not save your entries. Keep this page open and check your browser’s storage settings.",
+      ko: "입력 내용을 저장할 수 없습니다. 이 페이지를 닫지 말고 브라우저의 저장 설정을 확인해 주세요.",
+      "zh-tw": "無法儲存填寫內容。請勿關閉此頁，並確認瀏覽器的儲存設定。",
+    }[locale])
+    return false
+  }
 
   const plan = bookablePlans.find((p) => p.id === planId)
   const t = planId ? planById[planId] : undefined
@@ -561,6 +574,7 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (isBookingPreview) { toast.info(LINE_LOGIN_PREVIEW_NOTICE[locale]); return }
     if (submissionInFlightRef.current) return
     setSubmitError(null)
 
@@ -585,6 +599,7 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
         toast.error(copy.lineConnectionError)
         retryLiff()
       } else {
+        if (!prepareLineLogin()) return
         trackLineLoginClick({ location: `booking_submit_${locale}`, locale })
         loginLiff()
       }
@@ -814,6 +829,13 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
       }}
       className="space-y-8"
     >
+      {needsLineLogin && (
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+          <h2 className="mb-2 font-bold text-emerald-900">{{ en: "Start with LINE", ko: "먼저 LINE에서 인증해 주세요", "zh-tw": "先使用 LINE 授權" }[locale]}</h2>
+          <LineLoginActions locale={locale} location={`booking_top_${locale}`} planId={planId} date={date}
+            hasInputToKeep={hasInputToKeep} onBeforeLogin={prepareLineLogin} draftReady={hasRestoredPhotoConsent} />
+        </div>
+      )}
       {/* Plan */}
       <Card className="bg-white/80 rounded-3xl ring-1 ring-emerald-100 shadow-lg">
         <CardHeader>
@@ -1227,22 +1249,8 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
                 </a>
                 {copy.lineLoginBody.after}
               </p>
-              <Button
-                type="button"
-                onClick={() => {
-                  if (liffError) {
-                    retryLiff()
-                    return
-                  }
-                  trackLineLoginClick({ location: `booking_${locale}`, locale })
-                  loginLiff()
-                }}
-                disabled={!isLiffReady}
-                className="w-full bg-green-700 hover:bg-green-800 text-white font-bold rounded-xl"
-              >
-                {isLiffReady ? (liffError ? copy.lineRetry : copy.lineLoginButton) : copy.lineConnecting}
-              </Button>
-              {liffError && <p role="alert" className="text-sm text-rose-800 mt-2">{copy.lineConnectionError}</p>}
+              <LineLoginActions locale={locale} location={`booking_${locale}`} planId={planId} date={date}
+                hasInputToKeep={hasInputToKeep} onBeforeLogin={prepareLineLogin} draftReady={hasRestoredPhotoConsent} />
             </div>
           )}
 
