@@ -24,7 +24,7 @@ import { toast } from "sonner"
 import { CheckCircle, MessageCircle, Plus, Trash2 } from "lucide-react"
 import { useLiff } from "@/components/liff-provider"
 import { BookingDatePicker } from "@/components/booking-date-picker"
-import { bookingClosedMessage, isBookingDateClosed } from "@/lib/booking-closures"
+import { bookingUnavailableMessage, isBookingUnavailable } from "@/lib/booking-closures"
 import { PLANS, getStaffFee } from "@/lib/data"
 import type { IntlDict } from "@/lib/i18n/types"
 import { type IntlLocale, LOCALE_BOOKING_TAGS, localePath } from "@/lib/i18n/locales"
@@ -469,7 +469,7 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
   const isFormValid =
     !!plan &&
     !!date &&
-    !isBookingDateClosed(date) &&
+    !isBookingUnavailable(date, planId) &&
     !deadlineExpired &&
     (timeOptional || !!time) &&
     counts.adult > 0 &&
@@ -490,7 +490,7 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
   const missing = (message: string, targetId: string) => missingItems.push({ message, targetId })
   if (!plan) missing(copy.missingChooseTour, "intl-plan-heading")
   if (!date) missing(copy.missingDate, "intl-date")
-  else if (isBookingDateClosed(date)) missing(bookingClosedMessage(locale), "intl-date")
+  else if (isBookingUnavailable(date, planId)) missing(bookingUnavailableMessage(date, planId, locale), "intl-date")
   if (deadlineExpired) missing(deadlineCopy.closed, "intl-date")
   if (!timeOptional && !time) missing(copy.missingTime, plan ? "intl-time-label" : "intl-plan-heading")
   if (participants.length === 0) missing(copy.missingAddGuest, "intl-participants-heading")
@@ -855,6 +855,7 @@ export function BookingFormIntl({ locale, dict }: { locale: IntlLocale; dict: In
             </Label>
             <BookingDatePicker
               id="intl-date"
+              planId={planId}
               locale={locale}
               value={date}
               onChange={(date) => {

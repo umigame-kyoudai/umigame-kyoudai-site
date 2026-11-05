@@ -63,7 +63,7 @@ import { ADULT_PRICE, BOOKING_PLANS, CHILD_PRICE } from "@/lib/booking-plans"
 import { getStaffFee } from "@/lib/data"
 import { getPlanPriceDisplay, getPlanCode } from "@/lib/plan-price-display"
 import { getPlanMaxParticipants } from "@/lib/booking-rules"
-import { bookingClosedMessage, isBookingDateClosed } from "@/lib/booking-closures"
+import { bookingUnavailableMessage, isBookingUnavailable } from "@/lib/booking-closures"
 import { BookingDatePicker } from "@/components/booking-date-picker"
 import { replaceBookingSelectionQuery } from "@/lib/booking-url"
 import { syncRepresentativeName } from "@/lib/booking-participants"
@@ -1051,7 +1051,7 @@ export function BookingForm() {
   const isFormValid =
     bookingData.selectedPlan &&
     bookingData.selectedDate &&
-    !isBookingDateClosed(bookingData.selectedDate) &&
+    !isBookingUnavailable(bookingData.selectedDate, bookingData.selectedPlan) &&
     !deadlineExpired &&
     (getPlanType(bookingData.selectedPlan) === "sunset-sup" || bookingData.selectedTime) &&
     comboTimesSelected &&
@@ -1083,7 +1083,7 @@ export function BookingForm() {
   if (!bookingData.selectedPlan) missingItems.push("プランの選択")
   else if (selectedPlanIsComingSoon) missingItems.push("プランの変更（選択中のプランは近日公開のため、まだ予約できません）")
   if (!bookingData.selectedDate) missingItems.push("参加日の選択")
-  else if (isBookingDateClosed(bookingData.selectedDate)) missingItems.push(bookingClosedMessage())
+  else if (isBookingUnavailable(bookingData.selectedDate, bookingData.selectedPlan)) missingItems.push(bookingUnavailableMessage(bookingData.selectedDate, bookingData.selectedPlan))
   if (deadlineExpired) missingItems.push(deadlineCopy.closed)
   if (bookingData.selectedPlan && getPlanType(bookingData.selectedPlan) !== "sunset-sup" && !bookingData.selectedTime) {
     missingItems.push(isComboPlan ? "ウミガメツアーの開始時間の選択" : "開始時間の選択")
@@ -1991,12 +1991,13 @@ export function BookingForm() {
             </Label>
             <BookingDatePicker
               id="date"
+              planId={bookingData.selectedPlan}
               value={bookingData.selectedDate}
               onChange={(date) => {
                 handleInputChange("selectedDate", date)
               }}
             />
-            {bookingData.selectedDate && !isBookingDateClosed(bookingData.selectedDate) && (
+            {bookingData.selectedDate && !isBookingUnavailable(bookingData.selectedDate, bookingData.selectedPlan) && (
               <p className="text-xs text-emerald-700 mt-1">選択中: {bookingData.selectedDate}</p>
             )}
           </div>
@@ -2008,7 +2009,7 @@ export function BookingForm() {
               <p className="mb-3 text-sm text-gray-700">{deadlineCopy.sunset(formatBookingDeadline(deadline))}</p>
             )}
             {deadlineExpired && <p role="alert" className="mb-3 text-sm font-medium text-rose-800">{deadlineCopy.closed}</p>}
-            {!bookingData.selectedDate || isBookingDateClosed(bookingData.selectedDate) || !bookingData.selectedPlan ? (
+            {!bookingData.selectedDate || isBookingUnavailable(bookingData.selectedDate, bookingData.selectedPlan) || !bookingData.selectedPlan ? (
               <div className="text-sm text-gray-500 p-4 bg-gray-50 rounded-xl">プランと日付を選択してください</div>
             ) : isComboPlan ? (
               <div className="space-y-5">
