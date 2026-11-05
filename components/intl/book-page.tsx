@@ -6,7 +6,7 @@ import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { MobileCTA } from "@/components/mobile-cta"
 import { BookingFormSkeleton } from "@/components/booking-form-skeleton"
-import { LiffProvider } from "@/components/liff-provider"
+import { BookingLiffProvider } from "@/components/booking-liff-provider"
 import { createMetadata } from "@/lib/seo"
 import { getDict } from "@/lib/i18n/dict"
 import { type IntlLocale, localePath } from "@/lib/i18n/locales"
@@ -47,12 +47,12 @@ export function IntlBookPage({ locale, form }: { locale: IntlLocale; form: React
           </div>
 
           {/* フォームは useSearchParams を使うため個別の Suspense で包む */}
-          <LiffProvider>
+          <BookingLiffProvider>
             <Suspense fallback={<BookingFormSkeleton locale={locale} />}>
               {form}
             </Suspense>
             <Toaster position="top-center" richColors />
-          </LiffProvider>
+          </BookingLiffProvider>
         </div>
       </main>
       <Footer locale={locale} />

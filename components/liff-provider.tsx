@@ -4,6 +4,7 @@ import { bookingSourceLoginReturnUrl, captureBookingSource } from "@/lib/booking
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react"
 import type { Liff } from "@line/liff"
+import { LINE_APP_ENTRY_QUERY, readLineSession } from "@/lib/line-login"
 
 import {
   consumeLineLoginRedirectFlag,
@@ -22,6 +23,8 @@ interface LiffContextType {
   isLiffReady: boolean
   isLiffLoggedIn: boolean
   isInClient: boolean
+  allowLineAppLink: boolean
+  isBookingPreview: boolean
   liffError: string | null
   loginLiff: () => void
   retryLiff: () => void
@@ -43,6 +46,8 @@ const LiffContext = createContext<LiffContextType>({
   isLiffReady: false,
   isLiffLoggedIn: false,
   isInClient: false,
+  allowLineAppLink: false,
+  isBookingPreview: false,
   liffError: null,
   loginLiff: () => {},
   retryLiff: () => {},
@@ -69,10 +74,6 @@ function clearLegacyLiffStorage(): void {
 // LIFFモジュールをキャッシュ
 let liffInstance: Liff | null = null
 
-// LINEのIDトークンは発行から約1時間で失効するが、LIFFはセッションが残っていても
-// IDトークンを自動更新しない。そのまま送信するとサーバー検証(/oauth2/v2.1/verify)で
-// 必ず拒否されるため、残り時間がこの秒数を切ったら期限切れとして扱い再ログインへ誘導する。
-const ID_TOKEN_MIN_REMAINING_SECONDS = 60
 const LIFF_OPERATION_TIMEOUT_MS = 12_000
 
 const withTimeout = <T,>(promise: Promise<T>, message: string): Promise<T> =>
@@ -94,24 +95,7 @@ const withTimeout = <T,>(promise: Promise<T>, message: string): Promise<T> =>
     )
   })
 
-// ログイン済みLIFFセッションから「検証に通る見込みのある」IDトークンだけを取り出す。
-// 期限切れ・取得不能なら null。
-const readValidIdToken = (liff: Liff): string | null => {
-  try {
-    if (!liff.isLoggedIn()) return null
-    const idToken = liff.getIDToken()
-    const exp = liff.getDecodedIDToken()?.exp
-    const nowInSeconds = Math.floor(Date.now() / 1000)
-    if (!idToken || typeof exp !== "number" || exp <= nowInSeconds + ID_TOKEN_MIN_REMAINING_SECONDS) {
-      return null
-    }
-    return idToken
-  } catch {
-    return null
-  }
-}
-
-// ---- 計測用のヘルパー（LINEログインの処理手順そのものは変更しない） --------
+// ---- 計測用のヘルパー --------
 
 // 分析へ送るのはパスのみ。クエリやハッシュには liff.state・access_token・
 // OAuthコード等が入りうるため決して含めない。
@@ -131,6 +115,7 @@ const detectLoginCallback = (): boolean => {
       params.has("liff.state") ||
       params.has("code") ||
       params.has("liffClientId") ||
+      params.get(LINE_APP_ENTRY_QUERY) === "app" ||
       window.location.hash.includes("access_token")
     )
   } catch {
@@ -160,7 +145,7 @@ const detectRedirectMethod = (liff: Liff | null): RedirectMethod => {
   }
 }
 
-export function LiffProvider({ children }: { children: ReactNode }) {
+export function LiffProvider({ children, allowLineAppLink = false, isBookingPreview = false }: { children: ReactNode; allowLineAppLink?: boolean; isBookingPreview?: boolean }) {
   const [lineUserId, setLineUserId] = useState<string | null>(null)
   const [lineDisplayName, setLineDisplayName] = useState<string | null>(null)
   const [lineIdToken, setLineIdToken] = useState<string | null>(null)
@@ -218,7 +203,7 @@ export function LiffProvider({ children }: { children: ReactNode }) {
 
     try {
       clearLiffIdentity()
-      if (!liffId) {
+      if (!liffId || isBookingPreview) {
         setIsLiffReady(true)
         return
       }
@@ -254,39 +239,31 @@ export function LiffProvider({ children }: { children: ReactNode }) {
         reportFailure(providerError)
       }
 
-      // 既にログイン済みならプロフィールを取得
+      // 有効なIDトークンのプロフィールを表示する。追加のプロフィール通信を待たず、
+      // 通信失敗だけを理由とする強制ログアウト・再ログインを防ぐ。
       if (liff.isLoggedIn()) {
-        const idToken = readValidIdToken(liff)
-        if (!idToken) {
+        const session = readLineSession(liff)
+        if (!session) {
           // IDトークン期限切れ（LIFFは自動更新しない）。エラーではなく未ログイン扱いに戻し、
           // 通常のLINEログインボタンから再ログインしてもらう。
-          try { liff.logout() } catch {}
+          try { if (!liff.isInClient()) liff.logout() } catch {}
           clearLiffIdentity()
+          if (liff.isInClient()) setLiffError("LINEの認証を更新してください。")
           if (!providerError) {
             reportReturn("session_missing", false)
             reportFailure("token_expired")
           }
         } else {
           setIsLiffLoggedIn(true)
-          try {
-            const profile = await withTimeout(
-              liff.getProfile(),
-              "LINE情報の取得がタイムアウトしました。再試行してください。",
-            )
-            setLineUserId(profile.userId)
-            setLineDisplayName(profile.displayName)
-            setLineIdToken(idToken)
-            if (!providerError) reportReturn("session_found", true)
-          } catch (profileError) {
-            // プロフィール取得失敗（アクセストークン失効等）
-            // ログアウトしてリセット（次回ユーザーが手動でログインできるように）
-            try { liff.logout() } catch {}
-            clearLiffIdentity()
-            setLiffError("LINE情報の取得に失敗しました。再度ログインしてください。")
-            if (!providerError) {
-              reportReturn("session_missing", false)
-              reportFailure("provider_error")
-            }
+          setLineUserId(session.userId)
+          setLineDisplayName(session.displayName)
+          setLineIdToken(session.idToken)
+          if (!providerError) reportReturn("session_found", true)
+          // LIFF初期化後にだけ入口フラグを消す。リロードを認証復帰と重複計測しない。
+          const currentUrl = new URL(window.location.href)
+          if (currentUrl.searchParams.has(LINE_APP_ENTRY_QUERY)) {
+            currentUrl.searchParams.delete(LINE_APP_ENTRY_QUERY)
+            window.history.replaceState(window.history.state, "", currentUrl.pathname + currentUrl.search + currentUrl.hash)
           }
         }
       } else {
@@ -304,15 +281,10 @@ export function LiffProvider({ children }: { children: ReactNode }) {
       // liff.init 自体が失敗（コールバック処理の失敗）。生のエラー文字列は分析へ送らない。
       reportReturn("unknown", false)
       reportFailure("callback_error")
-      const msg = error instanceof Error ? error.message : String(error)
-      const detail =
-        error instanceof Error && "code" in error && typeof error.code === "string"
-          ? ` (code: ${error.code})`
-          : ""
-      setLiffError(`${msg}${detail}`)
+      setLiffError("LINEに接続できませんでした。通信状況を確認して、もう一度お試しください。")
       setIsLiffReady(true)
     }
-  }, [clearLiffIdentity])
+  }, [clearLiffIdentity, isBookingPreview])
 
   useEffect(() => {
     if (initialized.current) return
@@ -327,12 +299,19 @@ export function LiffProvider({ children }: { children: ReactNode }) {
   // ユーザーが手動でLINEログインを開始する
   const loginLiff = () => {
     // 遷移処理を開始できない場合は計測しない（仕様: 開始できなかったら発火させない）
-    if (!liffInstance) return
+    if (!liffInstance || !isLiffReady || isBookingPreview) return
+    // LIFF内ではinitが認証を担当し、liff.login()は利用できない。
+    if (liffInstance.isInClient()) { void initLiff(); return }
 
     // 遷移前にフラグを立てる。この直後の pagehide を「離脱」と数えないため。
     trackLineLoginRedirectStarted({ redirectMethod: detectRedirectMethod(liffInstance) })
 
-    liffInstance.login({ redirectUri: bookingSourceLoginReturnUrl(window.location.href) })
+    try {
+      liffInstance.login({ redirectUri: bookingSourceLoginReturnUrl(window.location.href) })
+    } catch {
+      consumeLineLoginRedirectFlag()
+      setLiffError("LINEに接続できませんでした。もう一度お試しください。")
+    }
   }
 
   const retryLiff = () => {
@@ -353,7 +332,7 @@ export function LiffProvider({ children }: { children: ReactNode }) {
 
   // サーバーがLINE認証を拒否(401)したとき等に呼び、「連携済み」の見た目をやめてログイン導線へ戻す
   const invalidateLineSession = useCallback(() => {
-    try { liffInstance?.logout() } catch {}
+    try { if (liffInstance && !liffInstance.isInClient()) liffInstance.logout() } catch {}
     clearLiffIdentity()
   }, [clearLiffIdentity])
 
@@ -361,7 +340,7 @@ export function LiffProvider({ children }: { children: ReactNode }) {
   // その時点で有効なトークンだけを返す。期限切れならセッションを破棄して null（UIはログイン導線に戻る）。
   const getFreshLineIdToken = useCallback((): string | null => {
     if (!liffInstance) return null
-    const idToken = readValidIdToken(liffInstance)
+    const idToken = readLineSession(liffInstance)?.idToken
     if (!idToken) {
       invalidateLineSession()
       return null
@@ -370,7 +349,7 @@ export function LiffProvider({ children }: { children: ReactNode }) {
   }, [invalidateLineSession])
 
   return (
-    <LiffContext.Provider value={{ lineUserId, lineDisplayName, lineIdToken, isLiffReady, isLiffLoggedIn, isInClient, liffError, loginLiff, retryLiff, closeWindow, getFreshLineIdToken, invalidateLineSession, consumeLineLoginReturn }}>
+    <LiffContext.Provider value={{ lineUserId, lineDisplayName, lineIdToken, isLiffReady, isLiffLoggedIn, isInClient, allowLineAppLink, isBookingPreview, liffError, loginLiff, retryLiff, closeWindow, getFreshLineIdToken, invalidateLineSession, consumeLineLoginReturn }}>
       {children}
     </LiffContext.Provider>
   )

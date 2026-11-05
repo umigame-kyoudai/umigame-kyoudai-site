@@ -7,6 +7,8 @@ import type React from "react"
 import Link from "next/link"
 import { ParticipantForm } from "./participant-form"
 import { useLiff } from "./liff-provider"
+import { LineLoginActions } from "./line-login-actions"
+import { hasNonPortableBookingInput, LINE_LOGIN_PREVIEW_NOTICE } from "@/lib/line-login"
 import { categorizeBookingFailure, trackEvent } from "@/lib/analytics"
 import { sendDetailedEvent } from "@/lib/detailed-analytics"
 import { getBookingSourceToken } from "@/lib/booking-source-client"
@@ -153,10 +155,11 @@ function loadBookingDraft(): Partial<BookingData> | null {
   }
 }
 
-function saveBookingDraft(data: BookingData): void {
+function saveBookingDraft(data: BookingData): boolean {
   try {
     window.sessionStorage.setItem(BOOKING_DRAFT_KEY, JSON.stringify(data))
-  } catch {}
+    return true
+  } catch { return false }
 }
 
 function clearBookingDraft(): void {
@@ -199,7 +202,10 @@ function saveRestoreProbe(data: BookingData): void {
 function readRestoreProbeResult(data: BookingData): FormRestoreResult {
   let before = Number.NaN
   try {
-    before = Number(window.sessionStorage.getItem(RESTORE_PROBE_KEY))
+    const probe = window.sessionStorage.getItem(RESTORE_PROBE_KEY)
+    if (probe === null) return "unknown"
+    before = Number(probe)
+    window.sessionStorage.removeItem(RESTORE_PROBE_KEY)
   } catch {
     return "unknown"
   }
@@ -384,13 +390,21 @@ export function BookingForm() {
   useEffect(() => {
     if (isSubmitted || !hasRestoredDraft) return
     saveBookingDraft(bookingData)
-    // 復元判定用に「埋まっている項目数」も併せて控える（値は保存しない）
-    saveRestoreProbe(bookingData)
   }, [bookingData, isSubmitted, hasRestoredDraft])
 
   // プロフィールは表示専用。予約APIにはサーバー検証用のID tokenだけを送る。
-  const { lineUserId: liffUserId, lineDisplayName: liffDisplayName, lineIdToken, isLiffReady, isLiffLoggedIn, isInClient, liffError, loginLiff, retryLiff, closeWindow, getFreshLineIdToken, invalidateLineSession, consumeLineLoginReturn } = useLiff()
+  const { lineUserId: liffUserId, lineDisplayName: liffDisplayName, lineIdToken, isLiffReady, isLiffLoggedIn, isInClient, isBookingPreview, liffError, loginLiff, retryLiff, closeWindow, getFreshLineIdToken, invalidateLineSession, consumeLineLoginReturn } = useLiff()
   const hasFreshLineSession = isLiffLoggedIn && !!liffUserId && !!lineIdToken
+  const hasInputToKeep = hasNonPortableBookingInput(bookingData)
+  const prepareLineLogin = () => {
+    const saved = saveBookingDraft(bookingData)
+    saveRestoreProbe(bookingData)
+    if (!saved && hasInputToKeep) {
+      toast.error("入力内容を保存できませんでした。画面を閉じず、ブラウザの保存設定をご確認ください。")
+      return false
+    }
+    return true
+  }
 
   // フォーム表示を1回だけ計測。
   // book_cta_click → booking_form_view → line_login_click → booking_submitted のファネルを見る。
@@ -807,6 +821,7 @@ export function BookingForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (isBookingPreview) { toast.info(LINE_LOGIN_PREVIEW_NOTICE.ja); return }
     if (submissionInFlightRef.current) return
 
     if (isBookingDeadlinePassed(bookingData)) {
@@ -840,7 +855,9 @@ export function BookingForm() {
         toast.error("LINE連携を再試行します。完了後にもう一度送信してください。")
         retryLiff()
       } else {
+        if (!prepareLineLogin()) return
         toast.info("予約送信にはLINEログインが必要です。入力内容を保存してログイン画面へ移動します。")
+        trackLineLoginClick({ location: "booking_submit", locale: "ja" })
         loginLiff()
       }
       return
@@ -1466,14 +1483,14 @@ export function BookingForm() {
           集合場所は海のツアーは前日、ナイトツアーは当日にLINEでご案内します。
           <a href="/access" target="_blank" rel="noopener" className="text-cyan-700 underline underline-offset-2 font-medium">候補ビーチの駐車場・設備はこちら</a>
         </p>
-        <p className="mt-2 text-sm font-medium text-amber-700">
+        {hasFreshLineSession && <p className="mt-2 text-sm font-medium text-amber-700">
           ⚠️ 確定のご連絡はLINEに届きます。<a href={LINE_ADD_FRIEND_URL} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent("line_add_friend_click", { location: "booking_intro" })} className="underline font-bold">LINE公式アカウントの「友だち追加」</a>もお済ませください（未追加だと連絡が届きません）。
-        </p>
+        </p>}
         <BookingPhoneHelp />
       </div>
 
       {/* LINE連携ステータス */}
-      {!!process.env.NEXT_PUBLIC_LIFF_ID && isLiffReady && (
+      {!!process.env.NEXT_PUBLIC_LIFF_ID && (
         hasFreshLineSession ? (
           <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-center gap-3">
             <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center flex-shrink-0">
@@ -1481,36 +1498,14 @@ export function BookingForm() {
             </div>
             <div>
               <p className="text-sm text-emerald-800 font-medium">LINE連携済み</p>
-              <p className="text-xs text-emerald-700">{liffDisplayName || ""}さんとして予約します</p>
+              <p className="text-xs text-emerald-700">{liffDisplayName ? `${liffDisplayName}さんとして予約します` : "認証が完了しました。このまま予約内容をご入力ください。"}</p>
             </div>
           </div>
-        ) : liffError ? (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-            <p className="text-sm text-red-800 font-medium">LINE連携でエラーが発生しました</p>
-            <p className="text-xs text-red-600 mt-1">{liffError}</p>
-            <button
-              type="button"
-              onClick={retryLiff}
-              className="mt-3 px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-medium rounded-lg transition-colors"
-            >
-              再試行
-            </button>
-          </div>
         ) : (
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-            <p className="text-sm text-blue-800 font-medium">予約にはLINE連携が必要です</p>
-            <p className="text-xs text-blue-600 mt-1">LINEでログインすると、予約確定通知をお送りできます。入力した内容は自動保存されるので、先にフォームを入力してからのログインでも大丈夫です。</p>
-            <button
-              type="button"
-              onClick={() => {
-                trackLineLoginClick({ location: "booking_top", locale: "ja" })
-                loginLiff()
-              }}
-              className="mt-3 px-5 py-2.5 bg-[#06C755] hover:bg-[#05b34c] text-[#003b1b] text-sm font-bold rounded-lg transition-colors flex items-center gap-2"
-            >
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314" /></svg>
-              LINEでログイン
-            </button>
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+            <p className="mb-2 text-sm font-bold text-emerald-900">まずはLINEで認証</p>
+            <LineLoginActions location="booking_top" planId={bookingData.selectedPlan} date={bookingData.selectedDate}
+              hasInputToKeep={hasInputToKeep} onBeforeLogin={prepareLineLogin} draftReady={hasRestoredDraft} />
           </div>
         )
       )}
@@ -2586,23 +2581,11 @@ export function BookingForm() {
 
           {/* 未ログインのままフォーム下部まで来た人向けのログイン導線。
               ページ上部のバナーまで戻らせない（入力後の行き止まり防止） */}
-          {!!process.env.NEXT_PUBLIC_LIFF_ID && isLiffReady && !hasFreshLineSession && !liffError && (
+          {!!process.env.NEXT_PUBLIC_LIFF_ID && !hasFreshLineSession && (
             <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
               <p className="text-sm font-bold text-emerald-900">あと1ステップ：LINEログインで送信できます</p>
-              <p className="mt-1 text-xs text-emerald-700">
-                入力した内容は自動保存されています。ログインから戻ったあと、そのまま送信できます。
-              </p>
-              <button
-                type="button"
-                onClick={() => {
-                  trackLineLoginClick({ location: "booking_bottom", locale: "ja" })
-                  loginLiff()
-                }}
-                className="mt-3 w-full px-5 py-3 bg-[#06C755] hover:bg-[#05b34c] text-[#003b1b] text-sm font-bold rounded-lg transition-colors flex items-center justify-center gap-2"
-              >
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314" /></svg>
-                LINEでログイン
-              </button>
+              <LineLoginActions location="booking_bottom" planId={bookingData.selectedPlan} date={bookingData.selectedDate}
+                hasInputToKeep={hasInputToKeep} onBeforeLogin={prepareLineLogin} draftReady={hasRestoredDraft} />
             </div>
           )}
 
