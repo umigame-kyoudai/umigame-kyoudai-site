@@ -27,8 +27,26 @@ export function isNightTourBookingClosed(date: string, planId: string): boolean 
     date >= NIGHT_TOUR_CLOSURE_START && date <= NIGHT_TOUR_CLOSURE_END
 }
 
+// 強風による海況不良のため、該当日だけ海の体験とそのセットを停止する。
+// ナイトツアー単体は対象外。
+const SEA_TOUR_CLOSED_DATE = "2026-11-10"
+const SEA_TOUR_PLAN_IDS = new Set(["S1", "S2", "S4", "S6", "S7", "S8", "C1", "C2", "C3", "C4", "C5", "C6"])
+
+export function isSeaTourBookingClosed(date: string, planId: string): boolean {
+  return date === SEA_TOUR_CLOSED_DATE && SEA_TOUR_PLAN_IDS.has(planId)
+}
+
+function seaTourClosureMessage(locale: string): string {
+  switch (locale) {
+    case "en": return "Sea tours and plans including them are unavailable on November 10 due to strong winds."
+    case "ko": return "강풍으로 인해 11월 10일 해양 체험과 이를 포함한 세트는 예약할 수 없습니다."
+    case "zh-tw": return "因強風影響，11月10日海上體驗及包含海上體驗的套裝行程暫停預約。"
+    default: return "強風のため、11月10日の海の体験とそれを含むセットは予約できません。"
+  }
+}
+
 export function isBookingUnavailable(date: string, planId: string): boolean {
-  return isBookingDateClosed(date) || isNightTourBookingClosed(date, planId)
+  return isBookingDateClosed(date) || isSeaTourBookingClosed(date, planId) || isNightTourBookingClosed(date, planId)
 }
 
 export function nightTourClosureMessage(locale: string = "ja"): string {
@@ -41,5 +59,7 @@ export function nightTourClosureMessage(locale: string = "ja"): string {
 }
 
 export function bookingUnavailableMessage(date: string, planId: string, locale: string = "ja"): string {
-  return isBookingDateClosed(date) ? bookingClosedMessage(locale) : nightTourClosureMessage(locale)
+  if (isBookingDateClosed(date)) return bookingClosedMessage(locale)
+  if (isSeaTourBookingClosed(date, planId)) return seaTourClosureMessage(locale)
+  return nightTourClosureMessage(locale)
 }
