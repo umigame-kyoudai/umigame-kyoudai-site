@@ -7,6 +7,7 @@ import { ja } from "date-fns/locale"
 import { Button } from "@/components/ui/button"
 import { Clock, Info } from "lucide-react"
 import { DAY_SUP_TIMES, NIGHT_TOUR_TIMES } from "@/lib/plan-flags"
+import { isNightSlotUnavailable } from "@/lib/booking-closures"
 import { getSunsetSupGuide } from "@/lib/beach-info"
 import { dateToYMD } from "@/lib/date-utils"
 import { getBookingDeadlineCopy, isBookingTimeOpen } from "@/lib/booking-deadline"
@@ -129,7 +130,8 @@ export default function BookingTimeSlots({ selectedPlan, selectedDate, selectedT
     <div>
       <div role="group" aria-label="開始時間" className="grid grid-cols-3 md:grid-cols-5 gap-3">
         {slots.map((time) => {
-          const closed = now !== null && !isBookingTimeOpen(date, time, now)
+          const unavailable = selectedPlan === "night-hunter" && isNightSlotUnavailable(date, "S3", time)
+          const closed = unavailable || (now !== null && !isBookingTimeOpen(date, time, now))
           return (
             <Button
               key={time}
@@ -146,7 +148,7 @@ export default function BookingTimeSlots({ selectedPlan, selectedDate, selectedT
               }`}
             >
               <span>{time}</span>
-              {closed && <span className="text-xs">{deadlineCopy.slotClosed}</span>}
+              {closed && <span className="text-xs">{unavailable ? "受付停止" : deadlineCopy.slotClosed}</span>}
             </Button>
           )
         })}

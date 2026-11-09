@@ -45,6 +45,20 @@ function seaTourClosureMessage(locale: string): string {
   }
 }
 
+// 11月11日のナイトツアー2便のみ停止（単品と夜を含むセット）。
+export function isNightSlotUnavailable(date: string, planId: string, selectedTime: string, nightTime = ""): boolean {
+  return date === "2026-11-11" && ((isNightTourPlan(planId) && selectedTime === "21:10") || (planHasNight(planId) && nightTime === "21:10"))
+}
+
+export function nightSlotUnavailableMessage(locale = "ja"): string {
+  switch (locale) {
+    case "en": return "The 21:10 night tour is unavailable on November 11."
+    case "ko": return "11월 11일 21:10 나이트 투어는 예약할 수 없습니다."
+    case "zh-tw": return "11月11日21:10夜間導覽暫停預約。"
+    default: return "11月11日のナイトツアー21:10便は予約できません。"
+  }
+}
+
 export function isBookingUnavailable(date: string, planId: string): boolean {
   return isBookingDateClosed(date) || isSeaTourBookingClosed(date, planId) || isNightTourBookingClosed(date, planId)
 }
