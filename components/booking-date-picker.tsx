@@ -113,7 +113,7 @@ export function BookingDatePicker({
                   type="button"
                   data-date={date}
                   disabled={disabled}
-                  aria-label={`${dateLabel(date)}${closed ? ` (${isBookingDateClosed(date) ? copy.closure : nightTourClosureMessage(locale)})` : ""}`}
+                  aria-label={`${dateLabel(date)}${closed ? ` (${bookingUnavailableMessage(date, planId, locale)})` : ""}`}
                   aria-pressed={value === date}
                   aria-current={date === today ? "date" : undefined}
                   onClick={() => {
