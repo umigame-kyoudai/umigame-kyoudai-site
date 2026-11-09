@@ -27,7 +27,7 @@ import { LineLoginActions } from "@/components/line-login-actions"
 import { BookingFormSkeleton } from "@/components/booking-form-skeleton"
 import { hasNonPortableBookingInput, LINE_LOGIN_PREVIEW_NOTICE } from "@/lib/line-login"
 import { BookingDatePicker } from "@/components/booking-date-picker"
-import { bookingUnavailableMessage, isBookingUnavailable } from "@/lib/booking-closures"
+import { bookingUnavailableMessage, isBookingUnavailable, isNightSlotUnavailable, nightSlotUnavailableMessage } from "@/lib/booking-closures"
 import { PLANS, getStaffFee } from "@/lib/data"
 import type { IntlDict } from "@/lib/i18n/types"
 import { type IntlLocale, LOCALE_BOOKING_TAGS, localePath } from "@/lib/i18n/locales"
@@ -483,6 +483,7 @@ function BookingFormIntlReady({ locale, dict }: { locale: IntlLocale; dict: Intl
     !!plan &&
     !!date &&
     !isBookingUnavailable(date, planId) &&
+    !isNightSlotUnavailable(date, planId, time) &&
     !deadlineExpired &&
     (timeOptional || !!time) &&
     counts.adult > 0 &&
@@ -504,6 +505,7 @@ function BookingFormIntlReady({ locale, dict }: { locale: IntlLocale; dict: Intl
   if (!plan) missing(copy.missingChooseTour, "intl-plan-heading")
   if (!date) missing(copy.missingDate, "intl-date")
   else if (isBookingUnavailable(date, planId)) missing(bookingUnavailableMessage(date, planId, locale), "intl-date")
+  if (isNightSlotUnavailable(date, planId, time)) missing(nightSlotUnavailableMessage(locale), "intl-time-label")
   if (deadlineExpired) missing(deadlineCopy.closed, "intl-date")
   if (!timeOptional && !time) missing(copy.missingTime, plan ? "intl-time-label" : "intl-plan-heading")
   if (participants.length === 0) missing(copy.missingAddGuest, "intl-participants-heading")
@@ -917,14 +919,14 @@ function BookingFormIntlReady({ locale, dict }: { locale: IntlLocale; dict: Intl
                       type="button"
                       key={tag}
                       aria-pressed={time === tag}
-                      disabled={now === null || !isBookingTimeOpen(date, tag, now)}
+                      disabled={now === null || !isBookingTimeOpen(date, tag, now) || isNightSlotUnavailable(date, planId, tag)}
                       onClick={() => setTime(tag)}
                       className={`min-h-11 px-4 py-2 rounded-full border-2 text-sm font-semibold transition-colors disabled:opacity-100 disabled:bg-gray-100 disabled:text-gray-600 disabled:border-gray-200 disabled:cursor-not-allowed ${
                         time === tag ? "border-emerald-500 bg-emerald-50 text-emerald-800" : "border-gray-200 text-gray-600 hover:border-emerald-300"
                       }`}
                     >
                       {tag}
-                      {now !== null && !isBookingTimeOpen(date, tag, now) && <span className="ml-1 text-xs">{deadlineCopy.slotClosed}</span>}
+                      {isNightSlotUnavailable(date, planId, tag) ? <span className="ml-1 text-xs">{nightSlotUnavailableMessage(locale)}</span> : now !== null && !isBookingTimeOpen(date, tag, now) && <span className="ml-1 text-xs">{deadlineCopy.slotClosed}</span>}
                     </button>
                   ))}
                   {!plan && <p className="text-sm text-gray-400 pt-2">{copy.chooseTourFirst}</p>}

@@ -10,7 +10,7 @@ import { calculateCouponDiscount } from '@/lib/constants/coupons'
 import { getEnPrice } from '@/lib/i18n/en-prices'
 import { isIntlLocale, isPlanAllowedForLocale } from '@/lib/i18n/locales'
 import { validateBookingRules } from '@/lib/booking-rules'
-import { bookingUnavailableMessage, isBookingUnavailable } from '@/lib/booking-closures'
+import { bookingUnavailableMessage, isBookingUnavailable, isNightSlotUnavailable, nightSlotUnavailableMessage } from '@/lib/booking-closures'
 import { calculateRentalTotal, planOffersRentals } from '@/lib/rental-options'
 import {
   getReferralCookieSecret,
@@ -309,6 +309,9 @@ const validateBookingRequest = (data: BookingRequest): { valid: boolean; error?:
   }
   if (isBookingUnavailable(selectedDate, plan.id)) {
     return { valid: false, error: bookingUnavailableMessage(selectedDate, plan.id, data.locale) }
+  }
+  if (isNightSlotUnavailable(selectedDate, plan.id, selectedTime || "", data.nightTime || "")) {
+    return { valid: false, error: nightSlotUnavailableMessage(data.locale) }
   }
   if (selectedDate < getTodayInJapan()) {
     return { valid: false, error: '過去の日付は予約できません' }

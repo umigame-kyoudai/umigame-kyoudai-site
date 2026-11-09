@@ -65,7 +65,7 @@ import { ADULT_PRICE, BOOKING_PLANS, CHILD_PRICE } from "@/lib/booking-plans"
 import { getStaffFee } from "@/lib/data"
 import { getPlanPriceDisplay, getPlanCode } from "@/lib/plan-price-display"
 import { getPlanMaxParticipants } from "@/lib/booking-rules"
-import { bookingUnavailableMessage, isBookingUnavailable } from "@/lib/booking-closures"
+import { bookingUnavailableMessage, isBookingUnavailable, isNightSlotUnavailable, nightSlotUnavailableMessage } from "@/lib/booking-closures"
 import { BookingDatePicker } from "@/components/booking-date-picker"
 import { replaceBookingSelectionQuery } from "@/lib/booking-url"
 import { syncRepresentativeName } from "@/lib/booking-participants"
@@ -1069,6 +1069,7 @@ export function BookingForm() {
     bookingData.selectedPlan &&
     bookingData.selectedDate &&
     !isBookingUnavailable(bookingData.selectedDate, bookingData.selectedPlan) &&
+    !isNightSlotUnavailable(bookingData.selectedDate, bookingData.selectedPlan, bookingData.selectedTime, bookingData.nightTime) &&
     !deadlineExpired &&
     (getPlanType(bookingData.selectedPlan) === "sunset-sup" || bookingData.selectedTime) &&
     comboTimesSelected &&
@@ -1101,6 +1102,7 @@ export function BookingForm() {
   else if (selectedPlanIsComingSoon) missingItems.push("プランの変更（選択中のプランは近日公開のため、まだ予約できません）")
   if (!bookingData.selectedDate) missingItems.push("参加日の選択")
   else if (isBookingUnavailable(bookingData.selectedDate, bookingData.selectedPlan)) missingItems.push(bookingUnavailableMessage(bookingData.selectedDate, bookingData.selectedPlan))
+  if (isNightSlotUnavailable(bookingData.selectedDate, bookingData.selectedPlan, bookingData.selectedTime, bookingData.nightTime)) missingItems.push(nightSlotUnavailableMessage())
   if (deadlineExpired) missingItems.push(deadlineCopy.closed)
   if (bookingData.selectedPlan && getPlanType(bookingData.selectedPlan) !== "sunset-sup" && !bookingData.selectedTime) {
     missingItems.push(isComboPlan ? "ウミガメツアーの開始時間の選択" : "開始時間の選択")
@@ -2053,7 +2055,7 @@ export function BookingForm() {
                           type="button"
                           variant={bookingData.nightTime === time ? "default" : "outline"}
                           aria-pressed={bookingData.nightTime === time}
-                          disabled={now === null || !isBookingTimeOpen(bookingData.selectedDate, time, now)}
+                          disabled={now === null || !isBookingTimeOpen(bookingData.selectedDate, time, now) || isNightSlotUnavailable(bookingData.selectedDate, bookingData.selectedPlan, "", time)}
                           size="sm"
                           onClick={() => handleInputChange("nightTime", time)}
                           className={`min-h-11 flex-col gap-0 rounded-xl disabled:opacity-100 disabled:bg-gray-100 disabled:text-gray-600 disabled:border-gray-200 ${
@@ -2063,7 +2065,7 @@ export function BookingForm() {
                           }`}
                         >
                           {time}
-                          {now !== null && !isBookingTimeOpen(bookingData.selectedDate, time, now) && <span className="text-xs">{deadlineCopy.slotClosed}</span>}
+                          {isNightSlotUnavailable(bookingData.selectedDate, bookingData.selectedPlan, "", time) ? <span className="text-xs">受付停止</span> : now !== null && !isBookingTimeOpen(bookingData.selectedDate, time, now) && <span className="text-xs">{deadlineCopy.slotClosed}</span>}
                         </Button>
                       ))}
                     </div>
