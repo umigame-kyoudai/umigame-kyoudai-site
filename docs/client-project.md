@@ -1,5 +1,17 @@
 # 海亀兄弟 Webサイト管理台帳
 
+## Cloudflare移行作業（2026-11-11）
+
+ユーザーは、既存のVercel有料プランを終了するため、運用中のサイトをCloudflareへ移すよう指示した。下記2026-09-25のVercel継続は当時の記録であり、現在の移行指示より優先しない。
+
+- 現在の本番は引き続きVercel。`www.umigamekyoudaimiyakojima.com` とapex、予約GAS、LINE、GA4、分析シートを維持する。
+- Cloudflare移行先候補は、Turtle Labアカウント `6ee1007b5398ed60a4eb9a43407d0a56` の `umigame-kyoudai-site`。GitHubから直接ビルドする。独自ドメイン・DNSは切替前。
+- `umigame-kyoudai-site-migration-preview` は移行検証用の候補。`wrangler.preview.jsonc` と専用Workerで送信メソッドを拒否し、noindexを返す。本番の予約・LINE・分析の秘密値は設定しない。
+- Vercel Blobの公開画像22点は、元ファイルのSHA-256を確認して `public/gallery/` へ収容した。ブログのMarkdownは `prebuild` でWorkerに組み込み、Cloudflare実行時にローカルファイルを読まない。
+- CloudflareビルドではVercel Web Analyticsへの送信を停止する。GA4・分析シート・同意条件は維持し、公開前に実環境で再確認する。Vercel側の既存ビルドは従来どおり。
+- 予約・クーポンの制限はCloudflareの訪問者IPを使う。ただし現在の回数制限はメモリ内で、複数Workerインスタンスをまたぐ厳密な制限ではない。本番前に許容性と追加対策を検証する。
+- ドメインの登録・年次更新は、Vercel Pro終了と両立できる限りVercelに残す。DNS、SSL、メール用レコード、復旧先の確認後に切り替える。
+
 確認日: 2026-09-26。秘密値は記録しない。
 
 | 項目 | 確認済みの構成 |

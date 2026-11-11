@@ -16,7 +16,8 @@ export function generateStaticParams() {
   }))
 }
 
-export function generateMetadata({ params }: { params: { page: string } }): Metadata {
+export async function generateMetadata(props: { params: Promise<{ page: string }> }): Promise<Metadata> {
+  const params = await props.params;
   const page = Number(params.page)
 
   if (!Number.isInteger(page) || page < 2 || page > getBlogPageCount()) {
@@ -31,7 +32,8 @@ export function generateMetadata({ params }: { params: { page: string } }): Meta
   })
 }
 
-export default function PaginatedBlogPage({ params }: { params: { page: string } }) {
+export default async function PaginatedBlogPage(props: { params: Promise<{ page: string }> }) {
+  const params = await props.params;
   const page = Number(params.page)
   const totalPages = getBlogPageCount()
 

@@ -28,19 +28,6 @@ export function SiteRootLayout({
 
   return (
     <html lang={lang} className={inter.variable} suppressHydrationWarning>
-      <head>
-        <link
-          key="preconnect-blob"
-          rel="preconnect"
-          href="https://hebbkx1anhila5yf.public.blob.vercel-storage.com"
-          crossOrigin="anonymous"
-        />
-        <link
-          key="dns-prefetch-blob"
-          rel="dns-prefetch"
-          href="https://hebbkx1anhila5yf.public.blob.vercel-storage.com"
-        />
-      </head>
       <body className="font-sans antialiased" suppressHydrationWarning>
         <WebSiteJsonLd />
         <OrganizationJsonLd />

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { clientIp } from '@/lib/client-ip'
 import { calculateCouponDiscount, getCouponPlanLimitLabel, isCouponEligiblePlan } from '@/lib/constants/coupons'
 
 // クーポンコードの検証はサーバー側でのみ行う。
@@ -39,8 +40,8 @@ const toCount = (value: unknown): number =>
 
 export async function POST(request: Request) {
   try {
-    const clientIp = (request.headers.get('x-forwarded-for') || 'unknown').split(',')[0].trim()
-    if (isRateLimited(clientIp)) {
+    const visitorIp = clientIp(request.headers)
+    if (isRateLimited(visitorIp)) {
       return NextResponse.json(
         { valid: false, discount: 0, error: '試行回数が多すぎます。しばらく時間をおいてからお試しください。' },
         { status: 429 }

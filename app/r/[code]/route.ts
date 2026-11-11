@@ -12,11 +12,11 @@ import {
 } from "@/lib/referral"
 
 interface ReferralRouteContext {
-  params: { code: string }
+  params: Promise<{ code: string }>
 }
 
-export function GET(request: NextRequest, context: ReferralRouteContext) {
-  const referralCode = normalizeReferralCode(context.params.code)
+export async function GET(request: NextRequest, context: ReferralRouteContext) {
+  const referralCode = normalizeReferralCode((await context.params).code)
   const campaign = normalizeReferralCampaign(request.nextUrl.searchParams.get("c"))
 
   if (!referralCode) {

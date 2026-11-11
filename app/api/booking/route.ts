@@ -1,5 +1,6 @@
 import { normalizeTrafficAttribution, trafficAttributionNote } from "@/lib/traffic-attribution"
 import { NextResponse } from 'next/server'
+import { clientIp } from '@/lib/client-ip'
 import { NIGHT_GUIDE } from '@/lib/staff'
 import { resolveBookingSource } from '@/lib/booking-source-server'
 import { generateBookingNumber, sendToGAS, createAPIResponse, createAPIError } from '@/lib/services/gas-service'
@@ -534,7 +535,7 @@ const buildGASPayload = (
 
 export async function POST(request: Request) {
   try {
-    const clientIp = (request.headers.get('x-forwarded-for') || 'unknown').split(',')[0].trim()
+    const visitorIp = clientIp(request.headers)
     const idempotencyKey = (request.headers.get('idempotency-key') || '').trim()
     if (idempotencyKey && !IDEMPOTENCY_KEY_PATTERN.test(idempotencyKey)) {
       return NextResponse.json(
@@ -542,7 +543,7 @@ export async function POST(request: Request) {
         { status: 400 }
       )
     }
-    if (isRateLimited(clientIp, idempotencyKey)) {
+    if (isRateLimited(visitorIp, idempotencyKey)) {
       return NextResponse.json(
         { success: false, error: 'リクエストが多すぎます。しばらく時間をおいてからお試しください。', timestamp: new Date().toISOString() },
         { status: 429 }

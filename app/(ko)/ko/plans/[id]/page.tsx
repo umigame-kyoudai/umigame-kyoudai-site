@@ -5,10 +5,12 @@ export function generateStaticParams() {
   return intlPlanStaticParams("ko")
 }
 
-export function generateMetadata({ params }: { params: { id: string } }): Metadata {
+export async function generateMetadata(props: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const params = await props.params;
   return intlPlanDetailMetadata("ko", params.id)
 }
 
-export default function KoreanPlanDetailPage({ params }: { params: { id: string } }) {
+export default async function KoreanPlanDetailPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   return <IntlPlanDetailPage locale="ko" id={params.id} />
 }
