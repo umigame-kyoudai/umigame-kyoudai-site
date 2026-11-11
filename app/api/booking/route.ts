@@ -1,6 +1,7 @@
 import { normalizeTrafficAttribution, trafficAttributionNote } from "@/lib/traffic-attribution"
 import { NextResponse } from 'next/server'
 import { clientIp } from '@/lib/client-ip'
+import { cloudflareRateLimited } from '@/lib/cloudflare-rate-limit'
 import { NIGHT_GUIDE } from '@/lib/staff'
 import { resolveBookingSource } from '@/lib/booking-source-server'
 import { generateBookingNumber, sendToGAS, createAPIResponse, createAPIError } from '@/lib/services/gas-service'
@@ -121,10 +122,12 @@ const STAFF_NAMES: Record<string, string> = {
 // 完全ではないが、スパム送信によるGAS予約シート・LINE通知の氾濫を抑止する
 const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000
 const RATE_LIMIT_MAX = 5
+const RATE_LIMIT_MAX_RETRIES = 3
 const IDEMPOTENCY_KEY_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 interface RateLimitAttempt {
   timestamp: number
   idempotencyKey: string
+  retries: number
 }
 const rateLimitMap = new Map<string, RateLimitAttempt[]>()
 
@@ -133,9 +136,12 @@ const isRateLimited = (clientKey: string, idempotencyKey: string): boolean => {
   const windowStart = now - RATE_LIMIT_WINDOW_MS
   const attempts = (rateLimitMap.get(clientKey) || []).filter((attempt) => attempt.timestamp > windowStart)
 
-  // 通信結果を受け取れなかった同一予約の再送は、回数制限を消費させない。
-  // GAS側でも同じ予約番号として扱うため、これでスパム予約を増やすことはできない。
-  if (idempotencyKey && attempts.some((attempt) => attempt.idempotencyKey === idempotencyKey)) {
+  // 通信結果を受け取れなかった同一予約は別枠を消費せず再送できる。
+  // 同じIDの無制限な使い回しは防ぐため、再送回数には上限を設ける。
+  const retry = idempotencyKey && attempts.find((attempt) => attempt.idempotencyKey === idempotencyKey)
+  if (retry) {
+    if (retry.retries >= RATE_LIMIT_MAX_RETRIES) return true
+    retry.retries += 1
     rateLimitMap.set(clientKey, attempts)
     return false
   }
@@ -144,7 +150,7 @@ const isRateLimited = (clientKey: string, idempotencyKey: string): boolean => {
     rateLimitMap.set(clientKey, attempts)
     return true
   }
-  attempts.push({ timestamp: now, idempotencyKey })
+  attempts.push({ timestamp: now, idempotencyKey, retries: 0 })
   rateLimitMap.set(clientKey, attempts)
   // Mapの肥大化防止: 定員超過時に期限切れエントリを掃除
   if (rateLimitMap.size > 1000) {
@@ -543,7 +549,18 @@ export async function POST(request: Request) {
         { status: 400 }
       )
     }
-    if (isRateLimited(visitorIp, idempotencyKey)) {
+    let limited: boolean
+    try {
+      limited = process.env.CF_WORKER_DEPLOYMENT === '1'
+        ? await cloudflareRateLimited('booking', visitorIp, idempotencyKey)
+        : isRateLimited(visitorIp, idempotencyKey)
+    } catch {
+      return NextResponse.json(
+        { success: false, error: BOOKING_SERVICE_UNAVAILABLE_MESSAGE, timestamp: new Date().toISOString() },
+        { status: 503 },
+      )
+    }
+    if (limited) {
       return NextResponse.json(
         { success: false, error: 'リクエストが多すぎます。しばらく時間をおいてからお試しください。', timestamp: new Date().toISOString() },
         { status: 429 }
