@@ -13,7 +13,8 @@
     "test": "node --import ./scripts/test-alias-hooks.mjs --test \"lib/**/*.test.mjs\"",
     "cloudflare:build": "NEXT_PUBLIC_DISABLE_VERCEL_ANALYTICS=1 opennextjs-cloudflare build && opennextjs-cloudflare populateCache local",
     "cloudflare:build:production": "NEXT_PUBLIC_DISABLE_VERCEL_ANALYTICS=1 opennextjs-cloudflare build -c wrangler.production.jsonc && opennextjs-cloudflare populateCache local -c wrangler.production.jsonc",
-    "cloudflare:preview:local": "wrangler dev --local --config wrangler.preview.jsonc"
+    "cloudflare:preview:local": "wrangler dev --local --config wrangler.preview.jsonc",
+    "cloudflare:deploy:production": "opennextjs-cloudflare deploy -c wrangler.production.jsonc"
   },
   "dependencies": {
     "@line/bot-sdk": "^10.8.0",
