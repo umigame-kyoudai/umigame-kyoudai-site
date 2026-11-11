@@ -1,0 +1,12 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "umigame-kyoudai-rate-sandbox",
+  "account_id": "6ee1007b5398ed60a4eb9a43407d0a56",
+  "workers_dev": true,
+  "main": "cloudflare/rate-limit-sandbox.mjs",
+  "compatibility_date": "2026-11-01",
+  "durable_objects": {
+    "bindings": [{ "name": "RATE_LIMITER", "class_name": "RateLimiter" }]
+  },
+  "migrations": [{ "tag": "rate-limiter-v1", "new_sqlite_classes": ["RateLimiter"] }]
+}
