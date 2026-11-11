@@ -80,3 +80,11 @@ Team ID: `team_AVkVeJGhky3xEi61HxtzJ2IX`。
 検証：373テストと本番ビルド（型・Lint検査込み）成功。通常ナイトで59歳・60歳・75歳を含む2名を8,000円で受付、76歳は対象外、水上体験の通常6プランは60歳以上の貸切案内を維持することを外部サービスを模擬化したAPIテストで確認。実予約・メール・LINE通知は送信していない。
 
 公開：[PR #56](https://github.com/umigame-kyoudai/umigame-kyoudai-site/pull/56)をマージし、`fbab0fb` の本番デプロイ `dpl_H4Qc9ejtuopNJpKAmhyP2B89KSTp` を確認。本番HTTPSのS3/S5・トップで更新文言を確認し、390px幅でS3の画像・参加案内・予約CTA・予約フォームを確認。75歳入力時に貸切警告が出ず、通常料金4,000円になることを本番画面で確認した。予約送信は行っていない。スクリーンショットはローカル `output/night-senior-2026-10-31/production-mobile.jpg` に保存。
+
+## Cloudflare移行調査（2026-11-11）
+
+ユーザーの今回の指示によりCloudflareへの移行を進める。Vercelの本番とDNSはまだ変更していない。Cloudflare側にGitHub直結の[閲覧専用プレビュー](https://umigame-kyoudai-site-migration-preview.throbbing-queen-f409.workers.dev/)を用意し、書込みを拒否・noindexとしている。
+
+別の移行作業ブランチでは、予約とクーポンのIP制限をCloudflare Durable Objectで共有する案をローカル検証した。10分間に予約5件・クーポン15件、同一予約IDの再送、制限装置の設定欠落時に503で閉じる動きを合成リクエストで確認。アドレスは環境別の `RATE_LIMIT_HMAC_SECRET` でHMAC化して識別し、原文はDurable Objectへ保存しない。秘密値はコードや台帳に記載しない。
+
+Durable Object本番作成・秘密値設定・CronやDNSの変更は未実施。課金・障害時の復旧・有効期限後の掃除・Cloudflare実環境とGASの冪等性を確認し、画像変換、LINE/LIFF、GA4、予約の隔離E2Eを終えるまで本番へ切り替えない。

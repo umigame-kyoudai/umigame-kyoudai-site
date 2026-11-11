@@ -1,6 +1,7 @@
 import { normalizeTrafficAttribution, trafficAttributionNote } from "@/lib/traffic-attribution"
 import { NextResponse } from 'next/server'
 import { clientIp } from '@/lib/client-ip'
+import { cloudflareRateLimited } from '@/lib/cloudflare-rate-limit'
 import { NIGHT_GUIDE } from '@/lib/staff'
 import { resolveBookingSource } from '@/lib/booking-source-server'
 import { generateBookingNumber, sendToGAS, createAPIResponse, createAPIError } from '@/lib/services/gas-service'
@@ -543,7 +544,18 @@ export async function POST(request: Request) {
         { status: 400 }
       )
     }
-    if (isRateLimited(visitorIp, idempotencyKey)) {
+    let limited: boolean
+    try {
+      limited = process.env.CF_WORKER_DEPLOYMENT === '1'
+        ? await cloudflareRateLimited('booking', visitorIp, idempotencyKey)
+        : isRateLimited(visitorIp, idempotencyKey)
+    } catch {
+      return NextResponse.json(
+        { success: false, error: BOOKING_SERVICE_UNAVAILABLE_MESSAGE, timestamp: new Date().toISOString() },
+        { status: 503 },
+      )
+    }
+    if (limited) {
       return NextResponse.json(
         { success: false, error: 'リクエストが多すぎます。しばらく時間をおいてからお試しください。', timestamp: new Date().toISOString() },
         { status: 429 }

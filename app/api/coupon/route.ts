@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { clientIp } from '@/lib/client-ip'
+import { cloudflareRateLimited } from '@/lib/cloudflare-rate-limit'
 import { calculateCouponDiscount, getCouponPlanLimitLabel, isCouponEligiblePlan } from '@/lib/constants/coupons'
 
 // クーポンコードの検証はサーバー側でのみ行う。
@@ -41,7 +42,18 @@ const toCount = (value: unknown): number =>
 export async function POST(request: Request) {
   try {
     const visitorIp = clientIp(request.headers)
-    if (isRateLimited(visitorIp)) {
+    let limited: boolean
+    try {
+      limited = process.env.CF_WORKER_DEPLOYMENT === '1'
+        ? await cloudflareRateLimited('coupon', visitorIp)
+        : isRateLimited(visitorIp)
+    } catch {
+      return NextResponse.json(
+        { valid: false, discount: 0, error: 'クーポンの確認を一時的に利用できません。時間をおいてお試しください。' },
+        { status: 503 },
+      )
+    }
+    if (limited) {
       return NextResponse.json(
         { valid: false, discount: 0, error: '試行回数が多すぎます。しばらく時間をおいてからお試しください。' },
         { status: 429 }
