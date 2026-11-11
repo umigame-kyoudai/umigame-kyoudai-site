@@ -2,6 +2,7 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "umigame-kyoudai-site-migration-preview",
   "account_id": "6ee1007b5398ed60a4eb9a43407d0a56",
+  "workers_dev": true,
   "main": "cloudflare-preview-worker.mjs",
   "compatibility_date": "2026-11-01",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
