@@ -5,7 +5,7 @@
 ユーザーは、既存のVercel有料プランを終了するため、運用中のサイトをCloudflareへ移すよう指示した。下記2026-09-25のVercel継続は当時の記録であり、現在の移行指示より優先しない。
 
 - 現在の本番は引き続きVercel。`www.umigamekyoudaimiyakojima.com` とapex、予約GAS、LINE、GA4、分析シートを維持する。
-- Cloudflare移行先候補は、Turtle Labアカウント `6ee1007b5398ed60a4eb9a43407d0a56` の `umigame-kyoudai-site`。GitHubから直接ビルドする。独自ドメイン・DNSは切替前。
+- Cloudflare移行先候補は、表示名 `Info@umigamekyoudaimiyakojima.com's Account`、ID `6ee1007b5398ed60a4eb9a43407d0a56` の `umigame-kyoudai-site`。GitHubから直接ビルドする。独自ドメイン・DNSは切替前。本番候補の `workers_dev` とpreview URLsは無効にし、確認前の別URLへの公開を防ぐ。
 - `umigame-kyoudai-site-migration-preview` は移行検証用。`wrangler.preview.jsonc` と専用Workerで送信メソッドを拒否し、noindexを返す。本番の予約・LINE・分析の秘密値は設定しない。移行ブランチの `wrangler.jsonc` はこの検証Worker名、`wrangler.production.jsonc` は将来の本番Worker候補を示す。
 - 検証WorkerのGitHub接続は、対象RepositoryのみをCloudflareアプリに追加する承認を得て設定。[`workers.dev` の閲覧専用版](https://umigame-kyoudai-site-migration-preview.throbbing-queen-f409.workers.dev/)はHTTPS公開とスマホ表示を確認済み。本番ドメインではなく、予約送信はできない。
 - Vercel Blobの公開画像22点は、元ファイルのSHA-256を確認して `public/gallery/` へ収容した。ブログのMarkdownは `prebuild` でWorkerに組み込み、Cloudflare実行時にローカルファイルを読まない。
