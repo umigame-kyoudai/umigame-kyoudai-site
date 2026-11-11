@@ -19,10 +19,11 @@ export class RateLimiter extends DurableObject {
     const allowed = await this.ctx.storage.transaction(async () => {
       const saved = await this.ctx.storage.get('attempts') || []
       const result = decideLimit(saved, scope, idempotencyKey, now)
-      // As before, retrying the same booking does not consume another slot.
+      // A few retries keep their booking slot, but cannot bypass the limit
+      // indefinitely by repeatedly reusing one request ID.
       if (result.changed) {
         await this.ctx.storage.put('attempts', result.active)
-        await this.ctx.storage.setAlarm(now + WINDOW_MS + 1000)
+        await this.ctx.storage.setAlarm(Math.max(...result.active.map((entry) => entry.time)) + WINDOW_MS + 1000)
       }
       return result.allowed
     })
