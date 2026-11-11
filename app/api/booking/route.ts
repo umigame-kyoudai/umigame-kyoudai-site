@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server'
 import { NIGHT_GUIDE } from '@/lib/staff'
 import { resolveBookingSource } from '@/lib/booking-source-server'
 import { generateBookingNumber, sendToGAS, createAPIResponse, createAPIError } from '@/lib/services/gas-service'
+import { createInventoryBooking, readInventoryBooking, readInventoryMode } from '@/lib/inventory-client'
+import { buildInventoryBooking } from '@/lib/inventory-booking'
 import { isValidCalendarDate, normalizePhoneNumber, validateEmail, validatePhoneNumber, validateRequired } from '@/lib/utils/validation'
 import { getBookingDeadlineCopy, isBookingDeadlinePassed } from '@/lib/booking-deadline'
 import { PLANS, getStaffFee } from '@/lib/data'
@@ -41,7 +43,8 @@ import {
   getAdultAgeMax,
 } from '@/lib/plan-flags'
 
-export const maxDuration = 30
+// 管理システムでの予約（最大8秒＋確かめ3秒）と、つながらない時の旧GAS（最大28秒）を合わせても収まる長さ（docs/130）。
+export const maxDuration = 60
 
 interface BookingParticipant {
   name?: string
@@ -100,6 +103,8 @@ interface BookingRequest {
 
 // プラン分類は lib/plan-flags.ts を単一ソースとして参照する（予約フォーム等と共通）
 const SUNSET_SUP_TIME_NOTE = 'サンセット時刻（前日にLINEでご案内）'
+const SLOT_FULL_MESSAGE = '選んだ時間は満席になりました。別の日時を選んでください。'
+const BOOKING_RESULT_UNKNOWN_MESSAGE = '予約の結果を確認できませんでした。少し待ってから、もう一度送ってください（二重にはなりません）。'
 const BOOKING_SERVICE_UNAVAILABLE_MESSAGE =
   '予約を送信できませんでした。時間をおいてもう一度お試しいただくか、LINEでお問い合わせください。'
 const LINE_AUTHENTICATION_FAILED_MESSAGE =
@@ -641,6 +646,44 @@ export async function POST(request: Request) {
       acquisition?.token || null,
     )
 
+    // 予約在庫（管理システム docs/130）：live の時は、管理システムで空きを確かめてその場で確定する（旧GASには送らない）。
+    // 満席なら 409 SLOT_FULL。管理システムにつながらない・止めている・在庫を管理していないツアーは、今の仮予約（旧GAS）で受ける。
+    // 結果が分からない時は、同じ予約番号でもう一度確かめ、無いと分かってから旧GASへ送る（二重にしない）。
+    if (readInventoryMode() === 'live' && idempotencyKey) {
+      try {
+        const built = buildInventoryBooking(gasPayload, bookingData.nightTime ?? null)
+        let created = await createInventoryBooking({ booking_number: bookingNumber, item: built.item, details: built.details })
+        if (!created.ok && created.uncertain) {
+          const again = await readInventoryBooking(bookingNumber)
+          if (!again.ok) {
+            return NextResponse.json(
+              { success: false, error: BOOKING_RESULT_UNKNOWN_MESSAGE, code: 'BOOKING_RESULT_UNKNOWN', timestamp: new Date().toISOString() },
+              { status: 503 }
+            )
+          }
+          created = again
+        }
+        if (created.ok) {
+          const state = created.data.state
+          if (state === 'CREATED') {
+            console.info('[inventory] Booking confirmed in management system:', { bookingNumber, replayed: created.data.replayed })
+            return NextResponse.json(createAPIResponse(true, { bookingNumber, totalPrice: serverTotalPrice, couponDiscount: validatedCoupon.discount, couponCode: validatedCoupon.code, confirmed: true }, '予約が確定しました'))
+          }
+          if (state === 'FULL' || state === 'CLOSED' || state === 'NOT_OFFERED') {
+            return NextResponse.json(
+              { success: false, error: SLOT_FULL_MESSAGE, code: 'SLOT_FULL', timestamp: new Date().toISOString() },
+              { status: 409 }
+            )
+          }
+          console.info('[inventory] Falling back to request booking:', { state })
+        } else {
+          console.warn('[inventory] Management system unavailable; falling back to request booking:', { status: created.status })
+        }
+      } catch (inventoryError) {
+        console.error('[inventory] Could not build the inventory booking; falling back:', inventoryError instanceof Error ? inventoryError.message : 'Unknown error')
+      }
+    }
+
     try {
       const result = await sendToGAS(gasPayload)
       console.info('[v0] Booking accepted by GAS:', {
@@ -655,6 +698,7 @@ export async function POST(request: Request) {
             totalPrice: serverTotalPrice,
             couponDiscount: validatedCoupon.discount,
             couponCode: validatedCoupon.code,
+            confirmed: false,
             result,
           },
           '予約が正常に作成されました'

@@ -60,6 +60,8 @@ import { toast } from "sonner"
 import { Calendar, Clock, Users, Calculator, CheckCircle, UserCheck, Check } from "lucide-react"
 import { todayStr, localDateFromYMD } from "@/lib/date-utils"
 import BookingTimeSlots from "@/components/booking-time-slots"
+import { useInventoryAvailability } from "@/lib/use-inventory-availability"
+import { SLOT_COPY_JA, slotNote, slotSelectable } from "@/lib/inventory-slot"
 import { ComingSoonBadge } from "@/components/coming-soon"
 import { ADULT_PRICE, BOOKING_PLANS, CHILD_PRICE } from "@/lib/booking-plans"
 import { getStaffFee } from "@/lib/data"
@@ -318,6 +320,10 @@ export function BookingForm() {
       couponDiscount: 0,
     }
   })
+  // 予約在庫（管理システム docs/130）：選んだプラン・日付の空き。満席の時刻は選べない（人数は3歳未満も数える）。
+  const inventory = useInventoryAvailability(bookingData.selectedPlan, bookingData.selectedDate)
+  const inventoryPeople = bookingData.adultCount + bookingData.childCount + bookingData.under3Count
+  const [bookingResult, setBookingResult] = useState<{ confirmed: boolean; bookingNumber: string } | null>(null)
 
   const [hasRestoredDraft, setHasRestoredDraft] = useState(false)
   const [isPlanPickerOpen, setIsPlanPickerOpen] = useState(false)
@@ -971,13 +977,16 @@ export function BookingForm() {
       const responseData: {
         success?: boolean
         error?: string
-        data?: { bookingNumber?: unknown; totalPrice?: unknown; couponDiscount?: unknown }
+        code?: string
+        data?: { bookingNumber?: unknown; totalPrice?: unknown; couponDiscount?: unknown; confirmed?: unknown }
       } | null = await response.json().catch(() => null)
       if (!response.ok || responseData?.success !== true) {
         if (response.status === 401) {
           // サーバーがLINE認証を拒否 → 古いセッションを破棄してログイン導線へ戻す
           invalidateLineSession()
         }
+        // 満席になった（ほかの方が先に予約した）：空きを読み直して、別の時刻を選べるようにする。
+        if (responseData?.code === "SLOT_FULL") inventory.reload()
         const publicErrorMessage =
           response.status < 500 && responseData?.error
             ? responseData.error
@@ -1014,6 +1023,10 @@ export function BookingForm() {
         source: getAttributionSourceLabel(),
         outcome: "success",
         booking_id: typeof responseData.data?.bookingNumber === "string" ? responseData.data.bookingNumber : "",
+      })
+      setBookingResult({
+        confirmed: responseData.data?.confirmed === true,
+        bookingNumber: typeof responseData.data?.bookingNumber === "string" ? responseData.data.bookingNumber : "",
       })
       completeCustomerBookingFunnel()
       clearBookingDraft()
@@ -1343,12 +1356,15 @@ export function BookingForm() {
       <Card className="glass-card bg-white/95 backdrop-blur-xl rounded-3xl ring-1 ring-emerald-100 shadow-2xl max-w-2xl w-full mx-auto my-4 animate-in fade-in zoom-in duration-300">
         <CardContent className="p-6 sm:p-8 text-center">
           <CheckCircle className="w-16 h-16 text-emerald-700 mx-auto mb-6" />
-          <h2 ref={successHeadingRef} tabIndex={-1} id="booking-success-title" className="text-2xl font-bold text-emerald-800 mb-4 outline-none">送信完了しました！</h2>
+          <h2 ref={successHeadingRef} tabIndex={-1} id="booking-success-title" className="text-2xl font-bold text-emerald-800 mb-4 outline-none">{bookingResult?.confirmed ? "ご予約が確定しました！" : "送信完了しました！"}</h2>
           <p className="text-gray-600 mb-6">
             ご予約ありがとうございます。
             <br />
-            スタッフが内容を確認し、LINE公式アカウントから確定のご連絡をお送りします。
+            {bookingResult?.confirmed
+              ? "空きを確認し、ご予約を確定しました。ご案内をLINE公式アカウントからお送りします。"
+              : "スタッフが内容を確認し、LINE公式アカウントから確定のご連絡をお送りします。"}
           </p>
+          {bookingResult?.bookingNumber && <p className="text-sm text-gray-600 mb-4">予約番号：{bookingResult.bookingNumber}</p>}
           <div className="bg-emerald-50 rounded-lg p-4 mb-6">
             <h3 className="font-semibold text-emerald-800 mb-2">予約内容</h3>
             <div className="text-sm text-gray-600 space-y-1">
@@ -2019,7 +2035,7 @@ export function BookingForm() {
                         type="button"
                         variant={bookingData.selectedTime === time ? "default" : "outline"}
                         aria-pressed={bookingData.selectedTime === time}
-                        disabled={now === null || !isBookingTimeOpen(bookingData.selectedDate, time, now)}
+                        disabled={now === null || !isBookingTimeOpen(bookingData.selectedDate, time, now) || !slotSelectable(inventory.slots?.main[time], inventoryPeople)}
                         size="sm"
                         onClick={() => handleInputChange("selectedTime", time)}
                         className={`min-h-11 flex-col gap-0 rounded-xl disabled:opacity-100 disabled:bg-gray-100 disabled:text-gray-600 disabled:border-gray-200 ${
@@ -2029,7 +2045,7 @@ export function BookingForm() {
                         }`}
                       >
                         {time}
-                        {now !== null && !isBookingTimeOpen(bookingData.selectedDate, time, now) && <span className="text-xs">{deadlineCopy.slotClosed}</span>}
+                        {now !== null && !isBookingTimeOpen(bookingData.selectedDate, time, now) ? <span className="text-xs">{deadlineCopy.slotClosed}</span> : slotNote(inventory.slots?.main[time], inventoryPeople, SLOT_COPY_JA) && <span className="text-xs">{slotNote(inventory.slots?.main[time], inventoryPeople, SLOT_COPY_JA)}</span>}
                       </Button>
                     ))}
                   </div>
@@ -2055,7 +2071,7 @@ export function BookingForm() {
                           type="button"
                           variant={bookingData.nightTime === time ? "default" : "outline"}
                           aria-pressed={bookingData.nightTime === time}
-                          disabled={now === null || !isBookingTimeOpen(bookingData.selectedDate, time, now) || isNightSlotUnavailable(bookingData.selectedDate, bookingData.selectedPlan, "", time)}
+                          disabled={now === null || !isBookingTimeOpen(bookingData.selectedDate, time, now) || isNightSlotUnavailable(bookingData.selectedDate, bookingData.selectedPlan, "", time) || !slotSelectable(inventory.slots?.night[time], inventoryPeople)}
                           size="sm"
                           onClick={() => handleInputChange("nightTime", time)}
                           className={`min-h-11 flex-col gap-0 rounded-xl disabled:opacity-100 disabled:bg-gray-100 disabled:text-gray-600 disabled:border-gray-200 ${
@@ -2065,6 +2081,7 @@ export function BookingForm() {
                           }`}
                         >
                           {time}
+                          {!isNightSlotUnavailable(bookingData.selectedDate, bookingData.selectedPlan, "", time) && slotNote(inventory.slots?.night[time], inventoryPeople, SLOT_COPY_JA) && <span className="text-xs">{slotNote(inventory.slots?.night[time], inventoryPeople, SLOT_COPY_JA)}</span>}
                           {isNightSlotUnavailable(bookingData.selectedDate, bookingData.selectedPlan, "", time) ? <span className="text-xs">受付停止</span> : now !== null && !isBookingTimeOpen(bookingData.selectedDate, time, now) && <span className="text-xs">{deadlineCopy.slotClosed}</span>}
                         </Button>
                       ))}
@@ -2090,6 +2107,8 @@ export function BookingForm() {
                   selectedDate={localDateFromYMD(bookingData.selectedDate)}
                   selectedTime={bookingData.selectedTime}
                   onPick={(time) => handleInputChange("selectedTime", time)}
+                  availability={inventory.slots?.main ?? null}
+                  people={inventoryPeople}
                 />
                 {selectedPlanData && getPlanType(bookingData.selectedPlan) !== "sunset-sup" && getPlanType(bookingData.selectedPlan) !== "day-sup" && (
                   <p className="text-xs text-gray-500 mt-2">
@@ -2626,7 +2645,7 @@ export function BookingForm() {
             aria-describedby={missingItems.length > 0 ? "booking-validation-summary" : undefined}
             className="w-full bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl py-4 text-lg font-semibold disabled:opacity-50"
           >
-            {isSubmitting ? "送信中..." : "仮予約を送信する"}
+            {isSubmitting ? "送信中..." : inventory.mode === "live" ? "予約を確定する" : "仮予約を送信する"}
           </Button>
 
           <p className="text-xs text-gray-500 text-center mt-3">送信後、24時間以内にスタッフよりご連絡いたします。</p>

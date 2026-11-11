@@ -61,6 +61,8 @@ import { replaceBookingSelectionQuery } from "@/lib/booking-url"
 import { isValidCalendarDate, normalizePhoneNumber, validatePhoneNumber } from "@/lib/utils/validation"
 import { formatBookingDeadline, getBookingDeadline, getBookingDeadlineCopy, isBookingDeadlinePassed, isBookingTimeOpen } from "@/lib/booking-deadline"
 import { useBookingClock } from "@/lib/use-booking-clock"
+import { useInventoryAvailability } from "@/lib/use-inventory-availability"
+import { BOOKING_CONFIRMED_INTL, DAY_TIME, SLOT_COPY_INTL, slotNote, slotSelectable } from "@/lib/inventory-slot"
 import { getIntlBookingError, getIntlCouponError } from "@/lib/intl-form-errors"
 import {
   clearBookingSubmissionId,
@@ -282,6 +284,9 @@ function BookingFormIntlReady({ locale, dict }: { locale: IntlLocale; dict: Intl
   // 指名できるプランは lib/plan-flags.ts の isStaffRequestAvailable が単一ソース（プラン未選択では出さない）
   const staffAvailable = !!plan && isStaffRequestAvailable(planId)
   const timeOptions = plan ? plan.timeTags.filter((tag) => /^\d{2}:\d{2}$/.test(tag)) : []
+  // 予約在庫（管理システム docs/130）：選んだプラン・日付の空き。満席の時刻は選べない。
+  const inventory = useInventoryAvailability(planId ?? "", date ?? "")
+  const [bookingConfirmed, setBookingConfirmed] = useState(false)
   const bookingSelection = { selectedPlan: planId, selectedDate: date, selectedTime: time }
   const deadline = getBookingDeadline(bookingSelection)
   const deadlineExpired = now !== null && isBookingDeadlinePassed(bookingSelection, now)
@@ -695,10 +700,14 @@ function BookingFormIntlReady({ locale, dict }: { locale: IntlLocale; dict: Intl
       const responseData: {
         success?: boolean
         code?: string
-        data?: { bookingNumber?: unknown; totalPrice?: unknown; couponDiscount?: unknown }
+        data?: { bookingNumber?: unknown; totalPrice?: unknown; couponDiscount?: unknown; confirmed?: unknown }
       } | null = await response.json().catch(() => null)
       if (!response.ok || responseData?.success !== true) {
         failureMessage = getIntlBookingError(copy, response.status, responseData?.code, deadlineCopy.closed)
+        if (responseData?.code === "SLOT_FULL") {
+          failureMessage = BOOKING_CONFIRMED_INTL[locale].slotFull
+          inventory.reload()
+        }
         if (response.status === 401) {
           // The server rejected the LINE credentials → drop the stale session
           // so the form shows the LINE login prompt again.
@@ -739,6 +748,7 @@ function BookingFormIntlReady({ locale, dict }: { locale: IntlLocale; dict: Intl
         window.sessionStorage.removeItem(draftKey(locale))
       } catch {}
       clearBookingSubmissionId(locale)
+      setBookingConfirmed(responseData.data?.confirmed === true)
       setIsSubmitted(true)
     } catch {
       sendDetailedEvent("booking_failed", {
@@ -771,11 +781,11 @@ function BookingFormIntlReady({ locale, dict }: { locale: IntlLocale; dict: Intl
       <Card className="bg-white/95 rounded-3xl ring-1 ring-emerald-100 shadow-2xl max-w-2xl mx-auto">
         <CardContent className="p-8 text-center">
           <CheckCircle className="w-16 h-16 text-emerald-700 mx-auto mb-6" />
-          <h2 ref={successHeadingRef} tabIndex={-1} className="text-2xl font-bold text-emerald-800 mb-4 outline-none">{copy.successTitle}</h2>
+          <h2 ref={successHeadingRef} tabIndex={-1} className="text-2xl font-bold text-emerald-800 mb-4 outline-none">{bookingConfirmed ? BOOKING_CONFIRMED_INTL[locale].title : copy.successTitle}</h2>
           <p className="text-gray-600 mb-6">
-            {copy.successBody.text}
-            <br />
-            <strong>{copy.successBody.strong}</strong>
+            {bookingConfirmed ? BOOKING_CONFIRMED_INTL[locale].body : copy.successBody.text}
+            {!bookingConfirmed && <br />}
+            {!bookingConfirmed && <strong>{copy.successBody.strong}</strong>}
           </p>
           <div className="bg-emerald-50 rounded-lg p-4 mb-6 text-left text-sm text-gray-700">
             <p>{copy.successTourLabel}{t?.name}</p>
@@ -919,13 +929,14 @@ function BookingFormIntlReady({ locale, dict }: { locale: IntlLocale; dict: Intl
                       type="button"
                       key={tag}
                       aria-pressed={time === tag}
-                      disabled={now === null || !isBookingTimeOpen(date, tag, now) || isNightSlotUnavailable(date, planId, tag)}
+                      disabled={now === null || !isBookingTimeOpen(date, tag, now) || isNightSlotUnavailable(date, planId, tag) || !slotSelectable(inventory.slots?.main[tag], counts.adult + counts.child + counts.under3)}
                       onClick={() => setTime(tag)}
                       className={`min-h-11 px-4 py-2 rounded-full border-2 text-sm font-semibold transition-colors disabled:opacity-100 disabled:bg-gray-100 disabled:text-gray-600 disabled:border-gray-200 disabled:cursor-not-allowed ${
                         time === tag ? "border-emerald-500 bg-emerald-50 text-emerald-800" : "border-gray-200 text-gray-600 hover:border-emerald-300"
                       }`}
                     >
                       {tag}
+                      {slotNote(inventory.slots?.main[tag], counts.adult + counts.child + counts.under3, SLOT_COPY_INTL[locale]) && <span className="ml-1 text-xs">{slotNote(inventory.slots?.main[tag], counts.adult + counts.child + counts.under3, SLOT_COPY_INTL[locale])}</span>}
                       {isNightSlotUnavailable(date, planId, tag) ? <span className="ml-1 text-xs">{nightSlotUnavailableMessage(locale)}</span> : now !== null && !isBookingTimeOpen(date, tag, now) && <span className="ml-1 text-xs">{deadlineCopy.slotClosed}</span>}
                     </button>
                   ))}

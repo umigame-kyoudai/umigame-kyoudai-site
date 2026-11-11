@@ -11,6 +11,7 @@ import { isNightSlotUnavailable } from "@/lib/booking-closures"
 import { getSunsetSupGuide } from "@/lib/beach-info"
 import { dateToYMD } from "@/lib/date-utils"
 import { getBookingDeadlineCopy, isBookingTimeOpen } from "@/lib/booking-deadline"
+import { DAY_TIME, SLOT_COPY_JA, slotNote, slotSelectable, type SlotState } from "@/lib/inventory-slot"
 
 type PlanId = "night-hunter" | "sunset-sup" | "day-sup" | "slide-boat" | "other"
 
@@ -20,6 +21,9 @@ type Props = {
   selectedTime: string
   onPick: (time: string) => void
   now: number | null
+  // 予約在庫（管理システム docs/130）：時刻ごとの空き（無ければ今まで通り）。people：参加人数（3歳未満も数える）。
+  availability?: Record<string, SlotState> | null
+  people?: number
 }
 
 // 宮古島の座標（市街地基準）
@@ -73,7 +77,7 @@ function getTimeSlots(plan: PlanId, date: Date): string[] {
   }
 }
 
-export default function BookingTimeSlots({ selectedPlan, selectedDate, selectedTime, onPick, now }: Props) {
+export default function BookingTimeSlots({ selectedPlan, selectedDate, selectedTime, onPick, now, availability = null, people = 1 }: Props) {
   const slots = useMemo(() => getTimeSlots(selectedPlan, selectedDate), [selectedPlan, selectedDate])
   const date = Number.isNaN(selectedDate.getTime()) ? "" : dateToYMD(selectedDate)
   const deadlineCopy = getBookingDeadlineCopy()
@@ -91,6 +95,9 @@ export default function BookingTimeSlots({ selectedPlan, selectedDate, selectedT
 
     return (
       <div className="bg-gradient-to-r from-orange-50 to-pink-50 border border-orange-200 rounded-xl p-6">
+        {availability && !slotSelectable(availability[DAY_TIME], people) && (
+          <p role="alert" className="mb-3 text-sm font-medium text-rose-800">この日は{slotNote(availability[DAY_TIME], people, SLOT_COPY_JA) ?? "満席"}です。別の日をお選びください。</p>
+        )}
         <div className="flex items-start gap-3">
           <div className="flex-shrink-0 w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
             <Clock className="w-5 h-5 text-orange-600" />
@@ -131,7 +138,10 @@ export default function BookingTimeSlots({ selectedPlan, selectedDate, selectedT
       <div role="group" aria-label="開始時間" className="grid grid-cols-3 md:grid-cols-5 gap-3">
         {slots.map((time) => {
           const unavailable = selectedPlan === "night-hunter" && isNightSlotUnavailable(date, "S3", time)
-          const closed = unavailable || (now !== null && !isBookingTimeOpen(date, time, now))
+          const stock = availability?.[time]
+          const soldOut = !slotSelectable(stock, people)
+          const note = slotNote(stock, people, SLOT_COPY_JA)
+          const closed = unavailable || soldOut || (now !== null && !isBookingTimeOpen(date, time, now))
           return (
             <Button
               key={time}
@@ -148,7 +158,7 @@ export default function BookingTimeSlots({ selectedPlan, selectedDate, selectedT
               }`}
             >
               <span>{time}</span>
-              {closed && <span className="text-xs">{unavailable ? "受付停止" : deadlineCopy.slotClosed}</span>}
+              {closed ? <span className="text-xs">{unavailable ? "受付停止" : soldOut ? note ?? "満席" : deadlineCopy.slotClosed}</span> : note && <span className="text-xs">{note}</span>}
             </Button>
           )
         })}
