@@ -1,6 +1,13 @@
-import { RateLimiter } from './rate-limiter.mjs'
+import { RateLimiter as ProductionRateLimiter } from './rate-limiter.mjs'
 
-export { RateLimiter }
+// Preserve the same production alarm, then record only a fixed synthetic
+// message so the sandbox can verify the scheduled cleanup actually ran.
+export class RateLimiter extends ProductionRateLimiter {
+  async alarm() {
+    await super.alarm()
+    console.info('synthetic-rate-limit-cleanup-complete')
+  }
+}
 
 // Standalone, synthetic-only check of the real Durable Object implementation.
 // It does not import the website, read request bodies or forward to LINE/GAS.
