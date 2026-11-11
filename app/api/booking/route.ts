@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import { NIGHT_GUIDE } from '@/lib/staff'
 import { resolveBookingSource } from '@/lib/booking-source-server'
 import { generateBookingNumber, sendToGAS, createAPIResponse, createAPIError } from '@/lib/services/gas-service'
-import { createInventoryBooking, readInventoryBooking, readInventoryMode } from '@/lib/inventory-client'
+import { abandonInventoryBooking, createInventoryBooking, readInventoryMode } from '@/lib/inventory-client'
 import { buildInventoryBooking } from '@/lib/inventory-booking'
 import { isValidCalendarDate, normalizePhoneNumber, validateEmail, validatePhoneNumber, validateRequired } from '@/lib/utils/validation'
 import { getBookingDeadlineCopy, isBookingDeadlinePassed } from '@/lib/booking-deadline'
@@ -104,6 +104,7 @@ interface BookingRequest {
 // プラン分類は lib/plan-flags.ts を単一ソースとして参照する（予約フォーム等と共通）
 const SUNSET_SUP_TIME_NOTE = 'サンセット時刻（前日にLINEでご案内）'
 const SLOT_FULL_MESSAGE = '選んだ時間は満席になりました。別の日時を選んでください。'
+const BOOKING_CHANGED_MESSAGE = '前の送信と内容（人数・日時など）が違います。ページを読み込み直してから、もう一度お手続きください。'
 const BOOKING_RESULT_UNKNOWN_MESSAGE = '予約の結果を確認できませんでした。少し待ってから、もう一度送ってください（二重にはなりません）。'
 const BOOKING_SERVICE_UNAVAILABLE_MESSAGE =
   '予約を送信できませんでした。時間をおいてもう一度お試しいただくか、LINEでお問い合わせください。'
@@ -647,21 +648,30 @@ export async function POST(request: Request) {
     )
 
     // 予約在庫（管理システム docs/130）：live の時は、管理システムで空きを確かめてその場で確定する（旧GASには送らない）。
-    // 満席なら 409 SLOT_FULL。管理システムにつながらない・止めている・在庫を管理していないツアーは、今の仮予約（旧GAS）で受ける。
-    // 結果が分からない時は、同じ予約番号でもう一度確かめ、無いと分かってから旧GASへ送る（二重にしない）。
+    // 満席なら 409 SLOT_FULL。管理システムが作っていないと言い切れる時（止めている・在庫を管理していない・つながる前の失敗など）は、今の仮予約（旧GAS）で受ける。
+    // 作ったかどうか分からない時は「あきらめる」を送り、作っていれば確定・無ければ印を残してから旧GASへ（両方に入らない。2026-11-11 レビュー）。
     if (readInventoryMode() === 'live' && idempotencyKey) {
       try {
         const built = buildInventoryBooking(gasPayload, bookingData.nightTime ?? null)
-        let created = await createInventoryBooking({ booking_number: bookingNumber, item: built.item, details: built.details })
+        const details = {
+          ...built.details,
+          referral: gasPayload.referral ?? null,
+          acquisition: acquisition ? { token: acquisition.token ?? null, source: (acquisition as { source?: unknown }).source ?? null } : null,
+          analytics: gasPayload.customerAnalytics ?? null,
+          attribution: gasPayload.attribution ?? null,
+          traffic: gasPayload.trafficAttribution ?? null,
+          locale: gasPayload.locale ?? null,
+        }
+        let created = await createInventoryBooking({ booking_number: bookingNumber, item: built.item, details })
         if (!created.ok && created.uncertain) {
-          const again = await readInventoryBooking(bookingNumber)
-          if (!again.ok) {
+          const abandoned = await abandonInventoryBooking(bookingNumber)
+          if (!abandoned.ok) {
             return NextResponse.json(
               { success: false, error: BOOKING_RESULT_UNKNOWN_MESSAGE, code: 'BOOKING_RESULT_UNKNOWN', timestamp: new Date().toISOString() },
               { status: 503 }
             )
           }
-          created = again
+          created = abandoned
         }
         if (created.ok) {
           const state = created.data.state
@@ -676,8 +686,14 @@ export async function POST(request: Request) {
             )
           }
           console.info('[inventory] Falling back to request booking:', { state })
+        } else if (created.status === 409 && created.error === 'WEB_BOOKING_MISMATCH') {
+          // 同じ送信番号で人数・日時などが前と違う：前の送信がもう確定しているかもしれないので、旧GASへは送らない。
+          return NextResponse.json(
+            { success: false, error: BOOKING_CHANGED_MESSAGE, code: 'BOOKING_CHANGED', timestamp: new Date().toISOString() },
+            { status: 409 }
+          )
         } else {
-          console.warn('[inventory] Management system unavailable; falling back to request booking:', { status: created.status })
+          console.warn('[inventory] Management system did not create the booking; falling back to request booking:', { status: created.status, error: created.error })
         }
       } catch (inventoryError) {
         console.error('[inventory] Could not build the inventory booking; falling back:', inventoryError instanceof Error ? inventoryError.message : 'Unknown error')

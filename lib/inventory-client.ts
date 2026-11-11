@@ -15,11 +15,20 @@ function readInventoryConfig(env: Record<string, string | undefined> = process.e
   return { url, secret }
 }
 
-export type InventoryCall<T> = { ok: true; status: number; data: T } | { ok: false; uncertain: boolean; status: number | null }
+// uncertain：送ったかもしれない（作ったかどうか分からない）。uncertain でない失敗は、管理システムが予約を作っていないと言い切れる時だけ。
+export type InventoryCall<T> = { ok: true; status: number; data: T } | { ok: false; uncertain: boolean; status: number | null; error: string | null }
+
+// つなぐ前に失敗した（相手に届いていない）ことが分かる失敗。これ以外の通信の失敗は「届いたかもしれない」として扱う。
+const NOT_SENT_CODES = new Set(["ECONNREFUSED", "ENOTFOUND", "EAI_AGAIN", "UND_ERR_CONNECT_TIMEOUT", "CERT_HAS_EXPIRED", "ERR_TLS_CERT_ALTNAME_INVALID", "UNABLE_TO_VERIFY_LEAF_SIGNATURE", "DEPTH_ZERO_SELF_SIGNED_CERT", "SELF_SIGNED_CERT_IN_CHAIN"])
+export function notSent(error: unknown): boolean {
+  if (!(error instanceof Error) || error.name === "TimeoutError" || error.name === "AbortError") return false
+  const cause = (error as { cause?: { code?: unknown } }).cause
+  return typeof cause?.code === "string" && NOT_SENT_CODES.has(cause.code)
+}
 
 async function call<T>(path: string, init: { method: "GET" | "POST"; body?: unknown; timeoutMs: number }, fetcher: typeof fetch = fetch): Promise<InventoryCall<T>> {
   const config = readInventoryConfig()
-  if (!config) return { ok: false, uncertain: false, status: null }
+  if (!config) return { ok: false, uncertain: false, status: null, error: "NOT_CONFIGURED" }
   let response: Response
   try {
     response = await fetcher(`${config.url}/web-inventory/v1/${path}`, {
@@ -30,13 +39,16 @@ async function call<T>(path: string, init: { method: "GET" | "POST"; body?: unkn
       cache: "no-store",
       signal: AbortSignal.timeout(init.timeoutMs),
     })
-  } catch {
-    // 送ったかどうか分からない（通信の途中で切れた・時間切れ）。
-    return { ok: false, uncertain: init.method === "POST", status: null }
+  } catch (error) {
+    // 送ったかどうか分からない（通信の途中で切れた・時間切れ）。つなぐ前の失敗だけは、届いていないと分かる。
+    return { ok: false, uncertain: init.method === "POST" && !notSent(error), status: null, error: notSent(error) ? "NOT_SENT" : "NETWORK" }
   }
   let data: unknown = null
-  try { data = await response.json() } catch { return { ok: false, uncertain: init.method === "POST" && response.status >= 500, status: response.status } }
-  if (!response.ok) return { ok: false, uncertain: response.status >= 500 && init.method === "POST", status: response.status }
+  try { data = await response.json() } catch { return { ok: false, uncertain: init.method === "POST" && response.status >= 500, status: response.status, error: null } }
+  const body = (data ?? {}) as { error?: unknown; attempted?: unknown }
+  const error = typeof body.error === "string" ? body.error : null
+  // attempted:false は、管理システムがDBを呼ぶ前に止まった（予約は作っていない）。
+  if (!response.ok) return { ok: false, uncertain: response.status >= 500 && init.method === "POST" && body.attempted !== false, status: response.status, error }
   return { ok: true, status: response.status, data: data as T }
 }
 
@@ -46,8 +58,12 @@ export interface AvailabilityResponse { today: string; paused: boolean; results:
 export const checkInventory = (requests: AvailabilityRequest[], fetcher?: typeof fetch) =>
   call<AvailabilityResponse>("availability", { method: "POST", body: { requests }, timeoutMs: 3000 }, fetcher)
 
-export interface CreateResult { state: "CREATED" | "FULL" | "CLOSED" | "NOT_OFFERED" | "UNMANAGED" | "PAUSED" | "NOT_READY" | "NONE"; booking_number: string; booking_id: string | null; remaining: number | null; replayed: boolean }
+export interface CreateResult { state: "CREATED" | "FULL" | "CLOSED" | "NOT_OFFERED" | "UNMANAGED" | "PAUSED" | "NOT_READY" | "NONE" | "ABANDONED"; booking_number: string; booking_id: string | null; remaining: number | null; replayed: boolean }
 export const createInventoryBooking = (body: { booking_number: string; item: unknown; details: unknown }, fetcher?: typeof fetch) =>
   call<CreateResult>("bookings", { method: "POST", body, timeoutMs: 8000 }, fetcher)
 export const readInventoryBooking = (bookingNumber: string, fetcher?: typeof fetch) =>
   call<CreateResult>(`bookings/${encodeURIComponent(bookingNumber)}`, { method: "GET", timeoutMs: 3000 }, fetcher)
+// 作成の結果が分からない時：走っている作成が終わるのを待ってから、作っていれば CREATED、無ければ「あきらめた」印を残して ABANDONED。
+// ABANDONED の後は、遅れて届いた作成も予約を作らないので、今の仮予約（旧GAS）へ切り替えてよい。
+export const abandonInventoryBooking = (bookingNumber: string, fetcher?: typeof fetch) =>
+  call<CreateResult>(`bookings/${encodeURIComponent(bookingNumber)}/abandon`, { method: "POST", body: {}, timeoutMs: 8000 }, fetcher)
