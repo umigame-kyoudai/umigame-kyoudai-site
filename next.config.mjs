@@ -29,6 +29,9 @@ const nextConfig = {
     ],
     deviceSizes: [360, 414, 768, 1024, 1280, 1920],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    // The Cloudflare optimizer accepts only configured qualities. Include
+    // every explicit <Image quality={...}> used throughout the site.
+    qualities: [30, 50, 55, 60, 68, 70, 72, 75, 80, 85, 90],
     minimumCacheTTL: 31536000,
     dangerouslyAllowSVG: true,
     contentDispositionType: 'attachment',
