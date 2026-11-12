@@ -4,16 +4,16 @@
 
 ユーザー指示は、運用サイトをサイト別GitHubとCloudflareの直接連携へ移し、最終的にVercel有料プランを終了すること。以下は今回確認した状態。後半のVercel継続方針や過去の未実施記録は当時の履歴として扱う。
 
-- 本番の配信は現在Vercel。PR #63のmain `34402771fe9f2854ee0c5f28371ea8ba8e6b7f3b` と、新しい紹介署名の発行・旧署名の引継ぎを本番で確認した。5つの既存aliasは同じ `dpl_E944M1iBcHD8GfxZAXJgi9BkdZ9n` を参照。切替前の旧署名による合成Cookieを使い、紹介者・キャンペーン・取得日時・残り有効期限の保持、不正署名の拒否を確認。実予約や通知は作成していない。
+- 今回、同じGitHub mainに直結したCloudflare Workerへapex/wwwを接続する。事前の実Cloudflare検証ではサイトマップ全82ページが200、移管画像22点のハッシュ一致、画像変換、クーポン判定、予約入口の不正入力拒否、旧紹介Cookieの再署名と残り有効期間の保持を確認した。390px幅で写真、予約導線、S1大人2名13,000円の計算も確認。実予約・LINE通知は送信していない。
 - 紹介の移行期限は **2026-12-13 00:00 JST**（`2026-12-12T15:00:00.000Z`）。本人は旧Vercelの約30日維持と、11/22更新時のUS$20基本料＋従量料金（税・手数料別）を承認済み。旧キーはVercel内に残し、新しいCookieは新キーで確認する。[設定と終了条件](referral-key-migration-2026-11-12.md)。旧発行は11/12 16:16 JSTまでに新しい版へ移行した。
-- Cloudflare account `6ee1007b5398ed60a4eb9a43407d0a56`、表示名 `Info@umigamekyoudaimiyakojima.com's Account`、Worker `umigame-kyoudai-site`。GitHub mainの直接ビルド `5e7ee22c-2254-474e-9034-97bee5942c06` が成功。本番専用の11設定を暗号化バックアップ後にSecretへ登録済み。`workers_dev` とpreview URLsは無効。
+- Cloudflare account `6ee1007b5398ed60a4eb9a43407d0a56`、表示名 `Info@umigamekyoudaimiyakojima.com's Account`、Worker `umigame-kyoudai-site`。GitHub mainの直接ビルド `5e7ee22c-2254-474e-9034-97bee5942c06` が成功。本番専用の11設定を暗号化バックアップ後にSecretへ登録済み。検証中のみ有効にした `workers_dev` は本番ドメイン公開で再び無効にする。preview URLsは常時無効。
 - DNSの委任先を `frida.ns.cloudflare.com` / `kobe.ns.cloudflare.com` へ変更し、ゾーン `f724e87932e46bda2fe6793a3a6ed58d` がactiveであることを確認。登録・年次更新先はVercelのまま。MX・DKIM・Google確認TXT・既存CAAを照合。DNSSECのDSは未登録。切替待ちのapex/www/wildcardは、Vercelが提示するA `216.150.1.1` / `216.150.16.1` のDNS-only設定とし、両IPのHTTPS応答を確認した。
-- 今回の変更では `migration-check.umigamekyoudaimiyakojima.com` のみを本番Workerへ一時接続し、実Cloudflareで予約入口・画像・Cookieを検証する。検証ホストには `X-Robots-Tag: noindex, nofollow` を返す。実予約・LINE通知・分析データの試験送信はしない。確認後、apex/wwwを接続する別変更で検証ホストを外す。
+- 本番設定のCustom Domainsは `umigamekyoudaimiyakojima.com` と `www.umigamekyoudaimiyakojima.com` の2件。検証用 `migration-check.umigamekyoudaimiyakojima.com` は接続から外す。MX・DKIM・Google確認TXT・CAA・ドメイン登録契約は維持する。
 - Vercelで行っていたapex→wwwの308転送をWorkerでも維持し、パス・クエリ・HTTPメソッドを保持する。正規ホストの応答は変更しない。
 - ビルドは `npm run cloudflare:build:production`、公開は `npm run cloudflare:deploy:production`。LIFF・GA4の公開IDは既存値を引継ぎ、CloudflareビルドではVercel Analyticsを停止する。GA4・分析シートの同意条件を維持する。
 - Vercel Blobの公開画像22点をハッシュ照合して `public/gallery/` に収容済み。ブログはビルド時に組み込む。画像変換障害時は、許可した同一サイト内の元画像を短いキャッシュで返す。予約・クーポンの回数制限はDurable Objectを使う。
 - 従来の閲覧専用Worker `umigame-kyoudai-site-migration-preview` は別環境で、送信拒否・noindex・本番秘密値なしを維持する。
-- 今回は426件のテスト、型検査、Lint、Cloudflare本番ビルドに成功。公開後の予約送信成功や外部通知配信の証拠とは区別する。
+- 紹介引継ぎではWorkers非対応の `redirect: "error"` を `manual` と非2xx拒否へ変更し、別ホストへ認証情報を転送しない。427件のテスト、型検査、Lint、Cloudflare本番ビルド、実workerdから旧Vercelへの接続に成功。公開後の予約送信成功や外部通知配信の証拠とは区別する。
 
 確認日: 2026-09-26。秘密値は記録しない。
 
