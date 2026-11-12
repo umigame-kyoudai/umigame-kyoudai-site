@@ -5,6 +5,7 @@
   "main": "cloudflare-production-worker.mjs",
   "workers_dev": false,
   "preview_urls": false,
+  "routes": [{ "pattern": "migration-check.umigamekyoudaimiyakojima.com", "custom_domain": true }],
   "compatibility_date": "2026-11-01",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "vars": { "CF_WORKER_DEPLOYMENT": "1" },
