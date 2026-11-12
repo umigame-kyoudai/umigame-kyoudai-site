@@ -92,7 +92,9 @@ export async function resolveReferralCookie(
       method: "POST",
       headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
       body: JSON.stringify({ cookie: cookieValue }),
-      redirect: "error",
+      // Workers does not implement redirect: "error". Manual mode keeps the
+      // credential on this owned URL; the non-2xx check below rejects redirects.
+      redirect: "manual",
       cache: "no-store",
       signal: AbortSignal.timeout(BRIDGE_TIMEOUT_MS),
     })
