@@ -59,7 +59,9 @@ export function ConsentAwareAnalytics({ gaId }: { gaId?: string }) {
     <>
       <AttributionTracker />
       <DetailedAnalytics />
-      <Analytics beforeSend={(event) => hasTrackingConsent() ? event : null} />
+      {process.env.NEXT_PUBLIC_DISABLE_VERCEL_ANALYTICS !== "1" && (
+        <Analytics beforeSend={(event) => hasTrackingConsent() ? event : null} />
+      )}
       {gaId ? <GoogleAnalytics gaId={gaId} /> : null}
     </>
   )

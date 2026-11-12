@@ -6,7 +6,8 @@ export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
 const headers = { "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex, nofollow" }
 
-export function GET(request: NextRequest, { params }: { params: { source: string } }) {
+export async function GET(request: NextRequest, props: { params: Promise<{ source: string }> }) {
+  const params = await props.params;
   const source = params.source
   if (!isBookingSourceCode(source)) return new NextResponse("このリンクは見つかりませんでした。", { status: 404, headers })
   const secret = getBookingSourceSecret()

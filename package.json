@@ -3,16 +3,23 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "prebuild": "node scripts/generate-blog-posts.mjs",
     "build": "next build",
+    "predev": "node scripts/generate-blog-posts.mjs",
     "dev": "next dev",
     "lint": "next lint",
     "start": "next start",
-    "test": "node --import ./scripts/test-alias-hooks.mjs --test \"lib/**/*.test.mjs\""
+    "pretest": "node scripts/generate-blog-posts.mjs",
+    "test": "node --import ./scripts/test-alias-hooks.mjs --test \"lib/**/*.test.mjs\"",
+    "cloudflare:build": "NEXT_PUBLIC_DISABLE_VERCEL_ANALYTICS=1 opennextjs-cloudflare build && opennextjs-cloudflare populateCache local",
+    "cloudflare:build:production": "NEXT_PUBLIC_DISABLE_VERCEL_ANALYTICS=1 opennextjs-cloudflare build -c wrangler.production.jsonc && opennextjs-cloudflare populateCache local -c wrangler.production.jsonc",
+    "cloudflare:preview:local": "wrangler dev --local --config wrangler.preview.jsonc",
+    "cloudflare:deploy:production": "opennextjs-cloudflare deploy -c wrangler.production.jsonc"
   },
   "dependencies": {
     "@line/bot-sdk": "^10.8.0",
     "@line/liff": "2.31.2",
-    "@next/third-parties": "^14.2.35",
+    "@next/third-parties": "15.5.29",
     "@radix-ui/react-checkbox": "1.1.3",
     "@radix-ui/react-label": "2.1.1",
     "@radix-ui/react-slot": "^1.2.5",
@@ -23,26 +30,37 @@
     "framer-motion": "12.23.16",
     "gray-matter": "^4.0.3",
     "lucide-react": "^0.454.0",
-    "next": "14.2.35",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
+    "next": "15.5.29",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
     "react-markdown": "^10.1.0",
     "sonner": "^1.7.4",
     "suncalc": "^1.9.0",
     "tailwind-merge": "^2.5.5"
   },
   "devDependencies": {
+    "@opennextjs/cloudflare": "1.20.16",
     "@tailwindcss/postcss": "^4.1.9",
     "@types/node": "^22",
-    "@types/react": "^18",
-    "@types/react-dom": "^18",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
     "@types/suncalc": "^1.9.2",
     "eslint": "^8.57.1",
-    "eslint-config-next": "^14.2.35",
+    "eslint-config-next": "15.5.29",
     "postcss": "^8.5",
-    "sharp": "^0.34.5",
+    "sharp": "0.35.5",
     "tailwindcss": "^4.1.9",
     "tw-animate-css": "1.3.3",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wrangler": "4.160.0"
+  },
+  "overrides": {
+    "next": {
+      "postcss": "8.5.32"
+    },
+    "framer-motion": {
+      "motion-dom": "12.38.0",
+      "motion-utils": "12.36.0"
+    }
   }
 }

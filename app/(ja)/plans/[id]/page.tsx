@@ -15,7 +15,8 @@ export function generateStaticParams() {
   return Object.keys(PLAN_DETAILS).map((id) => ({ id }))
 }
 
-export function generateMetadata({ params }: { params: { id: string } }): Metadata {
+export async function generateMetadata(props: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const params = await props.params;
   const plan = PLAN_DETAILS[params.id]
   if (!plan) return { title: "プランが見つかりません" }
   return createMetadata({
@@ -28,7 +29,8 @@ export function generateMetadata({ params }: { params: { id: string } }): Metada
   })
 }
 
-export default function Page({ params }: { params: { id: string } }) {
+export default async function Page(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const plan = PLAN_DETAILS[params.id]
   if (!plan) notFound()
 

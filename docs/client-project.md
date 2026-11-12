@@ -1,5 +1,23 @@
 # 海亀兄弟 Webサイト管理台帳
 
+## Cloudflare移行作業（2026-11-11）
+
+2026-11-12、配布済み紹介リンクを現在も使用していると本人確認済み。旧署名キーをVercel内に保ち、紹介者・取得日時・元の30日間を維持して新署名へ引き継ぐ実装を追加した。実環境のキー設定と有効化はまだ行っていない。[設定の対応・切替順序・障害時の挙動](referral-key-migration-2026-11-12.md)に従い、最終旧Cookieの期限経過まで旧Vercelを維持する。
+
+ユーザーは、既存のVercel有料プランを終了するため、運用中のサイトをCloudflareへ移すよう指示した。下記2026-09-25のVercel継続は当時の記録であり、現在の移行指示より優先しない。
+
+- 現在の本番は引き続きVercel。`www.umigamekyoudaimiyakojima.com` とapex、予約GAS、LINE、GA4、分析シートを維持する。
+- Cloudflare移行先候補は、表示名 `Info@umigamekyoudaimiyakojima.com's Account`、ID `6ee1007b5398ed60a4eb9a43407d0a56` の `umigame-kyoudai-site`。GitHubから直接ビルドする。独自ドメイン・DNSは切替前。本番候補の `workers_dev` とpreview URLsは無効にし、確認前の別URLへの公開を防ぐ。
+- `umigame-kyoudai-site-migration-preview` は移行検証用。`wrangler.preview.jsonc` と専用Workerで送信メソッドを拒否し、noindexを返す。本番の予約・LINE・分析の秘密値は設定しない。移行ブランチの `wrangler.jsonc` はこの検証Worker名、`wrangler.production.jsonc` は将来の本番Worker候補を示す。
+- 検証WorkerのGitHub接続は、対象RepositoryのみをCloudflareアプリに追加する承認を得て設定。[`workers.dev` の閲覧専用版](https://umigame-kyoudai-site-migration-preview.throbbing-queen-f409.workers.dev/)はHTTPS公開とスマホ表示を確認済み。本番ドメインではなく、予約送信はできない。
+- Vercel Blobの公開画像22点は、元ファイルのSHA-256を確認して `public/gallery/` へ収容した。ブログのMarkdownは `prebuild` でWorkerに組み込み、Cloudflare実行時にローカルファイルを読まない。
+- CloudflareビルドではVercel Web Analyticsへの送信を停止する。GA4・分析シート・同意条件は維持し、公開前に実環境で再確認する。Vercel側の既存ビルドは従来どおり。
+- 初期の閲覧専用版では予約・クーポンAPIの書込み自体を拒否している。別途、複数Worker間で共有する制限をDraft PRで実装・ローカル検証中。本番では未稼働。
+- ドメインの登録・年次更新は、Vercel Pro終了と両立できる限りVercelに残す。DNS、SSL、メール用レコード、復旧先の確認後に切り替える。
+- 本番候補のビルドは `npm run cloudflare:build:production`、デプロイは `npm run cloudflare:deploy:production` で、本番専用の Wrangler 設定を明示する。Workers Buildsでもこの組合せを使い、既定の閲覧専用Workerへ誤って配信しない。公開用の LIFF ID と GA4 ID は現行設定と照合して引き継ぐ。秘密値・環境ファイルは履歴に含めない。
+- 本番候補には画像変換の障害時に同じサイトの静的な元画像を返す処理を追加。正常応答と入力エラーはそのまま返し、外部 URL、動的ルート、パスの遡行、SVG は代替取得しない。原画像への代替は 60 秒のキャッシュとし、変換が復旧すれば再試行する。
+- 全 399 テスト、lint、型検査、Cloudflare 向け本番ビルドが成功。これらは本番の予約・通知送信成功の証拠ではない。必要な秘密値と外部連携、DNS、稼働後の監視を確認するまで本番切替は行わない。
+
 確認日: 2026-09-26。秘密値は記録しない。
 
 | 項目 | 確認済みの構成 |
@@ -67,3 +85,15 @@ Team ID: `team_AVkVeJGhky3xEi61HxtzJ2IX`。
 検証：373テストと本番ビルド（型・Lint検査込み）成功。通常ナイトで59歳・60歳・75歳を含む2名を8,000円で受付、76歳は対象外、水上体験の通常6プランは60歳以上の貸切案内を維持することを外部サービスを模擬化したAPIテストで確認。実予約・メール・LINE通知は送信していない。
 
 公開：[PR #56](https://github.com/umigame-kyoudai/umigame-kyoudai-site/pull/56)をマージし、`fbab0fb` の本番デプロイ `dpl_H4Qc9ejtuopNJpKAmhyP2B89KSTp` を確認。本番HTTPSのS3/S5・トップで更新文言を確認し、390px幅でS3の画像・参加案内・予約CTA・予約フォームを確認。75歳入力時に貸切警告が出ず、通常料金4,000円になることを本番画面で確認した。予約送信は行っていない。スクリーンショットはローカル `output/night-senior-2026-10-31/production-mobile.jpg` に保存。
+
+## Cloudflare移行調査（2026-11-11）
+
+ユーザーの今回の指示によりCloudflareへの移行を進める。Vercelの本番とDNSはまだ変更していない。Cloudflare側にGitHub直結の[閲覧専用プレビュー](https://umigame-kyoudai-site-migration-preview.throbbing-queen-f409.workers.dev/)を用意し、書込みを拒否・noindexとしている。
+
+別の移行作業ブランチでは、予約とクーポンのIP制限をCloudflare Durable Objectで共有する案をローカル検証した。10分間に予約5件・クーポン15件、同一予約IDの再送、制限装置の設定欠落時に503で閉じる動きを合成リクエストで確認。アドレスは環境別の `RATE_LIMIT_HMAC_SECRET` でHMAC化して識別し、原文はDurable Objectへ保存しない。秘密値はコードや台帳に記載しない。
+
+予約IDごとの再送は初回を含め4回までとし、5回目を429とする。20同時リクエストでは4回を受け、16回を429とすることをローカルWorkerdで確認した。別の一時コピーでLINE認証と予約GASを仮の接続先に差し替え、予約成功・同一ID再送・認証失敗・送信先障害を確認した。実際のLINE・GASや実際のGAS側の重複防止を検証したものではない。
+
+独自ドメインのDNSは現在Vercel。MX、DKIM、Google確認用TXT、CAA、apexとワイルドカードのALIASがある。2026-11-11の公開DNS照会ではDS応答はなかったが、切替直前に登録画面でもDNSSECを再確認する。Cloudflareの自動スキャンだけに頼らずメール・認証レコードを照合し、ALIASは提供元が表示する対応先を確認する。ドメイン登録・更新先の移管とDNSの切替は別操作。詳細は[CloudflareのDNS移行手順](https://developers.cloudflare.com/dns/zone-setups/full-setup/setup/)を参照する。
+
+Durable Object本番作成・秘密値設定・CronやDNSの変更は未実施。課金・障害時の復旧・有効期限後の掃除・Cloudflare実環境とGASの冪等性を確認し、画像変換、LINE/LIFF、GA4、予約の隔離E2Eを終えるまで本番へ切り替えない。

@@ -1446,6 +1446,8 @@ export function BookingForm() {
             </Button>
           ) : (
             <Button asChild className="bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl w-full">
+              {/* A full navigation clears the completed booking form. */}
+              {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
               <a href="/">ホームに戻る</a>
             </Button>
           )}

@@ -5,6 +5,9 @@
 
 # next.js
 /.next/
+/.open-next/
+/.wrangler/
+/.dev.vars*
 /out/
 
 # production

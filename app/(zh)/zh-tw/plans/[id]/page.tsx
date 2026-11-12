@@ -5,10 +5,12 @@ export function generateStaticParams() {
   return intlPlanStaticParams("zh-tw")
 }
 
-export function generateMetadata({ params }: { params: { id: string } }): Metadata {
+export async function generateMetadata(props: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const params = await props.params;
   return intlPlanDetailMetadata("zh-tw", params.id)
 }
 
-export default function TraditionalChinesePlanDetailPage({ params }: { params: { id: string } }) {
+export default async function TraditionalChinesePlanDetailPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   return <IntlPlanDetailPage locale="zh-tw" id={params.id} />
 }

@@ -208,7 +208,7 @@ export function trackEvent(name: TrackEventName, props?: TrackEventProps): void 
 
   try {
     const vercelProps = buildVercelEventProperties(name, safeProps)
-    if (vercelProps) track(name, vercelProps)
+    if (process.env.NEXT_PUBLIC_DISABLE_VERCEL_ANALYTICS !== "1" && vercelProps) track(name, vercelProps)
   } catch {
     // Analytics must never interrupt the booking flow.
   }

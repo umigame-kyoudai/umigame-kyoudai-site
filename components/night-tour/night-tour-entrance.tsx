@@ -13,7 +13,7 @@ export function NightEntrance({ children }: { children: ReactNode }) {
   const stageRef = useRef<HTMLDivElement>(null)
   const gateRef = useRef<HTMLElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
-  const skipRef = useRef<() => void>()
+  const skipRef = useRef<(() => void) | undefined>(undefined)
   const openedRef = useRef(false)
 
   useEffect(() => {
