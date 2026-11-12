@@ -100,9 +100,17 @@ export const verifySignedReferralCookie = (
   if (parts.length !== 2 || !parts[0] || !parts[1]) return null
   if (!signaturesMatch(parts[1], sign(parts[0], secret))) return null
 
+  return decodeUnverifiedReferralCookie(cookieValue, nowMs)
+}
+
+// Only a shape/age check. Callers MUST verify a signature before trusting this data.
+export const decodeUnverifiedReferralCookie = (
+  cookieValue: string | null | undefined,
+  nowMs = Date.now(),
+): ReferralCookiePayload | null => {
+  if (!cookieValue || cookieValue.length > 1024 || !/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]{43}$/.test(cookieValue)) return null
   try {
-    const parsed = JSON.parse(Buffer.from(parts[0], "base64url").toString("utf8"))
-    return normalizePayload(parsed, nowMs)
+    return normalizePayload(JSON.parse(Buffer.from(cookieValue.split(".")[0], "base64url").toString("utf8")), nowMs)
   } catch {
     return null
   }
