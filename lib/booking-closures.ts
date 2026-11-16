@@ -31,12 +31,24 @@ export function isNightTourBookingClosed(date: string, planId: string): boolean 
 // ナイトツアー単体は対象外。
 const SEA_TOUR_CLOSED_DATE = "2026-11-10"
 const SEA_TOUR_PLAN_IDS = new Set(["S1", "S2", "S4", "S6", "S7", "S8", "C1", "C2", "C3", "C4", "C5", "C6"])
+// 11月16日は日中プランと日中を含むセットを停止。夕方のサンセット単体とナイト単体は対象外。
+const DAYTIME_TOUR_CLOSED_DATE = "2026-11-16"
+const DAYTIME_TOUR_PLAN_IDS = new Set(["S1", "S2", "S6", "S7", "C1", "C2", "C3", "C4", "C5", "C6"])
 
 export function isSeaTourBookingClosed(date: string, planId: string): boolean {
-  return date === SEA_TOUR_CLOSED_DATE && SEA_TOUR_PLAN_IDS.has(planId)
+  return (date === SEA_TOUR_CLOSED_DATE && SEA_TOUR_PLAN_IDS.has(planId)) ||
+    (date === DAYTIME_TOUR_CLOSED_DATE && DAYTIME_TOUR_PLAN_IDS.has(planId))
 }
 
-function seaTourClosureMessage(locale: string): string {
+function seaTourClosureMessage(date: string, locale: string): string {
+  if (date === DAYTIME_TOUR_CLOSED_DATE) {
+    switch (locale) {
+      case "en": return "Daytime tours and plans including them are unavailable on November 16."
+      case "ko": return "11월 16일 주간 투어와 이를 포함한 세트는 예약할 수 없습니다."
+      case "zh-tw": return "11月16日白天行程及包含白天行程的套裝暫停預約。"
+      default: return "11月16日の日中ツアーとそれを含むセットは予約できません。"
+    }
+  }
   switch (locale) {
     case "en": return "Sea tours and plans including them are unavailable on November 10 due to strong winds."
     case "ko": return "강풍으로 인해 11월 10일 해양 체험과 이를 포함한 세트는 예약할 수 없습니다."
@@ -74,6 +86,6 @@ export function nightTourClosureMessage(locale: string = "ja"): string {
 
 export function bookingUnavailableMessage(date: string, planId: string, locale: string = "ja"): string {
   if (isBookingDateClosed(date)) return bookingClosedMessage(locale)
-  if (isSeaTourBookingClosed(date, planId)) return seaTourClosureMessage(locale)
+  if (isSeaTourBookingClosed(date, planId)) return seaTourClosureMessage(date, locale)
   return nightTourClosureMessage(locale)
 }
