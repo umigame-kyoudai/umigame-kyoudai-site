@@ -31,22 +31,23 @@ export function isNightTourBookingClosed(date: string, planId: string): boolean 
 // ナイトツアー単体は対象外。
 const SEA_TOUR_CLOSED_DATE = "2026-11-10"
 const SEA_TOUR_PLAN_IDS = new Set(["S1", "S2", "S4", "S6", "S7", "S8", "C1", "C2", "C3", "C4", "C5", "C6"])
-// 11月16日は日中プランと日中を含むセットを停止。夕方のサンセット単体とナイト単体は対象外。
-const DAYTIME_TOUR_CLOSED_DATE = "2026-11-16"
+// 指定日は日中プランと日中を含むセットを停止。夕方のサンセット単体とナイト単体は対象外。
+const DAYTIME_TOUR_CLOSED_DATES = new Set(["2026-11-16", "2026-11-20"])
 const DAYTIME_TOUR_PLAN_IDS = new Set(["S1", "S2", "S6", "S7", "C1", "C2", "C3", "C4", "C5", "C6"])
 
 export function isSeaTourBookingClosed(date: string, planId: string): boolean {
   return (date === SEA_TOUR_CLOSED_DATE && SEA_TOUR_PLAN_IDS.has(planId)) ||
-    (date === DAYTIME_TOUR_CLOSED_DATE && DAYTIME_TOUR_PLAN_IDS.has(planId))
+    (DAYTIME_TOUR_CLOSED_DATES.has(date) && DAYTIME_TOUR_PLAN_IDS.has(planId))
 }
 
 function seaTourClosureMessage(date: string, locale: string): string {
-  if (date === DAYTIME_TOUR_CLOSED_DATE) {
+  if (DAYTIME_TOUR_CLOSED_DATES.has(date)) {
+    const day = Number(date.slice(-2))
     switch (locale) {
-      case "en": return "Daytime tours and plans including them are unavailable on November 16."
-      case "ko": return "11월 16일 주간 투어와 이를 포함한 세트는 예약할 수 없습니다."
-      case "zh-tw": return "11月16日白天行程及包含白天行程的套裝暫停預約。"
-      default: return "11月16日の日中ツアーとそれを含むセットは予約できません。"
+      case "en": return `Daytime tours and plans including them are unavailable on November ${day}.`
+      case "ko": return `11월 ${day}일 주간 투어와 이를 포함한 세트는 예약할 수 없습니다.`
+      case "zh-tw": return `11月${day}日白天行程及包含白天行程的套裝暫停預約。`
+      default: return `11月${day}日の日中ツアーとそれを含むセットは予約できません。`
     }
   }
   switch (locale) {
