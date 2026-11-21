@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   ...createMetadata({
     title: PAGE_TITLE,
     description:
-      "宮古島でウミガメ（海亀）に会えるビーチや遭遇率が高い時期、初心者・子どもでも泳げるか、個人で行く際の注意点まで解説。安全に宮古島のウミガメツアー・シュノーケルを楽しむなら少人数制の海亀兄弟へ。",
+      "宮古島のウミガメには一年を通して会えるチャンスがあり、特に見やすいのは海が穏やかな4〜10月、時間帯は風の弱い午前中です。会いやすいビーチ、初心者・子どもでも泳げるか、個人で行くときの注意点を、少人数制のウミガメツアー海亀兄弟が解説します。",
     path: PAGE_PATH,
     locale: "ja",
     intlBasePath: "/miyakojima-sea-turtle",
